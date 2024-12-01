@@ -1,6 +1,6 @@
 import { Cell, Execution, MutableGame, MutablePlayer, Player, PlayerInfo, PlayerType, TerrainType, TerraNullius, Tile, UnitType } from "../game/Game"
 import { PseudoRandom } from "../PseudoRandom"
-import { and, bfs, dist, simpleHash } from "../Util";
+import { and, bfs, dist, euclDist, manhattanDist, simpleHash } from "../Util";
 import { AttackExecution } from "./AttackExecution";
 import { TransportShipExecution } from "./TransportShipExecution";
 import { SpawnExecution } from "./SpawnExecution";
@@ -173,11 +173,10 @@ export class FakeHumanExecution implements Execution {
         const ships = this.player.units(shipType)
         if (ports.length > 0 && ships.length == 0 && this.player.gold() > this.cost(shipType)) {
             const port = this.random.randElement(ports)
-            const spawns = Array.from(bfs(port.tile(), dist(port.tile(), this.mg.config().boatMaxDistance() / 2))).filter(t => t.isOcean())
-            if (spawns.length == 0) {
+            const targetTile = this.warshipSpawnTile(port.tile())
+            if (targetTile == null) {
                 return false
             }
-            const targetTile = this.random.randElement(spawns)
             const canBuild = this.player.canBuild(UnitType.Destroyer, targetTile)
             if (canBuild == false) {
                 console.warn('cannot spawn destroyer')
@@ -194,6 +193,28 @@ export class FakeHumanExecution implements Execution {
             return true
         }
         return false
+    }
+
+    private warshipSpawnTile(portTile: Tile): Tile | null {
+        const radius = this.mg.config().boatMaxDistance() / 2
+        for (let attempts = 0; attempts < 50; attempts++) {
+            const randX = this.random.nextInt(portTile.cell().x - radius, portTile.cell().x + radius)
+            const randY = this.random.nextInt(portTile.cell().y - radius, portTile.cell().y + radius)
+            const cell = new Cell(randX, randY)
+            if (!this.mg.isOnMap(cell)) {
+                continue
+            }
+            // Sanity check
+            if (manhattanDist(cell, portTile.cell()) >= this.mg.config().boatMaxDistance()) {
+                continue
+            }
+            const tile = this.mg.tile(cell)
+            if (!tile.isOcean()) {
+                continue
+            }
+            return tile
+        }
+        return null
     }
 
     private cost(type: UnitType): number {
