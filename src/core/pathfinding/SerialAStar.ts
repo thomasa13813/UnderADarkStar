@@ -1,6 +1,7 @@
 import { PriorityQueue } from "@datastructures-js/priority-queue";
 import { AStar, SearchNode } from "./AStar";
 import { PathFindResultType } from "./AStar";
+import { Cell } from "../game/Game";
 
 
 export class SerialAStar implements AStar {
@@ -114,7 +115,7 @@ export class SerialAStar implements AStar {
         }
     }
 
-    public reconstructPath(): SearchNode[] {
+    public reconstructPath(): Cell[] {
         if (!this.meetingPoint) return [];
 
         // Reconstruct path from start to meeting point
@@ -132,6 +133,6 @@ export class SerialAStar implements AStar {
             fwdPath.push(current);
         }
 
-        return fwdPath;
+        return fwdPath.map(sn => sn.cell());
     }
 }

@@ -5,7 +5,7 @@ import { PathFindResultType } from "../pathfinding/AStar";
 export class ShellExecution implements Execution {
 
     private active = true
-    private pathFinder = PathFinder.Serial(2000, () => true, 10)
+    private pathFinder: PathFinder
     private shell: MutableUnit
 
     constructor(private spawn: Tile, private _owner: MutablePlayer, private target: MutableUnit) {
@@ -13,6 +13,7 @@ export class ShellExecution implements Execution {
     }
 
     init(mg: MutableGame, ticks: number): void {
+        this.pathFinder = PathFinder.Mini(mg, 2000, () => true, 10)
     }
 
     tick(ticks: number): void {

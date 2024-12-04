@@ -84,7 +84,7 @@ export class TerritoryLayer implements Layer {
             if (tile.defenseBonuses().filter(db => db.unit.owner() == owner).length > 0) {
                 this.paintCell(
                     tile.cell(),
-                    colord({ r: 0, g: 0, b: 0 }),
+                    this.theme.defendedBorderColor(owner.info()),
                     255
                 )
             } else {
@@ -120,7 +120,14 @@ export class TerritoryLayer implements Layer {
 
     unitEvent(event: UnitEvent) {
         if (event.unit.type() == UnitType.DefensePost) {
-            bfs(event.unit.tile(), dist(event.unit.tile(), this.game.config().defensePostRange())).forEach(t => this.enqueue(t))
+            bfs(
+                event.unit.tile(),
+                dist(event.unit.tile(), this.game.config().defensePostRange())
+            ).forEach(t => {
+                if (t.isBorder()) {
+                    this.enqueue(t)
+                }
+            })
         }
     }
 

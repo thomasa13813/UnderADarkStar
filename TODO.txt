@@ -201,11 +201,19 @@
 * have NPCs build destroyers and battleships DONE 11/30/2024
 * add info view on top right DONE 11/30/2024
 * add info view for units DONE 11/30/2024
-* add defense post
-* use mini A* for all pathfinding
+* add defense post DONE 12/2/2024
+* bugfix: when thread doesn't complete computation, do it in main DONE 12/3/2024
+* bugfix: when trade ships captured don't render DONE 12/3/2024
+* use mini A* for all pathfinding DONE 12/3/2024
+* bugfix: gameStop not found error DONE 12/3/2024
+* log stack traces & display them on screen DONE 12/3/2024
+* record and replay games for debugging purposes
+* bugfix: destroyers can't find path to dst and freeze
 * record single player game stats
 * add radiation from nuke
 * add cities
+* create behavior tests
+* create perf test
 * create alternate view to show friendly & enemy units
 * spread out calculate clusters
 * NPC has relations

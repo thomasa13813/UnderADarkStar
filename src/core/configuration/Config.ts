@@ -68,6 +68,7 @@ export interface Theme {
 	playerInfoColor(id: PlayerID): Colord;
 	territoryColor(playerInfo: PlayerInfo): Colord;
 	borderColor(playerInfo: PlayerInfo): Colord;
+	defendedBorderColor(playerInfo: PlayerInfo): Colord;
 	terrainColor(tile: Tile): Colord;
 	backgroundColor(): Colord;
 	font(): string;

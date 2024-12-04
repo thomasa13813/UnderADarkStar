@@ -79,6 +79,8 @@ export class TradeShipExecution implements Execution {
                     this.tradeShip.delete()
                     break
                 case PathFindResultType.Pending:
+                    // Fire unit event to rerender.
+                    this.tradeShip.move(this.tradeShip.tile())
                     break
                 case PathFindResultType.NextTile:
                     this.tradeShip.move(result.tile)

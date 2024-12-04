@@ -173,7 +173,13 @@ export class GameRunner {
         }
         this.isProcessingTurn = true
         this.gs.addExecution(...this.executor.createExecs(this.turns[this.currTurn]))
-        this.gs.executeNextTick()
+        try {
+            this.gs.executeNextTick()
+        } catch (error) {
+            const errorText = `Error: ${error.message}\nStack: ${error.stack}`;
+            alert("Game crashed! Error info copied to clipboard. Please paste this in your bug report in Discord.");
+            navigator.clipboard.writeText(errorText);
+        }
         this.renderer.tick()
         this.currTurn++
         this.isProcessingTurn = false

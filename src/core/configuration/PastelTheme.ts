@@ -6,6 +6,7 @@ import {PseudoRandom} from "../PseudoRandom";
 import {simpleHash} from "../Util";
 
 export const pastelTheme = new class implements Theme {
+    
     private rand = new PseudoRandom(123)
 
     private background = colord({r: 60, g: 60, b: 60});
@@ -129,6 +130,14 @@ export const pastelTheme = new class implements Theme {
             r: Math.max(tc.r - 40, 0),
             g: Math.max(tc.g - 40, 0),
             b: Math.max(tc.b - 40, 0)
+        })
+    }
+    defendedBorderColor(playerInfo: PlayerInfo): Colord {
+        const bc = this.borderColor(playerInfo).rgba;
+        return colord({
+            r: Math.max(bc.r - 40, 0),
+            g: Math.max(bc.g - 40, 0),
+            b: Math.max(bc.b - 40, 0)
         })
     }
 

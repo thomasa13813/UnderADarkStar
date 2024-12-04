@@ -435,7 +435,7 @@ export class PlayerImpl implements MutablePlayer {
     }
 
     hash(): number {
-        return simpleHash(this.id()) * (this.population() + this.numTilesOwned());
+        return simpleHash(this.id()) * (this.population() + this.numTilesOwned()) + this._units.reduce((acc, unit) => acc + unit.hash(), 0)
     }
     toString(): string {
         return `Player:{name:${this.info().name},clientID:${this.info().clientID},isAlive:${this.isAlive()},troops:${this._troops},numTileOwned:${this.numTilesOwned()}}]`;

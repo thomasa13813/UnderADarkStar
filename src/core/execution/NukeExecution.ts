@@ -16,7 +16,7 @@ export class NukeExecution implements Execution {
     private nuke: MutableUnit
     private dst: Tile
 
-    private pathFinder: PathFinder = PathFinder.Serial(10_000, () => true)
+    private pathFinder: PathFinder
     constructor(
         private type: UnitType.AtomBomb | UnitType.HydrogenBomb,
         private senderID: PlayerID,
@@ -26,6 +26,7 @@ export class NukeExecution implements Execution {
 
     init(mg: MutableGame, ticks: number): void {
         this.mg = mg
+        this.pathFinder = PathFinder.Mini(mg, 10_000, () => true)
         this.player = mg.player(this.senderID)
         this.dst = this.mg.tile(this.cell)
     }

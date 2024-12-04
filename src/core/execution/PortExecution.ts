@@ -1,4 +1,4 @@
-import { AllPlayers, Cell, Execution, MutableGame, MutablePlayer, MutableUnit, Player, PlayerID, Tile, Unit, UnitType } from "../game/Game";
+import { AllPlayers, Cell, Execution, MutableGame, MutablePlayer, MutableUnit, Player, PlayerID, TerrainType, Tile, Unit, UnitType } from "../game/Game";
 import { PathFinder } from "../pathfinding/PathFinding";
 import { PathFindResultType } from "../pathfinding/AStar";
 import { SerialAStar } from "../pathfinding/SerialAStar";
@@ -72,7 +72,7 @@ export class PortExecution implements Execution {
                 const aStar = this.computingPaths.get(port)
                 switch (aStar.compute()) {
                     case PathFindResultType.Completed:
-                        this.portPaths.set(port, aStar.reconstructPath().map(sn => sn as Tile))
+                        this.portPaths.set(port, aStar.reconstructPath().map(cell => this.mg.tile(cell)))
                         this.computingPaths.delete(port)
                         break
                     case PathFindResultType.Pending:
@@ -83,7 +83,7 @@ export class PortExecution implements Execution {
                 }
                 continue
             }
-            const asyncPF = this.worker.createParallelAStar(this.port.tile(), port.tile(), 100)
+            const asyncPF = this.worker.createParallelAStar(this.port.tile(), port.tile(), 25, [TerrainType.Ocean])
             // console.log(`adding new port path from ${this.player().name()}:${this.port.tile().cell()} to ${port.owner().name()}:${port.tile().cell()}`)
             this.computingPaths.set(port, asyncPF)
         }
@@ -101,7 +101,7 @@ export class PortExecution implements Execution {
             const port = this.random.randElement(portConnections)
             const path = this.portPaths.get(port)
             if (path != null) {
-                const pf = PathFinder.Parallel(this.worker, 30)
+                const pf = PathFinder.Parallel(this.mg, this.worker, 10)
                 this.mg.addExecution(new TradeShipExecution(this.player().id(), this.port, port, pf, path))
             }
         }

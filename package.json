@@ -1,5 +1,5 @@
 {
-  "name": "warfront-client",
+  "name": "openfront-client",
   "scripts": {
     "build-map": "node --loader ts-node/esm --experimental-specifier-resolution=node src/scripts/TerrainMapGenerator.ts",
     "build-dev": "webpack --config webpack.config.js --mode development",

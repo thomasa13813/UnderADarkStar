@@ -32,7 +32,9 @@ class Client {
         const s = this.stopGame
         window.addEventListener('beforeunload', function (event) {
             console.log('Browser is closing');
-            s()
+            if (s != null) {
+                s()
+            }
         });
 
         setFavicon()
@@ -84,9 +86,7 @@ class Client {
     }
 
     private stopGame() {
-        if (this.gameStop != null) {
-            this.gameStop()
-        }
+        this?.gameStop?.()
     }
 
     private async handleLeaveLobby(event: CustomEvent) {

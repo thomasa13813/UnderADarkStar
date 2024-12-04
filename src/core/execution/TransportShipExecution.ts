@@ -1,4 +1,4 @@
-import { Unit, Cell, Execution, MutableUnit, MutableGame, MutablePlayer, Player, PlayerID, TerraNullius, Tile, TileEvent, UnitType } from "../game/Game";
+import { Unit, Cell, Execution, MutableUnit, MutableGame, MutablePlayer, Player, PlayerID, TerraNullius, Tile, TileEvent, UnitType, TerrainType } from "../game/Game";
 import { and, bfs, manhattanDistWrapped, sourceDstOceanShore, targetTransportTile } from "../Util";
 import { AttackExecution } from "./AttackExecution";
 import { DisplayMessageEvent, MessageType } from "../../client/graphics/layers/EventsDisplay";
@@ -27,7 +27,7 @@ export class TransportShipExecution implements Execution {
 
     private boat: MutableUnit
 
-    private pathFinder: PathFinder = PathFinder.Serial(10_000, t => t.isWater(), 2)
+    private pathFinder: PathFinder
 
     constructor(
         private attackerID: PlayerID,
@@ -43,6 +43,7 @@ export class TransportShipExecution implements Execution {
     init(mg: MutableGame, ticks: number) {
         this.lastMove = ticks
         this.mg = mg
+        this.pathFinder = PathFinder.Mini(mg, 10_000, t => t.terrainType() == TerrainType.Ocean, 2)
 
         this.attacker = mg.player(this.attackerID)
 

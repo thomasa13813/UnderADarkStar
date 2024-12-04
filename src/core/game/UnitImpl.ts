@@ -1,3 +1,4 @@
+import { simpleHash } from "../Util";
 import { MutableUnit, Tile, TerraNullius, UnitType, Player, UnitInfo } from "./Game";
 import { GameImpl } from "./GameImpl";
 import { PlayerImpl } from "./PlayerImpl";
@@ -20,7 +21,7 @@ export class UnitImpl implements MutableUnit {
     }
 
     move(tile: Tile): void {
-        if(tile == null) {
+        if (tile == null) {
             throw new Error("tile cannot be null")
         }
         const oldTile = this._tile;
@@ -56,5 +57,9 @@ export class UnitImpl implements MutableUnit {
     }
     isActive(): boolean {
         return this._active;
+    }
+
+    hash(): number {
+        return this.tile().cell().x + this.tile().cell().y + simpleHash(this.type())
     }
 }

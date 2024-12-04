@@ -21,7 +21,7 @@ export class MiniAStar implements AStar {
         this.aStar = new SerialAStar(
             miniSrc,
             miniDst,
-            (t => (t as TerrainTile).terrainType() == TerrainType.Ocean),
+            canMove,
             iterations,
             maxTries
         )
@@ -31,29 +31,22 @@ export class MiniAStar implements AStar {
         return this.aStar.compute()
     }
 
-    reconstructPath(): SearchNode[] {
+    reconstructPath(): Cell[] {
         const upscaled = upscalePath(this.aStar.reconstructPath())
-            .map(p => this.terrainMap.terrain(new Cell(p.x, p.y))) as SearchNode[]
-        upscaled.push(this.dst)
-        return upscaled
-    }
-
-    reconstructPathAsPoints(): Point[] {
-        const upscaled = upscalePath(this.aStar.reconstructPath())
-        upscaled.push({ x: this.dst.cell().x, y: this.dst.cell().y })
+        upscaled.push(this.dst.cell())
         return upscaled
     }
 
 }
 
-function upscalePath(path: SearchNode[], scaleFactor: number = 2): Point[] {
+function upscalePath(path: Cell[], scaleFactor: number = 2): Cell[] {
     // Scale up each point
-    const scaledPath = path.map(point => ({
-        x: point.cell().x * scaleFactor,
-        y: point.cell().y * scaleFactor
-    }));
+    const scaledPath = path.map(point => (new Cell(
+       point.x * scaleFactor,
+       point.y * scaleFactor
+    )));
 
-    const smoothPath: Point[] = [];
+    const smoothPath: Cell[] = [];
 
     for (let i = 0; i < scaledPath.length - 1; i++) {
         const current = scaledPath[i];
@@ -72,10 +65,10 @@ function upscalePath(path: SearchNode[], scaleFactor: number = 2): Point[] {
 
         // Add intermediate points
         for (let step = 1; step < steps; step++) {
-            smoothPath.push({
-                x: Math.round(current.x + (dx * step) / steps),
-                y: Math.round(current.y + (dy * step) / steps)
-            });
+            smoothPath.push(new Cell(
+                Math.round(current.x + (dx * step) / steps),
+                Math.round(current.y + (dy * step) / steps)
+            ));
         }
     }
 

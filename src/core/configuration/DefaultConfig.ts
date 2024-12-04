@@ -8,7 +8,7 @@ import { pastelTheme } from "./PastelTheme";
 
 export class DefaultConfig implements Config {
     defensePostRange(): number {
-        return 20
+        return 30
     }
     defensePostDefenseBonus(): number {
         return 3
