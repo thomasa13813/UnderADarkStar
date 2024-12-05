@@ -372,6 +372,8 @@ export class PlayerImpl implements MutablePlayer {
                 return this.transportShipSpawn(targetTile)
             case UnitType.TradeShip:
                 return this.tradeShipSpawn(targetTile)
+            case UnitType.City:
+                return this.landBasedStructureSpawn(targetTile)
             default:
                 assertNever(unitType)
         }

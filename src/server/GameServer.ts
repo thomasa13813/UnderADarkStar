@@ -3,7 +3,9 @@ import { Config } from "../core/configuration/Config";
 import { Client } from "./Client";
 import WebSocket from 'ws';
 import { slog } from "./StructuredLog";
+import { Storage } from '@google-cloud/storage';
 
+const storage = new Storage();
 
 export enum GamePhase {
     Lobby = 'LOBBY',
@@ -14,7 +16,7 @@ export enum GamePhase {
 export class GameServer {
 
 
-    private maxGameDuration = 60 * 60 * 1000 // 1 hour
+    private maxGameDuration = 2 * 60 * 60 * 1000 // 2 hours
 
     private turns: Turn[] = []
     private intents: Intent[] = []
@@ -135,7 +137,7 @@ export class GameServer {
         })
     }
 
-    endGame() {
+    async endGame() {
         // Close all WebSocket connections
         clearInterval(this.endTurnIntervalID);
         this.clients.forEach(client => {
@@ -144,6 +146,22 @@ export class GameServer {
                 client.ws.close();
             }
         });
+        try {
+            if (this.turns.length > 100 && this.clients.length > 0) {
+                const bucket = storage.bucket(this.config.gameStorageBucketName());
+                const file = bucket.file(this.id);
+                const game = {
+                    id: this.id,
+                    date: new Date().toISOString().split('T')[0],
+                    turns: this.turns
+                }
+                await file.save(JSON.stringify(game), {
+                    contentType: 'application/json'
+                });
+            }
+        } catch (error) {
+            console.log('error writing game to gcs: ' + error)
+        }
     }
 
     phase(): GamePhase {

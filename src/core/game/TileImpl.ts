@@ -13,12 +13,18 @@ export class TileImpl implements Tile {
 
     public _defenseBonuses: DefenseBonus[] = []
 
+    public _hasFallout = false
+
     constructor(
         private readonly gs: GameImpl,
         public _owner: PlayerImpl | TerraNulliusImpl,
         private readonly _cell: Cell,
         private readonly _terrain: TerrainTileImpl
     ) { }
+
+    hasFallout(): boolean {
+        return this._hasFallout
+    }
 
     terrainType(): TerrainType {
         return this._terrain.type

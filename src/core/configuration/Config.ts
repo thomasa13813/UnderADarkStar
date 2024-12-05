@@ -46,6 +46,7 @@ export interface Config {
 	}
 	attackAmount(attacker: Player, defender: Player | TerraNullius): number
 	maxPopulation(player: Player): number
+	cityPopulationIncrease(): number
 	boatAttackAmount(attacker: Player, defender: Player | TerraNullius): number
 	boatMaxDistance(): number
 	boatMaxNumber(): number
@@ -62,6 +63,9 @@ export interface Config {
 	tradeShipSpawnRate(): number
 	defensePostRange(): number
 	defensePostDefenseBonus(): number
+	falloutDefenseModifier(): number
+	maxUnitCost(): number
+	gameStorageBucketName(): string
 }
 
 export interface Theme {
@@ -71,6 +75,7 @@ export interface Theme {
 	defendedBorderColor(playerInfo: PlayerInfo): Colord;
 	terrainColor(tile: Tile): Colord;
 	backgroundColor(): Colord;
+	falloutColor(): Colord
 	font(): string;
 }
 

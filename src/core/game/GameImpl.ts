@@ -65,6 +65,15 @@ export class GameImpl implements MutableGame {
         })
     }
 
+    addFallout(tile: Tile) {
+        const ti = tile as TileImpl
+        if (tile.hasOwner()) {
+            throw Error(`cannot set fallout, tile ${tile} has owner`)
+        }
+        ti._hasFallout = true
+        this.eventBus.emit(new TileEvent(tile))
+    }
+
     addTileDefenseBonus(tile: Tile, unit: Unit, amount: number): DefenseBonus {
         const df = { unit: unit, tile: tile, amount: amount };
         (tile as TileImpl)._defenseBonuses.push(df)
@@ -322,6 +331,7 @@ export class GameImpl implements MutableGame {
         tileImpl._owner = owner
         owner._tiles.set(tile.cell().toString(), tile)
         this.updateBorders(tile)
+        tileImpl._hasFallout = false
         this.eventBus.emit(new TileEvent(tile))
     }
 

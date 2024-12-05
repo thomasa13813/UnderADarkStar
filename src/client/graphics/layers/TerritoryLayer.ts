@@ -75,6 +75,10 @@ export class TerritoryLayer implements Layer {
     }
 
     paintTerritory(tile: Tile) {
+        if (tile.hasFallout()) {
+            this.paintCell(tile.cell(), this.theme.falloutColor(), 150)
+            return
+        }
         if (!tile.hasOwner()) {
             this.clearCell(tile.cell())
             return

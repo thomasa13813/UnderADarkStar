@@ -83,6 +83,9 @@ export class NukeExecution implements Execution {
                 mp.removeTroops(2 * ratio[mp.id()])
                 others.add(mp)
             }
+            if (tile.isLand()) {
+                this.mg.addFallout(tile)
+            }
         }
         for (const other of others) {
             const alliance = this.player.allianceWith(other)

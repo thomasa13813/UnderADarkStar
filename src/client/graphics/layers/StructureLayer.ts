@@ -8,6 +8,7 @@ import { EventBus } from "../../../core/EventBus";
 import anchorIcon from '../../../../resources/images/AnchorIcon.png';
 import missileSiloIcon from '../../../../resources/images/MissileSiloUnit.png';
 import shieldIcon from '../../../../resources/images/ShieldIcon.png';
+import cityIcon from '../../../../resources/images/CityIcon.png';
 
 interface UnitRenderConfig {
     icon: string;
@@ -36,6 +37,11 @@ export class StructureLayer implements Layer {
         },
         [UnitType.DefensePost]: {
             icon: shieldIcon,
+            borderRadius: 8,
+            territoryRadius: 6
+        },
+        [UnitType.City]: {
+            icon: cityIcon,
             borderRadius: 8,
             territoryRadius: 6
         }

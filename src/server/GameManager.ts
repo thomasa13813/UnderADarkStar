@@ -74,9 +74,7 @@ export class GameManager {
         active.filter(g => !g.hasStarted() && g.isPublic).forEach(g => {
             g.start()
         })
-        finished.forEach(g => {
-            g.endGame()
-        })
+        finished.map(g => g.endGame());  // Fire and forget
         this.games = [...lobbies, ...active]
     }
 }

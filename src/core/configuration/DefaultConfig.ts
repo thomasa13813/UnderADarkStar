@@ -7,6 +7,22 @@ import { pastelTheme } from "./PastelTheme";
 
 
 export class DefaultConfig implements Config {
+
+    maxUnitCost(): number {
+        return 99_999_999
+    }
+
+    cityPopulationIncrease(): number {
+        return 250_000
+    }
+
+    falloutDefenseModifier(): number {
+        return 2
+    }
+
+    gameStorageBucketName(): string {
+        return "openfront-games"
+    }
     defensePostRange(): number {
         return 30
     }
@@ -23,61 +39,73 @@ export class DefaultConfig implements Config {
     tradeShipSpawnRate(): number {
         return 500
     }
+
     unitInfo(type: UnitType): UnitInfo {
-        switch (type) {
-            case UnitType.TransportShip:
-                return {
-                    cost: () => 0,
-                    territoryBound: false
-                }
-            case UnitType.Destroyer:
-                return {
-                    cost: (p: Player) => (p.units(UnitType.Destroyer).length + 1) * 250_000,
-                    territoryBound: false
-                }
-            case UnitType.Battleship:
-                return {
-                    cost: (p: Player) => (p.units(UnitType.Battleship).length + 1) * 500_000,
-                    territoryBound: false
-                }
-            case UnitType.Shell:
-                return {
-                    cost: (p: Player) => 0,
-                    territoryBound: false
-                }
-            case UnitType.Port:
-                return {
-                    cost: (p: Player) => Math.pow(2, p.units(UnitType.Port).length) * 250_000,
-                    territoryBound: true
-                }
-            case UnitType.AtomBomb:
-                return {
-                    cost: () => 1_000_000,
-                    territoryBound: false
-                }
-            case UnitType.HydrogenBomb:
-                return {
-                    cost: () => 5_000_000,
-                    territoryBound: false
-                }
-            case UnitType.TradeShip:
-                return {
-                    cost: () => 0,
-                    territoryBound: false
-                }
-            case UnitType.MissileSilo:
-                return {
-                    cost: () => 1_000_000,
-                    territoryBound: true
-                }
-            case UnitType.DefensePost:
-                return {
-                    cost: (p: Player) => Math.pow(2, p.units(UnitType.Port).length) * 100_000,
-                    territoryBound: true
-                }
-            default:
-                assertNever(type)
+        const fn = () => {
+            switch (type) {
+                case UnitType.TransportShip:
+                    return {
+                        cost: () => 0,
+                        territoryBound: false
+                    }
+                case UnitType.Destroyer:
+                    return {
+                        cost: (p: Player) => (p.units(UnitType.Destroyer).length + 1) * 250_000,
+                        territoryBound: false
+                    }
+                case UnitType.Battleship:
+                    return {
+                        cost: (p: Player) => (p.units(UnitType.Battleship).length + 1) * 500_000,
+                        territoryBound: false
+                    }
+                case UnitType.Shell:
+                    return {
+                        cost: (p: Player) => 0,
+                        territoryBound: false
+                    }
+                case UnitType.Port:
+                    return {
+                        cost: (p: Player) => Math.pow(2, p.units(UnitType.Port).length) * 250_000,
+                        territoryBound: true
+                    }
+                case UnitType.AtomBomb:
+                    return {
+                        cost: () => 1_000_000,
+                        territoryBound: false
+                    }
+                case UnitType.HydrogenBomb:
+                    return {
+                        cost: () => 5_000_000,
+                        territoryBound: false
+                    }
+                case UnitType.TradeShip:
+                    return {
+                        cost: () => 0,
+                        territoryBound: false
+                    }
+                case UnitType.MissileSilo:
+                    return {
+                        cost: () => 1_000_000,
+                        territoryBound: true
+                    }
+                case UnitType.DefensePost:
+                    return {
+                        cost: (p: Player) => Math.pow(2, p.units(UnitType.Port).length) * 100_000,
+                        territoryBound: true
+                    }
+                case UnitType.City:
+                    return {
+                        cost: (p: Player) => Math.pow(2, p.units(UnitType.Port).length) * 250_000,
+                        territoryBound: true
+                    }
+                default:
+                    assertNever(type)
+            }
         }
+        const ui = fn()
+        const oldCost = ui.cost
+        ui.cost = (p: Player) => Math.min(this.maxUnitCost(), oldCost(p))
+        return ui
     }
     defaultDonationAmount(sender: Player): number {
         return Math.floor(sender.troops() / 3)
@@ -148,6 +176,10 @@ export class DefaultConfig implements Config {
         }
         mag *= tileToConquer.defenseBonus(attacker)
         speed *= tileToConquer.defenseBonus(attacker)
+        if (tileToConquer.hasFallout()) {
+            mag *= this.falloutDefenseModifier()
+            speed *= this.falloutDefenseModifier()
+        }
 
         if (attacker.isPlayer() && defender.isPlayer()) {
             if (attacker.type() == PlayerType.Human && defender.type() == PlayerType.Bot) {
@@ -208,7 +240,7 @@ export class DefaultConfig implements Config {
         if (player.type() == PlayerType.Bot) {
             return maxPop
         }
-        return maxPop * 2
+        return maxPop * 2 + player.units(UnitType.City).length * this.cityPopulationIncrease()
     }
 
     populationIncreaseRate(player: Player): number {

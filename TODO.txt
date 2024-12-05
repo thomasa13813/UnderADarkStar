@@ -207,11 +207,22 @@
 * use mini A* for all pathfinding DONE 12/3/2024
 * bugfix: gameStop not found error DONE 12/3/2024
 * log stack traces & display them on screen DONE 12/3/2024
+* add radiation from nuke DONE 12/4/2024
+* add cities DONE 12/4/2024
+* max price for units
+* when player dies, don't remove atom bombs
 * record and replay games for debugging purposes
+* add bug report button in game
 * bugfix: destroyers can't find path to dst and freeze
 * record single player game stats
-* add radiation from nuke
-* add cities
+* stop requesting lobby when playing game
+* nuking an enemy and accidentally destroying a trade ship shouldn't break the alliance and make you a traitor
+* you should get a notification and a reward (some money) for eliminating an enemy (perhaps take wtvr gold the enemy had)
+* emojis should be displayed on top of your name not under it
+* the notification for a successful trade should be shorter, example: " 70k Gold from trade with "X" "
+* countries don't actually spawn with some randomness, it's always the same exact spawn
+* allow longer names and allow them to be displayed in the Rank UI not be cut (many are cut for now, even for countries)
+* clicking on a player's name in the rank UI should teleport you to him (pretty useful to know who's who and to locate small nations)
 * create behavior tests
 * create perf test
 * create alternate view to show friendly & enemy units
@@ -233,3 +244,4 @@
 * improve front page (make map larger?)
 * REFACTOR: give terranullius an ID, game.player() returns terranullius
 * REFACTOR: ocean is considered TerraNullius ?
+
