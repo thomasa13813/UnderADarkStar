@@ -90,12 +90,12 @@ export class DefaultConfig implements Config {
                     }
                 case UnitType.DefensePost:
                     return {
-                        cost: (p: Player) => Math.pow(2, p.units(UnitType.Port).length) * 100_000,
+                        cost: (p: Player) => Math.pow(2, p.units(UnitType.DefensePost).length) * 100_000,
                         territoryBound: true
                     }
                 case UnitType.City:
                     return {
-                        cost: (p: Player) => Math.pow(2, p.units(UnitType.Port).length) * 250_000,
+                        cost: (p: Player) => Math.pow(2, p.units(UnitType.City).length) * 250_000,
                         territoryBound: true
                     }
                 default:

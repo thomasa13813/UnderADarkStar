@@ -147,7 +147,8 @@ export class GameServer {
             }
         });
         try {
-            if (this.turns.length > 100 && this.clients.length > 0) {
+            if (this.turns.length > 350) {
+                console.log(`writing game ${this.id} to gcs`)
                 const bucket = storage.bucket(this.config.gameStorageBucketName());
                 const file = bucket.file(this.id);
                 const game = {

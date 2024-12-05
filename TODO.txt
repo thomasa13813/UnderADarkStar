@@ -215,6 +215,8 @@
 * add bug report button in game
 * bugfix: destroyers can't find path to dst and freeze
 * record single player game stats
+* alert on attack
+* alert on unit captured or destroyed
 * stop requesting lobby when playing game
 * nuking an enemy and accidentally destroying a trade ship shouldn't break the alliance and make you a traitor
 * you should get a notification and a reward (some money) for eliminating an enemy (perhaps take wtvr gold the enemy had)
