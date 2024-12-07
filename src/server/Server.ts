@@ -21,7 +21,7 @@ const wss = new WebSocketServer({ server });
 // Serve static files from the 'out' directory
 app.use(express.static(path.join(__dirname, '../../out')));
 app.use(express.json())
-const gm = new GameManager(getConfig())
+const gm = new GameManager(getConfig(false))
 
 // New GET endpoint to list lobbies
 app.get('/lobbies', (req, res) => {

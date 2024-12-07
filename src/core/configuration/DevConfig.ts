@@ -2,6 +2,11 @@ import { Player, PlayerInfo, UnitInfo, UnitType } from "../game/Game";
 import { DefaultConfig } from "./DefaultConfig";
 
 export const devConfig = new class extends DefaultConfig {
+
+    constructor() {
+        super(true)
+    }
+
     unitInfo(type: UnitType): UnitInfo {
         const info = super.unitInfo(type)
         const oldCost = info.cost

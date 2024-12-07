@@ -8,6 +8,8 @@ import { pastelTheme } from "./PastelTheme";
 
 export class DefaultConfig implements Config {
 
+    constructor(private isLocal: boolean) { }
+
     maxUnitCost(): number {
         return 99_999_999
     }
@@ -141,7 +143,7 @@ export class DefaultConfig implements Config {
         return 500
     }
     numSpawnPhaseTurns(): number {
-        return 100
+        return this.isLocal ? 100 : 200
     }
     numBots(): number {
         return 400
@@ -282,5 +284,3 @@ export class DefaultConfig implements Config {
         return adjustment
     }
 }
-
-export const defaultConfig = new DefaultConfig()

@@ -1,7 +1,7 @@
 import { Gold, Player, PlayerID, PlayerInfo, TerraNullius, Tick, Tile, Unit, UnitInfo, UnitType } from "../game/Game";
 import { Colord, colord } from "colord";
 import { devConfig } from "./DevConfig";
-import { defaultConfig } from "./DefaultConfig";
+import { DefaultConfig } from "./DefaultConfig";
 import { GameID } from "../Schemas";
 
 export enum GameEnv {
@@ -9,14 +9,14 @@ export enum GameEnv {
 	Prod
 }
 
-export function getConfig(): Config {
+export function getConfig(isLocal: boolean): Config {
 	// TODO: 'prod' not found in prod env
 	if (process.env.GAME_ENV == 'dev') {
 		console.log('Using dev config')
 		return devConfig
 	} else {
 		console.log('Using prod config')
-		return defaultConfig
+		return new DefaultConfig(isLocal)
 	}
 }
 

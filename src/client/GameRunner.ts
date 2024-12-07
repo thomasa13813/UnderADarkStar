@@ -5,7 +5,7 @@ import { EventBus } from "../core/EventBus";
 import { Config, getConfig } from "../core/configuration/Config";
 import { createRenderer, GameRenderer } from "./graphics/GameRenderer";
 import { InputHandler, MouseUpEvent, ZoomEvent, DragEvent, MouseDownEvent } from "./InputHandler"
-import { ClientID, ClientIntentMessageSchema, ClientJoinMessageSchema, ClientLeaveMessageSchema, ClientMessageSchema, GameID, Intent, ServerMessage, ServerMessageSchema, ServerSyncMessage, Turn } from "../core/Schemas";
+import { ClientID, ClientIntentMessageSchema, ClientJoinMessageSchema, ClientMessageSchema, GameID, Intent, ServerMessage, ServerMessageSchema, ServerSyncMessage, Turn } from "../core/Schemas";
 import { loadTerrainMap, TerrainMapImpl } from "../core/game/TerrainMapLoader";
 import { and, bfs, dist, manhattanDist } from "../core/Util";
 import { WinCheckExecution } from "../core/execution/WinCheckExecution";
@@ -36,7 +36,7 @@ export function joinLobby(lobbyConfig: LobbyConfig, onjoin: () => void): () => v
     const clientID = uuidv4()
     const playerID = uuidv4()
     const eventBus = new EventBus()
-    const config = getConfig()
+    const config = getConfig(lobbyConfig.isLocal)
     const transport = new Transport(lobbyConfig.isLocal, eventBus, lobbyConfig.gameID, lobbyConfig.ip, clientID, playerID, config, lobbyConfig.playerName)
 
     const onconnect = () => {
@@ -54,7 +54,7 @@ export function joinLobby(lobbyConfig: LobbyConfig, onjoin: () => void): () => v
                 gameID: lobbyConfig.gameID,
                 ip: lobbyConfig.ip,
             }
-            createClientGame(gameConfig, eventBus, transport).then(r => r.start())
+            createClientGame(config, gameConfig, eventBus, transport).then(r => r.start())
         };
     }
     transport.connect(onconnect, onmessage)
@@ -65,8 +65,7 @@ export function joinLobby(lobbyConfig: LobbyConfig, onjoin: () => void): () => v
 }
 
 
-export async function createClientGame(gameConfig: GameConfig, eventBus: EventBus, transport: Transport): Promise<GameRunner> {
-    const config = getConfig()
+export async function createClientGame(config: Config, gameConfig: GameConfig, eventBus: EventBus, transport: Transport): Promise<GameRunner> {
 
     const terrainMap = await loadTerrainMap(gameConfig.map)
 
