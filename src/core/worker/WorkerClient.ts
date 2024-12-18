@@ -1,6 +1,7 @@
 import { Cell, Game, GameMap, TerrainTile, TerrainType, Tile } from "../game/Game";
 import { AStar, PathFindResultType } from "../pathfinding/AStar";
 import { MiniAStar } from "../pathfinding/MiniAStar";
+import { generateID } from "../Util";
 
 
 export class WorkerClient {
@@ -61,7 +62,7 @@ export class ParallelAStar implements AStar {
     ) { }
 
     findPath(): Promise<void> {
-        const requestId = crypto.randomUUID();
+        const requestId = generateID()
         this.promise = new Promise((resolve, reject) => {
 
             const handler = (e: MessageEvent) => {
