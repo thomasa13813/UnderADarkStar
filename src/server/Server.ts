@@ -94,17 +94,20 @@ app.get('/private_lobby/:id', (req, res) => {
 
 wss.on('connection', (ws, req) => {
     ws.on('message', (message: string) => {
-        const clientMsg: ClientMessage = ClientMessageSchema.parse(JSON.parse(message))
-        slog('websocket_msg', 'server received websocket message', clientMsg, LogSeverity.DEBUG)
-        if (clientMsg.type == "join") {
-            const forwarded = req.headers['x-forwarded-for']
-            const ip = Array.isArray(forwarded)
-                ? forwarded[0]  // Get the first IP if it's an array
-                : forwarded || req.socket.remoteAddress;
+        try {
+            const clientMsg: ClientMessage = ClientMessageSchema.parse(JSON.parse(message))
+            slog('websocket_msg', 'server received websocket message', clientMsg, LogSeverity.DEBUG)
+            if (clientMsg.type == "join") {
+                const forwarded = req.headers['x-forwarded-for']
+                const ip = Array.isArray(forwarded)
+                    ? forwarded[0]  // Get the first IP if it's an array
+                    : forwarded || req.socket.remoteAddress;
 
-            gm.addClient(new Client(clientMsg.clientID, ip, ws), clientMsg.gameID, clientMsg.lastTurn)
+                gm.addClient(new Client(clientMsg.clientID, ip, ws), clientMsg.gameID, clientMsg.lastTurn)
+            }
+        } catch (error) {
+            console.log(`error handling websocket connection: ${error}`)
         }
-        // TODO: send error message
     })
 });
 
