@@ -166,10 +166,10 @@ export abstract class DefaultConfig implements Config {
         return 100
     }
     gameCreationRate(): number {
-        return 10 * 60 * 1000
+        return 1 * 60 * 1000
     }
     lobbyLifetime(): number {
-        return 10 * 120 * 1000
+        return 1 * 120 * 1000
     }
     theme(): Theme { return pastelTheme; }
 
