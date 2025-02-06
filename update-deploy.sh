@@ -18,20 +18,20 @@ fi
 if [[ "$ENV" == "dev" ]]; then
     INSTANCE_NAME="openfrontio-dev-instance"
     TAG="dev"
-    GAME_ENV="preprod"  # Set game environment to preprod for dev
+    GAME_ENV="preprod"
     echo "[DEV] Deploying to openfront.dev"
 else
     INSTANCE_NAME="openfrontio-instance"
     TAG="latest"
-    GAME_ENV="prod"     # Set game environment to prod for prod
+    GAME_ENV="prod"
     echo "[PROD] Deploying to openfront.io"
 fi
 
 # Ensure you're authenticated with Google Cloud
 gcloud auth configure-docker us-central1-docker.pkg.dev
 
-# Build the new Docker image with GAME_ENV build argument
-docker build --build-arg GAME_ENV=$GAME_ENV -t openfrontio .
+# Build the new Docker image with platform specification and GAME_ENV build argument
+docker build --platform linux/amd64 --build-arg GAME_ENV=$GAME_ENV -t openfrontio .
 
 # Tag the new image
 docker tag openfrontio us-central1-docker.pkg.dev/openfrontio/openfrontio/game-server:$TAG

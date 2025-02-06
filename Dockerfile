@@ -16,6 +16,6 @@ COPY . .
 # Build the client-side application
 RUN npm run build-prod
 # Expose the port the app runs on
-EXPOSE 3000
+EXPOSE 3000 9229
 # Define the command to run the app
 CMD ["npm", "run", "start:server"]
