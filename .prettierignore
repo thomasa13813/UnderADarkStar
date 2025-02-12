@@ -1,0 +1,24 @@
+# Dependencies
+node_modules
+out
+
+# Build outputs
+dist
+build
+
+# Generated files
+*.generated.*
+.next
+
+# Config files that shouldn't be formatted
+.husky
+*.lock
+package-lock.json
+
+# Client resources
+resources
+
+# Optional: Specific file types you don't want formatted
+*.min.js
+*.svg
+*.ico

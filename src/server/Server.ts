@@ -175,6 +175,13 @@ wss.on("connection", (ws, req) => {
       console.log(`errror handling websocket message: ${error}`);
     }
   });
+  ws.on("error", (error) => {
+    const clientIP = req.socket.remoteAddress;
+    if ("code" in error && error.code === "WS_ERR_UNEXPECTED_RSV_1") {
+      ws.close(1002);
+      console.log(`RSV1 error from IP: ${clientIP}`);
+    }
+  });
 });
 
 function runGame() {
