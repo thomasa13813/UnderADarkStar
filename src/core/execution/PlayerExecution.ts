@@ -162,6 +162,15 @@ export class PlayerExecution implements Execution {
   }
 
   private removeCluster(cluster: Set<TileRef>) {
+    if (
+      Array.from(cluster).some(
+        (t) => this.mg.ownerID(t) != this.player.smallID(),
+      )
+    ) {
+      // Other removeCluster operations could change tile owners,
+      // so double check.
+      return;
+    }
     const result = new Set<number>(); // Use Set to automatically deduplicate ownerIDs
     for (const t of cluster) {
       for (const neighbor of this.mg.neighbors(t)) {
@@ -176,7 +185,7 @@ export class PlayerExecution implements Execution {
     }
     const firstTile = cluster.values().next().value;
     const filter = (_, t: TileRef): boolean =>
-      this.mg.ownerID(t) == this.mg.ownerID(firstTile);
+      this.mg.ownerID(t) == this.player.smallID();
     const tiles = this.mg.bfs(firstTile, filter);
 
     const modePlayer = this.mg.playerBySmallID(mode);
