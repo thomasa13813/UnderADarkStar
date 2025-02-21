@@ -22,6 +22,7 @@ import {
   validateUsername,
 } from "../core/validations/username";
 import { Request, Response } from "express";
+import rateLimit from "express-rate-limit";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -33,6 +34,14 @@ const wss = new WebSocketServer({ server });
 // Serve static files from the 'out' directory
 app.use(express.static(path.join(__dirname, "../../out")));
 app.use(express.json());
+
+app.set("trust proxy", 2);
+app.use(
+  rateLimit({
+    windowMs: 1000, // 1 second
+    max: 20, // 20 requests per IP per second
+  }),
+);
 
 const gm = new GameManager(getServerConfig());
 
@@ -127,6 +136,14 @@ app.get("/lobby/:id", (req, res) => {
 app.get("/private_lobby/:id", (req, res) => {
   res.json({
     hi: "5",
+  });
+});
+
+app.get("/debug-ip", (req, res) => {
+  res.send({
+    "x-forwarded-for": req.headers["x-forwarded-for"],
+    "real-ip": req.ip,
+    "raw-headers": req.rawHeaders,
   });
 });
 
