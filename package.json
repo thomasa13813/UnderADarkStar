@@ -106,6 +106,7 @@
     "protobufjs": "^7.3.2",
     "pureimage": "^0.4.13",
     "raphael": "^2.3.0",
+    "rate-limiter-flexible": "^5.0.5",
     "twemoji": "^14.0.2",
     "uuid": "^10.0.0",
     "wheelnav": "^1.7.1",

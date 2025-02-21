@@ -18,6 +18,7 @@ import WebSocket from "ws";
 import { slog } from "./StructuredLog";
 import { CreateGameRecord } from "../core/Util";
 import { archive } from "./Archive";
+import { RateLimiterMemory } from "rate-limiter-flexible";
 
 export enum GamePhase {
   Lobby = "LOBBY",
@@ -26,6 +27,11 @@ export enum GamePhase {
 }
 
 export class GameServer {
+  private rateLimiter = new RateLimiterMemory({
+    points: 20, // 20 messages
+    duration: 1, // per 1 second
+  });
+
   private maxGameDuration = 5 * 60 * 60 * 1000; // 5 hours
 
   private turns: Turn[] = [];
@@ -98,7 +104,13 @@ export class GameServer {
 
     this.allClients.set(client.clientID, client);
 
-    client.ws.on("message", (message: string) => {
+    client.ws.on("message", async (message: string) => {
+      try {
+        await this.rateLimiter.consume(client.ip);
+      } catch (error) {
+        console.warn(`Rate limit exceeded for ${client.ip}`);
+        return;
+      }
       try {
         const clientMsg: ClientMessage = ClientMessageSchema.parse(
           JSON.parse(message),
