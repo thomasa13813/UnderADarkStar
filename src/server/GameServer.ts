@@ -32,7 +32,7 @@ export class GameServer {
     duration: 1, // per 1 second
   });
 
-  private maxGameDuration = 5 * 60 * 60 * 1000; // 5 hours
+  private maxGameDuration = 3 * 60 * 60 * 1000; // 3 hours
 
   private turns: Turn[] = [];
   private intents: Intent[] = [];
@@ -224,8 +224,8 @@ export class GameServer {
   async endGame() {
     // Close all WebSocket connections
     clearInterval(this.endTurnIntervalID);
-    this.activeClients.forEach((client) => {
-      client.ws.removeAllListeners("message"); // TODO: remove this?
+    this.allClients.forEach((client) => {
+      client.ws.removeAllListeners("message");
       if (client.ws.readyState === WebSocket.OPEN) {
         client.ws.close(1000, "game has ended");
       }
@@ -298,10 +298,7 @@ export class GameServer {
       }
     }
     this.activeClients = alive;
-    if (
-      now >
-      this.createdAt + this.config.lobbyLifetime() + this.maxGameDuration
-    ) {
+    if (now > this.createdAt + this.maxGameDuration) {
       console.warn(`${this.id}: game past max duration ${this.id}`);
       return GamePhase.Finished;
     }

@@ -63,11 +63,11 @@ export class GameManager {
 
   hasActiveGame(gameID: GameID): boolean {
     const game = this.games
+      .filter((g) => g.id == gameID)
       .filter(
         (g) => g.phase() == GamePhase.Lobby || g.phase() == GamePhase.Active
-      )
-      .find((g) => g.id == gameID);
-    return game != null;
+      );
+    return game.length > 0;
   }
 
   // TODO: stop private games to prevent memory leak.
@@ -106,7 +106,13 @@ export class GameManager {
       .forEach((g) => {
         g.start();
       });
-    finished.map((g) => g.endGame()); // Fire and forget
+    finished.forEach((g) => {
+      try {
+        g.endGame();
+      } catch (error) {
+        console.log(`error ending game ${g.id}: `, error);
+      }
+    });
     this.games = [...lobbies, ...active];
   }
 }

@@ -49,6 +49,11 @@ const rateLimiter = new RateLimiterMemory({
   duration: 1, // per 1 second
 });
 
+const updateRateLimiter = new RateLimiterMemory({
+  points: 10,
+  duration: 240, // 4 minutes
+});
+
 const gm = new GameManager(getServerConfig());
 
 const bot = new DiscordBot();
@@ -65,15 +70,32 @@ app.get("/lobbies", (req: Request, res: Response) => {
   res.send(lobbiesString);
 });
 
-app.post("/private_lobby", (req, res) => {
+app.post("/private_lobby", async (req, res) => {
+  let clientIP = "";
+  try {
+    clientIP = req.ip || req.socket.remoteAddress || "unknown";
+    await updateRateLimiter.consume(clientIP);
+  } catch (error) {
+    console.warn(`create private lobby rate limited for IP ${clientIP}`);
+    return;
+  }
   const id = gm.createPrivateGame();
-  console.log("creating private lobby with id ${id}");
+  console.log(`ip ${clientIP} creating private lobby with id ${id}`);
   res.json({
     id: id,
   });
 });
 
-app.post("/archive_singleplayer_game", (req, res) => {
+app.post("/archive_singleplayer_game", async (req, res) => {
+  let clientIP = "";
+  try {
+    clientIP = req.ip || req.socket.remoteAddress || "unknown";
+    await updateRateLimiter.consume(clientIP);
+  } catch (error) {
+    console.warn(`archive singleplayer game limited for IP ${clientIP}`);
+    return;
+  }
+
   try {
     const gameRecord: GameRecord = req.body;
     const clientIP = req.ip || req.socket.remoteAddress || "unknown"; // Added this line
@@ -99,12 +121,20 @@ app.post("/archive_singleplayer_game", (req, res) => {
   }
 });
 
-app.post("/start_private_lobby/:id", (req, res) => {
+app.post("/start_private_lobby/:id", async (req, res) => {
+  let clientIP = "";
+  try {
+    clientIP = req.ip || req.socket.remoteAddress || "unknown";
+    await updateRateLimiter.consume(clientIP);
+  } catch (error) {
+    console.warn(`start private lobby rate limited for IP ${clientIP}`);
+    return;
+  }
   console.log(`starting private lobby with id ${req.params.id}`);
   gm.startPrivateGame(req.params.id);
 });
 
-app.put("/private_lobby/:id", (req, res) => {
+app.put("/private_lobby/:id", async (req, res) => {
   const lobbyID = req.params.id;
   gm.updateGameConfig(lobbyID, {
     gameMap: req.body.gameMap,
