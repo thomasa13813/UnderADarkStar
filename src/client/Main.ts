@@ -22,6 +22,7 @@ import "./GoogleAdElement";
 import { HelpModal } from "./HelpModal";
 import { GameType } from "../core/game/Game";
 import { getServerConfigFromClient } from "../core/configuration/Config";
+import GoogleAdElement from "./GoogleAdElement";
 
 class Client {
   private gameStop: () => void;
@@ -32,6 +33,7 @@ class Client {
 
   private joinModal: JoinPrivateLobbyModal;
   private publicLobby: PublicLobby;
+  private googleAds: NodeListOf<GoogleAdElement>;
   private userSettings: UserSettings = new UserSettings();
 
   constructor() {}
@@ -57,6 +59,9 @@ class Client {
     }
 
     this.publicLobby = document.querySelector("public-lobby") as PublicLobby;
+    this.googleAds = document.querySelectorAll(
+      "google-ad",
+    ) as NodeListOf<GoogleAdElement>;
 
     window.addEventListener("beforeunload", (event) => {
       consolex.log("Browser is closing");
@@ -164,6 +169,9 @@ class Client {
       () => {
         this.joinModal.close();
         this.publicLobby.stop();
+        document.querySelectorAll(".ad").forEach((ad) => {
+          (ad as HTMLElement).style.display = "none";
+        });
 
         // show when the game loads
         const startingModal = document.querySelector(
