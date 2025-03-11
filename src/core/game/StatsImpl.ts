@@ -15,11 +15,11 @@ export class StatsImpl implements Stats {
     }
     if (!this.data[sender].sentNukes[target]) {
       this.data[sender].sentNukes[target] = {
-        [UnitType.MIRV]: 0,
-        [UnitType.MIRVWarhead]: 0,
         [UnitType.AtomBomb]: 0,
         [UnitType.HydrogenBomb]: 0,
-      };
+        [UnitType.MIRV]: 0,
+        [UnitType.MIRVWarhead]: 0,
+      } as { [key in NukeType]: number };
     }
   }
 

@@ -176,7 +176,12 @@ export class ClientGameRunner {
     this.input.initialize();
     this.worker.start((gu: GameUpdateViewData | ErrorUpdate) => {
       if ("errMsg" in gu) {
-        showErrorModal(gu.errMsg, gu.stack, this.lobby.clientID);
+        showErrorModal(
+          gu.errMsg,
+          gu.stack,
+          this.lobby.gameID,
+          this.lobby.clientID,
+        );
         return;
       }
       gu.updates[GameUpdateType.Hash].forEach((hu: HashUpdate) => {
@@ -220,6 +225,7 @@ export class ClientGameRunner {
         showErrorModal(
           `desync from server: ${JSON.stringify(message)}`,
           "",
+          this.lobby.gameID,
           this.lobby.clientID,
           true,
           "You are desynced from other players. What you see might differ from other players.",
