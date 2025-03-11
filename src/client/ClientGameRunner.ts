@@ -221,6 +221,8 @@ export class ClientGameRunner {
           `desync from server: ${JSON.stringify(message)}`,
           "",
           this.lobby.clientID,
+          true,
+          "You are desynced from other players. What you see might differ from other players.",
         );
       }
       if (message.type == "turn") {
@@ -291,12 +293,22 @@ export class ClientGameRunner {
   }
 }
 
-function showErrorModal(errMsg: string, stack: string, clientID: ClientID) {
+function showErrorModal(
+  errMsg: string,
+  stack: string,
+  gameID: GameID,
+  clientID: ClientID,
+  closable = false,
+  heading = "Game crashed!",
+) {
   const errorText = `Error: ${errMsg}\nStack: ${stack}`;
-  consolex.error(errorText);
+
+  if (document.querySelector("#error-modal")) {
+    return;
+  }
 
   const modal = document.createElement("div");
-  const content = `Game crashed! client id: ${clientID}\nPlease paste the following in your bug report in Discord:\n${errorText}`;
+  const content = `${heading}\n game id: ${gameID}, client id: ${clientID}\nPlease paste the following in your bug report in Discord:\n${errorText}`;
 
   // Create elements
   const pre = document.createElement("pre");
@@ -313,11 +325,23 @@ function showErrorModal(errMsg: string, stack: string, clientID: ClientID) {
       .catch(() => (button.textContent = "Failed to copy"));
   });
 
+  const closeButton = document.createElement("button");
+  closeButton.textContent = "X";
+  closeButton.style.cssText =
+    "color: white;top: 0px;right: 0px;cursor: pointer;background: red;margin-right: 0px;position: fixed;width: 40px;";
+  closeButton.addEventListener("click", () => {
+    modal.style.display = "none";
+  });
+
   // Add to modal
   modal.style.cssText =
     "position:fixed; padding:20px; background:white; border:1px solid black; top:50%; left:50%; transform:translate(-50%,-50%); z-index:9999;";
   modal.appendChild(pre);
   modal.appendChild(button);
+  modal.id = "error-modal";
+  if (closable) {
+    modal.appendChild(closeButton);
+  }
 
   document.body.appendChild(modal);
 }
