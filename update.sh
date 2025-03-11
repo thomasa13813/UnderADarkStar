@@ -31,10 +31,6 @@ if [ -f /root/.env ]; then
   export $(grep -v '^#' /root/.env | xargs)
 fi
 
-# Set the Loki URL
-LOKI_URL=${LOKI_URL:-"http://localhost:3100/loki/api/v1/push"}
-echo "Using Loki URL: ${LOKI_URL}"
-
 echo "Pulling latest image from Docker Hub..."
 docker pull $FULL_IMAGE_NAME
 
@@ -90,17 +86,9 @@ docker run -d -p 80:80 \
   --restart=always \
   $VOLUME_MOUNTS \
   $NETWORK_FLAGS \
-  --env APP_ENV=${ENV} \
+  --env GAME_ENV=${ENV} \
   --env-file /root/.env \
   --name ${CONTAINER_NAME} \
-  --log-driver=loki \
-  --log-opt loki-url="${LOKI_URL}" \
-  --log-opt loki-batch-size="400" \
-  --log-opt loki-min-backoff="100ms" \
-  --log-opt loki-max-backoff="10s" \
-  --log-opt loki-retries="5" \
-  --log-opt loki-timeout="10s" \
-  --log-opt loki-external-labels="job=openfront,env=${ENV},container=${CONTAINER_NAME}" \
   $FULL_IMAGE_NAME
 
 if [ $? -eq 0 ]; then
@@ -121,5 +109,4 @@ echo "======================================================"
 echo "✅ SERVER UPDATE COMPLETED SUCCESSFULLY"
 echo "Container name: ${CONTAINER_NAME}"
 echo "Image: ${FULL_IMAGE_NAME}"
-echo "Logs: Streaming to Loki at ${LOKI_URL}"
 echo "======================================================"

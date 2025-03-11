@@ -100,6 +100,10 @@ export interface ServerConfig {
   env(): GameEnv;
   adminToken(): string;
   adminHeader(): string;
+  r2Bucket(): string;
+  r2Endpoint(): string;
+  r2AccessKey(): string;
+  r2SecretKey(): string;
 }
 
 export interface Config {
