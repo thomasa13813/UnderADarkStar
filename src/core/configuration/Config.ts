@@ -98,6 +98,13 @@ export interface ServerConfig {
   workerPort(gameID: GameID): number;
   workerPortByIndex(workerID: number): number;
   env(): GameEnv;
+  adminToken(): string;
+  adminHeader(): string;
+  // Only available on the server
+  r2Bucket(): string;
+  r2Endpoint(): string;
+  r2AccessKey(): string;
+  r2SecretKey(): string;
 }
 
 export interface Config {
