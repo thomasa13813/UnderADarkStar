@@ -408,6 +408,7 @@ export class EventsDisplay extends LitElement implements Layer {
                       )?.name()}
                       ${!attack.retreating
                         ? html`<button
+                            translate="no"
                             ${attack.retreating ? "disabled" : ""}
                             @click=${() => {
                               this.emitCancelAttackIntent(attack.id);
