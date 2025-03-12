@@ -46,7 +46,7 @@ export abstract class DefaultServerConfig implements ServerConfig {
   }
   gameCreationRate(highTraffic: boolean): number {
     if (highTraffic) {
-      return 20 * 1000;
+      return 15 * 1000;
     } else {
       return 50 * 1000;
     }
