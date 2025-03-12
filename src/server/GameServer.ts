@@ -426,6 +426,9 @@ export class GameServer {
         }
       }
 
+      // TODO: enable when replays work
+      return;
+
       const serverDesync = ServerDesyncSchema.safeParse({
         type: "desync",
         turn: lastHashTurn,
