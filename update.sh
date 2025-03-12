@@ -85,7 +85,6 @@ echo "Starting new container for ${ENV} environment with Loki logging..."
 docker run -d -p 80:80 \
   --restart=always \
   $VOLUME_MOUNTS \
-  $NETWORK_FLAGS \
   --env GAME_ENV=${ENV} \
   --env-file /root/.env \
   --name ${CONTAINER_NAME} \
