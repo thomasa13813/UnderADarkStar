@@ -144,7 +144,7 @@ export class LocalServer {
     });
   }
 
-  public endGame() {
+  public endGame(saveFullGame: boolean = false) {
     consolex.log("local server ending game");
     clearInterval(this.endTurnIntervalID);
     const players: PlayerRecord[] = [
@@ -165,8 +165,10 @@ export class LocalServer {
       this.winner,
       this.allPlayersStats,
     );
-    // Clear turns because beacon only supports up to 64kb
-    record.turns = [];
+    if (!saveFullGame) {
+      // Clear turns because beacon only supports up to 64kb
+      record.turns = [];
+    }
     // For unload events, sendBeacon is the only reliable method
     const blob = new Blob([JSON.stringify(GameRecordSchema.parse(record))], {
       type: "application/json",

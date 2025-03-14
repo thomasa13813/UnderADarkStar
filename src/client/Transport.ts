@@ -319,9 +319,9 @@ export class Transport {
     );
   }
 
-  leaveGame() {
+  leaveGame(saveFullGame: boolean = false) {
     if (this.isLocal) {
-      this.localServer.endGame();
+      this.localServer.endGame(saveFullGame);
       return;
     }
     this.stopPing();
