@@ -93,9 +93,11 @@ export class LocalServer {
     }
     if (clientMsg.type == "hash") {
       if (!this.lobbyConfig.gameRecord) {
-        // Don't do hash verification on singleplayer games.
+        // If we are playing a singleplayer then store hash.
+        this.turns[clientMsg.turnNumber].hash = clientMsg.hash;
         return;
       }
+      // If we are replaying a game then verify hash.
       const archivedHash = this.turns[clientMsg.turnNumber].hash;
       if (!archivedHash) {
         console.warn(
