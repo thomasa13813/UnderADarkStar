@@ -48,12 +48,8 @@ export abstract class DefaultServerConfig implements ServerConfig {
   turnIntervalMs(): number {
     return 100;
   }
-  gameCreationRate(highTraffic: boolean): number {
-    if (highTraffic) {
-      return 20 * 1000;
-    } else {
-      return 50 * 1000;
-    }
+  gameCreationRate(): number {
+    return 60 * 1000;
   }
   lobbyMaxPlayers(map: GameMapType): number {
     if (map == GameMapType.World) {

@@ -12,7 +12,6 @@ import { GameConfig, GameInfo } from "../core/Schemas";
 import path from "path";
 import rateLimit from "express-rate-limit";
 import { fileURLToPath } from "url";
-import { isHighTrafficTime } from "./Util";
 import { gatekeeper, LimiterType } from "./Gatekeeper";
 
 const config = getServerConfigFromServer();
