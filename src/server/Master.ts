@@ -30,9 +30,14 @@ app.use(
       // You can conditionally set different cache times based on file types
       if (path.endsWith(".html")) {
         // Set HTML files to no-cache to ensure Express doesn't send 304s
-        res.setHeader("Cache-Control", "no-cache, must-revalidate");
+        res.setHeader(
+          "Cache-Control",
+          "no-store, no-cache, must-revalidate, proxy-revalidate",
+        );
         res.setHeader("Pragma", "no-cache");
         res.setHeader("Expires", "0");
+        // Prevent conditional requests
+        res.setHeader("ETag", "");
       } else if (path.match(/\.(js|css|svg)$/)) {
         // JS, CSS, SVG get long cache with immutable
         res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
