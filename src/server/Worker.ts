@@ -185,7 +185,7 @@ export function startWorker() {
       const game = gm.game(req.params.id);
       if (game == null) {
         log.info(`lobby ${req.params.id} not found`);
-        return res.status(404);
+        return res.status(404).json({ error: "Game not found" });
       }
       res.json(game.gameInfo());
     }),

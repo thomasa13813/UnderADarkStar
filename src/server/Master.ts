@@ -172,9 +172,12 @@ async function fetchLobbies(): Promise<number> {
   const fetchPromises = [];
 
   for (const gameID of publicLobbyIDs) {
+    const controller = new AbortController();
+    setTimeout(() => controller.abort(), 5000); // 5 second timeout
     const port = config.workerPort(gameID);
     const promise = fetch(`http://localhost:${port}/api/game/${gameID}`, {
       headers: { [config.adminHeader()]: config.adminToken() },
+      signal: controller.signal,
     })
       .then((resp) => resp.json())
       .then((json) => {
