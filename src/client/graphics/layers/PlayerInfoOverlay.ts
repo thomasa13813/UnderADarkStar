@@ -222,10 +222,7 @@ export class PlayerInfoOverlay extends LitElement implements Layer {
           Gold: ${renderNumber(player.gold())}
         </div>
         <div class="text-sm opacity-80" translate="no">
-          Ports: ${player.units(UnitType.Port).length}
-        </div>
-        <div class="text-sm opacity-80" translate="no">
-          Cities: ${player.units(UnitType.City).length}
+          Defense: ${renderNumber(player.troops() / player.numTilesOwned())}
         </div>
         <div class="text-sm opacity-80" translate="no">
           Missile launchers: ${player.units(UnitType.MissileSilo).length}
