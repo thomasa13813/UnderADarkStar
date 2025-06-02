@@ -10,13 +10,7 @@ import traitorIcon from "../../../../resources/images/TraitorIcon.svg";
 import { PseudoRandom } from "../../../core/PseudoRandom";
 import { ClientID } from "../../../core/Schemas";
 import { Theme } from "../../../core/configuration/Config";
-import {
-  AllPlayers,
-  Cell,
-  nukeTypes,
-  PlayerType,
-  UnitType,
-} from "../../../core/game/Game";
+import { AllPlayers, Cell, nukeTypes, UnitType } from "../../../core/game/Game";
 import { GameView, PlayerView } from "../../../core/game/GameView";
 import { createCanvas, renderNumber, renderTroops } from "../../Utils";
 import { TransformHandler } from "../TransformHandler";
@@ -220,7 +214,9 @@ export class NameLayer implements Layer {
     troopsDiv.style.marginTop = "-5%";
     element.appendChild(troopsDiv);
 
-    if (player.type() !== PlayerType.Bot) {
+    // TODO: Remove the shield icon.
+    /* eslint-disable no-constant-condition */
+    if (false) {
       const shieldDiv = document.createElement("div");
       shieldDiv.classList.add("player-shield");
       shieldDiv.style.zIndex = "3";
@@ -243,6 +239,7 @@ export class NameLayer implements Layer {
       shieldDiv.appendChild(shieldSpan);
       element.appendChild(shieldDiv);
     }
+    /* eslint-enable no-constant-condition */
 
     // Start off invisible so it doesn't flash at 0,0
     element.style.display = "none";
