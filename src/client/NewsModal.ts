@@ -51,22 +51,7 @@ export class NewsModal extends LitElement {
           <div class="options-section">
             <div class="news-container">
               <div class="news-content">
-                <h3>Main things to note:</h3>
-                <br />
-                <ul>
-                  <li>Workers reproduce faster than troops.</li>
-                  <li>Defense = troops divided how much land you have.</li>
-                  <li>Attacking troops count toward your population limit.</li>
-                </ul>
-                <br />
-                <br />
-                See full changelog
-                <a
-                  href="https://discord.com/channels/1284581928254701718/1286745902320713780"
-                  target="_blank"
-                  style="color: #4a9eff; font-weight: bold;"
-                  >here</a
-                >.
+                <h3>v22 meta is back!</h3>
               </div>
             </div>
           </div>
