@@ -216,14 +216,41 @@ export class PlayerImpl implements Player {
     return this._units.filter((u) => ts.has(u.type()));
   }
 
-  unitsIncludingConstruction(type: UnitType): Unit[] {
-    const units = this.units(type);
-    units.push(
-      ...this.units(UnitType.Construction).filter(
-        (u) => u.constructionType() === type,
-      ),
-    );
-    return units;
+  private numUnitsConstructed: number[] = [];
+  private recordUnitConstructed(type: UnitType): void {
+    if (type in this.numUnitsConstructed) {
+      this.numUnitsConstructed[type]++;
+    } else {
+      this.numUnitsConstructed[type] = 1;
+    }
+  }
+
+  // Count of units built by the player, including construction
+  unitsConstructed(type: UnitType): number {
+    const built = this.numUnitsConstructed[type] ?? 0;
+    let constructing = 0;
+    for (const unit of this._units) {
+      if (unit.type() !== UnitType.Construction) continue;
+      if (unit.constructionType() !== type) continue;
+      constructing++;
+    }
+    const total = constructing + built;
+    return total;
+  }
+
+  // Count of units owned by the player, including construction
+  unitsOwned(type: UnitType): number {
+    let total = 0;
+    for (const unit of this._units) {
+      if (unit.type() === type) {
+        total++;
+        continue;
+      }
+      if (unit.type() !== UnitType.Construction) continue;
+      if (unit.constructionType() !== type) continue;
+      total++;
+    }
+    return total;
   }
 
   sharesBorderWith(other: Player | TerraNullius): boolean {
@@ -749,6 +776,7 @@ export class PlayerImpl implements Player {
       params,
     );
     this._units.push(b);
+    this.recordUnitConstructed(type);
     this.removeGold(cost);
     this.removeTroops("troops" in params ? (params.troops ?? 0) : 0);
     this.mg.addUpdate(b.toUpdate());
