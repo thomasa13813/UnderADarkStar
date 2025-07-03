@@ -1,3 +1,4 @@
+import { base64url } from "jose";
 import { z } from "zod/v4";
 import quickChatData from "../../resources/QuickChat.json" with { type: "json" };
 import {
@@ -190,7 +191,7 @@ export const RequiredPatternSchema = z
   .refine(
     (val) => {
       try {
-        new PatternDecoder(val);
+        new PatternDecoder(val, base64url.decode);
         return true;
       } catch (e) {
         console.error(JSON.stringify(e.message, null, 2));
