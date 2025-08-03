@@ -63,6 +63,7 @@ declare global {
   // Extend the global interfaces to include your custom events
   interface DocumentEventMap {
     "join-lobby": CustomEvent<JoinLobbyEvent>;
+    "kick-player": CustomEvent;
   }
 }
 
