@@ -589,7 +589,8 @@ export interface Player {
   sendEmoji(recipient: Player | typeof AllPlayers, emoji: string): void;
 
   // Donation
-  canDonate(recipient: Player): boolean;
+  canDonateGold(recipient: Player): boolean;
+  canDonateTroops(recipient: Player): boolean;
   donateTroops(recipient: Player, troops: number): boolean;
   donateGold(recipient: Player, gold: Gold): boolean;
   canDeleteUnit(): boolean;
@@ -742,7 +743,8 @@ export interface PlayerInteraction {
   canSendAllianceRequest: boolean;
   canBreakAlliance: boolean;
   canTarget: boolean;
-  canDonate: boolean;
+  canDonateGold: boolean;
+  canDonateTroops: boolean;
   canEmbargo: boolean;
   allianceExpiresAt?: Tick;
 }
