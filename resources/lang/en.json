@@ -549,7 +549,8 @@
     "yes": "Yes",
     "no": "No",
     "none": "None",
-    "alliances": "Alliances"
+    "alliances": "Alliances",
+    "flag": "Flag"
   },
   "replay_panel": {
     "replay_speed": "Replay speed",
