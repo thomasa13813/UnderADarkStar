@@ -2,7 +2,7 @@ import { UserMeResponse } from "../core/ApiSchemas";
 import { Cosmetics, CosmeticsSchema, Pattern } from "../core/CosmeticSchemas";
 import { getApiBase, getAuthHeader } from "./jwt";
 
-export async function patterns(
+export async function fetchPatterns(
   userMe: UserMeResponse | null,
 ): Promise<Map<string, Pattern>> {
   const cosmetics = await getCosmetics();
@@ -12,7 +12,7 @@ export async function patterns(
   }
 
   const patterns: Map<string, Pattern> = new Map();
-  const playerFlares = new Set(userMe?.player.flares);
+  const playerFlares = new Set(userMe?.player?.flares ?? []);
 
   for (const name in cosmetics.patterns) {
     const patternData = cosmetics.patterns[name];
