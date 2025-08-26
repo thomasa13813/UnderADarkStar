@@ -14,10 +14,10 @@ import {
   Unit,
   UnitType,
 } from "../game/Game";
-import { euclDistFN, manhattanDistFN, TileRef } from "../game/GameMap";
+import { TileRef, euclDistFN, manhattanDistFN } from "../game/GameMap";
 import { PseudoRandom } from "../PseudoRandom";
 import { GameID } from "../Schemas";
-import { calculateBoundingBox, flattenedEmojiTable, simpleHash } from "../Util";
+import { calculateBoundingBox, simpleHash } from "../Util";
 import { ConstructionExecution } from "./ConstructionExecution";
 import { EmojiExecution } from "./EmojiExecution";
 import { structureSpawnTileValue } from "./nation/structureSpawnTileValue";
@@ -25,7 +25,7 @@ import { NukeExecution } from "./NukeExecution";
 import { SpawnExecution } from "./SpawnExecution";
 import { TransportShipExecution } from "./TransportShipExecution";
 import { closestTwoTiles } from "./Util";
-import { BotBehavior } from "./utils/BotBehavior";
+import { BotBehavior, EMOJI_HECKLE } from "./utils/BotBehavior";
 
 export class FakeHumanExecution implements Execution {
   private active = true;
@@ -40,10 +40,9 @@ export class FakeHumanExecution implements Execution {
   private reserveRatio: number;
   private expandRatio: number;
 
-  private lastEmojiSent = new Map<Player, Tick>();
-  private lastNukeSent: [Tick, TileRef][] = [];
-  private embargoMalusApplied = new Set<PlayerID>();
-  private heckleEmoji: number[];
+  private readonly lastEmojiSent = new Map<Player, Tick>();
+  private readonly lastNukeSent: [Tick, TileRef][] = [];
+  private readonly embargoMalusApplied = new Set<PlayerID>();
 
   constructor(
     gameID: GameID,
@@ -57,7 +56,6 @@ export class FakeHumanExecution implements Execution {
     this.triggerRatio = this.random.nextInt(60, 90) / 100;
     this.reserveRatio = this.random.nextInt(30, 60) / 100;
     this.expandRatio = this.random.nextInt(15, 25) / 100;
-    this.heckleEmoji = ["🤡", "😡"].map((e) => flattenedEmojiTable.indexOf(e));
   }
 
   init(mg: Game) {
@@ -309,7 +307,7 @@ export class FakeHumanExecution implements Execution {
       new EmojiExecution(
         this.player,
         enemy.id(),
-        this.random.randElement(this.heckleEmoji),
+        this.random.randElement(EMOJI_HECKLE),
       ),
     );
   }
