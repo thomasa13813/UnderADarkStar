@@ -23,7 +23,6 @@ import {
 import { generateID } from "../core/Util";
 import "./components/baseComponents/Modal";
 import "./components/Difficulties";
-import { DifficultyDescription } from "./components/Difficulties";
 import "./components/Maps";
 import { JoinLobbyEvent } from "./Main";
 import { renderUnitTypeOptions } from "./utilities/RenderUnitTypeOptions";
@@ -240,9 +239,7 @@ export class HostLobbyModal extends LitElement {
                         .difficultyKey=${key}
                       ></difficulty-display>
                       <p class="option-card-title">
-                        ${translateText(
-                          `difficulty.${DifficultyDescription[key as keyof typeof DifficultyDescription]}`,
-                        )}
+                        ${translateText(`difficulty.${key}`)}
                       </p>
                     </div>
                   `,
