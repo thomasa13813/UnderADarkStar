@@ -134,6 +134,17 @@
     "enables_title": "Enable Settings",
     "start": "Start Game"
   },
+  "token_login_modal": {
+    "title": "Logging in...",
+    "logging_in": "Logging in...",
+    "success": "Successfully logged in as {email}!"
+  },
+  "account_modal": {
+    "title": "Account",
+    "logged_in_as": "Logged in as {email}",
+    "logged_in_with_discord": "Logged in with Discord",
+    "recovery_email_sent": "Recovery email sent to {email}"
+  },
   "map": {
     "map": "Map",
     "world": "World",
