@@ -149,7 +149,10 @@ export class RadialMenu implements Layer {
       .style("position", "absolute")
       .style("top", "50%")
       .style("left", "50%")
-      .style("transition", `top ${this.config.menuTransitionDuration}ms ease, left ${this.config.menuTransitionDuration}ms ease`)
+      .style(
+        "transition",
+        `top ${this.config.menuTransitionDuration}ms ease, left ${this.config.menuTransitionDuration}ms ease`,
+      )
       .style("transform", "translate(-50%, -50%)")
       .style("pointer-events", "all")
       .on("click", (event) => this.hideRadialMenu());
@@ -1053,13 +1056,17 @@ export class RadialMenu implements Layer {
     const vh = window.innerHeight;
 
     // If the menu cannot fully fit on an axis, pin it to the viewport center on that axis.
-    const clampedX = 2 * margin > vw ? vw / 2 : Math.min(Math.max(this.anchorX, margin), vw - margin);
-    const clampedY = 2 * margin > vh ? vh / 2 : Math.min(Math.max(this.anchorY, margin), vh - margin);
+    const clampedX =
+      2 * margin > vw
+        ? vw / 2
+        : Math.min(Math.max(this.anchorX, margin), vw - margin);
+    const clampedY =
+      2 * margin > vh
+        ? vh / 2
+        : Math.min(Math.max(this.anchorY, margin), vh - margin);
 
     const svgSel = this.menuElement.select("svg");
-    svgSel
-      .style("top", `${clampedY}px`)
-      .style("left", `${clampedX}px`);
+    svgSel.style("top", `${clampedY}px`).style("left", `${clampedX}px`);
   }
 
   private handleResize = () => {

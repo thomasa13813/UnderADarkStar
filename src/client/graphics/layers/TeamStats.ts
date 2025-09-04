@@ -207,7 +207,9 @@ export class TeamStats extends LitElement implements Layer {
             this.requestUpdate();
           }}
         >
-          ${this.showUnits ? translateText("leaderboard.show_control") : translateText("leaderboard.show_units")}
+          ${this.showUnits
+            ? translateText("leaderboard.show_control")
+            : translateText("leaderboard.show_units")}
         </button>
       </div>
     `;

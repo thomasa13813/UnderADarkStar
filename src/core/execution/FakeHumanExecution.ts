@@ -474,7 +474,7 @@ export class FakeHumanExecution implements Execution {
     return bestTile;
   }
 
-  private * arraySampler<T>(a: T[], sampleSize = 50): Generator<T> {
+  private *arraySampler<T>(a: T[], sampleSize = 50): Generator<T> {
     if (a.length <= sampleSize) {
       // Return all elements
       yield* a;
@@ -495,7 +495,9 @@ export class FakeHumanExecution implements Execution {
     const mg = this.mg;
     const otherUnits = this.player.units(type);
     // Prefer spacing structures out of atom bomb range
-    const borderSpacing = this.mg.config().nukeMagnitudes(UnitType.AtomBomb).outer;
+    const borderSpacing = this.mg
+      .config()
+      .nukeMagnitudes(UnitType.AtomBomb).outer;
     const structureSpacing = borderSpacing * 2;
     switch (type) {
       case UnitType.Port:
@@ -503,7 +505,9 @@ export class FakeHumanExecution implements Execution {
           let w = 0;
 
           // Prefer to be far away from other structures of the same type
-          const otherTiles: Set<TileRef> = new Set(otherUnits.map((u) => u.tile()));
+          const otherTiles: Set<TileRef> = new Set(
+            otherUnits.map((u) => u.tile()),
+          );
           otherTiles.delete(tile);
           const closestOther = closestTwoTiles(mg, otherTiles, [tile]);
           if (closestOther !== null) {
@@ -530,7 +534,9 @@ export class FakeHumanExecution implements Execution {
           }
 
           // Prefer to be away from other structures of the same type
-          const otherTiles: Set<TileRef> = new Set(otherUnits.map((u) => u.tile()));
+          const otherTiles: Set<TileRef> = new Set(
+            otherUnits.map((u) => u.tile()),
+          );
           otherTiles.delete(tile);
           const closestOther = closestTwoTiles(mg, otherTiles, [tile]);
           if (closestOther !== null) {

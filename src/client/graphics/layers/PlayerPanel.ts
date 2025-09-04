@@ -13,6 +13,7 @@ import { AllPlayers, PlayerActions } from "../../../core/game/Game";
 import { TileRef } from "../../../core/game/GameMap";
 import { GameView, PlayerView } from "../../../core/game/GameView";
 import { flattenedEmojiTable } from "../../../core/Util";
+import Countries from "../../data/countries.json";
 import { CloseViewEvent, MouseUpEvent } from "../../InputHandler";
 import {
   SendAllianceRequestIntentEvent,
@@ -26,7 +27,6 @@ import {
 import { renderNumber, renderTroops } from "../../Utils";
 import { UIState } from "../UIState";
 import { ChatModal } from "./ChatModal";
-import Countries from "../../data/countries.json";
 import { EmojiTable } from "./EmojiTable";
 import { Layer } from "./Layer";
 
@@ -247,7 +247,10 @@ export class PlayerPanel extends LitElement implements Layer {
 
     //flag icon in the playerPanel
     const flagCode = other.cosmetics.flag;
-    const country = typeof flagCode === "string" ? Countries.find((c) => c.code === flagCode) : undefined;
+    const country =
+      typeof flagCode === "string"
+        ? Countries.find((c) => c.code === flagCode)
+        : undefined;
     const flagName = country?.name;
 
     return html`
@@ -295,7 +298,12 @@ export class PlayerPanel extends LitElement implements Layer {
                         bg-opacity-50 bg-gray-700 text-opacity-90 text-white
                         rounded text-sm lg:text-xl w-full"
                       >
-                        ${flagName} <img src="/flags/${flagCode}.svg" width=60 height=60>
+                        ${flagName}
+                        <img
+                          src="/flags/${flagCode}.svg"
+                          width="60"
+                          height="60"
+                        />
                       </div>
                     </div>
                   `
