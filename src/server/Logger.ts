@@ -24,9 +24,7 @@ if (config.otelEnabled()) {
   console.log("OTEL enabled");
   // Configure OpenTelemetry endpoint with basic auth (if provided)
   const headers: Record<string, string> = {};
-  // Remove "Basic" prefix from the auth header for backwards compatibility
-  headers["Authorization"] =
-    `Basic ${config.otelAuthHeader().replace("Basic", "").trim()}`;
+  headers["Authorization"] = "Basic " + config.otelAuthHeader();
   // Add OTLP exporter for logs
   const logExporter = new OTLPLogExporter({
     url: `${config.otelEndpoint()}/v1/logs`,
