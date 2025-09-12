@@ -269,7 +269,7 @@ export class JoinPrivateLobbyModal extends LitElement {
       // commit.txt is not found when running locally
       myGitCommit = "DEV";
     } else if (gitCommitResponse.status === 200) {
-      myGitCommit = await gitCommitResponse.text();
+      myGitCommit = (await gitCommitResponse.text()).trim();
     } else {
       console.error("Error getting git commit:", gitCommitResponse.status);
       return "error";
