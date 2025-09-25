@@ -648,6 +648,9 @@
     "delete_unit_title": "Delete Unit",
     "delete_unit_description": "Click to delete the nearest unit"
   },
+  "discord_user_header": {
+    "avatar_alt": "Avatar"
+  },
   "player_stats_table": {
     "building_stats": "Building Statistics",
     "ship_arrivals": "Ship Arrivals",
