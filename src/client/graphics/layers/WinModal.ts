@@ -33,6 +33,8 @@ export class WinModal extends LitElement implements Layer {
 
   private _title: string;
 
+  private rand = Math.random();
+
   // Override to prevent shadow DOM creation
   createRenderRoot() {
     return this;
@@ -93,6 +95,9 @@ export class WinModal extends LitElement implements Layer {
   }
 
   innerHtml() {
+    if (this.rand < 0.25) {
+      return this.steamWishlist();
+    }
     return this.renderPatternButton();
   }
 
