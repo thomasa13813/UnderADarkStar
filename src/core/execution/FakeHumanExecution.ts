@@ -161,30 +161,6 @@ export class FakeHumanExecution implements Execution {
     this.maybeAttack();
   }
 
-  /**
-   * TODO: Implement strategic betrayal logic
-   * Currently this just breaks alliances without strategic consideration.
-   * Future implementation should consider:
-   * - Relative strength (troop count, territory size) compared to target
-   * - Risk vs reward of betrayal
-   * - Potential impact on relations with other players
-   * - Timing (don't betray when already fighting other enemies)
-   * - Strategic value of target's territory
-   * - If target is distracted
-   */
-  private maybeConsiderBetrayal(target: Player): boolean {
-    if (this.player === null) throw new Error("not initialized");
-
-    const alliance = this.player.allianceWith(target);
-
-    if (!alliance) return false;
-
-    this.player.breakAlliance(alliance);
-
-    // Successfully broken an alliance
-    return true;
-  }
-
   private maybeAttack() {
     if (this.player === null || this.behavior === null) {
       throw new Error("not initialized");
@@ -232,7 +208,6 @@ export class FakeHumanExecution implements Execution {
     const toAttack = this.random.chance(2)
       ? enemies[0]
       : this.random.randElement(enemies);
-
     if (this.shouldAttack(toAttack)) {
       this.behavior.sendAttack(toAttack);
       return;
@@ -253,17 +228,9 @@ export class FakeHumanExecution implements Execution {
 
   private shouldAttack(other: Player): boolean {
     if (this.player === null) throw new Error("not initialized");
-
     if (this.player.isOnSameTeam(other)) {
       return false;
     }
-
-    // Consider betrayal for allies
-    if (this.player.isAlliedWith(other)) {
-      const canProceed = this.maybeConsiderBetrayal(other);
-      return canProceed;
-    }
-
     if (this.player.isFriendly(other)) {
       if (this.shouldDiscourageAttack(other)) {
         return this.random.chance(200);
@@ -429,7 +396,7 @@ export class FakeHumanExecution implements Execution {
 
   private maybeSendBoatAttack(other: Player) {
     if (this.player === null) throw new Error("not initialized");
-    if (this.player.isFriendly(other)) return;
+    if (this.player.isOnSameTeam(other)) return;
     const closest = closestTwoTiles(
       this.mg,
       Array.from(this.player.borderTiles()).filter((t) =>
