@@ -83,16 +83,30 @@ export class BotBehavior {
     if (this.player.isOnSameTeam(other)) {
       return false;
     }
-    if (this.player.isFriendly(other)) {
-      if (this.shouldDiscourageAttack(other)) {
-        return this.random.chance(200);
-      }
-      return this.random.chance(50);
-    } else {
-      if (this.shouldDiscourageAttack(other)) {
-        return this.random.chance(4);
-      }
+    const shouldAttack = this.attackChance(other);
+    if (shouldAttack && this.player.isAlliedWith(other)) {
+      this.betray(other);
       return true;
+    }
+    return shouldAttack;
+  }
+
+  private betray(target: Player): void {
+    if (this.player === null) throw new Error("not initialized");
+    const alliance = this.player.allianceWith(target);
+    if (!alliance) return;
+    this.player.breakAlliance(alliance);
+  }
+
+  private attackChance(other: Player): boolean {
+    if (this.player === null) throw new Error("not initialized");
+
+    if (this.player.isAlliedWith(other)) {
+      return this.shouldDiscourageAttack(other)
+        ? this.random.chance(200)
+        : this.random.chance(50);
+    } else {
+      return this.shouldDiscourageAttack(other) ? this.random.chance(4) : true;
     }
   }
 
