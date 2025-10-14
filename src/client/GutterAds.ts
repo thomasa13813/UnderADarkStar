@@ -1,5 +1,6 @@
 import { LitElement, html } from "lit";
 import { customElement, state } from "lit/decorators.js";
+import { isInIframe } from "./Utils";
 
 const LEFT_FUSE = "gutter-ad-container-left";
 const RIGHT_FUSE = "gutter-ad-container-right";
@@ -29,6 +30,11 @@ export class GutterAds extends LitElement {
   public show(): void {
     if (!this.isScreenLargeEnough()) {
       console.log("Screen too small for gutter ads, skipping");
+      return;
+    }
+
+    if (isInIframe()) {
+      console.log("In iframe, showing gutter ads");
       return;
     }
 
