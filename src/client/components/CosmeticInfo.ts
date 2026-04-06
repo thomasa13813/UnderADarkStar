@@ -53,6 +53,9 @@ export class CosmeticInfo extends LitElement {
                 ${translateText(`cosmetics.${this.rarity}`) || this.rarity}
               </div>`
             : nothing}
+          <div class="text-green-400 font-bold">
+            ${translateText("cosmetics.adfree")}
+          </div>
           ${this.colorPalette
             ? html`<div>
                 ${translateText("cosmetics.color_label")}

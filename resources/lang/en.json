@@ -926,7 +926,8 @@
     "uncommon": "Uncommon",
     "rare": "Rare",
     "epic": "Epic",
-    "legendary": "Legendary"
+    "legendary": "Legendary",
+    "adfree": "ad-free for life!"
   },
   "flag_input": {
     "title": "Select Flag",
