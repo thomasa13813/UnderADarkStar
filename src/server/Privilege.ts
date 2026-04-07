@@ -123,16 +123,8 @@ function censorWithMatcher(
   const clanTagIsProfane = clanTag
     ? matcher.hasMatch(clanTag) || clanTag.toLowerCase() === "ss"
     : false;
-  const usernameIsProfane = matcher.hasMatch(nameWithoutClan);
-
-  const censoredName = usernameIsProfane
-    ? shadowNames[simpleHash(nameWithoutClan) % shadowNames.length]
-    : nameWithoutClan;
-
-  // Restore clan tag only if it's clean, otherwise remove it entirely
-  if (clanTag && !clanTagIsProfane) {
-    return `[${clanTag.toUpperCase()}] ${censoredName}`;
-  }
+  const censoredClanTag =
+    clanTag && !clanTagIsProfane ? clanTag.toUpperCase() : null;
 
   return { username: censoredName, clanTag: censoredClanTag };
 }
