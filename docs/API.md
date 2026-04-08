@@ -1,5 +1,7 @@
 # API Usage
 
+> **Warning:** Rate limits are very strict. Join the [Discord](https://discord.gg/K9zernJB5z) to request higher rate limits.
+
 ## Games
 
 ### List Game Metadata
