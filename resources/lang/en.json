@@ -1044,5 +1044,12 @@
     "description": "(ALPHA)",
     "login_required": "Login to play ranked!",
     "must_login": "You must be logged in to play ranked matchmaking."
+  },
+  "news_box": {
+    "tournament": "TOURNAMENT",
+    "tutorial": "TUTORIAL",
+    "news": "NEWS",
+    "dismiss": "Dismiss",
+    "go_to_item": "Go to item {num}"
   }
 }
