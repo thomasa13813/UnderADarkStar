@@ -124,13 +124,24 @@ function censorUsernameWithMatcher(
     ? matcher.hasMatch(clanTag) || clanTag.toLowerCase() === "ss"
     : false;
   const usernameIsProfane = matcher.hasMatch(nameWithoutClan);
+  // Catch slurs split across clan tag and username (e.g. "[HIT]LER", "[NIG]ger")
+  // by looking for a match that spans the clan/name boundary.
+  const combinedSlurAcrossBoundary = clanTag
+    ? matcher.getAllMatches(clanTag + nameWithoutClan).some(
+        (match) =>
+          // Match must start in the clan and extend into the name — otherwise
+          // it's already handled by the clan-only or name-only checks above.
+          match.startIndex < clanTag.length && match.endIndex >= clanTag.length,
+      )
+    : false;
 
-  const censoredName = usernameIsProfane
-    ? shadowNames[simpleHash(nameWithoutClan) % shadowNames.length]
-    : nameWithoutClan;
+  const censoredName =
+    usernameIsProfane || combinedSlurAcrossBoundary
+      ? shadowNames[simpleHash(nameWithoutClan) % shadowNames.length]
+      : nameWithoutClan;
 
   // Restore clan tag only if it's clean, otherwise remove it entirely
-  if (clanTag && !clanTagIsProfane) {
+  if (clanTag && !clanTagIsProfane && !combinedSlurAcrossBoundary) {
     return `[${clanTag.toUpperCase()}] ${censoredName}`;
   }
 

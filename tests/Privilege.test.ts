@@ -230,6 +230,44 @@ describe("UsernameCensor", () => {
         expect(shadowNames).toContain(result);
         expect(result).not.toContain("[");
       });
+
+      describe("clan tag + username combined forms a slur", () => {
+        test("censors when clan+name combined forms hitler", () => {
+          const result = checker.censorUsername("[HIT]LER");
+          expect(shadowNames).toContain(result);
+          expect(result).not.toContain("[");
+        });
+
+        test("censors when clan+name combined forms hitler (split differently)", () => {
+          const result = checker.censorUsername("[HI]TLER");
+          expect(shadowNames).toContain(result);
+          expect(result).not.toContain("[");
+        });
+
+        test("censors when clan+name combined forms adolf", () => {
+          const result = checker.censorUsername("[AD]OLF");
+          expect(shadowNames).toContain(result);
+          expect(result).not.toContain("[");
+        });
+
+        test("censors when clan+name combined forms nigger", () => {
+          const result = checker.censorUsername("[NIG]ger");
+          expect(shadowNames).toContain(result);
+          expect(result).not.toContain("[");
+        });
+
+        test("censors when clan+name combined forms nigger (clean parts)", () => {
+          const result = checker.censorUsername("[NI]gger");
+          expect(shadowNames).toContain(result);
+          expect(result).not.toContain("[");
+        });
+
+        test("censors leet speak combined across clan and name", () => {
+          const result = checker.censorUsername("[N1G]g3r");
+          expect(shadowNames).toContain(result);
+          expect(result).not.toContain("[");
+        });
+      });
     });
 
     test("returns deterministic shadow name for same input", () => {
