@@ -25,6 +25,7 @@ import {
   Tick,
   TrainType,
   TransportShipState,
+  Unit,
   UnitInfo,
   UnitType,
   WarshipState,
@@ -1151,7 +1152,7 @@ export class GameView implements GameMap {
       tile,
       searchRange,
       types,
-      predicate,
+      predicate as (unit: Unit | UnitView) => boolean,
       playerId,
       includeUnderConstruction,
     );
