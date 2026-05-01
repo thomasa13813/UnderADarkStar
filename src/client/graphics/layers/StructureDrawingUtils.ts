@@ -8,12 +8,12 @@ import {
 } from "../../../core/game/Game";
 import { GameView, PlayerView, UnitView } from "../../../core/game/GameView";
 import { TransformHandler } from "../TransformHandler";
-const anchorIcon = assetUrl("images/AnchorIcon.png");
-const cityIcon = assetUrl("images/CityIcon.png");
-const factoryIcon = assetUrl("images/FactoryUnit.png");
-const missileSiloIcon = assetUrl("images/MissileSiloUnit.png");
-const SAMMissileIcon = assetUrl("images/SamLauncherUnit.png");
-const shieldIcon = assetUrl("images/ShieldIcon.png");
+const anchorIcon = assetUrl("images/AnchorIcon.v1.png");
+const cityIcon = assetUrl("images/CityIcon.v1.png");
+const factoryIcon = assetUrl("images/FactoryUnit.v1.png");
+const missileSiloIcon = assetUrl("images/MissileSiloUnit.v1.png");
+const SAMMissileIcon = assetUrl("images/SamLauncherUnit.v1.png");
+const shieldIcon = assetUrl("images/ShieldIcon.v1.png");
 
 export const STRUCTURE_SHAPES: Partial<Record<UnitType, ShapeType>> = {
   [UnitType.City]: "circle",
