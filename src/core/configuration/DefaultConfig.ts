@@ -683,16 +683,11 @@ export class DefaultConfig implements Config {
         mag = 0;
       }
       if (
-        attacker.type() === PlayerType.Human &&
+        (attacker.type() === PlayerType.Human ||
+          attacker.type() === PlayerType.Nation) &&
         defender.type() === PlayerType.Bot
       ) {
-        mag *= 0.8;
-      }
-      if (
-        attacker.type() === PlayerType.Nation &&
-        defender.type() === PlayerType.Bot
-      ) {
-        mag *= 0.8;
+        mag *= 0.7;
       }
     }
 
@@ -864,7 +859,7 @@ export class DefaultConfig implements Config {
     toAdd *= ratio;
 
     if (player.type() === PlayerType.Bot) {
-      toAdd *= 0.6;
+      toAdd *= 0.5;
     }
 
     if (player.type() === PlayerType.Nation) {
