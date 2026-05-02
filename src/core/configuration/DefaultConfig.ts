@@ -379,7 +379,7 @@ export class DefaultConfig implements Config {
             UnitType.Port,
             UnitType.Factory,
           ),
-          constructionDuration: this.instantBuild() ? 0 : 2 * 10,
+          constructionDuration: this.instantBuild() ? 0 : 5 * 10,
           upgradable: true,
         };
         break;
