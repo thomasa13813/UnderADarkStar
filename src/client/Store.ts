@@ -1,6 +1,6 @@
 import type { PropertyValues, TemplateResult } from "lit";
 import { html } from "lit";
-import { customElement } from "lit/decorators.js";
+import { customElement, state } from "lit/decorators.js";
 import { UserMeResponse } from "../core/ApiSchemas";
 import { CosmeticPack, Cosmetics, Product } from "../core/CosmeticSchemas";
 import { BaseModal } from "./components/BaseModal";
@@ -59,6 +59,15 @@ export class StoreModal extends BaseModal {
   private cosmetics: Cosmetics | null = null;
   private affiliateCode: string | null = null;
   private userMeResponse: UserMeResponse | false = false;
+  // `userMeResponse` starts at `false`, which is also what "no session" looks
+  // like, so a tab that renders a sign-in prompt on `false` would show it to a
+  // logged-in player for the whole window before Main's first userMeResponse
+  // broadcast (a Steam ticket exchange on desktop). This distinguishes the
+  // two: nothing is asserted about the session until it has actually settled.
+  // Reactive on its own, unlike `userMeResponse`: onUserMe() only calls
+  // refresh() after the catalog fetch, and a settled no-session result must
+  // not wait on a slow catalog before it may say so.
+  @state() private authSettled = false;
   private cosmeticsSubTab: CosmeticsSubTab = "patterns";
   private inspected: ResolvedCosmetic | null = null;
   private previewingCosmetic: ResolvedCosmetic | null = null;
@@ -135,6 +144,7 @@ export class StoreModal extends BaseModal {
 
   async onUserMe(userMeResponse: UserMeResponse | false) {
     this.userMeResponse = userMeResponse;
+    this.authSettled = true;
     this.cosmetics = await fetchCosmetics();
     this.selectVisible(this.groupsForTab(this.activeTab));
     await this.refresh();
@@ -622,6 +632,9 @@ export class StoreModal extends BaseModal {
   }
 
   private renderTribeGrid(): TemplateResult {
+    // The panel's `false` branch is a sign-in prompt, i.e. a logged-out
+    // state; hold it back until the session is known (see authSettled).
+    if (!this.authSettled) return html``;
     return html`<tribes-panel
       .userMeResponse=${this.userMeResponse}
     ></tribes-panel>`;
