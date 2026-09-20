@@ -63,6 +63,12 @@ export class SpawnExecution implements Execution {
       player = this.mg.addPlayer(this.playerInfo);
     }
 
+    // The Hegemon is seated on the Dark Star by GameImpl; a spawn would
+    // relinquish the whole domain.
+    if (player.isHegemon()) {
+      return;
+    }
+
     // Security: a client's spawn intent is only honoured if it was *issued*
     // during the spawn phase. Gating on the phase at tick time is wrong in
     // both directions — an intent sent on the final spawn-phase tick runs a

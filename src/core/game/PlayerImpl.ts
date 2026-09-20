@@ -397,6 +397,7 @@ export class PlayerImpl implements Player {
       betrayals: this._betrayalCount,
       lastDeleteUnitTick: this.lastDeleteUnitTick,
       isLobbyCreator: this.isLobbyCreator(),
+      isHegemon: this.isHegemon(),
     };
   }
 
@@ -715,6 +716,10 @@ export class PlayerImpl implements Player {
     return this.playerInfo.isLobbyCreator;
   }
 
+  isHegemon(): boolean {
+    return this.playerInfo.isHegemon;
+  }
+
   isAlive(): boolean {
     return this._tiles.size > 0;
   }
@@ -795,6 +800,10 @@ export class PlayerImpl implements Player {
 
   canSendAllianceRequest(other: Player): boolean {
     if (this.mg.config().disableAlliances()) {
+      return false;
+    }
+    // The Hegemon allies with no one (H9).
+    if (this.isHegemon() || other.isHegemon()) {
       return false;
     }
     if (other === this) {

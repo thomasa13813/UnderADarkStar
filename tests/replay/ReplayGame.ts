@@ -186,6 +186,8 @@ async function main(): Promise<void> {
         p.clanTag,
         p.friends ?? [],
         p.teamIndex ?? null,
+        null,
+        p.isHegemon ?? false,
       ),
   );
   const nations = createNationsForGame(

@@ -459,6 +459,8 @@ export class PlayerExecution implements Execution {
   }
 
   private removeCluster(cluster: readonly TileRef[]) {
+    // The Hegemon falls only to invasion (H7), never to enclosure.
+    if (this.player.isHegemon()) return;
     for (const t of cluster) {
       if (this.mg?.ownerID(t) !== this.player?.smallID()) {
         // Other removeCluster operations could change tile owners,

@@ -164,6 +164,11 @@ export class GameView implements GameMap {
     humans: Player[],
   ) {
     this._map = this._mapData.gameMap;
+    if (this._config.hegemonConfig().enabled) {
+      // The map is still as authored here (the Dark Star arrives with the
+      // first tick's tile updates), matching what the sim's Config was given.
+      this._config.setHegemonMapLandTiles(this._map.numLandTiles());
+    }
     this.lastUpdate = null;
     this.unitGrid = new UnitGrid(this._map);
     this._cosmetics = new Map(
@@ -1306,6 +1311,9 @@ export class GameView implements GameMap {
   }
   setMagnitude(ref: TileRef, value: number): void {
     this._map.setMagnitude(ref, value);
+  }
+  setTerrainByte(ref: TileRef, byte: number): void {
+    this._map.setTerrainByte(ref, byte);
   }
   ownerID(ref: TileRef): number {
     return this._map.ownerID(ref);

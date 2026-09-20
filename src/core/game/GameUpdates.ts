@@ -270,6 +270,7 @@ export interface PlayerUpdate {
   betrayals?: number;
   lastDeleteUnitTick?: Tick;
   isLobbyCreator?: boolean;
+  isHegemon?: boolean;
 }
 
 export interface AllianceView {

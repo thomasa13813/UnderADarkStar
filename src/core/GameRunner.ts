@@ -2,6 +2,7 @@ import { placeName, placeSpawnName } from "../client/hud/NameBoxCalculator";
 import { Config } from "./configuration/Config";
 import { DoomsdayClockExecution } from "./execution/DoomsdayClockExecution";
 import { Executor } from "./execution/ExecutionManager";
+import { HegemonExecution } from "./execution/HegemonExecution";
 import { RecomputeRailClusterExecution } from "./execution/RecomputeRailClusterExecution";
 import { SpawnTimerExecution } from "./execution/SpawnTimerExecution";
 import { WinCheckExecution } from "./execution/WinCheckExecution";
@@ -57,6 +58,8 @@ export async function createGameRunner(
       p.clanTag,
       p.friends ?? [],
       p.teamIndex ?? null,
+      null,
+      p.isHegemon ?? false,
     );
   });
 
@@ -105,6 +108,10 @@ export class GameRunner {
   ) {}
 
   init() {
+    const hegemonMode = this.game.config().hegemonConfig().enabled;
+    if (hegemonMode) {
+      this.game.addExecution(new HegemonExecution());
+    }
     if (this.game.config().gameConfig().gameType !== GameType.Singleplayer) {
       this.game.addExecution(new SpawnTimerExecution());
     }
@@ -120,7 +127,9 @@ export class GameRunner {
       );
     }
     this.game.addExecution(new WinCheckExecution());
-    if (this.game.config().doomsdayClockConfig().enabled) {
+    // The Doomsday Clock drains whoever holds too little of the map, which
+    // would fight the Hegemon's fixed strength on a small domain.
+    if (this.game.config().doomsdayClockConfig().enabled && !hegemonMode) {
       this.game.addExecution(new DoomsdayClockExecution());
     }
     if (!this.game.config().isUnitDisabled(UnitType.Factory)) {

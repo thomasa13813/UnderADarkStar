@@ -24,7 +24,7 @@ const TERRAIN_LAND_MASK = 0x80;
 const TERRAIN_MAG_MASK = 0x1f;
 const IMPASSABLE_MAG = 31;
 
-interface CraterBounds {
+export interface CraterBounds {
   minX: number;
   maxX: number;
   minY: number;
@@ -335,7 +335,7 @@ export class WaterManager {
     // local BFS instead of one bounding box spanning most of the map.
     const groups = this.computeCraterGroups(converted, w, MAX_MAG_DIST);
     for (const g of groups) {
-      this.recomputeMagnitudesInBox(
+      recomputeMagnitudesInBox(
         map,
         g,
         this._waterStampArr!,
@@ -526,7 +526,7 @@ export class WaterManager {
         MAX_MAG_DIST,
       );
       for (const g of miniGroups) {
-        this.recomputeMagnitudesInBox(
+        recomputeMagnitudesInBox(
           this.miniMap,
           g,
           this._miniStampArr!,
@@ -693,141 +693,141 @@ export class WaterManager {
     }
     return groups;
   }
+}
 
-  /**
-   * Recompute water magnitudes (ceil(dist_to_nearest_coast / 2), capped
-   * at 31) for all water tiles within MAX_MAG_DIST of the crater bounds.
-   *
-   * Dirty box (±MAX_MAG_DIST from crater bounds): the region where
-   * magnitudes may have changed.  Only tiles here get updated.
-   *
-   * Seed box (±2*MAX_MAG_DIST from crater bounds): coastlines here are
-   * seeded for BFS.  This ensures that every coastline that could be
-   * nearest to a dirty-box tile is included (a dirty-box tile is at most
-   * MAX_MAG_DIST from the crater, and the nearest coast is at most
-   * MAX_MAG_DIST from the tile, so the coast is at most 2*MAX_MAG_DIST
-   * from the crater).  The BFS runs WITHOUT convergence inside the seed
-   * box so that wavefronts from distant coastlines correctly reach the
-   * dirty box, and is clipped at the seed box boundary for performance.
-   *
-   * Reads terrain bytes directly — these loops dominate finalize cost on
-   * large maps.
-   *
-   * @param passableCoastOnly When true, impassable terrain is void (like
-   *   the map edge), so water tiles adjacent only to impassable terrain
-   *   are NOT coastline — they stay uniformly deep with no gradient.
-   *   (Used on the full map; the minimap counts any land as coastline.)
-   * @param changed When set, tiles whose magnitude changed are recorded
-   *   for client updates.
-   */
-  private recomputeMagnitudesInBox(
-    map: GameMap,
-    bounds: CraterBounds,
-    stampArr: Uint16Array,
-    distArr: Uint16Array,
-    stamp: number,
-    passableCoastOnly: boolean,
-    changed: Set<TileRef> | null,
-  ): void {
-    const w = map.width();
-    const h = map.height();
-    // Direct terrain access, same precedent as ConnectedComponents
-    const terrain = (map as unknown as { terrain: Uint8Array }).terrain;
+/**
+ * Recompute water magnitudes (ceil(dist_to_nearest_coast / 2), capped
+ * at 31) for all water tiles within MAX_MAG_DIST of the crater bounds.
+ *
+ * Dirty box (±MAX_MAG_DIST from crater bounds): the region where
+ * magnitudes may have changed.  Only tiles here get updated.
+ *
+ * Seed box (±2*MAX_MAG_DIST from crater bounds): coastlines here are
+ * seeded for BFS.  This ensures that every coastline that could be
+ * nearest to a dirty-box tile is included (a dirty-box tile is at most
+ * MAX_MAG_DIST from the crater, and the nearest coast is at most
+ * MAX_MAG_DIST from the tile, so the coast is at most 2*MAX_MAG_DIST
+ * from the crater).  The BFS runs WITHOUT convergence inside the seed
+ * box so that wavefronts from distant coastlines correctly reach the
+ * dirty box, and is clipped at the seed box boundary for performance.
+ *
+ * Reads terrain bytes directly — these loops dominate finalize cost on
+ * large maps.
+ *
+ * @param passableCoastOnly When true, impassable terrain is void (like
+ *   the map edge), so water tiles adjacent only to impassable terrain
+ *   are NOT coastline — they stay uniformly deep with no gradient.
+ *   (Used on the full map; the minimap counts any land as coastline.)
+ * @param changed When set, tiles whose magnitude changed are recorded
+ *   for client updates.
+ */
+export function recomputeMagnitudesInBox(
+  map: GameMap,
+  bounds: CraterBounds,
+  stampArr: Uint16Array,
+  distArr: Uint16Array,
+  stamp: number,
+  passableCoastOnly: boolean,
+  changed: Set<TileRef> | null,
+): void {
+  const w = map.width();
+  const h = map.height();
+  // Direct terrain access, same precedent as ConnectedComponents
+  const terrain = (map as unknown as { terrain: Uint8Array }).terrain;
 
-    // Dirty box: tiles whose magnitude may need updating.
-    const dMinX = Math.max(0, bounds.minX - MAX_MAG_DIST);
-    const dMaxX = Math.min(w - 1, bounds.maxX + MAX_MAG_DIST);
-    const dMinY = Math.max(0, bounds.minY - MAX_MAG_DIST);
-    const dMaxY = Math.min(h - 1, bounds.maxY + MAX_MAG_DIST);
-    // Seed box: coastlines here are seeded; BFS is clipped here.
-    const sMinX = Math.max(0, bounds.minX - MAX_MAG_DIST * 2);
-    const sMaxX = Math.min(w - 1, bounds.maxX + MAX_MAG_DIST * 2);
-    const sMinY = Math.max(0, bounds.minY - MAX_MAG_DIST * 2);
-    const sMaxY = Math.min(h - 1, bounds.maxY + MAX_MAG_DIST * 2);
+  // Dirty box: tiles whose magnitude may need updating.
+  const dMinX = Math.max(0, bounds.minX - MAX_MAG_DIST);
+  const dMaxX = Math.min(w - 1, bounds.maxX + MAX_MAG_DIST);
+  const dMinY = Math.max(0, bounds.minY - MAX_MAG_DIST);
+  const dMaxY = Math.min(h - 1, bounds.maxY + MAX_MAG_DIST);
+  // Seed box: coastlines here are seeded; BFS is clipped here.
+  const sMinX = Math.max(0, bounds.minX - MAX_MAG_DIST * 2);
+  const sMaxX = Math.min(w - 1, bounds.maxX + MAX_MAG_DIST * 2);
+  const sMinY = Math.max(0, bounds.minY - MAX_MAG_DIST * 2);
+  const sMaxY = Math.min(h - 1, bounds.maxY + MAX_MAG_DIST * 2);
 
-    const isCoastByte = (b: number): boolean =>
-      (b & TERRAIN_LAND_MASK) !== 0 &&
-      (!passableCoastOnly || (b & TERRAIN_MAG_MASK) !== IMPASSABLE_MAG);
+  const isCoastByte = (b: number): boolean =>
+    (b & TERRAIN_LAND_MASK) !== 0 &&
+    (!passableCoastOnly || (b & TERRAIN_MAG_MASK) !== IMPASSABLE_MAG);
 
-    // Seed from coastline water tiles inside the seed box.
-    const queue: TileRef[] = [];
-    for (let y = sMinY; y <= sMaxY; y++) {
-      const rowStart = y * w;
-      for (let x = sMinX; x <= sMaxX; x++) {
-        const tile = (rowStart + x) as TileRef;
-        if ((terrain[tile] & TERRAIN_LAND_MASK) !== 0) continue;
-        if (stampArr[tile] === stamp) continue;
-        const isCoast =
-          (y > 0 && isCoastByte(terrain[tile - w])) ||
-          (y < h - 1 && isCoastByte(terrain[tile + w])) ||
-          (x > 0 && isCoastByte(terrain[tile - 1])) ||
-          (x < w - 1 && isCoastByte(terrain[tile + 1]));
-        if (isCoast) {
-          stampArr[tile] = stamp;
-          distArr[tile] = 0;
-          queue.push(tile);
-        }
+  // Seed from coastline water tiles inside the seed box.
+  const queue: TileRef[] = [];
+  for (let y = sMinY; y <= sMaxY; y++) {
+    const rowStart = y * w;
+    for (let x = sMinX; x <= sMaxX; x++) {
+      const tile = (rowStart + x) as TileRef;
+      if ((terrain[tile] & TERRAIN_LAND_MASK) !== 0) continue;
+      if (stampArr[tile] === stamp) continue;
+      const isCoast =
+        (y > 0 && isCoastByte(terrain[tile - w])) ||
+        (y < h - 1 && isCoastByte(terrain[tile + w])) ||
+        (x > 0 && isCoastByte(terrain[tile - 1])) ||
+        (x < w - 1 && isCoastByte(terrain[tile + 1]));
+      if (isCoast) {
+        stampArr[tile] = stamp;
+        distArr[tile] = 0;
+        queue.push(tile);
       }
     }
+  }
 
-    // BFS outward through water, clipped to the seed box.
-    let head = 0;
-    while (head < queue.length) {
-      const tile = queue[head++];
-      const nextDist = distArr[tile] + 1;
-      const x = tile % w;
-      const y = (tile - x) / w;
-      if (y > sMinY) {
-        const n = tile - w;
-        if ((terrain[n] & TERRAIN_LAND_MASK) === 0 && stampArr[n] !== stamp) {
-          stampArr[n] = stamp;
-          distArr[n] = nextDist;
-          queue.push(n as TileRef);
-        }
-      }
-      if (y < sMaxY) {
-        const n = tile + w;
-        if ((terrain[n] & TERRAIN_LAND_MASK) === 0 && stampArr[n] !== stamp) {
-          stampArr[n] = stamp;
-          distArr[n] = nextDist;
-          queue.push(n as TileRef);
-        }
-      }
-      if (x > sMinX) {
-        const n = tile - 1;
-        if ((terrain[n] & TERRAIN_LAND_MASK) === 0 && stampArr[n] !== stamp) {
-          stampArr[n] = stamp;
-          distArr[n] = nextDist;
-          queue.push(n as TileRef);
-        }
-      }
-      if (x < sMaxX) {
-        const n = tile + 1;
-        if ((terrain[n] & TERRAIN_LAND_MASK) === 0 && stampArr[n] !== stamp) {
-          stampArr[n] = stamp;
-          distArr[n] = nextDist;
-          queue.push(n as TileRef);
-        }
+  // BFS outward through water, clipped to the seed box.
+  let head = 0;
+  while (head < queue.length) {
+    const tile = queue[head++];
+    const nextDist = distArr[tile] + 1;
+    const x = tile % w;
+    const y = (tile - x) / w;
+    if (y > sMinY) {
+      const n = tile - w;
+      if ((terrain[n] & TERRAIN_LAND_MASK) === 0 && stampArr[n] !== stamp) {
+        stampArr[n] = stamp;
+        distArr[n] = nextDist;
+        queue.push(n as TileRef);
       }
     }
+    if (y < sMaxY) {
+      const n = tile + w;
+      if ((terrain[n] & TERRAIN_LAND_MASK) === 0 && stampArr[n] !== stamp) {
+        stampArr[n] = stamp;
+        distArr[n] = nextDist;
+        queue.push(n as TileRef);
+      }
+    }
+    if (x > sMinX) {
+      const n = tile - 1;
+      if ((terrain[n] & TERRAIN_LAND_MASK) === 0 && stampArr[n] !== stamp) {
+        stampArr[n] = stamp;
+        distArr[n] = nextDist;
+        queue.push(n as TileRef);
+      }
+    }
+    if (x < sMaxX) {
+      const n = tile + 1;
+      if ((terrain[n] & TERRAIN_LAND_MASK) === 0 && stampArr[n] !== stamp) {
+        stampArr[n] = stamp;
+        distArr[n] = nextDist;
+        queue.push(n as TileRef);
+      }
+    }
+  }
 
-    // Update magnitudes only for dirty-box tiles.
-    for (let y = dMinY; y <= dMaxY; y++) {
-      const rowStart = y * w;
-      for (let x = dMinX; x <= dMaxX; x++) {
-        const tile = (rowStart + x) as TileRef;
-        const b = terrain[tile];
-        if ((b & TERRAIN_LAND_MASK) !== 0) continue;
-        // Reached by BFS → magnitude from distance; unreached → nearest
-        // coast is >MAX_MAG_DIST away → deep water (31).
-        const newMag =
-          stampArr[tile] === stamp
-            ? Math.min(Math.ceil(distArr[tile] / 2), 31)
-            : 31;
-        if ((b & TERRAIN_MAG_MASK) !== newMag) {
-          map.setMagnitude(tile, newMag);
-          changed?.add(tile);
-        }
+  // Update magnitudes only for dirty-box tiles.
+  for (let y = dMinY; y <= dMaxY; y++) {
+    const rowStart = y * w;
+    for (let x = dMinX; x <= dMaxX; x++) {
+      const tile = (rowStart + x) as TileRef;
+      const b = terrain[tile];
+      if ((b & TERRAIN_LAND_MASK) !== 0) continue;
+      // Reached by BFS → magnitude from distance; unreached → nearest
+      // coast is >MAX_MAG_DIST away → deep water (31).
+      const newMag =
+        stampArr[tile] === stamp
+          ? Math.min(Math.ceil(distArr[tile] / 2), 31)
+          : 31;
+      if ((b & TERRAIN_MAG_MASK) !== newMag) {
+        map.setMagnitude(tile, newMag);
+        changed?.add(tile);
       }
     }
   }

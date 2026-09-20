@@ -475,6 +475,15 @@ export const OvertimeConfigSchema = z.object({
   startMinutes: zb.uint({ min: 1, max: 120 }).optional(),
 });
 
+// Under a Dark Star: the asymmetric Hegemon round (docs/DarkStar-Design.md).
+// One player holds the Dark Star, a disc at the map centre ringed by a moat,
+// with fixed map-scaled strength; the round ends when it is eliminated or the
+// timer expires. Only `enabled` is wire-configurable; domain size and strength
+// tuning live in HEGEMON_DEFAULTS (Config.ts).
+export const HegemonConfigSchema = z.object({
+  enabled: z.boolean().optional(),
+});
+
 export const GameConfigSchema = z.object({
   gameMap: z.enum(GameMapType),
   difficulty: z.enum(Difficulty),
@@ -553,6 +562,7 @@ export const GameConfigSchema = z.object({
       startingGold: zb.uint({ max: 1000000000 }).nullable().optional(),
     })
     .optional(),
+  hegemon: HegemonConfigSchema.optional(),
 });
 
 export const TeamSchema = z.string();
@@ -902,6 +912,9 @@ export const PlayerSchema = z.object({
   // game's team list). Feeds deterministic team assignment, so it must be
   // identical for every client (like clanTag/friends).
   teamIndex: zb.uint().optional(),
+  // This player holds the Hegemon seat (hegemon mode only). A simulation
+  // input, so it must be identical for every client and ride the game record.
+  isHegemon: z.boolean().optional(),
 });
 
 // A purchased bot tribe name in use this game (active names are globally

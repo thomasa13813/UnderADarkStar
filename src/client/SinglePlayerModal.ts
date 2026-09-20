@@ -117,6 +117,7 @@ const DEFAULT_OPTIONS = {
   waterNukes: false,
   doomsdayClock: false,
   doomsdayClockSpeed: "normal" as DoomsdayClockSpeed,
+  hegemon: true,
   overtime: false,
   overtimeStartMinutes: undefined as number | undefined,
 } as const;
@@ -204,6 +205,7 @@ export class SinglePlayerModal extends BaseModal {
   @state() private customAllianceMinutes: number | undefined =
     DEFAULT_OPTIONS.customAllianceMinutes;
   @state() private waterNukes: boolean = DEFAULT_OPTIONS.waterNukes;
+  @state() private hegemon: boolean = DEFAULT_OPTIONS.hegemon;
   @state() private doomsdayClock: boolean = DEFAULT_OPTIONS.doomsdayClock;
   @state() private doomsdayClockSpeed: DoomsdayClockSpeed =
     DEFAULT_OPTIONS.doomsdayClockSpeed;
@@ -518,6 +520,10 @@ export class SinglePlayerModal extends BaseModal {
                 },
                 toggles: [
                   {
+                    labelKey: "game_settings.hegemon",
+                    checked: this.hegemon,
+                  },
+                  {
                     labelKey: "game_settings.instant_build",
                     checked: this.instantBuild,
                   },
@@ -610,6 +616,7 @@ export class SinglePlayerModal extends BaseModal {
       this.customAlliances !== DEFAULT_OPTIONS.customAlliances ||
       this.customAllianceMinutes !== DEFAULT_OPTIONS.customAllianceMinutes ||
       this.waterNukes !== DEFAULT_OPTIONS.waterNukes ||
+      this.hegemon !== DEFAULT_OPTIONS.hegemon ||
       this.doomsdayClock !== DEFAULT_OPTIONS.doomsdayClock ||
       // Pace only matters when the mode is on (startGame drops it when off).
       (this.doomsdayClock &&
@@ -686,6 +693,7 @@ export class SinglePlayerModal extends BaseModal {
     this.customAlliances = DEFAULT_OPTIONS.customAlliances;
     this.customAllianceMinutes = DEFAULT_OPTIONS.customAllianceMinutes;
     this.waterNukes = DEFAULT_OPTIONS.waterNukes;
+    this.hegemon = DEFAULT_OPTIONS.hegemon;
     this.doomsdayClock = DEFAULT_OPTIONS.doomsdayClock;
     this.doomsdayClockSpeed = DEFAULT_OPTIONS.doomsdayClockSpeed;
     this.overtime = DEFAULT_OPTIONS.overtime;
@@ -786,6 +794,9 @@ export class SinglePlayerModal extends BaseModal {
         break;
       case "game_settings.doomsday_clock":
         this.doomsdayClock = checked;
+        break;
+      case "game_settings.hegemon":
+        this.hegemon = checked;
         break;
       default:
         break;
@@ -1183,6 +1194,14 @@ export class SinglePlayerModal extends BaseModal {
                         enabled: true,
                         startMinutes: this.overtimeStartMinutes ?? 30,
                       },
+                    }
+                  : {}),
+                // A Hegemon round is always timed (R5); stating the default
+                // here also gives the HUD its countdown. FFA only.
+                ...(this.hegemon && this.gameMode === GameMode.FFA
+                  ? {
+                      hegemon: { enabled: true },
+                      maxTimerValue: finalMaxTimerValue ?? 20,
                     }
                   : {}),
               },

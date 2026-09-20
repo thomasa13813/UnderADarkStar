@@ -29,6 +29,13 @@ export interface GameMap {
   clearShorelineBit(ref: TileRef): void;
   setOcean(ref: TileRef): void;
   setMagnitude(ref: TileRef, value: number): void;
+  /**
+   * Raw terrain write for bulk terrain generation (the Dark Star). Unlike
+   * setWater it can turn water or impassable void into land and back; it keeps
+   * numLandTiles and waterVersion in step. Derived bits (shoreline, ocean,
+   * magnitude) are the caller's job.
+   */
+  setTerrainByte(ref: TileRef, byte: number): void;
   // State getters and setters (mutable)
   ownerID(ref: TileRef): number;
   hasOwner(ref: TileRef): boolean;
@@ -278,6 +285,33 @@ export class GameMapImpl implements GameMap {
     this.terrain[ref] =
       (this.terrain[ref] & ~GameMapImpl.MAGNITUDE_MASK) |
       (value & GameMapImpl.MAGNITUDE_MASK);
+  }
+
+  setTerrainByte(ref: TileRef, byte: number): void {
+    this.writeTerrainByte(ref, byte & 0xff);
+  }
+
+  // numLandTiles counts PASSABLE land (as the map manifest does), so void
+  // becoming land, or being carved to water, is accounted for correctly.
+  private static isPassableLandByte(byte: number): boolean {
+    return (
+      (byte & (1 << GameMapImpl.IS_LAND_BIT)) !== 0 &&
+      (byte & GameMapImpl.MAGNITUDE_MASK) !== GameMapImpl.IMPASSABLE_MAGNITUDE
+    );
+  }
+
+  private writeTerrainByte(ref: TileRef, byte: number): void {
+    const old = this.terrain[ref];
+    if (old === byte) return;
+    this.terrain[ref] = byte;
+    const landBit = 1 << GameMapImpl.IS_LAND_BIT;
+    // Water-derived caches key on waterVersion(): a write that flips
+    // land/water must invalidate them just like setWater() does.
+    if ((old & landBit) !== (byte & landBit)) this.waterVersion_++;
+    const wasPassable = GameMapImpl.isPassableLandByte(old);
+    const isPassable = GameMapImpl.isPassableLandByte(byte);
+    if (wasPassable && !isPassable) this.numLandTiles_--;
+    else if (!wasPassable && isPassable) this.numLandTiles_++;
   }
 
   // State getters and setters (mutable)
@@ -569,14 +603,7 @@ export class GameMapImpl implements GameMap {
     // Update terrain if the packed value includes a terrain byte that differs
     const terrainChanged = this.terrain[tile] !== terrainByte;
     if (terrainChanged) {
-      const wasLand = this.isLand(tile);
-      this.terrain[tile] = terrainByte;
-      const isNowLand = Boolean(terrainByte & (1 << GameMapImpl.IS_LAND_BIT));
-      // Water-derived caches key on waterVersion(): a packed update that flips
-      // land/water must invalidate them just like setWater() does.
-      if (wasLand !== isNowLand) this.waterVersion_++;
-      if (wasLand && !isNowLand) this.numLandTiles_--;
-      else if (!wasLand && isNowLand) this.numLandTiles_++;
+      this.writeTerrainByte(tile, terrainByte);
     }
     return terrainChanged;
   }

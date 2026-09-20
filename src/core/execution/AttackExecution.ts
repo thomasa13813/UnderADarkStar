@@ -356,7 +356,13 @@ export class AttackExecution implements Execution {
           ? null
           : {
               type: defender.type(),
-              numTiles: defender.numTilesOwned(),
+              // The Hegemon's strength is decoupled from its territory (H5):
+              // it is always costed as if it held the whole domain, so each
+              // tile lost bleeds the same share of its troops.
+              numTiles:
+                (defender.isHegemon()
+                  ? this.mg.darkStar()?.domainTileCount
+                  : undefined) ?? defender.numTilesOwned(),
               troops: defender.troops(),
               isTraitor: defender.isTraitor(),
               isDisconnectedTeammate:
@@ -432,6 +438,15 @@ export class AttackExecution implements Execution {
   private handleDeadDefender() {
     if (!(this.target.isPlayer() && this.target.numTilesOwned() < 100)) return;
     const target: Player = this.target;
+
+    if (target.isHegemon()) {
+      // The Hegemon falls only to invasion, tile by tile (H7): no mop-up, no
+      // tiles handed to neighbours. Whoever takes the last tile is its slayer.
+      if (target.numTilesOwned() === 0) {
+        this.mg.conquerPlayer(this._owner, target);
+      }
+      return;
+    }
 
     this.mg.conquerPlayer(this._owner, target);
 

@@ -365,9 +365,15 @@ export class WinModal extends LitElement implements Controller {
         this.show();
       } else if (wu.winner[0] === "nation") {
         this.eventBus.emit(new SendWinnerEvent(wu.winner, wu.allPlayersStats));
-        this._title = translateText("win_modal.nation_won", {
-          nation: wu.winner[1],
-        });
+        // An AI Hegemon that outlasts the round wins as a "nation" (R4).
+        const hegemonWon = this.game
+          .playerViews()
+          .some((p) => p.isHegemon() && p.name() === wu.winner![1]);
+        this._title = hegemonWon
+          ? translateText("win_modal.hegemon_endures")
+          : translateText("win_modal.nation_won", {
+              nation: wu.winner[1],
+            });
         this.isWin = false;
         this.playEndOfGameSound();
         this.show();

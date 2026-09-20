@@ -3,6 +3,7 @@ import { AbstractGraph } from "../pathfinding/algorithms/AbstractGraph";
 import { PathFinder } from "../pathfinding/types";
 import { AllPlayersStats, ClientID } from "../Schemas";
 import { formatPlayerDisplayName } from "../Util";
+import { DarkStarGeometry } from "./DarkStar";
 import { GameMap, TileRef } from "./GameMap";
 import {
   GameUpdate,
@@ -454,6 +455,9 @@ export class PlayerInfo {
     // the correct flag even when multiple nations on a map share a display
     // name (e.g. India's and Pakistan's "Punjab").
     public readonly nationFlag: string | null = null,
+    // Holds the Hegemon seat (hegemon mode). A flag rather than a PlayerType
+    // so a human or an AI can hold it.
+    public readonly isHegemon: boolean = false,
   ) {
     this.displayName = formatPlayerDisplayName(this.name, this.clanTag);
   }
@@ -597,6 +601,7 @@ export interface Player {
   isPlayer(): this is Player;
   toString(): string;
   isLobbyCreator(): boolean;
+  isHegemon(): boolean;
 
   // State & Properties
   isAlive(): boolean;
@@ -913,6 +918,13 @@ export interface Game extends GameMap {
   addUpdate(update: GameUpdate): void;
   railNetwork(): RailNetwork;
   conquerPlayer(conqueror: Player, conquered: Player): void;
+
+  // Hegemon mode (docs/DarkStar-Design.md); null/false when the mode is off.
+  darkStar(): DarkStarGeometry | null;
+  isInDarkStar(tile: TileRef): boolean;
+  hegemon(): Player | null;
+  // Whoever eliminated the Hegemon, once it has fallen.
+  hegemonSlayer(): Player | null;
   miniWaterHPA(): PathFinder<number> | null;
   miniWaterGraph(): AbstractGraph | null;
   getWaterComponent(tile: TileRef): number | null;

@@ -1771,12 +1771,14 @@ export class GameServer {
           stats,
           cosmetics: player.cosmetics,
           // Simulation inputs: teamIndex pins matchmade teams, friends bias
-          // team grouping, isLobbyCreator gates host cheats. Replays rebuild
+          // team grouping, isLobbyCreator gates host cheats, isHegemon seats
+          // the Hegemon. Replays rebuild
           // GameStartInfo from these records, so dropping any of them makes
           // the replay diverge from the recorded hashes (desync errors).
           teamIndex: player.teamIndex,
           friends: player.friends,
           isLobbyCreator: player.isLobbyCreator,
+          isHegemon: player.isHegemon,
         } satisfies PlayerRecord;
       },
     );

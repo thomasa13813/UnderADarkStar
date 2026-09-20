@@ -7,6 +7,7 @@ import { DoomsdayClockSpeed } from "../game/DoomsdayClock";
 import {
   Difficulty,
   Game,
+  GameMode,
   GameType,
   Gold,
   Player,
@@ -262,8 +263,33 @@ const OVERTIME_DEFAULTS = {
   dropPercentPerMinute: 2,
 };
 
+// Hegemon (Under a Dark Star) tunables. Off unless enabled in GameConfig; only
+// `enabled` is wire-configurable. See docs/DarkStar-Design.md.
+//
+// The Dark Star is a disc at the map centre ringed by a moat of deep space. Both
+// are permille of the map's SHORTER side, floored to whole tiles once, so every
+// client derives the identical tile set (F5 — confirm by eye, then tune here).
+//
+// Strength depends only on the map's ORIGINAL land-tile count (H3), never on the
+// Hegemon's own territory (H5). These are F1 placeholders until calibrated
+// against AI-only games: the ceiling is a share of what ONE player owning every
+// land tile could field, which on Milky Way (~443k tiles) is ~5M troops.
+const HEGEMON_DEFAULTS = {
+  enabled: false,
+  defaultRoundMinutes: 20, // R5, used when maxTimerValue is unset
+  domainRadiusPermille: 90,
+  moatWidthPermille: 10,
+  moatMinTiles: 15,
+  troopCeilingPercentOfWholeMapCap: 100,
+  regenPercent: 100, // of the standard regeneration curve
+  goldPerTickPer50kLandTiles: 100,
+};
+
 export class Config {
   private unitInfoCache = new Map<UnitType, UnitInfo>();
+  // Land tiles of the map BEFORE the Dark Star was carved into it. Config has
+  // no map access, so GameImpl (sim) and GameView (client) each set it once.
+  private _hegemonMapLandTiles: number | null = null;
   constructor(
     private _gameConfig: GameConfig,
     private _userSettings: UserSettings | null,
@@ -328,6 +354,44 @@ export class Config {
       // The drop rate is internal (not wire-configurable): always the default.
       dropPercentPerMinute: d.dropPercentPerMinute,
     };
+  }
+  // Hegemon config, resolved against defaults. FFA only: team modes are out of
+  // scope for the role (F12).
+  hegemonConfig(): typeof HEGEMON_DEFAULTS {
+    const c = this._gameConfig.hegemon;
+    const d = HEGEMON_DEFAULTS;
+    return {
+      ...d,
+      enabled:
+        (c?.enabled ?? d.enabled) && this._gameConfig.gameMode === GameMode.FFA,
+    };
+  }
+  setHegemonMapLandTiles(landTiles: number): void {
+    this._hegemonMapLandTiles = landTiles;
+  }
+  private hegemonMapLandTiles(): number {
+    if (this._hegemonMapLandTiles === null) {
+      throw new Error("Hegemon map land tiles not set");
+    }
+    return this._hegemonMapLandTiles;
+  }
+  // The Hegemon's troop ceiling: fixed for the round, whatever it still holds.
+  hegemonMaxTroops(): number {
+    const wholeMapCap =
+      2 * (pow(this.hegemonMapLandTiles(), 0.6) * 1000 + 50000);
+    return Math.floor(
+      (wholeMapCap * this.hegemonConfig().troopCeilingPercentOfWholeMapCap) /
+        100,
+    );
+  }
+  hegemonGoldPerTick(): Gold {
+    return BigInt(
+      Math.floor(
+        (this.hegemonMapLandTiles() *
+          this.hegemonConfig().goldPerTickPer50kLandTiles) /
+          50_000,
+      ),
+    );
   }
   spawnImmunityDuration(): Tick {
     return (
@@ -1011,6 +1075,9 @@ export class Config {
   }
 
   maxTroops(player: Player | PlayerView): number {
+    if (player.isHegemon()) {
+      return this.hegemonMaxTroops();
+    }
     const maxTroops =
       player.type() === PlayerType.Human && this.hasInfiniteTroopsFor(player)
         ? 1_000_000_000
@@ -1052,6 +1119,12 @@ export class Config {
     const ratio = 1 - player.troops() / max;
     toAdd *= ratio;
 
+    if (player.isHegemon()) {
+      // The standard curve against the fixed ceiling; no type/difficulty terms.
+      toAdd = (toAdd * this.hegemonConfig().regenPercent) / 100;
+      return Math.min(player.troops() + toAdd, max) - player.troops();
+    }
+
     if (player.type() === PlayerType.Bot) {
       toAdd *= 0.5;
     }
@@ -1079,6 +1152,9 @@ export class Config {
   }
 
   goldAdditionRate(player: Player | PlayerView): Gold {
+    if (player.isHegemon()) {
+      return this.hegemonGoldPerTick();
+    }
     const multiplier = this.goldMultiplierFor(player);
     let baseRate: bigint;
     if (player.type() === PlayerType.Bot) {

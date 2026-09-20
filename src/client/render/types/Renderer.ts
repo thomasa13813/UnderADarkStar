@@ -25,6 +25,7 @@ export interface PlayerStatic {
   playerType: PlayerTypeEnum;
   team: string | null;
   isLobbyCreator: boolean;
+  isHegemon: boolean;
   /** Resolved flag image URL, or undefined for no flag. */
   flag?: string;
   /** Resolved crown-cosmetic image URL, or undefined for no crown. */

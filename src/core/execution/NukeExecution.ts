@@ -381,6 +381,8 @@ export class NukeExecution implements Execution {
     // Retrieve all impacted players and the number of tiles
     const tilesPerPlayers = new Map<Player, number>();
     for (const tile of toDestroy) {
+      // The Dark Star cannot be nuked (H7), whoever holds the tile.
+      if (mg.isInDarkStar(tile)) continue;
       const owner = mg.owner(tile);
       if (owner.isPlayer()) {
         owner.relinquish(tile);

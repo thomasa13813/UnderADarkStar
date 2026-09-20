@@ -10,6 +10,14 @@ import { simpleHash } from "../Util";
 import { AllianceImpl } from "./AllianceImpl";
 import { AllianceRequestImpl } from "./AllianceRequestImpl";
 import {
+  computeDarkStarGeometry,
+  DarkStarGeometry,
+  generateDarkStarTerrain,
+  HEGEMON_AI_NAME,
+  HEGEMON_PLAYER_ID,
+  isInDarkStar,
+} from "./DarkStar";
+import {
   Alliance,
   AllianceRequest,
   Cell,
@@ -118,6 +126,14 @@ export class GameImpl implements Game {
   private _teamGameSpawnAreas: TeamGameSpawnAreas | undefined;
   /** Tiles from nuke blast radii this tick, drained by the renderer. */
   private _nukeImpactQueue: TileRef[] = [];
+  // Hegemon mode (docs/DarkStar-Design.md). All null when the mode is off.
+  private _darkStar: DarkStarGeometry | null = null;
+  private _hegemon: Player | null = null;
+  private _hegemonSlayer: Player | null = null;
+  // The Dark Star is carved during construction, but clients load the pristine
+  // map and only learn of changes through tile updates, which the first tick
+  // would otherwise discard. Held here until then.
+  private _initialTileUpdates: TileRef[] | null = null;
 
   constructor(
     private _humans: PlayerInfo[],
@@ -135,6 +151,9 @@ export class GameImpl implements Game {
     this._width = _map.width();
     this._height = _map.height();
     this.unitGrid = new UnitGrid(this._map);
+    // Before the WaterManager, so water components and the nav graph are built
+    // from final terrain (they can merge at runtime, never split).
+    const domainTiles = this.carveDarkStar();
     this._waterManager = new WaterManager(
       this._map,
       this.miniGameMap,
@@ -146,10 +165,90 @@ export class GameImpl implements Game {
       this.populateTeams();
     }
     this.addPlayers();
+    if (domainTiles !== null) {
+      this.seatHegemon(domainTiles);
+    }
 
     console.log(
       `[GameImpl] Constructor total: ${(performance.now() - constructorStart).toFixed(0)}ms`,
     );
+  }
+
+  private carveDarkStar(): TileRef[] | null {
+    const cfg = this._config.hegemonConfig();
+    if (!cfg.enabled) return null;
+    // Strength scales with the map as authored (H3), not as carved.
+    this._config.setHegemonMapLandTiles(this._map.numLandTiles());
+    this._darkStar = computeDarkStarGeometry(this._width, this._height, cfg);
+    const { changed, domainTiles } = generateDarkStarTerrain(
+      this._map,
+      this.miniGameMap,
+      this._darkStar,
+    );
+    this._initialTileUpdates = changed;
+    // A nation the map places on the Dark Star (Milky Way's "Sagittarius A*")
+    // could never spawn there; without a cell it is placed at random instead.
+    // The margin covers NationExecution's jitter around its cell plus a spawn.
+    const keepOut = this._darkStar.radius + this._darkStar.moatWidth + 30;
+    this._nations = this._nations.map((n) => {
+      if (n.spawnCell === undefined) return n;
+      const dx = n.spawnCell.x - this._darkStar!.cx;
+      const dy = n.spawnCell.y - this._darkStar!.cy;
+      return dx * dx + dy * dy <= keepOut * keepOut
+        ? new Nation(undefined, n.playerInfo)
+        : n;
+    });
+    return domainTiles;
+  }
+
+  // The Hegemon holds the whole domain from the first tick, at full strength
+  // (H2). A human flagged isHegemon takes the seat; otherwise an AI holds it
+  // (R6). The AI seat is made here rather than listed as a Nation, so no
+  // NationExecution drives it, and its fixed id draws nothing from any PRNG.
+  private seatHegemon(domainTiles: TileRef[]) {
+    const darkStar = this._darkStar!;
+    const hegemon =
+      Array.from(this._players.values()).find((p) => p.isHegemon()) ??
+      this.addPlayer(
+        new PlayerInfo(
+          HEGEMON_AI_NAME,
+          PlayerType.Nation,
+          null,
+          HEGEMON_PLAYER_ID,
+          false,
+          null,
+          [],
+          null,
+          null,
+          true,
+        ),
+      );
+    for (const tile of domainTiles) {
+      hegemon.conquer(tile);
+    }
+    hegemon.setSpawnTile(this.ref(darkStar.cx, darkStar.cy));
+    hegemon.setTroops(this._config.hegemonMaxTroops());
+    this._hegemon = hegemon;
+    this._initialTileUpdates!.push(...domainTiles);
+  }
+
+  darkStar(): DarkStarGeometry | null {
+    return this._darkStar;
+  }
+
+  isInDarkStar(tile: TileRef): boolean {
+    return (
+      this._darkStar !== null &&
+      isInDarkStar(this._darkStar, this.x(tile), this.y(tile))
+    );
+  }
+
+  hegemon(): Player | null {
+    return this._hegemon;
+  }
+
+  hegemonSlayer(): Player | null {
+    return this._hegemonSlayer;
   }
 
   private populateTeams() {
@@ -488,6 +587,12 @@ export class GameImpl implements Game {
   executeNextTick(): GameUpdates {
     this.updates = createGameUpdatesMap();
     this.tileUpdatePairs.length = 0;
+    if (this._initialTileUpdates !== null) {
+      for (const tile of this._initialTileUpdates) {
+        this.recordTileUpdate(tile);
+      }
+      this._initialTileUpdates = null;
+    }
     this.execs.forEach((e) => {
       if (
         (!this.inSpawnPhase() || e.activeDuringSpawnPhase()) &&
@@ -1266,6 +1371,9 @@ export class GameImpl implements Game {
   setMagnitude(ref: TileRef, value: number): void {
     this._map.setMagnitude(ref, value);
   }
+  setTerrainByte(ref: TileRef, byte: number): void {
+    this._map.setTerrainByte(ref, byte);
+  }
   ownerID(ref: TileRef): number {
     return this._map.ownerID(ref);
   }
@@ -1369,6 +1477,10 @@ export class GameImpl implements Game {
     return this._sharedWaterCache.get(player);
   }
   conquerPlayer(conqueror: Player, conquered: Player) {
+    if (conquered.isHegemon()) {
+      // The killing blow (R3): read by WinCheckExecution.
+      this._hegemonSlayer = conqueror;
+    }
     if (conquered.isDisconnected() && conqueror.isOnSameTeam(conquered)) {
       const ships = conquered
         .units()

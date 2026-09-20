@@ -83,6 +83,10 @@ export class WinCheckExecution implements Execution {
 
   checkWinnerFFA(): void {
     if (this.mg === null) throw new Error("Not initialized");
+    if (this.mg.config().gameConfig().hegemon?.enabled === true) {
+      this.checkWinnerHegemon();
+      return;
+    }
     const sorted = this.mg
       .players()
       .sort((a, b) => b.numTilesOwned() - a.numTilesOwned());
@@ -106,6 +110,42 @@ export class WinCheckExecution implements Execution {
     if (this.hasWon(max.numTilesOwned())) {
       this.mg.setWinner(max, this.mg.stats().stats());
       console.log(`${max.name()} has won the game`);
+      this.active = false;
+    }
+  }
+
+  // Hegemon mode: victory runs through the Hegemon (R1). Holding land wins
+  // nothing; the round ends when the Hegemon is eliminated, and its slayer wins
+  // (R2, R3), or when the timer expires, and the Hegemon wins (R4).
+  private checkWinnerHegemon(): void {
+    if (this.mg === null) throw new Error("Not initialized");
+    const hegemon = this.mg.hegemon();
+    if (hegemon === null) return;
+
+    if (!hegemon.isAlive()) {
+      const winner =
+        this.mg.hegemonSlayer() ??
+        this.mg
+          .players()
+          .sort((a, b) => b.numTilesOwned() - a.numTilesOwned())[0];
+      if (winner === undefined) return;
+      this.mg.setWinner(winner, this.mg.stats().stats());
+      console.log(`${winner.name()} has overthrown the Hegemon`);
+      this.active = false;
+      return;
+    }
+
+    // A round is always timed (R5): an unset or disabled timer is the default.
+    const roundMinutes =
+      this.mg.config().gameConfig().maxTimerValue ??
+      this.mg.config().hegemonConfig().defaultRoundMinutes;
+    const timeElapsed = this.mg.elapsedGameSeconds();
+    if (
+      timeElapsed >= roundMinutes * 60 ||
+      timeElapsed >= WinCheckExecution.HARD_TIME_LIMIT_SECONDS
+    ) {
+      this.mg.setWinner(hegemon, this.mg.stats().stats());
+      console.log(`${hegemon.name()} endures`);
       this.active = false;
     }
   }

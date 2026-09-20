@@ -36,6 +36,7 @@ describe("PlayerView accessors", () => {
         isAlive: true,
         isDisconnected: false,
         isLobbyCreator: true,
+        isHegemon: true,
         tilesOwned: 42,
         gold: 999n,
         troops: 250,
@@ -51,6 +52,7 @@ describe("PlayerView accessors", () => {
     expect(p.isAlive()).toBe(true);
     expect(p.isDisconnected()).toBe(false);
     expect(p.isLobbyCreator()).toBe(true);
+    expect(p.isHegemon()).toBe(true);
     expect(p.numTilesOwned()).toBe(42);
     expect(p.gold()).toBe(999n);
     expect(p.troops()).toBe(250);

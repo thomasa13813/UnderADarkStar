@@ -73,6 +73,7 @@ function makeRealisticUpdate(
     betrayals: 0,
     lastDeleteUnitTick: 0,
     isLobbyCreator: false,
+    isHegemon: false,
     ...overrides,
   };
 }
@@ -149,6 +150,7 @@ function diffPlayerUpdateBefore(
     prev.lastDeleteUnitTick === next.lastDeleteUnitTick,
   );
   setIfDifferent("isLobbyCreator", prev.isLobbyCreator === next.isLobbyCreator);
+  setIfDifferent("isHegemon", prev.isHegemon === next.isHegemon);
   setIfDifferent("allies", numberArrayEqual(prev.allies, next.allies));
   setIfDifferent("targets", numberArrayEqual(prev.targets, next.targets));
   setIfDifferent(

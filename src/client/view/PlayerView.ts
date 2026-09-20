@@ -67,6 +67,7 @@ function staticFromUpdate(pu: PlayerUpdate): PlayerStatic {
     playerType: gamePlayerTypeToEnum(pu.playerType!),
     team: pu.team ?? null,
     isLobbyCreator: pu.isLobbyCreator!,
+    isHegemon: pu.isHegemon ?? false,
   };
 }
 
@@ -575,6 +576,10 @@ export class PlayerView {
 
   isLobbyCreator(): boolean {
     return this.static.isLobbyCreator;
+  }
+
+  isHegemon(): boolean {
+    return this.static.isHegemon;
   }
 
   isAlliedWith(other: PlayerView): boolean {

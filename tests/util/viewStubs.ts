@@ -59,6 +59,7 @@ export function stubConfig(overrides: Partial<Config> = {}): Config {
     allianceDuration: () => 100,
     deletionMarkDuration: () => 300,
     doomsdayClockConfig: () => ({ warnSeconds: 15 }),
+    hegemonConfig: () => ({ enabled: false }),
     nukeMagnitudes: () => ({ inner: 0, outer: 0 }),
     nukeAllianceBreakThreshold: () => 0,
     userSettings: () => ({}),
@@ -151,6 +152,7 @@ export function makePlayerUpdate(
     betrayals: 0,
     lastDeleteUnitTick: 0,
     isLobbyCreator: false,
+    isHegemon: false,
     ...overrides,
   };
 }

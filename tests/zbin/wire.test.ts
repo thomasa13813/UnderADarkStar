@@ -135,9 +135,9 @@ const SERVER_MESSAGES: ServerMessage[] = [
     gameStartInfo: {
       gameID: "gM3xQ1zR",
       lobbyCreatedAt: 1_700_000_000_000,
-      config: CONFIG,
+      config: { ...CONFIG, hegemon: { enabled: true } },
       players: [
-        { clientID: P1, username: "alpha", clanTag: "ABC" },
+        { clientID: P1, username: "alpha", clanTag: "ABC", isHegemon: true },
         {
           clientID: P2,
           username: "bravo",
