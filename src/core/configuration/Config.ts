@@ -1106,7 +1106,11 @@ export class Config {
     const maxTroops =
       player.type() === PlayerType.Human && this.hasInfiniteTroopsFor(player)
         ? 1_000_000_000
-        : 2 * (pow(player.numTilesOwned(), 0.6) * 1000 + 50000) +
+        : // Dark Star tiles count for nothing to a challenger holding them (H5).
+          2 *
+            (pow(player.numTilesOwned() - player.domainTilesHeld(), 0.6) *
+              1000 +
+              50000) +
           player
             .units(UnitType.City)
             .filter((u) => !u.isUnderConstruction())

@@ -58,6 +58,7 @@ export class HegemonExecution implements Execution {
     if (invader === null) {
       this.invader = null;
       this.stallTroops = null;
+      mg.setInvasionStalled(false);
       return;
     }
 
@@ -88,6 +89,7 @@ export class HegemonExecution implements Execution {
       wave();
     }
 
+    mg.setInvasionStalled(stalled);
     if (!stalled) return;
     if (this.stallTroops === null) {
       if (!hegemon.outgoingAttacks().some((a) => a.target() === invader)) {

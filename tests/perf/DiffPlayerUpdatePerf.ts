@@ -74,6 +74,9 @@ function makeRealisticUpdate(
     lastDeleteUnitTick: 0,
     isLobbyCreator: false,
     isHegemon: false,
+    domainTilesHeld: 0,
+    invasionCooldownUntil: 0,
+    invasionStalled: false,
     ...overrides,
   };
 }
@@ -145,6 +148,18 @@ function diffPlayerUpdateBefore(
   setIfDifferent("hasSpawned", prev.hasSpawned === next.hasSpawned);
   setIfDifferent("spawnTile", prev.spawnTile === next.spawnTile);
   setIfDifferent("betrayals", prev.betrayals === next.betrayals);
+  setIfDifferent(
+    "domainTilesHeld",
+    prev.domainTilesHeld === next.domainTilesHeld,
+  );
+  setIfDifferent(
+    "invasionCooldownUntil",
+    prev.invasionCooldownUntil === next.invasionCooldownUntil,
+  );
+  setIfDifferent(
+    "invasionStalled",
+    prev.invasionStalled === next.invasionStalled,
+  );
   setIfDifferent(
     "lastDeleteUnitTick",
     prev.lastDeleteUnitTick === next.lastDeleteUnitTick,

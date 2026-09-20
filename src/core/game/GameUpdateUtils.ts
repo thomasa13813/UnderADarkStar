@@ -59,6 +59,9 @@ export function diffPlayerUpdate(
     prev.hasSpawned === next.hasSpawned &&
     prev.spawnTile === next.spawnTile &&
     prev.betrayals === next.betrayals &&
+    prev.domainTilesHeld === next.domainTilesHeld &&
+    prev.invasionCooldownUntil === next.invasionCooldownUntil &&
+    prev.invasionStalled === next.invasionStalled &&
     prev.lastDeleteUnitTick === next.lastDeleteUnitTick &&
     prev.isLobbyCreator === next.isLobbyCreator &&
     prev.isHegemon === next.isHegemon &&
@@ -124,6 +127,18 @@ export function diffPlayerUpdate(
   setIfDifferent("hasSpawned", prev.hasSpawned === next.hasSpawned);
   setIfDifferent("spawnTile", prev.spawnTile === next.spawnTile);
   setIfDifferent("betrayals", prev.betrayals === next.betrayals);
+  setIfDifferent(
+    "domainTilesHeld",
+    prev.domainTilesHeld === next.domainTilesHeld,
+  );
+  setIfDifferent(
+    "invasionCooldownUntil",
+    prev.invasionCooldownUntil === next.invasionCooldownUntil,
+  );
+  setIfDifferent(
+    "invasionStalled",
+    prev.invasionStalled === next.invasionStalled,
+  );
   setIfDifferent(
     "lastDeleteUnitTick",
     prev.lastDeleteUnitTick === next.lastDeleteUnitTick,
@@ -196,6 +211,12 @@ export function applyStateUpdate(target: PlayerState, pu: PlayerUpdate): void {
   }
   if (pu.isDecaying !== undefined) target.isDecaying = pu.isDecaying;
   if (pu.betrayals !== undefined) target.betrayals = pu.betrayals;
+  if (pu.domainTilesHeld !== undefined)
+    target.domainTilesHeld = pu.domainTilesHeld;
+  if (pu.invasionCooldownUntil !== undefined)
+    target.invasionCooldownUntil = pu.invasionCooldownUntil;
+  if (pu.invasionStalled !== undefined)
+    target.invasionStalled = pu.invasionStalled;
   if (pu.hasSpawned !== undefined) target.hasSpawned = pu.hasSpawned;
   if (pu.spawnTile !== undefined) target.spawnTile = pu.spawnTile;
   if (pu.lastDeleteUnitTick !== undefined) {

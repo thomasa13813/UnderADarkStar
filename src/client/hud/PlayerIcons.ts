@@ -49,6 +49,10 @@ interface PlayerIconParams {
 }
 
 export function getFirstPlacePlayer(game: GameView): PlayerView | null {
+  // Hegemon mode: the crown marks the Hegemon while it lives.
+  const hegemon = game.hegemon();
+  if (hegemon?.isAlive()) return hegemon;
+
   const sorted = game
     .playerViews()
     .sort((a, b) => b.numTilesOwned() - a.numTilesOwned());

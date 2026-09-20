@@ -153,6 +153,9 @@ export function makePlayerUpdate(
     lastDeleteUnitTick: 0,
     isLobbyCreator: false,
     isHegemon: false,
+    domainTilesHeld: 0,
+    invasionCooldownUntil: 0,
+    invasionStalled: false,
     ...overrides,
   };
 }

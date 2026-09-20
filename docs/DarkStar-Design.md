@@ -389,6 +389,22 @@ it on). With it off the sim is bit-identical to before: no extra player, no PRNG
   (H5); an all-in last stand (the Hegemon still dies with ~2M troops unspent, since waves are a share of
   what is left); AI nations rarely invade before minute ~13.
 
+### 6.3 As built — invasion economics and the first HUD (2026-09-20)
+
+- **The invader gains nothing from the Dark Star (H5).** `Player.domainTilesHeld()` is subtracted from
+  the tile count in `Config.maxTroops` and from the attacker's `numTiles` in combat (the large-territory
+  bonuses). Before this, every domain tile raised the invader's own troop cap, so a successful invasion
+  snowballed.
+- **Client state.** `PlayerUpdate` carries `domainTilesHeld`, `invasionCooldownUntil` (a tick) and
+  `invasionStalled` (set on the invader; `HegemonExecution` → `Game.setInvasionStalled`). `GameView.hegemon()`
+  and `GameView.darkStar()` (geometry recomputed client-side from the map size) serve the HUD.
+- **HUD (minimal, pulled forward from M2).** The **crown** marks the Hegemon while it lives — on the map
+  (`computePlayerStatus`'s `hegemonSmallID`) and in the hover overlay (`getFirstPlacePlayer`). A
+  **`dark-star-panel`** under the game timer shows the Hegemon's troops against its ceiling, the share
+  of the domain it still holds, the invasion status (unchallenged / invader's name / you are invading /
+  stalled) and the viewer's re-invasion cooldown. Strings under `dark_star.*`. Not yet verified in the
+  browser when written.
+
 ## 7. Constraints (non-negotiable engineering rules)
 
 - `src/core/` must stay **deterministic** (seeded PRNG, no wall-clock, careful with floats) and
@@ -437,7 +453,7 @@ these before any public release.
 | Slice | Goal                                                                                                                                                                                                                                                 | Status               |
 | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
 | 1     | **The throne exists:** `hegemon` config + `isHegemon` flag, disc/moat terrain, seated passive AI Hegemon, fixed map-scaled strength, troop bleed, win rules R1–R5, cheap guards (no mop-up/cluster capture/nuke damage on the domain, no alliances). | **Built 2026-09-20** |
-| 2     | **Invasion economics:** the invader gains nothing from domain tiles (H5); units standing on the domain survive nukes too (rest of H7).                                                                                                               |                      |
+| 2 ✔   | **Invasion economics:** the invader gains nothing from domain tiles (H5); units standing on the domain survive nukes too (rest of H7).                                                                                                               |                      |
 | 3 ✔   | **Single-invader slot:** claimed on landing, held while any domain tile is held, inbound transports turn back, 5-minute cooldown from eviction (H6, H12).                                                                                            |                      |
 | 4     | **The Dark Star fights back, razing, diplomacy:** stall detector and forced counter-attack (H13), raze mode (H8), open donations (H9).                                                                                                               |                      |
 | 5     | **AI Hegemon + calibration:** punitive strikes (H11), Nations/Tribes treat the Hegemon as the objective, headless F1 calibration, private-lobby toggle.                                                                                              |                      |
@@ -503,3 +519,6 @@ settled by playtesting.
   documented slice 2 (§6.2). Decided: an AI Hegemon counter-attacks on landing, H13's forced routing applies
   to any Hegemon on stall, and it switches off if the invader advances again (F2). Fortress multipliers
   lowered to 300/300 (500/1000 felt slow in play).
+- **2026-09-20** — Built: the invader gains nothing from domain tiles (H5), and a first HUD — the crown
+  marks the Hegemon, and a Dark Star panel shows its strength, domain share, the invader, stall state and
+  the viewer's cooldown (§6.3). Tom confirmed the slot + counter-attack balance in play beforehand.

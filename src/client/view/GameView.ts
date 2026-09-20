@@ -1,5 +1,9 @@
 import { Config } from "../../core/configuration/Config";
 import {
+  computeDarkStarGeometry,
+  DarkStarGeometry,
+} from "../../core/game/DarkStar";
+import {
   Cell,
   GameUpdates,
   PlayerID,
@@ -608,6 +612,7 @@ export class GameView implements GameMap {
 
     f.playerStatus = computePlayerStatus(this._playerStates, this._unitStates, {
       localPlayerSmallID: this._myPlayer?.smallID() ?? 0,
+      hegemonSmallID: this.hegemon()?.smallID(),
       localPlayerID: this._myPlayer?.id() ?? "",
       tileState: this._map.tileStateBuffer(),
       tick: gu.tick,
@@ -1032,6 +1037,33 @@ export class GameView implements GameMap {
 
   myClientID(): ClientID | undefined {
     return this._myClientID;
+  }
+
+  // Hegemon mode (docs/DarkStar-Design.md). The seat never changes hands
+  // within a round, so the lookup is cached once found.
+  private _hegemon: PlayerView | null = null;
+  hegemon(): PlayerView | null {
+    if (this._hegemon === null && this._config.hegemonConfig().enabled) {
+      for (const p of this._players.values()) {
+        if (p.isHegemon()) {
+          this._hegemon = p;
+          break;
+        }
+      }
+    }
+    return this._hegemon;
+  }
+
+  private _darkStar: DarkStarGeometry | null = null;
+  darkStar(): DarkStarGeometry | null {
+    if (this._darkStar === null && this._config.hegemonConfig().enabled) {
+      this._darkStar = computeDarkStarGeometry(
+        this._map.width(),
+        this._map.height(),
+        this._config.hegemonConfig(),
+      );
+    }
+    return this._darkStar;
   }
 
   myPlayer(): PlayerView | null {

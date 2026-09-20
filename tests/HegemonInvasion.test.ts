@@ -8,6 +8,7 @@ import {
   UnitType,
 } from "../src/core/game/Game";
 import { TileRef } from "../src/core/game/GameMap";
+import { GameUpdateType, PlayerUpdate } from "../src/core/game/GameUpdates";
 import { canBuildTransportShip } from "../src/core/game/TransportShipUtils";
 import { setup } from "./util/Setup";
 import { executeTicks } from "./util/utils";
@@ -206,5 +207,49 @@ describe("The Dark Star fights back (H13)", () => {
     hegemon.addTroops(100_000);
     executeTicks(game, 20);
     expect(hegemon.troops()).toBeGreaterThanOrEqual(pinned + 100_000);
+  });
+});
+
+describe("An invader gains nothing from the Dark Star (H5)", () => {
+  beforeEach(() => start(PlayerType.Human));
+
+  test("domain tiles raise neither its troop cap nor its combat bonuses", () => {
+    const config = game.config();
+    const tiles = east.numTilesOwned();
+    const cap = config.maxTroops(east);
+
+    const g = game.darkStar()!;
+    for (const tile of Array.from(hegemon.tiles())) {
+      if (game.x(tile) > g.cx) east.conquer(tile);
+    }
+    expect(east.numTilesOwned()).toBeGreaterThan(tiles * 3);
+    expect(east.domainTilesHeld()).toBe(east.numTilesOwned() - tiles);
+    expect(config.maxTroops(east)).toBe(cap);
+
+    // Land outside the Dark Star still counts.
+    east.conquer(game.ref(0, 0));
+    expect(config.maxTroops(east)).toBeGreaterThan(cap);
+  });
+
+  test("the client is told who holds what, for the HUD", () => {
+    const eastUpdate = () =>
+      (game.executeNextTick()[GameUpdateType.Player] as PlayerUpdate[]).find(
+        (u) => u.id === east.id(),
+      );
+    eastUpdate();
+    east.conquer(domainShore(1));
+    east.setTroops(0);
+    expect(eastUpdate()?.domainTilesHeld).toBe(1);
+
+    // Stalled after 5 s: flagged until the forced wave evicts it.
+    let sawStalled = false;
+    for (let i = 0; i < 80; i++) {
+      const update = eastUpdate(); // ticks the game: not inside the ||=
+      sawStalled ||= update?.invasionStalled === true;
+    }
+    expect(sawStalled).toBe(true);
+    expect(game.darkStarInvader()).toBeNull();
+    expect(east.domainTilesHeld()).toBe(0);
+    expect(game.invasionCooldownUntil(east)).toBeGreaterThan(game.ticks());
   });
 });

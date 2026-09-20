@@ -602,6 +602,8 @@ export interface Player {
   toString(): string;
   isLobbyCreator(): boolean;
   isHegemon(): boolean;
+  // Dark Star tiles held by a challenger; they count for nothing (H5).
+  domainTilesHeld(): number;
 
   // State & Properties
   isAlive(): boolean;
@@ -929,6 +931,10 @@ export interface Game extends GameMap {
   darkStarInvader(): Player | null;
   domainTilesHeldBy(player: Player): number;
   lastInvaderGainTick(): number;
+  invasionCooldownUntil(player: Player): number;
+  // Set by HegemonExecution: the current invasion has stalled (H13).
+  invasionStalled(): boolean;
+  setInvasionStalled(stalled: boolean): void;
   canInvadeDarkStar(player: Player): boolean;
   // Ticks until an evicted invader may invade again; 0 if free to.
   invasionCooldownTicks(player: Player): number;

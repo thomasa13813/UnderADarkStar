@@ -16,6 +16,11 @@ export interface ComputePlayerStatusOptions {
    */
   localPlayerSmallID?: number;
   /**
+   * Hegemon mode: the Hegemon's smallID. The crown marks the Hegemon while it
+   * lives, rather than whoever holds the most tiles.
+   */
+  hegemonSmallID?: number;
+  /**
    * Local player string ID for matching outgoing alliance requests.
    */
   localPlayerID?: string;
@@ -78,6 +83,13 @@ export function computePlayerStatus(
       maxTiles = ps.tilesOwned;
       crownSmallID = ps.smallID;
     }
+  }
+  const hegemonState =
+    opts.hegemonSmallID !== undefined
+      ? players.get(opts.hegemonSmallID)
+      : undefined;
+  if (hegemonState?.isAlive) {
+    crownSmallID = hegemonState.smallID;
   }
 
   // Nukes: single pass over units → per-owner flags (avoids the

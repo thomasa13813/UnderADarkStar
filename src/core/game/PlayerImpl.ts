@@ -395,6 +395,10 @@ export class PlayerImpl implements Player {
       hasSpawned: this.hasSpawned(),
       spawnTile: this._spawnTile,
       betrayals: this._betrayalCount,
+      domainTilesHeld: this.domainTilesHeld(),
+      invasionCooldownUntil: this.mg.invasionCooldownUntil(this),
+      invasionStalled:
+        this.mg.invasionStalled() && this.mg.darkStarInvader() === this,
       lastDeleteUnitTick: this.lastDeleteUnitTick,
       isLobbyCreator: this.isLobbyCreator(),
       isHegemon: this.isHegemon(),
@@ -718,6 +722,10 @@ export class PlayerImpl implements Player {
 
   isHegemon(): boolean {
     return this.playerInfo.isHegemon;
+  }
+
+  domainTilesHeld(): number {
+    return this.mg.domainTilesHeldBy(this);
   }
 
   isAlive(): boolean {

@@ -5,6 +5,7 @@ import { EventBus } from "../../../core/EventBus";
 import { GameType } from "../../../core/game/Game";
 import { createNextLobby } from "../../Api";
 import { ClientEnv } from "../../ClientEnv";
+import "../../components/DarkStarPanel";
 import "../../components/DoomsdayClockPanel";
 import "../../components/OvertimePanel";
 import { Controller } from "../../Controller";
@@ -404,6 +405,11 @@ export class GameRightSidebar extends LitElement implements Controller {
         .hasWinner=${this.hasWinner}
         .refreshKey=${this.timer}
       ></doomsday-clock-panel>
+      <dark-star-panel
+        .game=${this.game}
+        .hasWinner=${this.hasWinner}
+        .refreshKey=${this.timer}
+      ></dark-star-panel>
       <overtime-panel
         .game=${this.game}
         .hasWinner=${this.hasWinner}

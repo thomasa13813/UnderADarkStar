@@ -135,6 +135,7 @@ export class GameImpl implements Game {
   private _domainTilesHeld = new Map<Player, number>();
   private _invasionCooldownUntil = new Map<PlayerID, number>();
   private _lastInvaderGainTick = 0;
+  private _invasionStalled = false;
   // The Dark Star is carved during construction, but clients load the pristine
   // map and only learn of changes through tile updates, which the first tick
   // would otherwise discard. Held here until then.
@@ -273,6 +274,18 @@ export class GameImpl implements Game {
 
   domainTilesHeldBy(player: Player): number {
     return this._domainTilesHeld.get(player) ?? 0;
+  }
+
+  invasionCooldownUntil(player: Player): number {
+    return this._invasionCooldownUntil.get(player.id()) ?? 0;
+  }
+
+  invasionStalled(): boolean {
+    return this._invasionStalled;
+  }
+
+  setInvasionStalled(stalled: boolean): void {
+    this._invasionStalled = stalled;
   }
 
   invasionCooldownTicks(player: Player): number {

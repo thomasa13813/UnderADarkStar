@@ -82,6 +82,12 @@ export interface PlayerState {
   isDecaying: boolean;
   markedDoomsdayClockTick: number;
   betrayals: number;
+  /** Hegemon mode: Dark Star tiles this player holds (> 0 = the invader). */
+  domainTilesHeld: number;
+  /** Hegemon mode: tick until which this player may not invade again (0 = free). */
+  invasionCooldownUntil: number;
+  /** Hegemon mode: this player is the invader and the invasion has stalled. */
+  invasionStalled: boolean;
   hasSpawned: boolean;
   /** TileRef the player picked as their spawn (undefined if not yet spawned). */
   spawnTile?: number;

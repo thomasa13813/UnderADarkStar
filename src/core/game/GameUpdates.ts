@@ -268,6 +268,9 @@ export interface PlayerUpdate {
   hasSpawned?: boolean;
   spawnTile?: TileRef;
   betrayals?: number;
+  domainTilesHeld?: number;
+  invasionCooldownUntil?: number;
+  invasionStalled?: boolean;
   lastDeleteUnitTick?: Tick;
   isLobbyCreator?: boolean;
   isHegemon?: boolean;

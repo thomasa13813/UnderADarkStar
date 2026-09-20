@@ -570,6 +570,16 @@
     "title": "Support a Creator",
     "unsupport": "Unsupport"
   },
+  "dark_star": {
+    "cooldown": "You may invade again in {time}",
+    "domain": "Domain held: {pct}%",
+    "invader": "Invader: {name}",
+    "stalled": "Invasion stalled. The Dark Star strikes back",
+    "title": "The Dark Star",
+    "troops": "{troops} / {max} troops",
+    "unchallenged": "Unchallenged",
+    "you_invade": "You are invading the Dark Star"
+  },
   "desktop_gate": {
     "back_to_game": "Back to Game",
     "browser_fallback": "Couldn't open your browser automatically — use the link above.",

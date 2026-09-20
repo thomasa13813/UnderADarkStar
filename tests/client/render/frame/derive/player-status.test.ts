@@ -42,6 +42,9 @@ function ps(overrides: Partial<PlayerState> = {}): PlayerState {
     isDecaying: false,
     markedDoomsdayClockTick: -1,
     betrayals: 0,
+    domainTilesHeld: 0,
+    invasionCooldownUntil: 0,
+    invasionStalled: false,
     hasSpawned: true,
     lastDeleteUnitTick: 0,
     allies: [],
@@ -126,6 +129,28 @@ describe("computePlayerStatus — replay mode (no localPlayerSmallID)", () => {
     const status = computePlayerStatus(players, unitsMap());
     expect(status.get(2)?.crown).toBe(true);
     expect(status.has(1)).toBe(false);
+  });
+
+  it("hegemon mode: the crown marks the Hegemon while it lives", () => {
+    const players = playersMap(
+      ps({ smallID: 1, tilesOwned: 100 }), // the Hegemon: a small domain
+      ps({ smallID: 2, tilesOwned: 500 }),
+    );
+    const status = computePlayerStatus(players, unitsMap(), {
+      hegemonSmallID: 1,
+    });
+    expect(status.get(1)?.crown).toBe(true);
+    expect(status.has(2)).toBe(false);
+
+    // Once it has fallen the crown reverts to the largest player.
+    const fallen = playersMap(
+      ps({ smallID: 1, tilesOwned: 0, isAlive: false }),
+      ps({ smallID: 2, tilesOwned: 500 }),
+    );
+    expect(
+      computePlayerStatus(fallen, unitsMap(), { hegemonSmallID: 1 }).get(2)
+        ?.crown,
+    ).toBe(true);
   });
 
   it("traitor + traitorRemainingTicks flow through", () => {

@@ -349,7 +349,8 @@ export class AttackExecution implements Execution {
       attackTroops,
       attacker: {
         type: this._owner.type(),
-        numTiles: this._owner.numTilesOwned(),
+        // Nor do Dark Star tiles earn an invader the large-territory bonuses (H5).
+        numTiles: this._owner.numTilesOwned() - this._owner.domainTilesHeld(),
       },
       defender:
         defender === null

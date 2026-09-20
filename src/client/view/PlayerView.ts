@@ -94,6 +94,9 @@ function stateFromUpdate(pu: PlayerUpdate): PlayerState {
     isDecaying: pu.isDecaying ?? false,
     markedDoomsdayClockTick: pu.markedDoomsdayClockTick ?? -1,
     betrayals: pu.betrayals!,
+    domainTilesHeld: pu.domainTilesHeld ?? 0,
+    invasionCooldownUntil: pu.invasionCooldownUntil ?? 0,
+    invasionStalled: pu.invasionStalled ?? false,
     hasSpawned: pu.hasSpawned!,
     spawnTile: pu.spawnTile,
     lastDeleteUnitTick: pu.lastDeleteUnitTick!,
@@ -694,6 +697,18 @@ export class PlayerView {
   }
   betrayals(): number {
     return this.state.betrayals;
+  }
+
+  domainTilesHeld(): number {
+    return this.state.domainTilesHeld;
+  }
+
+  invasionCooldownUntil(): number {
+    return this.state.invasionCooldownUntil;
+  }
+
+  invasionStalled(): boolean {
+    return this.state.invasionStalled;
   }
   outgoingEmojis(): EmojiMessage[] {
     return this.state.outgoingEmojis;
