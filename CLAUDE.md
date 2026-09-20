@@ -2,6 +2,12 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Project: Under a Dark Star
+
+This repository is a fork of OpenFront.io being turned into **Under a Dark Star (DarkStar)**, a sci-fi territorial strategy game. Its defining feature is the asymmetric **Hegemon** role: one player starts each round extremely strong but cannot expand; the other players grow across the galaxy and try to overthrow them. The round ends when the Hegemon is eliminated (the player who lands the killing blow wins) or when the timer expires (the Hegemon wins). The winner is the next round's Hegemon.
+
+**Read `docs/DarkStar-Design.md` before any design or gameplay work.** It records the decided rules, open questions, relevant engine hooks, licensing obligations and roadmap. Update it (and its changelog) when decisions change.
+
 ## Commands
 
 ```bash
@@ -26,12 +32,14 @@ npx vitest NationAllianceBehavior --run # match by name pattern
 
 ## Architecture
 
-OpenFront.io is a real-time multiplayer territorial strategy game. There are four components:
+OpenFront.io (the engine DarkStar is built on) is a real-time multiplayer territorial strategy game. There are four components:
 
 1. **`src/core/`** — Deterministic game simulation. Pure TypeScript with **no external dependencies**. Must remain fully deterministic (seeded PRNG, no floating-point math). Runs in a Web Worker thread. All `src/core` changes **must** include tests.
-2. **`src/client/`** — Rendering (Pixi.js/WebGL), UI (Lit web components + Tailwind CSS 4), WebSocket communication.
+2. **`src/client/`** — Rendering (custom WebGL2 in `src/client/render/`, see `src/client/render/CLAUDE.md`), UI (Lit web components + Tailwind CSS 4; in-game HUD in `src/client/hud/`), WebSocket communication.
 3. **`src/server/`** — Game coordination, intent relay, WebSocket management (Node.js/Express/ws).
-4. **API** — Closed-source Cloudflare Worker handling auth, stats, cosmetics, monetization. Not in this repo.
+4. **API** — Closed-source Cloudflare Worker handling auth, stats, cosmetics, monetization. Not in this repo, and **not available to this fork** — features that depend on it (accounts, store, ranked, game archive/replays) do not work.
+
+Terminology: simple bots are called **Tribes** (`TribeExecution`); the smarter map-defined AI players are **Nations** (`NationExecution`, `src/core/execution/nation/`).
 
 ### Simulation Flow (Intent → Execution)
 
@@ -54,19 +62,21 @@ The game server only serves `index.html` and the WebSocket. All other assets (JS
 
 ## Key Files
 
-| File                        | Purpose                                |
-| --------------------------- | -------------------------------------- |
-| `src/core/Schemas.ts`       | All intent/message types (Zod schemas) |
-| `src/core/GameRunner.ts`    | Simulation orchestrator                |
-| `src/core/game/GameImpl.ts` | Game state implementation              |
-| `src/server/GameServer.ts`  | Main WebSocket server, game loop       |
-| `src/server/Master.ts`      | Lobby and game registry                |
-| `tests/util/Setup.ts`       | Test helper — creates test games       |
-| `docs/Architecture.md`      | Architecture overview                  |
-| `zbin/README.md`            | Binary wire format for zod schemas     |
-| `docs/Auth.md`              | JWT/auth flow                          |
-| `docs/API.md`               | Public API endpoints                   |
-| `vite.config.ts`            | Build config, CDN handling             |
+| File                               | Purpose                                |
+| ---------------------------------- | -------------------------------------- |
+| `docs/DarkStar-Design.md`          | DarkStar goals, rules, roadmap         |
+| `src/core/configuration/Config.ts` | All game balance constants/formulas    |
+| `src/core/Schemas.ts`              | All intent/message types (Zod schemas) |
+| `src/core/GameRunner.ts`           | Simulation orchestrator                |
+| `src/core/game/GameImpl.ts`        | Game state implementation              |
+| `src/server/GameServer.ts`         | Main WebSocket server, game loop       |
+| `src/server/Master.ts`             | Lobby and game registry                |
+| `tests/util/Setup.ts`              | Test helper — creates test games       |
+| `docs/Architecture.md`             | Architecture overview                  |
+| `zbin/README.md`                   | Binary wire format for zod schemas     |
+| `docs/Auth.md`                     | JWT/auth flow                          |
+| `docs/API.md`                      | Public API endpoints                   |
+| `vite.config.ts`                   | Build config, CDN handling             |
 
 ## UI Text / i18n
 
@@ -79,7 +89,7 @@ Tests use a `setup()` helper from `tests/util/Setup.ts` that creates a full game
 ## Tech Stack
 
 - **Bundler:** Vite + TypeScript 5.7
-- **Rendering:** Pixi.js (WebGL)
+- **Rendering:** Custom WebGL2 renderer (GLSL passes, no framework)
 - **UI Components:** Lit (LitElement) + Tailwind CSS 4
 - **Audio:** Howler.js
 - **Schemas/Validation:** Zod
