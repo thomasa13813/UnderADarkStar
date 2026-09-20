@@ -925,6 +925,13 @@ export interface Game extends GameMap {
   hegemon(): Player | null;
   // Whoever eliminated the Hegemon, once it has fallen.
   hegemonSlayer(): Player | null;
+  // The invasion slot (H6, H12): the one challenger holding domain tiles.
+  darkStarInvader(): Player | null;
+  domainTilesHeldBy(player: Player): number;
+  lastInvaderGainTick(): number;
+  canInvadeDarkStar(player: Player): boolean;
+  // Ticks until an evicted invader may invade again; 0 if free to.
+  invasionCooldownTicks(player: Player): number;
   miniWaterHPA(): PathFinder<number> | null;
   miniWaterGraph(): AbstractGraph | null;
   getWaterComponent(tile: TileRef): number | null;

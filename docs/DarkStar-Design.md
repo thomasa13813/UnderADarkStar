@@ -343,8 +343,9 @@ it on). With it off the sim is bit-identical to before: no extra player, no PRNG
   authored** (`setHegemonMapLandTiles`, set by `GameImpl` and by `GameView`); branches in `maxTroops`,
   `troopIncreaseRate`, `goldAdditionRate`. Troop bleed: `AttackExecution.attackLogicInput` costs a
   Hegemon defender as holding `domainTileCount` tiles.
-- **Fortress [Decided 2026-09-20 — Tom playtested the pacing; values still tunable]:** taking a domain tile _from the Hegemon_ costs the attacker
-  `domainAttackerLossPercent` (500) and goes `domainConquestSlowPercent` (1000) slower — the engine's
+- **Fortress [Decided 2026-09-20; values tunable — 500/1000 felt slow to Tom once playtested, now 300/300
+  alongside the counter-attack]:** taking a domain tile _from the Hegemon_ costs the attacker
+  `domainAttackerLossPercent` (300) and goes `domainConquestSlowPercent` (300) slower — the engine's
   defense-post idea applied to the whole domain (`AttackLogicInput.hegemonDomain`). The Hegemon retaking
   its own tiles meets no such resistance. Why: in this engine troops only make each tile costly, so the
   domain's _tiles_ ran out long before the Hegemon's _troops_ — measured on the World map, a full-strength
@@ -360,6 +361,33 @@ it on). With it off the sim is bit-identical to before: no extra player, no PRNG
   domain tiles, no alliance requests to or from the Hegemon, a Hegemon cannot re-spawn.
 - **Engine gotcha:** an execution added from another execution's `init()` is silently dropped — add from
   `tick()`.
+
+### 6.2 As built — invasion slot and counter-attack (2026-09-20)
+
+- **The slot is occupancy (H6, H12).** `GameImpl` counts domain tiles held by anyone but the Hegemon
+  (`conquer`/`relinquish` → `domainTileChanged`); whoever is in that map is `darkStarInvader()`.
+  `canInvadeDarkStar(player)`: nobody holds the slot (or the player does) and the player's cooldown has
+  run out. Losing the last domain tile is eviction and starts the 5-minute cooldown
+  (`invasionCooldownTicks`). The gate sits in `canBuildTransportShip` (so the UI and the AI never offer
+  the boat) and in `TransportShipExecution`: launch is refused with a message, and a fleet already under
+  way **turns back the moment someone else lands**, comes home with no retreat losses, and burns no
+  cooldown. Land attacks need no gate: the moat means only the invader borders the Hegemon.
+- **The Dark Star's response (H13), in `HegemonExecution`.** [Decided 2026-09-20] An **AI** Hegemon answers
+  a landing **at once**: a wave of `responseWavePercent` (20%) of its troops, repeated every
+  `responseWaveSeconds` (10 s) while the invader holds domain tiles; a human Hegemon runs its own
+  defence. For **any** Hegemon, once the invasion has **stalled** (no domain tile gained for
+  `invasionStallSeconds`, 5 s — `lastInvaderGainTick()`), a wave is forced and from then on the Hegemon's
+  troops are pinned: everything it gains (regeneration, donations, returning troops) is sent after the
+  invader once a second. [Decided — F2] If the invader **advances again the forced routing switches
+  off** until the next stall; troops already committed stay in the fight. Opposing attacks cancel troop
+  for troop in this engine, so the counter-attack spends the Hegemon's army directly against the
+  invader's — this is what makes its troop pool matter.
+- **Measured (World, AI-only, 300/300):** one invader only; the front moves both ways for ~4 minutes; the
+  Hegemon spends 6.2M → ~2.2M troops and falls at ~18:10. On Milky Way the AI never invades and the
+  Hegemon wins on the timer.
+- **Still missing:** HUD for the slot/stall/cooldown (F2, M2); the invader gains nothing from domain tiles
+  (H5); an all-in last stand (the Hegemon still dies with ~2M troops unspent, since waves are a share of
+  what is left); AI nations rarely invade before minute ~13.
 
 ## 7. Constraints (non-negotiable engineering rules)
 
@@ -410,7 +438,7 @@ these before any public release.
 | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
 | 1     | **The throne exists:** `hegemon` config + `isHegemon` flag, disc/moat terrain, seated passive AI Hegemon, fixed map-scaled strength, troop bleed, win rules R1–R5, cheap guards (no mop-up/cluster capture/nuke damage on the domain, no alliances). | **Built 2026-09-20** |
 | 2     | **Invasion economics:** the invader gains nothing from domain tiles (H5); units standing on the domain survive nukes too (rest of H7).                                                                                                               |                      |
-| 3     | **Single-invader slot:** claimed on landing, held while any domain tile is held, inbound transports turn back, 5-minute cooldown from eviction (H6, H12).                                                                                            |                      |
+| 3 ✔   | **Single-invader slot:** claimed on landing, held while any domain tile is held, inbound transports turn back, 5-minute cooldown from eviction (H6, H12).                                                                                            |                      |
 | 4     | **The Dark Star fights back, razing, diplomacy:** stall detector and forced counter-attack (H13), raze mode (H8), open donations (H9).                                                                                                               |                      |
 | 5     | **AI Hegemon + calibration:** punitive strikes (H11), Nations/Tribes treat the Hegemon as the objective, headless F1 calibration, private-lobby toggle.                                                                                              |                      |
 
@@ -471,3 +499,7 @@ settled by playtesting.
   first-tick performance all good. Fixed: large-domain maps (Europe, Milky Way; ~70k+ domain tiles) failed to
   launch in the browser — a `push(...domainTiles)` spread overflowed the Web Worker's stack (Node's is larger,
   so tests and the headless sim never saw it).
+- **2026-09-20** — Invasion slot (H6, H12) and the Dark Star's counter-attack (H13) built, ahead of the
+  documented slice 2 (§6.2). Decided: an AI Hegemon counter-attacks on landing, H13's forced routing applies
+  to any Hegemon on stall, and it switches off if the invader advances again (F2). Fortress multipliers
+  lowered to 300/300 (500/1000 felt slow in play).

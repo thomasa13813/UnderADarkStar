@@ -18,6 +18,11 @@ export function canBuildTransportShip(
     return false;
   }
 
+  // One invader at a time on the Dark Star (H6).
+  if (game.isInDarkStar(dst) && !game.canInvadeDarkStar(player)) {
+    return false;
+  }
+
   const other = game.owner(tile);
   if (other === player) {
     return false;

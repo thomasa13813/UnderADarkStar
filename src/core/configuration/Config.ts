@@ -285,14 +285,23 @@ const HEGEMON_DEFAULTS = {
   troopCeilingPercentOfWholeMapCap: 100,
   regenPercent: 100, // of the standard regeneration curve
   goldPerTickPer50kLandTiles: 100,
+  // The invasion slot (H6, H12) and the Dark Star's response (H13).
+  invasionCooldownSeconds: 5 * 60, // from eviction, before invading again
+  invasionStallSeconds: 5, // no tile gained for this long = stalled
+  // An AI Hegemon answers an invader with a wave of this share of its troops,
+  // repeated at this interval for as long as the invader holds domain tiles.
+  // The same wave is forced on ANY Hegemon the moment an invasion stalls.
+  responseWavePercent: 20,
+  responseWaveSeconds: 10,
   // The Dark Star is a fortress: taking a domain tile FROM THE HEGEMON costs the
   // attacker this much more and goes this much slower (100 = no change). Without
   // it the domain's tiles run out long before the Hegemon's troops do: measured
-  // with tests/perf/fullgame/HegemonSim.ts, a full-strength Hegemon lost its
-  // whole domain in ~40s with over half its army unspent.
-  // At 500/1000 (World map, AI-only) an invasion is a fight of several minutes.
-  domainAttackerLossPercent: 500,
-  domainConquestSlowPercent: 1000,
+  // with tests/perf/fullgame/HegemonSim.ts, a full-strength passive Hegemon lost
+  // its whole domain in ~40s with over half its army unspent. At 300/300, with
+  // the counter-attack above, an AI invasion on the World map is a contested
+  // fight of about four minutes.
+  domainAttackerLossPercent: 300,
+  domainConquestSlowPercent: 300,
 };
 
 export class Config {

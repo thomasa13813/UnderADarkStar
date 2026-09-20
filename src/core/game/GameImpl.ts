@@ -130,6 +130,11 @@ export class GameImpl implements Game {
   private _darkStar: DarkStarGeometry | null = null;
   private _hegemon: Player | null = null;
   private _hegemonSlayer: Player | null = null;
+  // Domain tiles held by anyone but the Hegemon. Occupancy IS the invasion
+  // slot (H6): whoever is in here is the invader.
+  private _domainTilesHeld = new Map<Player, number>();
+  private _invasionCooldownUntil = new Map<PlayerID, number>();
+  private _lastInvaderGainTick = 0;
   // The Dark Star is carved during construction, but clients load the pristine
   // map and only learn of changes through tile updates, which the first tick
   // would otherwise discard. Held here until then.
@@ -253,6 +258,62 @@ export class GameImpl implements Game {
 
   hegemonSlayer(): Player | null {
     return this._hegemonSlayer;
+  }
+
+  darkStarInvader(): Player | null {
+    for (const player of this._domainTilesHeld.keys()) return player;
+    return null;
+  }
+
+  // When the invader last took a domain tile: an invasion that has gone
+  // without for long enough is stalled (H13).
+  lastInvaderGainTick(): number {
+    return this._lastInvaderGainTick;
+  }
+
+  domainTilesHeldBy(player: Player): number {
+    return this._domainTilesHeld.get(player) ?? 0;
+  }
+
+  invasionCooldownTicks(player: Player): number {
+    const until = this._invasionCooldownUntil.get(player.id()) ?? 0;
+    return Math.max(0, until - this._ticks);
+  }
+
+  // Only the Hegemon and one invader may ever occupy the Dark Star (H6). The
+  // slot belongs to whoever holds a domain tile, and an evicted invader must
+  // wait out a cooldown (H12).
+  canInvadeDarkStar(player: Player): boolean {
+    if (this._darkStar === null || player.isHegemon()) return false;
+    const invader = this.darkStarInvader();
+    if (invader !== null) return invader === player;
+    return this.invasionCooldownTicks(player) === 0;
+  }
+
+  private domainTileChanged(
+    tile: TileRef,
+    from: Player | TerraNullius,
+    to: Player | null,
+  ) {
+    if (this._darkStar === null || !this.isInDarkStar(tile)) return;
+    if (from.isPlayer() && !from.isHegemon()) {
+      const left = (this._domainTilesHeld.get(from) ?? 0) - 1;
+      if (left > 0) {
+        this._domainTilesHeld.set(from, left);
+      } else {
+        // Evicted: the cooldown starts now (H12).
+        this._domainTilesHeld.delete(from);
+        this._invasionCooldownUntil.set(
+          from.id(),
+          this._ticks +
+            this._config.hegemonConfig().invasionCooldownSeconds * 10,
+        );
+      }
+    }
+    if (to !== null && !to.isHegemon()) {
+      this._lastInvaderGainTick = this._ticks;
+      this._domainTilesHeld.set(to, (this._domainTilesHeld.get(to) ?? 0) + 1);
+    }
   }
 
   private populateTeams() {
@@ -875,6 +936,7 @@ export class GameImpl implements Game {
       throw Error(`cannot conquer impassable terrain`);
     }
     const previousOwner = this.owner(tile) as TerraNullius | PlayerImpl;
+    this.domainTileChanged(tile, previousOwner, owner);
     if (previousOwner.isPlayer()) {
       previousOwner._lastTileChange = this._ticks;
       previousOwner._tileChangeVersion++;
@@ -900,6 +962,7 @@ export class GameImpl implements Game {
     }
 
     const previousOwner = this.owner(tile) as PlayerImpl;
+    this.domainTileChanged(tile, previousOwner, null);
     previousOwner._lastTileChange = this._ticks;
     previousOwner._tileChangeVersion++;
     previousOwner._tiles.delete(tile);

@@ -34,6 +34,8 @@ export class TransportShipExecution implements Execution {
   private dst: TileRef | null;
   private src: TileRef | null;
   private retreatDst: TileRef | false | null = null;
+  // Turned back from the Dark Star because someone else landed first (H12).
+  private turnedBack = false;
   private boat: Unit;
   private motionPlanId = 1;
   private motionPlanDst: TileRef | null = null;
@@ -112,6 +114,31 @@ export class TransportShipExecution implements Execution {
       console.warn(
         `${this.attacker} cannot send ship to ${this.target}, cannot find target tile`,
       );
+      this.active = false;
+      return;
+    }
+
+    if (
+      mg.isInDarkStar(this.dst) &&
+      !this.attacker.isHegemon() &&
+      !mg.canInvadeDarkStar(this.attacker)
+    ) {
+      const cooldown = mg.invasionCooldownTicks(this.attacker);
+      if (mg.darkStarInvader() === null && cooldown > 0) {
+        mg.displayMessage(
+          "events_display.dark_star_cooldown",
+          MessageType.ATTACK_FAILED,
+          this.attacker.id(),
+          undefined,
+          { seconds: Math.ceil(cooldown / 10) },
+        );
+      } else {
+        mg.displayMessage(
+          "events_display.dark_star_occupied",
+          MessageType.ATTACK_FAILED,
+          this.attacker.id(),
+        );
+      }
       this.active = false;
       return;
     }
@@ -210,6 +237,26 @@ export class TransportShipExecution implements Execution {
       this.retreatDst = null;
     }
 
+    // Bound for the Dark Star when someone else claimed the slot: the attack
+    // is no longer valid, so turn around at once (H12). The troops come home
+    // whole, and no cooldown is burnt.
+    if (
+      !this.boat.transportShipState().isRetreating &&
+      this.dst !== null &&
+      this.mg.isInDarkStar(this.dst) &&
+      !this.attacker.isHegemon() &&
+      !this.mg.canInvadeDarkStar(this.attacker)
+    ) {
+      this.boat.updateTransportShipState({ isRetreating: true });
+      this.retreatDst = null;
+      this.turnedBack = true;
+      this.mg.displayMessage(
+        "events_display.dark_star_turned_back",
+        MessageType.ATTACK_CANCELLED,
+        this.attacker.id(),
+      );
+    }
+
     if (this.boat.transportShipState().isRetreating) {
       // Resolve retreat destination once, based on current boat location when retreat begins.
       this.retreatDst ??= this.attacker.bestTransportShipSpawn(
@@ -237,7 +284,9 @@ export class TransportShipExecution implements Execution {
     switch (result.status) {
       case PathStatus.COMPLETE:
         if (this.mg.owner(this.dst) === this.attacker) {
-          const deaths = this.boat.troops() * (malusForRetreat / 100);
+          const deaths = this.turnedBack
+            ? 0
+            : this.boat.troops() * (malusForRetreat / 100);
           const survivors = this.boat.troops() - deaths;
           this.attacker.addTroops(survivors);
           this.boat.delete(false);
