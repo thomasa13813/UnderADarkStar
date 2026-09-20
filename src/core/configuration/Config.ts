@@ -101,6 +101,8 @@ export interface AttackLogicInput {
   } | null;
   /** A defense post owned by the defender is in range of the tile. */
   defenderHasDefensePost: boolean;
+  /** The tile is a Dark Star tile held by the Hegemon (hegemon mode). */
+  hegemonDomain?: boolean;
   /** Fraction of land tiles with fallout, or null if the tile has no fallout. */
   falloutRatio: number | null;
   /** Tiles on the attack front this tick (plus jitter); fixed for the tick. */
@@ -283,6 +285,14 @@ const HEGEMON_DEFAULTS = {
   troopCeilingPercentOfWholeMapCap: 100,
   regenPercent: 100, // of the standard regeneration curve
   goldPerTickPer50kLandTiles: 100,
+  // The Dark Star is a fortress: taking a domain tile FROM THE HEGEMON costs the
+  // attacker this much more and goes this much slower (100 = no change). Without
+  // it the domain's tiles run out long before the Hegemon's troops do: measured
+  // with tests/perf/fullgame/HegemonSim.ts, a full-strength Hegemon lost its
+  // whole domain in ~40s with over half its army unspent.
+  // At 500/1000 (World map, AI-only) an invasion is a fight of several minutes.
+  domainAttackerLossPercent: 500,
+  domainConquestSlowPercent: 1000,
 };
 
 export class Config {
@@ -944,6 +954,12 @@ export class Config {
       const fallout = this.falloutDefenseModifier(input.falloutRatio);
       mag *= fallout;
       tileCost *= fallout;
+    }
+
+    if (defender !== null && input.hegemonDomain === true) {
+      const h = this.hegemonConfig();
+      mag = (mag * h.domainAttackerLossPercent) / 100;
+      tileCost = (tileCost * h.domainConquestSlowPercent) / 100;
     }
 
     if (defender === null) {

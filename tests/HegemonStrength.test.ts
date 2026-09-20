@@ -1,4 +1,4 @@
-import { AttackLogicInput } from "../src/core/configuration/Config";
+import { AttackLogicInput, Config } from "../src/core/configuration/Config";
 import { AttackExecution } from "../src/core/execution/AttackExecution";
 import { HegemonExecution } from "../src/core/execution/HegemonExecution";
 import { Game, Player, PlayerInfo, PlayerType } from "../src/core/game/Game";
@@ -7,8 +7,10 @@ import { TestConfig } from "./util/TestConfig";
 import { executeTicks } from "./util/utils";
 
 const seenDefenderTiles: number[] = [];
+const seenInputs: AttackLogicInput[] = [];
 class RecordingConfig extends TestConfig {
   attackLogic(input: AttackLogicInput) {
+    seenInputs.push(input);
     if (input.defender !== null)
       seenDefenderTiles.push(input.defender.numTiles);
     return super.attackLogic(input);
@@ -25,6 +27,7 @@ const BIG_PLAINS_LAND = 40_000;
 describe("Hegemon strength", () => {
   beforeEach(async () => {
     seenDefenderTiles.length = 0;
+    seenInputs.length = 0;
     game = await setup(
       "big_plains",
       { hegemon: { enabled: true } },
@@ -99,5 +102,42 @@ describe("Hegemon strength", () => {
     for (const numTiles of seenDefenderTiles) {
       expect(numTiles).toBe(g.domainTileCount);
     }
+  });
+
+  test("the Dark Star is a fortress, but only while the Hegemon holds it", () => {
+    const g = game.darkStar()!;
+    for (const tile of Array.from(hegemon.tiles())) {
+      if (game.x(tile) > g.cx) invader.conquer(tile);
+    }
+    invader.setTroops(1_000_000);
+    game.addExecution(new AttackExecution(10_000, invader, hegemon.id()));
+    executeTicks(game, 5);
+    expect(seenInputs.length).toBeGreaterThan(0);
+    expect(seenInputs.every((i) => i.hegemonDomain === true)).toBe(true);
+    const input = seenInputs[0];
+
+    // The Hegemon retaking its own tiles meets no such resistance.
+    seenInputs.length = 0;
+    game.addExecution(new AttackExecution(10_000, hegemon, invader.id()));
+    executeTicks(game, 5);
+    const retaking = seenInputs.filter(
+      (i) => i.defender?.type === PlayerType.Human,
+    );
+    expect(retaking.length).toBeGreaterThan(0);
+    expect(retaking.every((i) => i.hegemonDomain === false)).toBe(true);
+
+    // The multipliers themselves, through the real combat formula.
+    const cfg = game.config().hegemonConfig();
+    const real = (i: AttackLogicInput) =>
+      Config.prototype.attackLogic.call(game.config(), i);
+    const plain = real({ ...input, hegemonDomain: false });
+    const fortress = real({ ...input, hegemonDomain: true });
+    expect(fortress.attackerTroopLoss).toBeCloseTo(
+      (plain.attackerTroopLoss * cfg.domainAttackerLossPercent) / 100,
+    );
+    expect(fortress.tickFraction).toBeCloseTo(
+      (plain.tickFraction * cfg.domainConquestSlowPercent) / 100,
+    );
+    expect(fortress.defenderTroopLoss).toBe(plain.defenderTroopLoss);
   });
 });

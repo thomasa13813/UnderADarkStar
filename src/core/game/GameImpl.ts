@@ -229,7 +229,11 @@ export class GameImpl implements Game {
     hegemon.setSpawnTile(this.ref(darkStar.cx, darkStar.cy));
     hegemon.setTroops(this._config.hegemonMaxTroops());
     this._hegemon = hegemon;
-    this._initialTileUpdates!.push(...domainTiles);
+    // Not push(...domainTiles): tens of thousands of spread arguments overflow
+    // the stack of the Web Worker the sim runs in.
+    for (const tile of domainTiles) {
+      this._initialTileUpdates!.push(tile);
+    }
   }
 
   darkStar(): DarkStarGeometry | null {
