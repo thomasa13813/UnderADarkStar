@@ -310,8 +310,8 @@ const HEGEMON_DEFAULTS = {
   // An AI Hegemon's punitive strikes (H11, "leveller"): once its troops have
   // sat at this share of the ceiling for long enough and nobody is invading,
   // it strikes the challenger with the largest troop capacity, provided they
-  // are a real threat (capacity as a share of the Hegemon's ceiling). The strike is recalled once the
-  // target's capacity has fallen to punitiveRecallPercentOfRival of the next
+  // are a real threat (capacity as a share of the Hegemon's ceiling). The
+  // strike is recalled once the target's capacity has fallen to punitiveRecallPercentOfRival of the next
   // strongest challenger's, and the next strike waits out the cooldown.
   punitiveFullPercent: 95,
   punitiveFullSeconds: 60,
@@ -319,6 +319,15 @@ const HEGEMON_DEFAULTS = {
   punitiveStrikePercent: 25,
   punitiveRecallPercentOfRival: 85,
   punitiveCooldownSeconds: 90,
+  // AI challengers (Nations) treat the throne as the objective
+  // (NationHegemonBehavior). A nation invades once its troops reach this share
+  // of the Hegemon's CURRENT troops; the bar falls linearly over the round, so
+  // they grow bolder as the timer runs down. It sends this share of its army,
+  // and while it holds the slot pushes on with everything above its reserve.
+  aiInvadeTroopPercentAtStart: 100,
+  aiInvadeTroopPercentAtEnd: 50,
+  aiInvasionSendPercent: 70,
+  aiInvasionReservePercent: 20, // of its own troop capacity, kept at home
 };
 
 export class Config {

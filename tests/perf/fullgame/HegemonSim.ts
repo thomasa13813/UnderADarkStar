@@ -154,6 +154,12 @@ async function main(): Promise<void> {
     "min | heg troops | heg tiles | invaders | strongest challenger (troops, tiles) | all challengers' troops",
   );
 
+  // Round summary: every landing (a new holder of the invasion slot), and how
+  // close the Dark Star came to falling.
+  const landings: string[] = [];
+  let lastInvader: Player | null = null;
+  let lowestTiles = g.domainTileCount;
+  let lowestTroops = hegemon.troops();
   let turn = 0;
   let startTurn: number | null = null;
   let strike: {
@@ -171,6 +177,14 @@ async function main(): Promise<void> {
     if (game.inSpawnPhase()) continue;
     startTurn ??= turn;
     const elapsed = turn - startTurn;
+
+    const invader = game.darkStarInvader();
+    if (invader !== null && invader !== lastInvader) {
+      landings.push(`${invader.name()}@${(elapsed / 600).toFixed(1)}`);
+    }
+    lastInvader = invader;
+    lowestTiles = Math.min(lowestTiles, hegemon.numTilesOwned());
+    lowestTroops = Math.min(lowestTroops, hegemon.troops());
 
     // Raze strikes (H8/H11): logged as they land and as they end.
     const razing = hegemon
@@ -229,6 +243,10 @@ async function main(): Promise<void> {
   }
 
   if (fatal !== undefined) throw new Error(fatal);
+  log(
+    `Summary: ${landings.length} landings [${landings.join(", ")}]; domain low ` +
+      `${Math.round((lowestTiles * 100) / g.domainTileCount)}%, Hegemon troops low ${k(lowestTroops)}`,
+  );
   const seconds = Math.round((turn - (startTurn ?? turn)) / 10);
   log(
     `Round over after ${Math.floor(seconds / 60)}m${seconds % 60}s: winner ${JSON.stringify(win!.winner)}` +
