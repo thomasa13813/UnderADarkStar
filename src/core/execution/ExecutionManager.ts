@@ -21,6 +21,7 @@ import { NationExecution } from "./NationExecution";
 import { NoOpExecution } from "./NoOpExecution";
 import { PauseExecution } from "./PauseExecution";
 import { QuickChatExecution } from "./QuickChatExecution";
+import { RazeExecution } from "./RazeExecution";
 import { RetreatExecution } from "./RetreatExecution";
 import { SpawnExecution } from "./SpawnExecution";
 import { TargetPlayerExecution } from "./TargetPlayerExecution";
@@ -81,6 +82,11 @@ export class Executor {
           true,
         );
       case "boat":
+        // The Hegemon sends no fleets: aimed beyond the Dark Star, its "boat"
+        // is a raze strike on that tile (H8).
+        if (player.isHegemon() && !this.mg.isInDarkStar(intent.dst)) {
+          return new RazeExecution(player, intent.dst, intent.troops);
+        }
         return new TransportShipExecution(player, intent.dst, intent.troops);
       case "allianceRequest":
         return new AllianceRequestExecution(player, intent.recipient);

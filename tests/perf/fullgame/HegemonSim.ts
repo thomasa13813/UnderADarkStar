@@ -22,6 +22,8 @@ import {
   GameMapType,
   GameMode,
   GameType,
+  Player,
+  UnitType,
 } from "../../../src/core/game/Game";
 import { createGame } from "../../../src/core/game/GameImpl";
 import { GameUpdateType, WinUpdate } from "../../../src/core/game/GameUpdates";
@@ -154,12 +156,50 @@ async function main(): Promise<void> {
 
   let turn = 0;
   let startTurn: number | null = null;
+  let strike: {
+    target: Player;
+    tiles: number;
+    troops: number;
+    cities: number;
+    sent: number;
+    left: number;
+    start: number;
+  } | null = null;
   while (win === undefined && fatal === undefined) {
     runner.addTurn({ turnNumber: turn++, intents: [] });
     runner.executeNextTick();
     if (game.inSpawnPhase()) continue;
     startTurn ??= turn;
     const elapsed = turn - startTurn;
+
+    // Raze strikes (H8/H11): logged as they land and as they end.
+    const razing = hegemon
+      .outgoingAttacks()
+      .find((a) => a.sourceTile() !== null);
+    if (razing !== undefined && strike === null) {
+      const target = razing.target() as Player;
+      strike = {
+        target,
+        tiles: target.numTilesOwned(),
+        troops: target.troops(),
+        cities: target.units(UnitType.City).length,
+        sent: razing.troops(),
+        left: razing.troops(),
+        start: elapsed,
+      };
+    } else if (razing !== undefined && strike !== null) {
+      strike.left = razing.troops();
+    } else if (razing === undefined && strike !== null) {
+      const t = strike.target;
+      log(
+        `      strike @${(strike.start / 600).toFixed(2)} on ${t.name()}: sent ${k(strike.sent)}, ` +
+          `${((elapsed - strike.start) / 10).toFixed(0)}s, ~${k(strike.left)} left at the end; ` +
+          `target tiles ${strike.tiles} -> ${t.numTilesOwned()}, troops ${k(strike.troops)} -> ${k(t.troops())}, ` +
+          `cities ${strike.cities} -> ${t.units(UnitType.City).length}`,
+      );
+      strike = null;
+    }
+
     // Once a minute, and every 5 seconds while the Dark Star is under attack.
     const underAttack = hegemon.numTilesOwned() < g.domainTileCount;
     if (elapsed % (underAttack ? 50 : 600) !== 0) continue;

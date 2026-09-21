@@ -302,6 +302,23 @@ const HEGEMON_DEFAULTS = {
   // fight of about four minutes.
   domainAttackerLossPercent: 300,
   domainConquestSlowPercent: 300,
+  // Razing (H8): the Hegemon borders nobody, so a strike falls directly on the
+  // tile it is aimed at, after a flight time that grows with the distance from
+  // the Dark Star's centre.
+  razeTravelMinTicks: 30,
+  razeTravelTicksPer100Tiles: 10,
+  // An AI Hegemon's punitive strikes (H11, "leveller"): once its troops have
+  // sat at this share of the ceiling for long enough and nobody is invading,
+  // it strikes the challenger with the largest troop capacity, provided they
+  // are a real threat (capacity as a share of the Hegemon's ceiling). The strike is recalled once the
+  // target's capacity has fallen to punitiveRecallPercentOfRival of the next
+  // strongest challenger's, and the next strike waits out the cooldown.
+  punitiveFullPercent: 95,
+  punitiveFullSeconds: 60,
+  punitiveThreatPercentOfCeiling: 25,
+  punitiveStrikePercent: 25,
+  punitiveRecallPercentOfRival: 85,
+  punitiveCooldownSeconds: 90,
 };
 
 export class Config {

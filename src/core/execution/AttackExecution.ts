@@ -36,6 +36,7 @@ export class AttackExecution implements Execution {
   // Cached smallIDs for integer owner comparisons in hot loops.
   private ownerSmallID: number;
   private targetSmallID: number;
+  private ownerIsHegemon = false;
   // Reusable neighbor buffers to avoid closures/allocation in hot loops.
   private nbuf: TileRef[] = [0, 0, 0, 0];
   private nbuf2: TileRef[] = [0, 0, 0, 0];
@@ -75,6 +76,7 @@ export class AttackExecution implements Execution {
         : mg.player(this._targetID);
     this.ownerSmallID = this._owner.smallID();
     this.targetSmallID = this.target.smallID();
+    this.ownerIsHegemon = this._owner.isHegemon();
 
     if (this._owner === this.target) {
       console.error(`Player ${this._owner} cannot attack itself`);
@@ -157,7 +159,10 @@ export class AttackExecution implements Execution {
         outgoing !== this.attack &&
         outgoing.target() === this.attack.target() &&
         // Boat attacks (sourceTile is not null) are not combined with other attacks
-        this.attack.sourceTile() === null
+        this.attack.sourceTile() === null &&
+        // Nor is a Hegemon's raze strike (RazeExecution) absorbed into its
+        // defence of the Dark Star against the same player.
+        !(this._owner.isHegemon() && outgoing.sourceTile() !== null)
       ) {
         this.attack.setTroops(this.attack.troops() + outgoing.troops());
         outgoing.delete();
@@ -307,6 +312,11 @@ export class AttackExecution implements Execution {
         !this.map.isLand(tileToConquer) ||
         this.map.isImpassable(tileToConquer)
       ) {
+        continue;
+      }
+      // The Hegemon never owns land outside the Dark Star (H8); beyond it, it
+      // razes (RazeExecution).
+      if (this.ownerIsHegemon && !this.mg.isInDarkStar(tileToConquer)) {
         continue;
       }
       this.addNeighbors(tileToConquer);
