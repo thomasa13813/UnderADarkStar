@@ -307,6 +307,18 @@ const HEGEMON_DEFAULTS = {
   // the Dark Star's centre.
   razeTravelMinTicks: 30,
   razeTravelTicksPer100Tiles: 10,
+  // Razing is deliberately poor value for the Hegemon: each tile costs the
+  // strike this much more than an ordinary conquest and takes this much longer
+  // (100 = no change) — the fortress multipliers, turned against the throne.
+  razeAttackerLossPercent: 300,
+  razeSlowPercent: 300,
+  // Tyranny: a strike's troop cost is scaled by the target's share of the
+  // map's land (permille, Dark Star tiles not counted). No penalty at
+  // tyrannyFreePermille and above; the cost rises without limit towards
+  // tyrannyFloorPermille, at and below which a player cannot be struck at all.
+  // The Hegemon can therefore never eliminate a challenger.
+  tyrannyFloorPermille: 5,
+  tyrannyFreePermille: 30,
   // An AI Hegemon's punitive strikes (H11, "leveller"): once its troops have
   // sat at this share of the ceiling for long enough and nobody is invading,
   // it strikes the challenger with the largest troop capacity, provided they
@@ -436,6 +448,20 @@ export class Config {
           this.hegemonConfig().goldPerTickPer50kLandTiles) /
           50_000,
       ),
+    );
+  }
+  // Tyranny: what a raze strike's troop losses are multiplied by (percent)
+  // against a target holding this many tiles outside the Dark Star. null = too
+  // small to be struck at all.
+  hegemonTyrannyLossPercent(targetTiles: number): number | null {
+    const cfg = this.hegemonConfig();
+    const land = this.hegemonMapLandTiles();
+    const floorTiles = (land * cfg.tyrannyFloorPermille) / 1000;
+    const freeTiles = (land * cfg.tyrannyFreePermille) / 1000;
+    if (targetTiles <= floorTiles) return null;
+    if (targetTiles >= freeTiles) return 100;
+    return Math.floor(
+      (100 * (freeTiles - floorTiles)) / (targetTiles - floorTiles),
     );
   }
   spawnImmunityDuration(): Tick {

@@ -102,10 +102,11 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   tiles it has lost. It **may attack** challengers, but land it takes **reverts to neutral** ("razed").
   [Decided 2026-09-20] A raze is a **direct strike**: the Hegemon aims at any challenger tile and, after
   a flight time that grows with distance, the strike falls there and razes outward — no fleet, so it
-  reaches inland players and works where the moat is a landlocked lake. It pays the **normal attack
-  costs** from the Hegemon's fixed pool, runs until its troops are spent, the target has no land within
-  reach, or it is recalled (survivors come home), and it **can eliminate** a challenger. **Structures on
-  razed land are destroyed.**
+  reaches inland players and works where the moat is a landlocked lake. It pays for the land from the Hegemon's fixed pool — [Decided 2026-09-21] at a
+  **deliberately poor rate** (`razeAttackerLossPercent` / `razeSlowPercent`, 300/300: three times the
+  troops and three times the time of an ordinary conquest) — runs until its troops are spent, the target
+  has no land within reach, or it is recalled (survivors come home). It **can never eliminate** a
+  challenger (H16). **Structures on razed land are destroyed.** The target can fight it (H17).
 - **H9 — Diplomacy.** The Hegemon **cannot ally** with anyone. It **can donate** to any player, and any
   player can donate to it (H6). This needs a change to the engine, where donation currently requires
   the two players to be allied or team-mates (`canDonateGold` / `canDonateTroops` → `isFriendly`).
@@ -140,16 +141,36 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   whichever challenger is becoming dominant before they can make a bid for the throne (razing attacks,
   H8) and can prop up their rivals (donations, H9). It is the counterbalance to every upstart.
 
+- **H16 — Tyranny: the Hegemon cannot eliminate anyone.** [Decided 2026-09-21] A strike's troop cost is
+  multiplied by a **tyranny** penalty that depends only on the **target's share of the map's land**
+  (Dark Star tiles not counted; _not_ on its strength relative to the Hegemon). No penalty at
+  `tyrannyFreePermille` (3%) and above; below that the multiplier is
+  `(free − floor) ÷ (share − floor)`, rising without limit towards `tyrannyFloorPermille` (0.5%), at and
+  below which a player **cannot be struck at all** (the strike is refused, or goes home if it razed its
+  target down to the floor). Because the target shrinks as it is razed, every strike self-limits.
+  Bullying the weak is ruinous; only a real power can be struck efficiently. Tyranny applies to strikes
+  only: evicting an invader from the Dark Star is ordinary combat, so a player whose homeland is gone
+  can still die on the Dark Star.
+- **H17 — Strike counterplay: hold the line.** [Decided 2026-09-21] For `razeGraceSeconds` (**5 s**)
+  after it lands a strike cannot be opposed. After that the target may **commit troops to hold it** (an
+  attack order on the Hegemon while being struck — the HUD's **Defend** button): while any defenders
+  remain, **razing stops** and both sides grind down — the strike loses `razeHoldBurnPermille` (0.5%) of
+  its troops a tick, the defence a third of that (`razeDefenseKillPercent` 300: one defender is worth
+  three attackers). The defence can be reinforced; survivors go home when the strike ends; when the
+  defence is spent the razing resumes. **AI nations defend too**, committing up to half their army
+  (`aiStrikeDefensePercent`) and no more than it takes to destroy the strike; an AI Hegemon **recalls**
+  a strike that is held by enough defenders to destroy it.
+
 ### 3.3 Challengers
 
-- **C1 — Elimination is not the end.** A challenger who loses all territory **stays in the game** and
-  may **resettle unclaimed land** when some is available. Razing (H8, C2) keeps neutral land
-  reappearing through the round, so there is somewhere to come back to.
+- **C1 — Elimination is final.** [Decided 2026-09-21; replaces resettlement] A challenger who loses all
+  territory is out of the round: they may **spectate or leave** to find another game (the engine's
+  existing behaviour), and cannot re-deploy. In exchange, **only other challengers can eliminate a
+  challenger** — never the Hegemon (H16).
 - **C2 — Raids [Direction agreed, details open].** Challengers get an option to **raid** another player:
   an attack that razes territory back to neutral instead of claiming it.
 - **C3 — Launch from the core.** At round start all challengers visibly **launch from the Dark Star to
-  their starting territory** (an arc animation like the engine's nuke trajectories). Resettlement (C1)
-  can reuse the same presentation.
+  their starting territory** (an arc animation like the engine's nuke trajectories).
 
 ### 3.4 Setting and delivery
 
@@ -170,15 +191,15 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
 
 Tom expects more mechanics to emerge over time; this list is the current frontier, not the final one.
 **Nothing blocks M1:** F2 is down to presentation/tuning and F5 has proposed numbers to confirm on a
-test map. (F3, F4 and F10 were resolved on 2026-09-20 → H12–H14, S1.)
+test map. (F3, F4 and F10 were resolved on 2026-09-20 → H12–H14, S1; F7 was dropped on 2026-09-21 with
+resettlement — C1.)
 
 | #   | Question                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| F1  | **Calibrating Hegemon strength (H4).** Approach is decided; the numbers are not. [Proposed placeholders, in `HEGEMON_DEFAULTS`] troop ceiling = 100% of what ONE player owning every land tile of the map as authored could field (`2·(L^0.6·1000+50000)`; Milky Way ≈ 5.0M), regeneration = the standard curve against that ceiling, gold = 100/tick per 50k land tiles (Milky Way ≈ 886). To settle while building M1: what counts as "mid-round" (10 of 20 minutes?), which AI mix and difficulty the calibration games use, whether one curve over land-tile count fits all map sizes, and where in the 25–40% band to start. **Target [Decided 2026-09-20]:** roughly a third to a half of AI-only rounds end in an overthrow. First measurement (§6.5): 0/6 at ceiling 100%, 1/6 at 70%, 3/6 at 50%.                                                                                                                                                                                                                                                                                              |
+| F1  | **Calibrating Hegemon strength (H4).** Approach is decided; the numbers are not. [Proposed placeholders, in `HEGEMON_DEFAULTS`] troop ceiling = 100% of what ONE player owning every land tile of the map as authored could field (`2·(L^0.6·1000+50000)`; Milky Way ≈ 5.0M), regeneration = the standard curve against that ceiling, gold = 100/tick per 50k land tiles (Milky Way ≈ 886). To settle while building M1: what counts as "mid-round" (10 of 20 minutes?), which AI mix and difficulty the calibration games use, whether one curve over land-tile count fits all map sizes, and where in the 25–40% band to start. **Target [Decided 2026-09-20]:** roughly a third to a half of AI-only rounds end in an overthrow. First measurement (§6.5): 0/6 at ceiling 100%, 1/6 at 70%, 3/6 at 50%. **Superseded by §6.6:** with strike counterplay, 3/6 at ceiling 100% — re-measure after the last stand before changing the ceiling.                                                                                                                                                          |
 | F2  | **Invasion slot — presentation and tuning (H6, H12, H13).** Rules are settled. Remaining: how the slot, the invader, the stall state and each player's cooldown are shown to everyone (HUD indicator); whether the forced counter-attack switches off again if a stalled invader resumes advancing; and playtest tuning of the 5 s stall threshold and the 5 min cooldown.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | F5  | **Domain and moat dimensions (H1, H14).** Intent is decided (large legible disc; thin moat); numbers are not. Implemented as tunables in `HEGEMON_DEFAULTS` (`domainRadiusPermille: 90`, `moatWidthPermille: 10`, `moatMinTiles: 15` → Milky Way: radius 157, moat 17), centred on the map centre, **confirmed by Tom in play 2026-09-20 (name legible at full zoom-out, moat reads well)**; the `info.json` override is deferred to M2. [Proposed] Express both as fractions of the map's shorter side so they scale with any map: **domain radius ≈ 8–10%** (on a 2000-tile-wide map that is a disc ~350 tiles across, ~100k tiles — the engine sizes name labels to territory, so this reads clearly at full zoom-out) and **moat width ≈ 1%, minimum ~15 tiles**, tuned so a transport crosses in a few seconds. Confirm by building a test map and looking at it. Maps declare the centre in `info.json` (`hegemon: { center, radius }`) with a computed centre disc as fallback. Still open: what terrain the domain is, and how it is drawn (accretion-disc shader vs. ordinary territory fill). |
-| F6  | **Raids (C2).** The Hegemon's side is decided (H8: direct strike, normal costs, structures destroyed, can eliminate). Still open for challenger raids: what does a raid cost, and what stops raiding from being strictly better than conquering against a rival you can't hold ground from? Can a raid target the Hegemon's domain (presumably not — H6)? Measured caveat: a large AI resettles razed land almost at once, so a raze's lasting harm is the structures it destroys.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| F7  | **Resettlement (C1).** What does a returning player come back with (fresh starting troops? less each time?), is there a cooldown or a limit, where may they land, and what happens to their gold? Does the conqueror still get the engine's gold transfer on elimination? Engine impact: today "alive" means "owns tiles", and death deletes units, alliances and gold (`PlayerExecution.removeOnDeath`).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| F6  | **Raids (C2).** The Hegemon's side is decided (H8, H16, H17: direct strike at a poor rate, structures destroyed, cannot eliminate, can be held). Still open for challenger raids: what does a raid cost, and what stops raiding from being strictly better than conquering against a rival you can't hold ground from? Can a raid target the Hegemon's domain (presumably not — H6)? Measured caveat: a large AI resettles razed land almost at once, so a raze's lasting harm is the structures it destroys.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | F8  | **Nukes around the Dark Star (H7).** Domain tiles are immune but targetable: a nuke aimed at them lands and does nothing [Decided]. Still open: Can the Hegemon itself build silos and nuke challengers, and if so is that land razed or merely irradiated? Are SAMs/defense posts available to it?                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | F9  | **Donations (H6, H9).** Are donations open between _any_ two players now, or only to/from the Hegemon and to the current invader? Any limits to prevent a coalition funnelling everything into one super-invader — or is that the intended strategy?                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | F11 | **Hegemon toolkit (H15).** The role is decided — balance-of-power counterweight — and strikes cost normal troops, so spending the pool on strikes versus keeping it for defence **is** the core decision [Decided]. Still open: are razing and donations enough, or does the Hegemon need more (nukes — see F8; embargo-like edicts; visibility into challengers' strength)? Note that regeneration at the current F1 placeholder refills a 25% strike in under a minute, so the tension is weak until F1 is calibrated.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
@@ -321,9 +342,6 @@ Additional touch points implied by the 2026-09-20 rules:
 - **Open donations (H9):** relax the `isFriendly` check in `PlayerImpl.canDonateGold` /
   `canDonateTroops`; forbid Hegemon alliances in `AllianceRequestExecution`.
 - **Defensive warships (H10):** targeting in `WarshipExecution`.
-- **Resettlement (C1):** "alive" currently means "owns tiles" (`PlayerImpl.isAlive`), and
-  `PlayerExecution.removeOnDeath` wipes units/alliances/gold and deactivates the player. Needs a new
-  "exiled" state plus a re-spawn path through `SpawnExecution` outside the spawn phase.
 - **Launch opening (C3):** presentation only — `NukeTrajectoryPass` in `src/client/render/gl/passes/` is
   the visual precedent.
 
@@ -466,6 +484,44 @@ it on). With it off the sim is bit-identical to before: no extra player, no PRNG
   AI-only rounds end in an overthrow — so F1 lands near 50–60% of today's ceiling _for AI challengers_;
   humans will be stronger, and the last stand will pull the other way.
 
+### 6.6 As built — strike counterplay and tyranny (2026-09-21)
+
+- **Why.** Tom's playtest: strikes felt "punishing and effectively unstoppable". Checked in the running
+  game: the HUD's Retaliate button _did_ cancel a strike troop for troop, but it was a trap — a strike is
+  25% of the Hegemon's pool (1.56M, several times a challenger's army), razing cost it only ~35–100
+  troops a tile (3.4k tiles gone in 13 s, 70% of the strike went home), spending your army on the cancel
+  lowered your troop density and made the rest of the razing _cheaper_, and nothing on screen said a
+  strike could be fought at all.
+- **Cost and speed (H8).** `RazeExecution` scales `attackLogic`'s attacker loss by
+  `razeAttackerLossPercent` × tyranny and its tick cost by `razeSlowPercent`.
+- **Tyranny (H16).** `Config.hegemonTyrannyLossPercent(tiles)` (null = immune), from the map's land as
+  authored. Checked at launch (refused, with a message to the Hegemon) and before every tile (the strike
+  goes home at the floor). World ≈ 690k land tiles: floor ≈ 3.4k tiles, no penalty from ≈ 21k.
+- **Holding a strike (H17).** The `Attack` object carries `strikeGraceUntil()` (set when the strike
+  lands; null for every other attack) and `defenseTroops()`. **No wire change:** an `attack` order on the
+  Hegemon from a player it is striking (and who holds no Dark Star tile — the invader's orders are its
+  invasion) is turned into a defence commit in `AttackExecution.init`; during grace it is refused and the
+  troops stay home. Strikes are excluded from the engine's troop-for-troop cancelling. `RazeExecution.hold`
+  runs the grind; every way a strike can end returns the surviving defenders. `AttackUpdate` carries both
+  fields to the client (they are part of the attack-array diff).
+- **AI.** `NationHegemonBehavior.defendAgainstStrike` (before anything else it does that turn);
+  `HegemonExecution.punish` recalls a strike that `isDoomed()`. A struck nation also pours troops into
+  resettling razed land, which slower razing now gives it time to do.
+- **HUD.** A strike has its own purple row in `attacks-display` ("Dark Star strike", grace countdown, then
+  a pulsing **Defend** button that commits the attack-ratio share of your troops, capped at what would
+  destroy the strike; "held by N" while defended; click the row to jump to the front). On the map the
+  front's troop label reads "STRIKE n" (purple) or "HELD n" (green). The inbound warning now says the
+  strike can be held. `.claude/skills/run-openfront` now works on Windows (real GPU; the game refuses
+  software WebGL).
+- **Measured (`HegemonSim --set key=value,…` overrides any tunable; it now counts tiles actually razed).**
+  World, per round, 2 seeds: before — 49–70k tiles razed at 60–80 troops/tile. Defence alone (costs
+  100/100): 7–18k tiles. **300/300 (default): 4–9k tiles at ~200–850 troops/tile**, each strike 400–3,000
+  tiles and 1–3 cities. 500/300 and 1000/300 raze about the same (3–6k) — the grace window and the hold
+  dominate, not the price. 300/150: 3–12k.
+- **Side effect on F1.** A weaker leveller means stronger challengers: at the unchanged 100% ceiling
+  **3 of 6** AI-only rounds (World + Milky Way, 3 seeds) now end in an overthrow (was 0 of 6) — already
+  inside the target band, before the last stand.
+
 ## 7. Constraints (non-negotiable engineering rules)
 
 - `src/core/` must stay **deterministic** (seeded PRNG, no wall-clock, careful with floats) and
@@ -502,7 +558,7 @@ these before any public release.
 | Milestone | Goal                                                                                                                                                                                                                                                                                                                                             |
 | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **M1**    | Hegemon core in the sim, with tests: role flag, central domain (H1–H3), map-scaled strength decoupled from tiles (H4–H5), single-invader rule (H6–H7), razing attacks (H8), no alliances + open donations (H9), win logic (R1–R5). Playable in singleplayer against a basic AI Hegemon (H11) on an existing map. Built as the five slices below. |
-| **M1.5**  | Challenger systems: resettlement after elimination (C1), raids (C2), defensive-only Hegemon warships (H10).                                                                                                                                                                                                                                      |
+| **M1.5**  | Challenger systems: raids (C2), defensive-only Hegemon warships (H10).                                                                                                                                                                                                                                                                           |
 | **M2**    | First galaxy map authored around the Dark Star; HUD: Hegemon marker, invasion-slot indicator, round countdown, victory screens; launch-from-the-core opening (C3).                                                                                                                                                                               |
 | **M3**    | Succession: private-lobby hand-off through the successor-lobby flow; singleplayer throne persistence.                                                                                                                                                                                                                                            |
 | **M4**    | Sci-fi re-theme: strings, palette/theme JSON, atlases, names, audio.                                                                                                                                                                                                                                                                             |
@@ -517,9 +573,9 @@ these before any public release.
 | 2 ✔   | **Invasion economics:** the invader gains nothing from domain tiles (H5); units standing on the domain survive nukes too (rest of H7).                                                                                                               |                      |
 | 3 ✔   | **Single-invader slot:** claimed on landing, held while any domain tile is held, inbound transports turn back, 5-minute cooldown from eviction (H6, H12).                                                                                            |                      |
 | 4     | **The Dark Star fights back, razing, diplomacy:** stall detector and forced counter-attack (H13) ✔, raze mode (H8) ✔, open donations (H9).                                                                                                           | H9 outstanding       |
-| 5     | **AI Hegemon + calibration:** punitive strikes (H11) ✔, Nations treat the Hegemon as the objective ✔, all-in last stand, headless F1 calibration, private-lobby toggle.                                                                              | In progress          |
+| 5     | **AI Hegemon + calibration:** punitive strikes (H11) ✔, Nations treat the Hegemon as the objective ✔, strike counterplay + tyranny (H16, H17) ✔, all-in last stand, headless F1 calibration, private-lobby toggle.                                   | In progress          |
 
-Confirm F5 on a test map early in M1 (F1 is calibrated during it); F6–F7 before M1.5; the rest can be
+Confirm F5 on a test map early in M1 (F1 is calibrated during it); F6 before M1.5; the rest can be
 settled by playtesting.
 
 ## 10. Glossary
@@ -531,7 +587,8 @@ settled by playtesting.
 | **Dark Star / Domain**        | The central black-hole region: the Hegemon's territory, the only tiles it may ever own.    |
 | **Invader**                   | The single challenger currently allowed to attack the domain.                              |
 | **Raze / Raid**               | An attack that returns land to neutral instead of claiming it.                             |
-| **Resettle**                  | An eliminated challenger re-entering the round on unclaimed land.                          |
+| **Tyranny**                   | The cost penalty on striking a small player; at the floor they cannot be struck at all.    |
+| **Hold**                      | Troops a struck player commits to a strike: razing stops while they last.                  |
 | **Overthrow**                 | Eliminating the Hegemon (zero tiles).                                                      |
 | **Killing blow**              | The conquest that eliminates the Hegemon; its owner wins the round.                        |
 | **Round / Reign**             | One game / the consecutive rounds a player holds the throne.                               |
@@ -593,3 +650,11 @@ settled by playtesting.
   the round), and keep pushing while they hold the slot. Decided with Tom: Nations only (no Tribes),
   self-interested (no cooperation), and an F1 target of a third to a half of AI-only rounds ending in an
   overthrow. Measured: 0/6 at the placeholder ceiling, 3/6 at half of it.
+- **2026-09-21** — Strike counterplay and tyranny built (§6.6). Decided with Tom: **resettlement is dropped**
+  — elimination is final, players spectate or leave (C1 rewritten, F7 and the M1.5 item removed) — and in
+  exchange the **Hegemon can never eliminate a challenger**: a tyranny penalty on strikes scales with the
+  target's share of the map's land (free above 3%, immune at 0.5%) (H16). Strikes are uncounterable for
+  5 s, then the target can commit troops to a **sustained hold** that stops the razing and kills three
+  attackers per defender; AI nations defend too (H17). Razing made poor value for the Hegemon (300% cost,
+  300% slower) (H8). Measured: a round's razing falls from 49–70k tiles to 4–9k, and AI-only overthrows
+  rise from 0/6 to 3/6 at the unchanged ceiling (F1).

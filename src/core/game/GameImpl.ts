@@ -276,6 +276,19 @@ export class GameImpl implements Game {
     return this._domainTilesHeld.get(player) ?? 0;
   }
 
+  hegemonDomainTiles(): number {
+    if (this._darkStar === null) return 0;
+    let held = 0;
+    for (const n of this._domainTilesHeld.values()) held += n;
+    return this._darkStar.domainTileCount - held;
+  }
+
+  hegemonBubbleTiles(): number {
+    const hegemon = this.hegemon();
+    if (hegemon === null) return 0;
+    return hegemon.numTilesOwned() - this.hegemonDomainTiles();
+  }
+
   invasionCooldownUntil(player: Player): number {
     return this._invasionCooldownUntil.get(player.id()) ?? 0;
   }
@@ -964,6 +977,19 @@ export class GameImpl implements Game {
     this.updateBorders(tile);
     this._map.setFallout(tile, false);
     this.recordTileUpdate(tile);
+    // The throne falls with its last Dark Star tile (R2): a strike's bubble
+    // must not keep the Hegemon alive beyond it, and popping it here lets
+    // the conqueror's attack see the Hegemon dead and record the killing
+    // blow (handleDeadDefender → conquerPlayer).
+    if (
+      previousOwner.isPlayer() &&
+      previousOwner.isHegemon() &&
+      this.hegemonDomainTiles() === 0
+    ) {
+      for (const t of Array.from(previousOwner.tiles())) {
+        if (!this.isInDarkStar(t)) this.relinquish(t);
+      }
+    }
   }
 
   relinquish(tile: TileRef) {

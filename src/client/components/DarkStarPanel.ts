@@ -45,7 +45,15 @@ export class DarkStarPanel extends LitElement {
       maxTroops > 0 ? Math.min(100, (hegemon.troops() / maxTroops) * 100) : 0;
     const domainPct = Math.min(
       100,
-      Math.floor((hegemon.numTilesOwned() / darkStar.domainTileCount) * 100),
+      // Its land beyond the moat is a strike's bubble, not domain.
+      Math.floor(
+        ((darkStar.domainTileCount -
+          this.game
+            .players()
+            .reduce((held, p) => held + p.domainTilesHeld(), 0)) /
+          darkStar.domainTileCount) *
+          100,
+      ),
     );
 
     const me = this.game.myPlayer();

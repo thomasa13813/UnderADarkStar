@@ -26,6 +26,12 @@ bash .claude/skills/run-openfront/setup.sh
 Deps were installed with `npm run inst` (`npm ci --ignore-scripts`) — do
 not use `npm install`.
 
+**Windows:** skip `setup.sh`. Run `npm install --no-save --ignore-scripts
+playwright@<version whose Chromium revision matches %LOCALAPPDATA%\ms-playwright>`
+(1.55.1 ↔ chromium-1193). `launch()` then uses full Chromium with the real GPU
+(the game refuses software WebGL), so `rafIntervalMs` is unnecessary. Use a
+scratch directory instead of `/tmp`.
+
 ## Run the dev server
 
 ```bash

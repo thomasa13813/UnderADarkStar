@@ -33,10 +33,24 @@ export async function launch({ viewport, rafIntervalMs, args } = {}) {
       : libs;
     env.FONTCONFIG_FILE = path.join(CACHE, "fonts.conf");
   }
-  const browser = await chromium.launch({
-    args: ["--no-sandbox", "--disable-gpu", ...(args ?? [])],
-    env,
-  });
+  // Windows: the game refuses software WebGL (render/gl/initGL.ts), and the
+  // headless shell has no GPU. Full Chromium in new-headless mode gets a real
+  // D3D11 context, so no rafIntervalMs throttle is needed there either.
+  const browser =
+    process.platform === "win32"
+      ? await chromium.launch({
+          channel: "chromium",
+          args: [
+            "--enable-gpu",
+            "--ignore-gpu-blocklist",
+            "--use-angle=d3d11",
+            ...(args ?? []),
+          ],
+        })
+      : await chromium.launch({
+          args: ["--no-sandbox", "--disable-gpu", ...(args ?? [])],
+          env,
+        });
   const context = await browser.newContext({
     viewport: viewport ?? { width: 1400, height: 1000 },
   });

@@ -403,6 +403,10 @@ export interface Attack {
   clearBorder(): void;
   borderSize(): number;
   clusteredPositions(): TileRef[];
+  // A Hegemon's strike (RazeExecution): its troops defend the bubble of land
+  // it holds, and the target fights it by taking that land back.
+  isStrike(): boolean;
+  markStrike(): void;
 }
 
 export interface AllianceRequest {
@@ -762,6 +766,8 @@ export interface Player {
   // Attacking.
   canAttack(tile: TileRef): boolean;
   canAttackPlayer(player: Player, treatAFKFriendly?: boolean): boolean;
+  // A Hegemon's strike is razing this player's land (H17).
+  isStruckBy(hegemon: Player): boolean;
   isImmune(): boolean;
 
   createAttack(
@@ -930,6 +936,10 @@ export interface Game extends GameMap {
   // The invasion slot (H6, H12): the one challenger holding domain tiles.
   darkStarInvader(): Player | null;
   domainTilesHeldBy(player: Player): number;
+  // Dark Star tiles the Hegemon still holds, and its land beyond the moat —
+  // the bubbles of its strikes (H17).
+  hegemonDomainTiles(): number;
+  hegemonBubbleTiles(): number;
   lastInvaderGainTick(): number;
   invasionCooldownUntil(player: Player): number;
   // Set by HegemonExecution: the current invasion has stalled (H13).

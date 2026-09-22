@@ -8,6 +8,7 @@ export class AttackImpl implements Attack {
   private _borderSize = 0;
   public _retreating = false;
   public _retreated = false;
+  private _isStrike = false;
 
   constructor(
     private _id: string,
@@ -34,6 +35,13 @@ export class AttackImpl implements Attack {
   }
   setTroops(troops: number) {
     this._troops = Math.max(0, troops);
+  }
+
+  isStrike(): boolean {
+    return this._isStrike;
+  }
+  markStrike(): void {
+    this._isStrike = true;
   }
 
   isActive() {

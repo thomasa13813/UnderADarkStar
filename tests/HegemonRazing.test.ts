@@ -12,6 +12,7 @@ import {
 } from "../src/core/game/Game";
 import { TileRef } from "../src/core/game/GameMap";
 import { setup } from "./util/Setup";
+import { UseRealAttackLogic } from "./util/TestConfig";
 import { executeTicks } from "./util/utils";
 
 let game: Game;
@@ -48,7 +49,7 @@ function anyTile(player: Player): TileRef {
   return Array.from(player.tiles())[0];
 }
 
-async function start(hegemonType: PlayerType) {
+async function start(hegemonType: PlayerType, realCombat = false) {
   const humans = [
     new PlayerInfo("east", PlayerType.Human, "client1", "east"),
     new PlayerInfo("west", PlayerType.Human, "client2", "west"),
@@ -73,11 +74,15 @@ async function start(hegemonType: PlayerType) {
     "big_plains",
     { hegemon: { enabled: true }, disableNavMesh: false, instantBuild: true },
     humans,
+    undefined,
+    realCombat ? UseRealAttackLogic : undefined,
   );
   hegemon = game.hegemon()!;
   east = game.player("east");
   west = game.player("west");
-  settle(east, 1, 20, 100_000);
+  // East is large enough to be struck at no tyranny penalty (3% of the map's
+  // land); west is an ordinary small player.
+  settle(east, 1, 40, 100_000, 20);
   settle(west, -1, 20, 100_000);
   game.addExecution(new HegemonExecution());
   while (game.inSpawnPhase()) game.executeNextTick();
@@ -86,41 +91,83 @@ async function start(hegemonType: PlayerType) {
 describe("Razing (H8)", () => {
   beforeEach(() => start(PlayerType.Human));
 
-  test("a strike lands after its flight and razes the target's land to neutral", () => {
+  test("a strike lands after its flight, grows a bubble of Hegemon land, and pops it to neutral when it ends", () => {
     const tiles = east.numTilesOwned();
     const troops = hegemon.troops();
-    game.addExecution(new RazeExecution(hegemon, anyTile(east), 500_000));
+    const domain = game.darkStar()!.domainTileCount;
+    game.addExecution(new RazeExecution(hegemon, anyTile(east), 100_000));
     executeTicks(game, 5);
     // In flight: paid for (less a few ticks' regeneration), nothing hit yet.
-    expect(hegemon.troops()).toBeLessThan(troops - 450_000);
+    expect(hegemon.troops()).toBeLessThan(troops - 90_000);
     expect(east.numTilesOwned()).toBe(tiles);
 
-    executeTicks(game, 300);
-    expect(east.numTilesOwned()).toBeLessThan(tiles / 2);
-    // Razed, not conquered: the Hegemon never owns land beyond the Dark Star.
-    expect(hegemon.numTilesOwned()).toBe(game.darkStar()!.domainTileCount);
-    for (const tile of hegemon.tiles()) {
-      expect(game.isInDarkStar(tile)).toBe(true);
+    executeTicks(game, 100);
+    // The bubble: the Hegemon holds what it took, for now.
+    const bubble = game.hegemonBubbleTiles();
+    expect(bubble).toBeGreaterThan(50);
+    expect(hegemon.numTilesOwned()).toBe(domain + bubble);
+    expect(east.numTilesOwned()).toBe(tiles - bubble);
+    expect(game.hegemonDomainTiles()).toBe(domain);
+
+    // Spent: the bubble pops, and the Hegemon never keeps land beyond the
+    // Dark Star.
+    let ticks = 0;
+    while (hegemon.outgoingAttacks().length > 0 && ticks++ < 3000) {
+      game.executeNextTick();
     }
+    expect(hegemon.outgoingAttacks()).toHaveLength(0);
+    expect(game.hegemonBubbleTiles()).toBe(0);
+    expect(hegemon.numTilesOwned()).toBe(domain);
+    expect(east.numTilesOwned()).toBeLessThan(tiles - 50);
     expect(west.numTilesOwned()).toBeGreaterThan(0);
   });
 
-  test("it pays the normal price, and the survivors come home", () => {
-    game.addExecution(new RazeExecution(hegemon, anyTile(east), 2_000_000));
+  test("it never eliminates: razing stops at the tyranny floor and the survivors come home", () => {
+    game.addExecution(new RazeExecution(hegemon, anyTile(east), 5_000_000));
     executeTicks(game, 5);
     const afterLaunch = hegemon.troops();
-    executeTicks(game, 600);
-    // Enough to raze east entirely: east is out, the strike is over.
-    expect(east.numTilesOwned()).toBe(0);
+    executeTicks(game, 3000);
+    // More than enough to raze east entirely — but the smaller east gets, the
+    // more each tile costs, and at 0.5% of the map's land it is untouchable.
+    const floor =
+      (40_000 * game.config().hegemonConfig().tyrannyFloorPermille) / 1000;
+    expect(east.isAlive()).toBe(true);
+    expect(east.numTilesOwned()).toBe(floor);
     expect(hegemon.outgoingAttacks()).toHaveLength(0);
     const returned = hegemon.troops() - afterLaunch;
     expect(returned).toBeGreaterThan(0);
-    expect(returned).toBeLessThan(2_000_000);
+    expect(returned).toBeLessThan(5_000_000);
   });
 
-  test("structures on razed land are destroyed", () => {
+  test("a player at or below the tyranny floor cannot be struck at all", () => {
+    const small = game.addPlayer(
+      new PlayerInfo("small", PlayerType.Human, "client9", "small"),
+    );
+    settle(small, 1, 5, 10_000, 3);
+    // Beyond east's block, so it needs its own land: move it out of east's.
+    expect(small.numTilesOwned()).toBeGreaterThan(0);
+    expect(small.numTilesOwned()).toBeLessThan(200);
+    const troops = hegemon.troops();
+    game.addExecution(new RazeExecution(hegemon, anyTile(small), 500_000));
+    executeTicks(game, 100);
+    expect(hegemon.troops()).toBeGreaterThanOrEqual(troops);
+    expect(small.numTilesOwned()).toBeGreaterThan(0);
+  });
+
+  test("tyranny: the cost multiplier runs from 100% at the free share to unlimited at the floor", () => {
+    const config = game.config();
+    expect(config.hegemonTyrannyLossPercent(1200)).toBe(100);
+    expect(config.hegemonTyrannyLossPercent(40_000)).toBe(100);
+    expect(config.hegemonTyrannyLossPercent(700)).toBe(200);
+    expect(config.hegemonTyrannyLossPercent(210)).toBe(10_000);
+    expect(config.hegemonTyrannyLossPercent(200)).toBeNull();
+    expect(config.hegemonTyrannyLossPercent(0)).toBeNull();
+  });
+
+  test("structures in the bubble are captured, and die with it when it pops", () => {
     const city = anyTile(east);
-    // What a spawn registers; it is this that clears units off unowned land.
+    // What a spawn registers; it is this that clears units off unowned land
+    // and hands captured ones over.
     game.addExecution(new PlayerExecution(east));
     east.addGold(10_000_000n);
     game.addExecution(new ConstructionExecution(east, UnitType.City, city));
@@ -128,7 +175,13 @@ describe("Razing (H8)", () => {
     expect(east.units(UnitType.City)).toHaveLength(1);
 
     game.addExecution(new RazeExecution(hegemon, city, 2_000_000));
-    executeTicks(game, 600);
+    executeTicks(game, 40);
+    expect(east.units(UnitType.City)).toHaveLength(0);
+    expect(hegemon.units(UnitType.City)).toHaveLength(1);
+
+    executeTicks(game, 3000);
+    expect(hegemon.outgoingAttacks()).toHaveLength(0);
+    executeTicks(game, 2);
     expect(east.units(UnitType.City)).toHaveLength(0);
     expect(hegemon.units(UnitType.City)).toHaveLength(0);
     expect(west.units(UnitType.City)).toHaveLength(0);
@@ -156,11 +209,120 @@ describe("Razing (H8)", () => {
     expect(hegemon.outgoingAttacks()).toHaveLength(1);
 
     for (const tile of Array.from(hegemon.tiles())) {
-      if (game.x(tile) > g.cx + g.radius - 10) east.conquer(tile);
+      if (game.isInDarkStar(tile) && game.x(tile) > g.cx + g.radius - 10) {
+        east.conquer(tile);
+      }
     }
     game.addExecution(new AttackExecution(200_000, hegemon, east.id()));
     executeTicks(game, 2);
     expect(hegemon.outgoingAttacks()).toHaveLength(2);
+  });
+});
+
+// The engine's real combat maths: the test stub costs every tile one troop,
+// which makes any two opposing attacks swap a tile a tick forever.
+describe("Strike counterplay (H17)", () => {
+  beforeEach(() => start(PlayerType.Human, true));
+
+  function landStrike(troops: number) {
+    game.addExecution(new RazeExecution(hegemon, anyTile(east), troops));
+    while (hegemon.outgoingAttacks().length === 0) game.executeNextTick();
+    return hegemon.outgoingAttacks()[0];
+  }
+
+  test("the struck player fights the bubble like any attacker, and its troops come out of the strike", () => {
+    const strike = landStrike(300_000);
+    expect(strike.isStrike()).toBe(true);
+    executeTicks(game, 30);
+    const bubble = game.hegemonBubbleTiles();
+    expect(bubble).toBeGreaterThan(20);
+    expect(east.isStruckBy(hegemon)).toBe(true);
+
+    const hegemonTroops = hegemon.troops();
+    east.setTroops(400_000);
+    game.addExecution(new AttackExecution(300_000, east, hegemon.id()));
+    executeTicks(game, 2);
+    // Not cancelled troop for troop: both attacks are in the field.
+    expect(east.outgoingAttacks()).toHaveLength(1);
+    expect(hegemon.outgoingAttacks()).toHaveLength(1);
+    const strikeTroops = strike.troops();
+
+    executeTicks(game, 20);
+    const retaken = Array.from(east.tiles()).filter((t) =>
+      game.isInDarkStar(t),
+    ).length;
+    expect(retaken).toBe(0);
+    // The counter-attack takes bubble tiles back and bleeds the strike; the
+    // Dark Star's own army is untouched (it has only regenerated).
+    expect(strike.troops()).toBeLessThan(strikeTroops - 1000);
+    expect(hegemon.troops()).toBeGreaterThanOrEqual(hegemonTroops);
+  });
+
+  test("a strike ground down to nothing pops: the land goes neutral, not to the Hegemon", () => {
+    landStrike(40_000);
+    executeTicks(game, 30);
+    const eastTiles = east.numTilesOwned();
+    east.setTroops(1_000_000);
+    game.addExecution(new AttackExecution(800_000, east, hegemon.id()));
+    let ticks = 0;
+    while (hegemon.outgoingAttacks().length > 0 && ticks++ < 600) {
+      game.executeNextTick();
+    }
+    expect(hegemon.outgoingAttacks()).toHaveLength(0);
+    expect(game.hegemonBubbleTiles()).toBe(0);
+    // What east retook is east's; what the bubble still held is neutral.
+    expect(east.numTilesOwned()).toBeGreaterThan(eastTiles);
+  });
+
+  test("nobody but the struck player may attack the bubble", () => {
+    landStrike(300_000);
+    executeTicks(game, 60);
+    expect(game.hegemonBubbleTiles()).toBeGreaterThan(0);
+    const bubbleTile = Array.from(hegemon.tiles()).find(
+      (t) => !game.isInDarkStar(t),
+    )!;
+    expect(east.canAttack(bubbleTile)).toBe(true);
+    expect(west.canAttack(bubbleTile)).toBe(false);
+    const westTroops = west.troops();
+    game.addExecution(new AttackExecution(50_000, west, hegemon.id()));
+    executeTicks(game, 2);
+    expect(west.outgoingAttacks()).toHaveLength(0);
+    expect(west.troops()).toBeGreaterThanOrEqual(westTroops);
+
+    // The invader's orders remain its invasion: the Dark Star itself is open.
+    const g = game.darkStar()!;
+    west.conquer(game.ref(g.cx - g.radius, g.cy));
+    expect(west.canAttack(game.ref(g.cx - g.radius + 1, g.cy))).toBe(true);
+    game.addExecution(new AttackExecution(50_000, west, hegemon.id()));
+    executeTicks(game, 2);
+    expect(west.outgoingAttacks()).toHaveLength(1);
+  });
+
+  test("a recalled strike pops its bubble and brings the survivors home", () => {
+    const raze = new RazeExecution(hegemon, anyTile(east), 300_000);
+    game.addExecution(raze);
+    while (hegemon.outgoingAttacks().length === 0) game.executeNextTick();
+    executeTicks(game, 30);
+    expect(game.hegemonBubbleTiles()).toBeGreaterThan(0);
+    const before = hegemon.troops();
+    raze.recall();
+    executeTicks(game, 2);
+    expect(hegemon.outgoingAttacks()).toHaveLength(0);
+    expect(game.hegemonBubbleTiles()).toBe(0);
+    expect(hegemon.troops()).toBeGreaterThan(before + 100_000);
+  });
+
+  test("the throne falls with its last Dark Star tile: a bubble does not keep it alive", () => {
+    landStrike(300_000);
+    executeTicks(game, 30);
+    expect(game.hegemonBubbleTiles()).toBeGreaterThan(0);
+    for (const tile of Array.from(hegemon.tiles())) {
+      if (game.isInDarkStar(tile)) west.conquer(tile);
+    }
+    expect(hegemon.isAlive()).toBe(false);
+    expect(game.hegemonBubbleTiles()).toBe(0);
+    executeTicks(game, 2);
+    expect(hegemon.outgoingAttacks()).toHaveLength(0);
   });
 });
 

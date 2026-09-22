@@ -91,8 +91,17 @@ async function main(): Promise<void> {
   class SimConfig extends Config {
     hegemonConfig() {
       const d = super.hegemonConfig();
+      // --set razeSlowPercent=200,tyrannyFloorPermille=0 overrides any tunable.
+      const set: Record<string, number> = {};
+      for (const pair of arg("set", "").split(",")) {
+        const [key, value] = pair.split("=");
+        if (key === "") continue;
+        if (!(key in d)) throw new Error(`--set: no tunable ${key}`);
+        set[key] = Number(value);
+      }
       return {
         ...d,
+        ...set,
         domainAttackerLossPercent: Number(
           arg("loss", String(d.domainAttackerLossPercent)),
         ),
@@ -170,7 +179,12 @@ async function main(): Promise<void> {
     sent: number;
     left: number;
     start: number;
+    minTiles: number;
+    maxBubble: number;
+    fought: boolean; // the target counter-attacked the bubble
+    popped: number; // tiles left neutral when the bubble popped
   } | null = null;
+  const strikeTotals = { count: 0, sent: 0, lost: 0, popped: 0, fought: 0 };
   while (win === undefined && fatal === undefined) {
     runner.addTurn({ turnNumber: turn++, intents: [] });
     runner.executeNextTick();
@@ -183,7 +197,7 @@ async function main(): Promise<void> {
       landings.push(`${invader.name()}@${(elapsed / 600).toFixed(1)}`);
     }
     lastInvader = invader;
-    lowestTiles = Math.min(lowestTiles, hegemon.numTilesOwned());
+    lowestTiles = Math.min(lowestTiles, game.hegemonDomainTiles());
     lowestTroops = Math.min(lowestTroops, hegemon.troops());
 
     // Raze strikes (H8/H11): logged as they land and as they end.
@@ -200,22 +214,43 @@ async function main(): Promise<void> {
         sent: razing.troops(),
         left: razing.troops(),
         start: elapsed,
+        minTiles: target.numTilesOwned(),
+        maxBubble: 0,
+        fought: false,
+        popped: 0,
       };
     } else if (razing !== undefined && strike !== null) {
       strike.left = razing.troops();
+      strike.minTiles = Math.min(
+        strike.minTiles,
+        strike.target.numTilesOwned(),
+      );
+      const bubble = game.hegemonBubbleTiles();
+      strike.maxBubble = Math.max(strike.maxBubble, bubble);
+      // Last seen bubble: what pops if the strike ends now.
+      strike.popped = bubble;
+      strike.fought ||= strike.target
+        .outgoingAttacks()
+        .some((a) => a.target() === hegemon);
     } else if (razing === undefined && strike !== null) {
       const t = strike.target;
       log(
         `      strike @${(strike.start / 600).toFixed(2)} on ${t.name()}: sent ${k(strike.sent)}, ` +
           `${((elapsed - strike.start) / 10).toFixed(0)}s, ~${k(strike.left)} left at the end; ` +
           `target tiles ${strike.tiles} -> ${t.numTilesOwned()}, troops ${k(strike.troops)} -> ${k(t.troops())}, ` +
-          `cities ${strike.cities} -> ${t.units(UnitType.City).length}`,
+          `cities ${strike.cities} -> ${t.units(UnitType.City).length}; ` +
+          `bubble peaked at ${strike.maxBubble}, popped ${strike.popped} to neutral${strike.fought ? ", fought" : ""}`,
       );
+      strikeTotals.count++;
+      strikeTotals.sent += strike.sent;
+      strikeTotals.lost += strike.sent - strike.left;
+      strikeTotals.popped += strike.popped;
+      if (strike.fought) strikeTotals.fought++;
       strike = null;
     }
 
     // Once a minute, and every 5 seconds while the Dark Star is under attack.
-    const underAttack = hegemon.numTilesOwned() < g.domainTileCount;
+    const underAttack = game.darkStarInvader() !== null;
     if (elapsed % (underAttack ? 50 : 600) !== 0) continue;
 
     const challengers = game.players().filter((p) => p !== hegemon);
@@ -246,6 +281,12 @@ async function main(): Promise<void> {
   log(
     `Summary: ${landings.length} landings [${landings.join(", ")}]; domain low ` +
       `${Math.round((lowestTiles * 100) / g.domainTileCount)}%, Hegemon troops low ${k(lowestTroops)}`,
+  );
+  log(
+    `Strikes: ${strikeTotals.count} (${strikeTotals.fought} fought), sent ${k(strikeTotals.sent)}, lost ${k(strikeTotals.lost)}, popped ${strikeTotals.popped} tiles to neutral` +
+      (strikeTotals.popped > 0
+        ? ` = ${Math.round(strikeTotals.lost / strikeTotals.popped)} troops/tile`
+        : ""),
   );
   const seconds = Math.round((turn - (startTurn ?? turn)) / 10);
   log(

@@ -15,20 +15,24 @@ import { FlatBinaryHeap } from "./utils/FlatBinaryHeap";
 
 const malusForRetreat = 25;
 
-// A Hegemon strike (H8, docs/DarkStar-Design.md): land it takes is RAZED — it
-// reverts to neutral, and whatever stood on it is destroyed (PlayerExecution
-// deletes structures on unowned land).
+// A Hegemon strike (H8, H16, H17 in docs/DarkStar-Design.md).
 //
-// The Hegemon borders nobody (the moat), and razed tiles never become its own,
-// so the engine's attack — which only advances over tiles next to the
-// attacker's land — cannot do this. A strike falls directly on the tile it was
-// aimed at after a flight time, and keeps its own frontier: it advances over
-// the target's tiles next to tiles THIS strike has razed, whoever holds those
-// now. Costs are the engine's normal attack costs, paid from the Hegemon's
-// fixed pool (F6): every strike weakens the throne's defence.
+// The Hegemon borders nobody (the moat), so a strike falls directly on the
+// tile it was aimed at after a flight time. From there it is an ordinary
+// conquest: the land it takes is the strike's BUBBLE, Hegemon-owned while the
+// strike lasts, and the target fights it like any other invader — by taking
+// the bubble back over land (AttackExecution; the bubble is defended by the
+// strike's own troops, never by the Dark Star's). When the strike ends — its
+// troops spent, the target beneath the tyranny floor, nothing left in reach,
+// recalled, or the Hegemon fallen — the bubble POPS: every tile in it that is
+// still the Hegemon's reverts to neutral, and the structures the bubble
+// captured die with it (PlayerExecution deletes units on unowned land). The
+// Hegemon never keeps land beyond the Dark Star.
 //
-// It ends when its troops are spent, the target has no land left within reach,
-// or it is recalled; survivors return to the Hegemon.
+// Costs are the engine's, scaled by razeAttackerLossPercent / razeSlowPercent
+// and by tyranny: the smaller the target, the more each tile costs, without
+// limit; at the floor a player cannot be struck at all, so a strike never
+// eliminates anyone.
 export class RazeExecution implements Execution {
   private active = true;
   private mg: Game;
@@ -37,10 +41,11 @@ export class RazeExecution implements Execution {
   private attack: Attack | null = null;
   private arrivalTick = 0;
 
-  private razed = new Set<TileRef>();
-  private toRaze = new FlatBinaryHeap();
+  private bubble = new Set<TileRef>();
+  private toConquer = new FlatBinaryHeap();
   private random = new PseudoRandom(123);
   private targetSmallID: number;
+  private hegemonSmallID: number;
   private nbuf: TileRef[] = [0, 0, 0, 0];
   private nbuf2: TileRef[] = [0, 0, 0, 0];
 
@@ -77,8 +82,20 @@ export class RazeExecution implements Execution {
       this.active = false;
       return;
     }
+    if (this.tyrannyPercent(owner) === null) {
+      mg.displayMessage(
+        "events_display.dark_star_strike_tyranny",
+        MessageType.ATTACK_FAILED,
+        this.hegemon.id(),
+        undefined,
+        { name: owner.displayName() },
+      );
+      this.active = false;
+      return;
+    }
     this.target = owner;
     this.targetSmallID = owner.smallID();
+    this.hegemonSmallID = this.hegemon.smallID();
 
     this.troops ??= mg.config().attackAmount(this.hegemon, owner);
     this.troops = this.hegemon.removeTroops(
@@ -114,6 +131,11 @@ export class RazeExecution implements Execution {
     return this.target;
   }
 
+  // Tiles the bubble holds right now.
+  bubbleSize(): number {
+    return this.bubble.size;
+  }
+
   // Bring the strike home now (the AI's recall; a human cancels the attack).
   recall(): void {
     if (!this.active) return;
@@ -132,6 +154,12 @@ export class RazeExecution implements Execution {
       return;
     }
     const attack = this.attack;
+    if (!this.hegemon.isAlive()) {
+      // The throne fell (GameImpl pops the bubble): nothing to come home to.
+      attack.delete();
+      this.active = false;
+      return;
+    }
     if (attack.retreated()) {
       const deaths = attack.troops() * (malusForRetreat / 100);
       this.mg.displayMessage(
@@ -148,35 +176,44 @@ export class RazeExecution implements Execution {
       return;
     }
     if (attack.retreating()) return;
-    if (!attack.isActive()) {
-      // Cancelled out by the target's own attack on the Hegemon.
+    if (!attack.isActive() || !this.target.isAlive()) {
+      this.pop();
       this.active = false;
       return;
     }
 
+    const cfg = this.mg.config().hegemonConfig();
+    // The target's counter-attack spends these too (AttackExecution).
     let troopCount = attack.troops();
     const borderSize = attack.borderSize() + this.random.nextInt(0, 5);
     let tickBudget = 1;
     while (tickBudget > 0) {
       if (troopCount < 1) {
+        this.pop();
         attack.delete();
         this.active = false;
         return;
       }
-      if (this.toRaze.size() === 0) {
+      const tyranny = this.tyrannyPercent(this.target);
+      if (tyranny === null) {
+        // Struck down to the floor: the target is beneath the throne's notice.
+        this.comeHome(troopCount);
+        return;
+      }
+      if (this.toConquer.size() === 0) {
         this.refreshFrontier();
-        if (this.toRaze.size() === 0) {
+        if (this.toConquer.size() === 0) {
           this.comeHome(troopCount);
           return;
         }
       }
 
-      const tile = this.toRaze.dequeue();
+      const tile = this.toConquer.dequeue();
       attack.removeBorderTile(tile);
       if (
         this.map.ownerID(tile) !== this.targetSmallID ||
         this.mg.isInDarkStar(tile) ||
-        !(tile === this.ref || this.bordersRazed(tile))
+        !this.bordersBubble(tile)
       ) {
         continue;
       }
@@ -184,12 +221,13 @@ export class RazeExecution implements Execution {
       const { attackerTroopLoss, defenderTroopLoss, tickFraction } = this.mg
         .config()
         .attackLogic(this.attackLogicInput(troopCount, tile, borderSize));
-      tickBudget -= tickFraction;
-      troopCount -= attackerTroopLoss;
+      tickBudget -= (tickFraction * cfg.razeSlowPercent) / 100;
+      troopCount -=
+        (attackerTroopLoss * cfg.razeAttackerLossPercent * tyranny) / 10_000;
       attack.setTroops(troopCount);
       this.target.removeTroops(defenderTroopLoss);
-      this.target.relinquish(tile);
-      this.razed.add(tile);
+      this.hegemon.conquer(tile);
+      this.bubble.add(tile);
       this.addNeighbors(tile);
     }
   }
@@ -210,30 +248,63 @@ export class RazeExecution implements Execution {
       this.ref,
       new Set<TileRef>(),
     );
-    this.attack.addBorderTile(this.ref);
-    this.toRaze.enqueue(this.ref, 0);
+    this.attack.markStrike();
+    // The impact: the aimed tile is taken outright, and the bubble grows from it.
+    this.hegemon.conquer(this.ref);
+    this.bubble.add(this.ref);
+    this.addNeighbors(this.ref);
     this.mg.stats().attackMaxIncoming(this.target, troops);
   }
 
+  // The bubble pops: whatever it still holds reverts to neutral.
+  private pop(): void {
+    for (const tile of this.bubble) {
+      if (
+        this.map.ownerID(tile) === this.hegemonSmallID &&
+        !this.mg.isInDarkStar(tile)
+      ) {
+        this.hegemon.relinquish(tile);
+      }
+    }
+    this.bubble.clear();
+  }
+
   private comeHome(troops: number): void {
+    this.pop();
     this.hegemon.addTroops(troops);
     this.attack?.delete();
     this.active = false;
   }
 
-  private bordersRazed(tile: TileRef): boolean {
+  private tyrannyPercent(target: Player): number | null {
+    return this.mg
+      .config()
+      .hegemonTyrannyLossPercent(
+        target.numTilesOwned() - target.domainTilesHeld(),
+      );
+  }
+
+  // The domain borders nothing, so any Hegemon tile next to the target's land
+  // is bubble.
+  private bordersBubble(tile: TileRef): boolean {
     const n = this.map.neighbors4(tile, this.nbuf);
     for (let i = 0; i < n; i++) {
-      if (this.razed.has(this.nbuf[i])) return true;
+      if (this.map.ownerID(this.nbuf[i]) === this.hegemonSmallID) return true;
     }
     return false;
   }
 
-  // The target may have resettled land this strike razed; pick the front up
-  // again from everything razed so far.
+  // The target may have taken bubble tiles back, or resettled around them:
+  // pick the front up again from what the bubble still holds.
   private refreshFrontier(): void {
     this.attack!.clearBorder();
-    for (const tile of this.razed) this.addNeighbors(tile);
+    for (const tile of this.bubble) {
+      if (this.map.ownerID(tile) === this.hegemonSmallID) {
+        this.addNeighbors(tile);
+      } else {
+        this.bubble.delete(tile);
+      }
+    }
   }
 
   private addNeighbors(tile: TileRef): void {
@@ -248,10 +319,10 @@ export class RazeExecution implements Execution {
         continue;
       }
       this.attack!.addBorderTile(neighbor);
-      let numRazed = 0;
+      let numOwned = 0;
       const numInner = this.map.neighbors4(neighbor, this.nbuf2);
       for (let j = 0; j < numInner; j++) {
-        if (this.razed.has(this.nbuf2[j])) numRazed++;
+        if (this.map.ownerID(this.nbuf2[j]) === this.hegemonSmallID) numOwned++;
       }
 
       let mag: number;
@@ -269,11 +340,11 @@ export class RazeExecution implements Execution {
           mag = 0;
           break;
       }
-      // AttackExecution's priority, with razed tiles standing in for owned ones.
+      // AttackExecution's priority.
       const priority =
-        (this.random.nextInt(0, 7) + 10) * (1 - numRazed * 0.5 + mag / 2) +
+        (this.random.nextInt(0, 7) + 10) * (1 - numOwned * 0.5 + mag / 2) +
         tickNow;
-      this.toRaze.enqueue(neighbor, priority);
+      this.toConquer.enqueue(neighbor, priority);
     }
   }
 
@@ -287,7 +358,7 @@ export class RazeExecution implements Execution {
       attackTroops,
       attacker: {
         type: this.hegemon.type(),
-        // Decoupled from what it still holds (H5), as when it defends.
+        // Decoupled from what it holds (H5), as when it defends.
         numTiles:
           this.mg.darkStar()?.domainTileCount ?? this.hegemon.numTilesOwned(),
       },

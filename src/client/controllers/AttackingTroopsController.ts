@@ -15,7 +15,7 @@ import { Controller } from "../Controller";
 import { AlternateViewEvent } from "../InputHandler";
 import { MapRenderer } from "../render/gl";
 import type { AttackTroopLabel } from "../render/gl/passes/WorldTextPass";
-import { renderTroops } from "../Utils";
+import { renderTroops, translateText } from "../Utils";
 import { GameView } from "../view";
 
 // Aquarius (#3fa9f5) for outgoing, red-400 (#f87171) for incoming.
@@ -25,6 +25,8 @@ const OUTGOING_B = 0xf5 / 255;
 const INCOMING_R = 0xf8 / 255;
 const INCOMING_G = 0x71 / 255;
 const INCOMING_B = 0x71 / 255;
+// Purple-400 (#c084fc) for a Dark Star strike.
+const STRIKE_RGB = [0xc0 / 255, 0x84 / 255, 0xfc / 255];
 
 /** Animation duration for cluster shifts — matches old CSS transition. */
 const ANIM_MS = 250;
@@ -48,6 +50,8 @@ export interface Slot {
 interface AttackEntry {
   text: string;
   isIncoming: boolean;
+  /** Overrides the incoming/outgoing colour (Dark Star strikes). */
+  rgb?: number[];
   slots: Slot[];
 }
 
@@ -129,6 +133,13 @@ export class AttackingTroopsController implements Controller {
       }
       activeIDs.add(attack.id);
       this.ensureEntry(attack.id, attack.troops, true);
+      if (attack.isStrike) {
+        const entry = this.attacks.get(attack.id)!;
+        entry.rgb = STRIKE_RGB;
+        entry.text = translateText("dark_star.strike_map_label", {
+          troops: renderTroops(attack.troops),
+        });
+      }
     }
 
     for (const id of this.attacks.keys()) {
@@ -237,9 +248,9 @@ export class AttackingTroopsController implements Controller {
     const out: AttackTroopLabel[] = [];
 
     for (const entry of this.attacks.values()) {
-      const r = entry.isIncoming ? INCOMING_R : OUTGOING_R;
-      const g = entry.isIncoming ? INCOMING_G : OUTGOING_G;
-      const b = entry.isIncoming ? INCOMING_B : OUTGOING_B;
+      const r = entry.rgb?.[0] ?? (entry.isIncoming ? INCOMING_R : OUTGOING_R);
+      const g = entry.rgb?.[1] ?? (entry.isIncoming ? INCOMING_G : OUTGOING_G);
+      const b = entry.rgb?.[2] ?? (entry.isIncoming ? INCOMING_B : OUTGOING_B);
       for (const slot of entry.slots) {
         const t = Math.min(1, (now - slot.startMs) / ANIM_MS);
         slot.curX = slot.srcX + (slot.dstX - slot.srcX) * t;

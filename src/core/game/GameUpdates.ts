@@ -211,6 +211,8 @@ export interface AttackUpdate {
   troops: number;
   id: string;
   retreating: boolean;
+  // A Hegemon's strike (RazeExecution); absent on every other attack.
+  isStrike?: true;
 }
 
 /**

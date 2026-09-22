@@ -211,48 +211,85 @@ export class AttacksDisplay extends LitElement implements Controller {
   private renderIncomingAttacks() {
     if (this.incomingAttacks.length === 0) return html``;
 
-    return this.incomingAttacks.map(
-      (attack) => html`
-        <div
-          class="flex items-center gap-0.5 w-full bg-gray-800/92 backdrop-blur-sm sm:rounded-lg px-1.5 py-0.5 overflow-hidden"
-        >
-          ${this.renderButton({
-            content: html`<span class="inline-flex items-center"
-                ><img
-                  src="${soldierIcon}"
-                  class="h-4 w-4"
-                  style="filter: brightness(0) saturate(100%) invert(27%) sepia(91%) saturate(4551%) hue-rotate(348deg) brightness(89%) contrast(97%)"
-                />↓</span
-              ><span class="ml-1">${renderTroops(attack.troops)}</span>
-              <span class="truncate ml-1"
-                >${(
-                  this.game.playerBySmallID(attack.attackerID) as PlayerView
-                )?.displayName()}</span
-              >
-              ${attack.retreating
-                ? `(${translateText("events_display.retreating")}...)`
-                : ""} `,
-            onClick: () => this.attackWarningOnClick(attack),
-            className:
-              "text-left text-red-400 inline-flex items-center gap-0.5 lg:gap-1 min-w-0",
-            translate: false,
-          })}
-          ${!attack.retreating
-            ? this.renderButton({
-                content: html`<img
-                  src="${swordIcon}"
-                  class="h-4 w-4"
-                  style="filter: brightness(0) saturate(100%) invert(27%) sepia(91%) saturate(4551%) hue-rotate(348deg) brightness(89%) contrast(97%)"
-                />`,
-                onClick: () => this.handleRetaliate(attack),
+    return this.incomingAttacks.map((attack) =>
+      attack.isStrike
+        ? this.renderStrike(attack)
+        : html`
+            <div
+              class="flex items-center gap-0.5 w-full bg-gray-800/92 backdrop-blur-sm sm:rounded-lg px-1.5 py-0.5 overflow-hidden"
+            >
+              ${this.renderButton({
+                content: html`<span class="inline-flex items-center"
+                    ><img
+                      src="${soldierIcon}"
+                      class="h-4 w-4"
+                      style="filter: brightness(0) saturate(100%) invert(27%) sepia(91%) saturate(4551%) hue-rotate(348deg) brightness(89%) contrast(97%)"
+                    />↓</span
+                  ><span class="ml-1">${renderTroops(attack.troops)}</span>
+                  <span class="truncate ml-1"
+                    >${(
+                      this.game.playerBySmallID(attack.attackerID) as PlayerView
+                    )?.displayName()}</span
+                  >
+                  ${attack.retreating
+                    ? `(${translateText("events_display.retreating")}...)`
+                    : ""} `,
+                onClick: () => this.attackWarningOnClick(attack),
                 className:
-                  "ml-auto inline-flex items-center justify-center cursor-pointer bg-red-900/50 hover:bg-red-800/70 sm:rounded-lg px-1.5 py-1 border border-red-700/50",
+                  "text-left text-red-400 inline-flex items-center gap-0.5 lg:gap-1 min-w-0",
                 translate: false,
-              })
-            : ""}
-        </div>
-      `,
+              })}
+              ${!attack.retreating
+                ? this.renderButton({
+                    content: html`<img
+                      src="${swordIcon}"
+                      class="h-4 w-4"
+                      style="filter: brightness(0) saturate(100%) invert(27%) sepia(91%) saturate(4551%) hue-rotate(348deg) brightness(89%) contrast(97%)"
+                    />`,
+                    onClick: () => this.handleRetaliate(attack),
+                    className:
+                      "ml-auto inline-flex items-center justify-center cursor-pointer bg-red-900/50 hover:bg-red-800/70 sm:rounded-lg px-1.5 py-1 border border-red-700/50",
+                    translate: false,
+                  })
+                : ""}
+            </div>
+          `,
     );
+  }
+
+  // A Dark Star strike (H17): the Hegemon's bubble borders us, so the
+  // ordinary attack order is the counter-attack — the engine costs bubble
+  // tiles to the strike's own troops.
+  private renderStrike(attack: AttackUpdate) {
+    return html`
+      <div
+        class="flex items-center gap-1 w-full bg-purple-950/92 backdrop-blur-sm sm:rounded-lg px-1.5 py-1 overflow-hidden border border-purple-500/70"
+      >
+        ${this.renderButton({
+          content: html`<span class="font-bold whitespace-nowrap"
+              >${translateText("dark_star.strike_label")}
+              ${renderTroops(attack.troops)}</span
+            >
+            <span class="text-xs whitespace-nowrap text-purple-300"
+              >${attack.retreating
+                ? `${translateText("events_display.retreating")}...`
+                : translateText("dark_star.strike_hint")}</span
+            >`,
+          onClick: () => this.attackWarningOnClick(attack),
+          className: "text-left text-purple-200 flex flex-col min-w-0",
+          translate: false,
+        })}
+        ${attack.retreating
+          ? ""
+          : this.renderButton({
+              content: translateText("dark_star.strike_counter"),
+              onClick: () => this.handleRetaliate(attack),
+              className:
+                "ml-auto cursor-pointer font-bold text-white bg-green-700/80 hover:bg-green-600 sm:rounded-lg px-2 py-1 border border-green-400/70 whitespace-nowrap",
+              translate: false,
+            })}
+      </div>
+    `;
   }
 
   private renderOutgoingAttacks() {

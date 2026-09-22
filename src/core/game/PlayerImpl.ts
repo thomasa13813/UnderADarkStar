@@ -93,6 +93,12 @@ const EMPTY_NUMBER_ARRAY: number[] = [];
 const EMPTY_STRING_ARRAY: string[] = [];
 const EMPTY_ATTACK_UPDATES: AttackUpdate[] = [];
 const EMPTY_ALLIANCE_VIEWS: AllianceView[] = [];
+const NO_STRIKE_FIELDS = {};
+const STRIKE_FIELDS = { isStrike: true } as const;
+
+function strikeFields(a: Attack): Pick<AttackUpdate, "isStrike"> {
+  return a.isStrike() ? STRIKE_FIELDS : NO_STRIKE_FIELDS;
+}
 const EMPTY_EMOJIS: EmojiMessage[] = [];
 const EMPTY_EMBARGOES = new Set<string>();
 // Reusable buffers for hot loops. The simulation is single-threaded and these
@@ -333,6 +339,7 @@ export class PlayerImpl implements Player {
               troops: a.troops(),
               id: a.id(),
               retreating: a.retreating(),
+              ...strikeFields(a),
             } satisfies AttackUpdate;
           });
 
@@ -347,6 +354,7 @@ export class PlayerImpl implements Player {
             troops: a.troops(),
             id: a.id(),
             retreating: a.retreating(),
+            ...strikeFields(a),
           } satisfies AttackUpdate;
         });
       }
@@ -1918,6 +1926,12 @@ export class PlayerImpl implements Player {
     return !player.isImmune() && !this.isFriendly(player, treatAFKFriendly);
   }
 
+  isStruckBy(hegemon: Player): boolean {
+    return this._incomingAttacks.some(
+      (a) => a.isStrike() && a.attacker() === hegemon,
+    );
+  }
+
   public canAttack(tile: TileRef): boolean {
     const owner = this.mg.owner(tile);
     if (owner === this) {
@@ -1925,6 +1939,16 @@ export class PlayerImpl implements Player {
     }
 
     if (owner.isPlayer() && !this.canAttackPlayer(owner)) {
+      return false;
+    }
+    // The Hegemon's land beyond the moat is a strike's bubble (H17): only the
+    // player it is striking may fight over it.
+    if (
+      owner.isPlayer() &&
+      owner.isHegemon() &&
+      !this.mg.isInDarkStar(tile) &&
+      !this.isStruckBy(owner)
+    ) {
       return false;
     }
 
