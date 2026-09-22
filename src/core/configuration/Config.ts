@@ -312,6 +312,12 @@ const HEGEMON_DEFAULTS = {
   // (100 = no change) — the fortress multipliers, turned against the throne.
   razeAttackerLossPercent: 300,
   razeSlowPercent: 300,
+  // Fighting a strike (H17): its bubble is defended by the strike's own
+  // troops at their density over the bubble — but a bubble is never costed as
+  // smaller than this, or a fresh landing (a million troops on a handful of
+  // tiles) would lose a fraction of the whole strike to every tile retaken
+  // and die in a second to any standing army.
+  razeBubbleMinTiles: 200,
   // Tyranny: a strike's troop cost is scaled by the target's share of the
   // map's land (permille, Dark Star tiles not counted). No penalty at
   // tyrannyFreePermille and above; the cost rises without limit towards

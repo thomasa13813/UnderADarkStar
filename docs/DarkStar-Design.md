@@ -151,15 +151,20 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   Bullying the weak is ruinous; only a real power can be struck efficiently. Tyranny applies to strikes
   only: evicting an invader from the Dark Star is ordinary combat, so a player whose homeland is gone
   can still die on the Dark Star.
-- **H17 — Strike counterplay: hold the line.** [Decided 2026-09-21] For `razeGraceSeconds` (**5 s**)
-  after it lands a strike cannot be opposed. After that the target may **commit troops to hold it** (an
-  attack order on the Hegemon while being struck — the HUD's **Defend** button): while any defenders
-  remain, **razing stops** and both sides grind down — the strike loses `razeHoldBurnPermille` (0.5%) of
-  its troops a tick, the defence a third of that (`razeDefenseKillPercent` 300: one defender is worth
-  three attackers). The defence can be reinforced; survivors go home when the strike ends; when the
-  defence is spent the razing resumes. **AI nations defend too**, committing up to half their army
-  (`aiStrikeDefensePercent`) and no more than it takes to destroy the strike; an AI Hegemon **recalls**
-  a strike that is held by enough defenders to destroy it.
+- **H17 — Strike counterplay: the bubble.** [Decided 2026-09-21; replaces the same-day "hold" design]
+  A strike is an ordinary conquest: the land it takes is the strike's **bubble**, Hegemon-owned while
+  the strike lasts and bordering the target, so the target **fights it like any other invader** — an
+  attack order on the Hegemon (the HUD's **Counter-attack** button, or clicking the bubble) takes bubble
+  tiles back over land. The bubble is **defended by the strike's own troops**, never by the Dark Star's:
+  every tile retaken costs the strike its troops-per-bubble-tile (the bubble is costed as no smaller than
+  `razeBubbleMinTiles`, 200), so a fresh compact bubble is expensive to breach and a sprawling one is
+  soft — no explicit grace window. **Only the struck player may attack the bubble**; everyone else, and
+  the AI, is refused until it pops (the invader's attack on the Dark Star itself is unaffected).
+  **Structures the bubble rolls over are captured**, and die when it pops — retake the tile first and
+  you keep your city. When the strike ends (troops spent, target at the tyranny floor, nothing left in
+  reach, recalled, or the throne fallen) the bubble **pops**: whatever it still holds reverts to neutral
+  for anyone to scramble over. Strikes are exempt from the engine's troop-for-troop cancelling. AI
+  nations need no special rule: the engine's retaliation against an attacker already fights the bubble.
 
 ### 3.3 Challengers
 
@@ -492,35 +497,39 @@ it on). With it off the sim is bit-identical to before: no extra player, no PRNG
   troops a tile (3.4k tiles gone in 13 s, 70% of the strike went home), spending your army on the cancel
   lowered your troop density and made the rest of the razing _cheaper_, and nothing on screen said a
   strike could be fought at all.
+- **First attempt, replaced the same day:** a 5 s grace window, then a "hold" — troops committed to an
+  abstract defence pool froze the razing and ground the strike down 3:1, with a Defend button and an AI
+  defence rule. Tom: the fight "halted basically immediately" and it over-complicated things; he proposed
+  the bubble instead. The hold, its two `AttackUpdate` fields, the AI rule and the tunables are gone.
 - **Cost and speed (H8).** `RazeExecution` scales `attackLogic`'s attacker loss by
   `razeAttackerLossPercent` × tyranny and its tick cost by `razeSlowPercent`.
 - **Tyranny (H16).** `Config.hegemonTyrannyLossPercent(tiles)` (null = immune), from the map's land as
   authored. Checked at launch (refused, with a message to the Hegemon) and before every tile (the strike
   goes home at the floor). World ≈ 690k land tiles: floor ≈ 3.4k tiles, no penalty from ≈ 21k.
-- **Holding a strike (H17).** The `Attack` object carries `strikeGraceUntil()` (set when the strike
-  lands; null for every other attack) and `defenseTroops()`. **No wire change:** an `attack` order on the
-  Hegemon from a player it is striking (and who holds no Dark Star tile — the invader's orders are its
-  invasion) is turned into a defence commit in `AttackExecution.init`; during grace it is refused and the
-  troops stay home. Strikes are excluded from the engine's troop-for-troop cancelling. `RazeExecution.hold`
-  runs the grind; every way a strike can end returns the surviving defenders. `AttackUpdate` carries both
-  fields to the client (they are part of the attack-array diff).
-- **AI.** `NationHegemonBehavior.defendAgainstStrike` (before anything else it does that turn);
-  `HegemonExecution.punish` recalls a strike that `isDoomed()`. A struck nation also pours troops into
-  resettling razed land, which slower razing now gives it time to do.
-- **HUD.** A strike has its own purple row in `attacks-display` ("Dark Star strike", grace countdown, then
-  a pulsing **Defend** button that commits the attack-ratio share of your troops, capped at what would
-  destroy the strike; "held by N" while defended; click the row to jump to the front). On the map the
-  front's troop label reads "STRIKE n" (purple) or "HELD n" (green). The inbound warning now says the
-  strike can be held. `.claude/skills/run-openfront` now works on Windows (real GPU; the game refuses
-  software WebGL).
-- **Measured (`HegemonSim --set key=value,…` overrides any tunable; it now counts tiles actually razed).**
-  World, per round, 2 seeds: before — 49–70k tiles razed at 60–80 troops/tile. Defence alone (costs
-  100/100): 7–18k tiles. **300/300 (default): 4–9k tiles at ~200–850 troops/tile**, each strike 400–3,000
-  tiles and 1–3 cities. 500/300 and 1000/300 raze about the same (3–6k) — the grace window and the hold
-  dominate, not the price. 300/150: 3–12k.
-- **Side effect on F1.** A weaker leveller means stronger challengers: at the unchanged 100% ceiling
-  **3 of 6** AI-only rounds (World + Milky Way, 3 seeds) now end in an overthrow (was 0 of 6) — already
-  inside the target band, before the last stand.
+- **The bubble (H17).** `RazeExecution` lands by conquering the aimed tile for the Hegemon and advances
+  the engine's way (target tiles next to Hegemon tiles — the domain borders nothing, so any such tile is
+  bubble), recording what it took; `pop()` relinquishes whatever it still holds. The `Attack` is
+  `markStrike()`ed. **No wire change** beyond `AttackUpdate.isStrike`. In `AttackExecution`: strikes are
+  excluded from the cancel loop; a land attack on the Hegemon by a player holding no domain tile and not
+  `isStruckBy()` it is refused before troops are taken (also `Player.canAttack(tile)` for the UI), and its
+  tile loop skips bubble tiles for anyone but the struck player; bubble tiles are costed against the
+  strike (`Game.hegemonBubbleTiles()`, floored at `razeBubbleMinTiles`) and the defender loss comes off
+  the strike, not the Hegemon. `GameImpl.conquer` pops every bubble the moment the Hegemon loses its last
+  Dark Star tile, so the conqueror's attack sees it dead and records the killing blow (R2/R3). Captured
+  structures ride the engine's existing capture-on-conquest; the pop leaves them on unowned land and
+  `PlayerExecution` deletes them. `Game.hegemonDomainTiles()` is the domain share (the HUD's "Domain
+  held" and the sim use it; `numTilesOwned` includes the bubble).
+- **HUD.** A purple "Dark Star strike" row in `attacks-display` with a **Counter-attack** button (the
+  ordinary attack intent) and a hint; the front's map label reads "STRIKE n". The inbound warning says
+  the strike holds nothing once it ends. `.claude/skills/run-openfront` now works on Windows (real GPU;
+  the game refuses software WebGL).
+- **Measured (`HegemonSim --set key=value,…` overrides any tunable; it logs each strike's bubble peak,
+  what popped to neutral and whether the target fought).** AI-only, 3 seeds × World + Milky Way: AI
+  targets fight 24 of 32 strikes with no special code; a fought strike lasts 30–56 s with the density
+  floor at 200 (without it, a big standing army snuffed a fresh 8-tile bubble in 1 s — each tile retaken
+  cost the strike an eighth of itself); bubbles peak at 100–3,400 tiles and pop 0–2,700 to neutral; the
+  Hegemon burns 2–7M troops a round on strikes for 150–8,000 popped tiles — very poor value, as intended.
+  Overthrows: 2/6 without the floor, 0/6 with it (small samples; re-measure with the last stand).
 
 ## 7. Constraints (non-negotiable engineering rules)
 
@@ -650,7 +659,8 @@ settled by playtesting.
   the round), and keep pushing while they hold the slot. Decided with Tom: Nations only (no Tribes),
   self-interested (no cooperation), and an F1 target of a third to a half of AI-only rounds ending in an
   overthrow. Measured: 0/6 at the placeholder ceiling, 3/6 at half of it.
-- **2026-09-21** — Strike counterplay and tyranny built (§6.6). Decided with Tom: **resettlement is dropped**
+- **2026-09-21** — Strike counterplay and tyranny built (§6.6; the "hold" design described below was
+  replaced by the bubble the same day — see the next entry). Decided with Tom: **resettlement is dropped**
   — elimination is final, players spectate or leave (C1 rewritten, F7 and the M1.5 item removed) — and in
   exchange the **Hegemon can never eliminate a challenger**: a tyranny penalty on strikes scales with the
   target's share of the map's land (free above 3%, immune at 0.5%) (H16). Strikes are uncounterable for
@@ -658,3 +668,10 @@ settled by playtesting.
   attackers per defender; AI nations defend too (H17). Razing made poor value for the Hegemon (300% cost,
   300% slower) (H8). Measured: a round's razing falls from 49–70k tiles to 4–9k, and AI-only overthrows
   rise from 0/6 to 3/6 at the unchanged ceiling (F1).
+- **2026-09-21** — Strike counterplay redesigned as the **bubble** (H17, §6.6) after Tom found the hold
+  halted the fight instantly and over-complicated it. A strike now conquers a bubble of Hegemon land that
+  the target fights over like any invader; the bubble is defended by the strike's own troops (no explicit
+  grace: density does it), only the struck player may attack it, captured structures die when it pops,
+  and it pops to neutral when the strike ends. The hold, Defend button, grace timer and AI defence rule
+  were removed; commit `409388f20`. Follow-up: `razeBubbleMinTiles` (200) so a fresh bubble is not
+  snuffed in a second.

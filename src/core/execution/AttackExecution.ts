@@ -407,7 +407,10 @@ export class AttackExecution implements Execution {
               // it is always costed as if it held the whole domain, so each
               // tile lost bleeds the same share of its troops.
               numTiles: bubble
-                ? this.mg.hegemonBubbleTiles()
+                ? Math.max(
+                    this.mg.hegemonBubbleTiles(),
+                    this.mg.config().hegemonConfig().razeBubbleMinTiles,
+                  )
                 : ((defender.isHegemon()
                     ? this.mg.darkStar()?.domainTileCount
                     : undefined) ?? defender.numTilesOwned()),
