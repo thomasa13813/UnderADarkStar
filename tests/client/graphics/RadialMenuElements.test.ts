@@ -6,6 +6,7 @@ import {
   MenuElementParams,
   rootMenuElement,
   Slot,
+  strikeMenuElement,
 } from "../../../src/client/hud/layers/RadialMenuElements";
 import { BuildUnitIntentEvent } from "../../../src/client/Transport";
 import { GameView, PlayerView } from "../../../src/client/view";
@@ -15,6 +16,8 @@ import { TileRef } from "../../../src/core/game/GameMap";
 vi.mock("../../../src/client/Utils", () => ({
   translateText: vi.fn((key: string) => key),
   renderNumber: vi.fn((num: number) => num.toString()),
+  // Troops are stored ×10 (the HUD shows troops ÷ 10 everywhere).
+  renderTroops: vi.fn((num: number) => (num / 10).toString()),
 }));
 
 vi.mock("../../../src/client/hud/layers/BuildMenu", async () => {
@@ -757,6 +760,43 @@ describe("RadialMenuElements", () => {
           mockParams,
         ),
       ).toBe(COLORS.building);
+    });
+  });
+
+  describe("strikeMenuElement", () => {
+    it("sizes the strike by the slider and shows it in the same units as every other troop count", async () => {
+      const { translateText } = await vi.importMock<
+        typeof import("../../../src/client/Utils")
+      >("../../../src/client/Utils");
+      (translateText as Mock).mockClear();
+
+      const target = {
+        id: () => 2,
+        smallID: () => 2,
+        isPlayer: vi.fn(() => true),
+        displayName: () => "Taiwan",
+        numTilesOwned: () => 5000,
+        domainTilesHeld: () => 0,
+      } as unknown as PlayerView;
+      (mockPlayer as any).isHegemon = vi.fn(() => true);
+      // What the HUD shows as 625k.
+      (mockPlayer as any).troops = () => 6_250_000;
+      (mockPlayer as any).outgoingAttacks = () => [];
+      (mockGame as any).owner = vi.fn(() => target);
+      (mockGame as any).isInDarkStar = vi.fn(() => false);
+      (mockGame as any).config = vi.fn(() => ({
+        hegemonTyrannyLossPercent: () => 100,
+      }));
+      mockParams.uiState = { attackRatio: 0.5 } as any;
+
+      const element = strikeMenuElement(mockParams);
+      const texts = element.tooltipItems!.map((i) => i.text);
+      expect(texts).toContain("dark_star.strike_tooltip");
+      // Half of 625k, not half of the raw 6.25M.
+      expect(translateText).toHaveBeenCalledWith("dark_star.strike_tooltip", {
+        name: "Taiwan",
+        troops: "312500",
+      });
     });
   });
 

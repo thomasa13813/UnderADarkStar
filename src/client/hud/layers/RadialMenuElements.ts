@@ -15,7 +15,7 @@ import {
 import { TileRef } from "../../../core/game/GameMap";
 import { Emoji, findClosestBy, flattenedEmojiTable } from "../../../core/Util";
 import { UIState } from "../../UIState";
-import { renderNumber, translateText } from "../../Utils";
+import { renderNumber, renderTroops, translateText } from "../../Utils";
 import { GameView, PlayerView } from "../../view";
 import { BuildItemDisplay, BuildMenu, flattenedBuildTable } from "./BuildMenu";
 import { ChatIntegration } from "./ChatIntegration";
@@ -752,7 +752,7 @@ export function strikeMenuElement(params: MenuElementParams): MenuElement {
     tooltipItems.push({
       text: translateText("dark_star.strike_tooltip", {
         name: target.displayName(),
-        troops: renderNumber(troops),
+        troops: renderTroops(troops),
       }),
       className: "text-white font-bold",
     });

@@ -29,6 +29,7 @@ const makePlayer = (
       other && typeof other.id === "function" && other.id() !== id
         ? true
         : true,
+    isHegemon: () => false,
     isTraitor: () => opts?.isTraitor ?? false,
     isDisconnected: () => opts?.isDisconnected ?? false,
   }) as unknown as import("../src/client/view").PlayerView;
