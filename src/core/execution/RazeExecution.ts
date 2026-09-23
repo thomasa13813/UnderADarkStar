@@ -4,6 +4,7 @@ import {
   Attack,
   Execution,
   Game,
+  HegemonStrike,
   MessageType,
   Player,
   StrikeInFlight,
@@ -30,11 +31,17 @@ const malusForRetreat = 25;
 // captured die with it (PlayerExecution deletes units on unowned land). The
 // Hegemon never keeps land beyond the Dark Star.
 //
+// Not all of the Hegemon's land beyond the moat was taken by a strike: the
+// engine hands the Hegemon any pocket of the target's land a jagged bubble
+// seals in (PlayerExecution.removeCluster), behind the strike's back. Such
+// orphans are adopted into the bubble they touch (adoptOrphans), and a pop
+// sweeps whatever else no live strike claims, so nothing is left standing.
+//
 // Costs are the engine's, scaled by razeAttackerLossPercent / razeSlowPercent
 // and by tyranny: the smaller the target, the more each tile costs, without
 // limit; at the floor a player cannot be struck at all, so a strike never
 // eliminates anyone.
-export class RazeExecution implements Execution, StrikeInFlight {
+export class RazeExecution implements Execution, StrikeInFlight, HegemonStrike {
   private active = true;
   private mg: Game;
   private map: GameMap;
@@ -145,6 +152,7 @@ export class RazeExecution implements Execution, StrikeInFlight {
     this.strikeID = `strike-${ticks}-${this.ref}`;
     this.inFlight = true;
     mg.addStrikeInFlight(this);
+    mg.addHegemonStrike(this);
   }
 
   // StrikeInFlight: what the HUD and a recall see between launch and landing.
@@ -176,6 +184,11 @@ export class RazeExecution implements Execution, StrikeInFlight {
     return this.bubble.size;
   }
 
+  // HegemonStrike: whether this strike's bubble holds the tile.
+  holdsTile(tile: TileRef): boolean {
+    return this.bubble.has(tile);
+  }
+
   // Bring the strike home now (the AI's recall; a human cancels the attack).
   recall(): void {
     if (!this.active) return;
@@ -197,6 +210,8 @@ export class RazeExecution implements Execution, StrikeInFlight {
     if (!this.hegemon.isAlive()) {
       // The throne fell (GameImpl pops the bubble): nothing to come home to.
       attack.delete();
+      this.bubble.clear();
+      this.mg.removeHegemonStrike(this);
       this.active = false;
       return;
     }
@@ -298,17 +313,55 @@ export class RazeExecution implements Execution, StrikeInFlight {
     this.mg.stats().attackMaxIncoming(this.target, troops);
   }
 
-  // The bubble pops: whatever it still holds reverts to neutral.
+  // The bubble pops: whatever it still holds reverts to neutral — with the
+  // orphans it touches, and then anything else the Hegemon holds beyond the
+  // moat that no other live strike's bubble claims.
   private pop(): void {
+    this.adoptOrphans();
     for (const tile of this.bubble) {
-      if (
-        this.map.ownerID(tile) === this.hegemonSmallID &&
-        !this.mg.isInDarkStar(tile)
-      ) {
-        this.hegemon.relinquish(tile);
-      }
+      this.hegemon.relinquish(tile);
     }
     this.bubble.clear();
+    this.mg.removeHegemonStrike(this);
+
+    if (this.mg.hegemonBubbleTiles() === 0) return;
+    const others = this.mg.hegemonStrikes();
+    for (const other of others) other.adoptOrphans();
+    for (const tile of Array.from(this.hegemon.tiles())) {
+      if (this.mg.isInDarkStar(tile)) continue;
+      if (others.some((other) => other.holdsTile(tile))) continue;
+      this.hegemon.relinquish(tile);
+    }
+  }
+
+  // Drop what the target took back, then take in every Hegemon tile beyond
+  // the moat the bubble touches: land the engine handed over (an enclave the
+  // bubble sealed in) is the bubble's to hold, fight over and pop.
+  adoptOrphans(): void {
+    const stack: TileRef[] = [];
+    for (const tile of this.bubble) {
+      if (this.map.ownerID(tile) === this.hegemonSmallID) {
+        stack.push(tile);
+      } else {
+        this.bubble.delete(tile);
+      }
+    }
+    while (stack.length > 0) {
+      const tile = stack.pop()!;
+      const n = this.map.neighbors4(tile, this.nbuf);
+      for (let i = 0; i < n; i++) {
+        const neighbor = this.nbuf[i];
+        if (
+          this.map.ownerID(neighbor) !== this.hegemonSmallID ||
+          this.bubble.has(neighbor) ||
+          this.mg.isInDarkStar(neighbor)
+        ) {
+          continue;
+        }
+        this.bubble.add(neighbor);
+        stack.push(neighbor);
+      }
+    }
   }
 
   private comeHome(troops: number): void {
@@ -337,16 +390,14 @@ export class RazeExecution implements Execution, StrikeInFlight {
     return false;
   }
 
-  // The target may have taken bubble tiles back, or resettled around them:
-  // pick the front up again from what the bubble still holds.
+  // The target may have taken bubble tiles back, resettled around them, or
+  // lost an enclave to the bubble: pick the front up again from what the
+  // bubble holds now.
   private refreshFrontier(): void {
     this.attack!.clearBorder();
+    this.adoptOrphans();
     for (const tile of this.bubble) {
-      if (this.map.ownerID(tile) === this.hegemonSmallID) {
-        this.addNeighbors(tile);
-      } else {
-        this.bubble.delete(tile);
-      }
+      this.addNeighbors(tile);
     }
   }
 

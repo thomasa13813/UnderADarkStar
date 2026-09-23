@@ -522,7 +522,15 @@ it on). With it off the sim is bit-identical to before: no extra player, no PRNG
   tile loop skips bubble tiles for anyone but the struck player; bubble tiles are costed against the
   strike (`Game.hegemonBubbleTiles()`, floored at `razeBubbleMinTiles`) and the defender loss comes off
   the strike, not the Hegemon. `GameImpl.conquer` pops every bubble the moment the Hegemon loses its last
-  Dark Star tile, so the conqueror's attack sees it dead and records the killing blow (R2/R3). Captured
+  Dark Star tile, so the conqueror's attack sees it dead and records the killing blow (R2/R3). **Orphans
+  (2026-09-22):** the engine's enclave rule (`PlayerExecution.removeCluster`) hands the Hegemon any
+  pocket of the target's land a jagged bubble seals in, behind the strike's back, so a pop that only knew
+  its own conquests left those tiles standing, unattackable once the strike was gone. Now every strike is
+  registered for its whole life (`Game.hegemonStrikes()`), a bubble **adopts** whatever Hegemon land
+  beyond the moat it touches (when its front is refreshed and when it pops), and a pop then **sweeps** any
+  remaining Hegemon tile beyond the moat that no other live strike's bubble claims. `HegemonExecution`
+  also sweeps every 10 ticks when no strike is alive at all, so nothing can stand beyond the moat without
+  one. Captured
   structures ride the engine's existing capture-on-conquest; the pop leaves them on unowned land and
   `PlayerExecution` deletes them. `Game.hegemonDomainTiles()` is the domain share (the HUD's "Domain
   held" and the sim use it; `numTilesOwned` includes the bubble).
@@ -735,3 +743,8 @@ settled by playtesting.
   travel time (an arc or marker is later, and instant strikes are a tunable away); "The Hegemon Reigns
   Supreme" / "Overthrown by X". Deferred: donations (H9), the last stand, throne persistence. Measured:
   a passive human throne keeps only 5% of the domain on World seed a (F11 note).
+- **2026-09-22** — **Orphaned bubble tiles fixed.** Tom saw Hegemon land left standing on the map after a
+  strike ended, when the front was jagged or counter-attacked; only the next strike on that player made it
+  attackable again. Cause: the engine's enclave rule gave the Hegemon sealed-in pockets the strike never
+  took. Bubbles now adopt touching orphans, a pop sweeps everything beyond the moat that no live strike
+  holds, and the Hegemon's own execution sweeps when no strike is alive (§6.6).

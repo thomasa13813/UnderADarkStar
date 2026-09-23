@@ -419,6 +419,16 @@ export interface StrikeInFlight {
   recall(): void;
 }
 
+// A Hegemon strike from launch until its bubble has popped (RazeExecution).
+// The bubble is the strike's own bookkeeping; this lets one strike's pop tell
+// another live strike's land from an orphan (see RazeExecution.pop).
+export interface HegemonStrike {
+  targetPlayer(): Player;
+  // Take in any Hegemon land beyond the moat that touches the bubble.
+  adoptOrphans(): void;
+  holdsTile(tile: TileRef): boolean;
+}
+
 export interface AllianceRequest {
   accept(): void;
   reject(): void;
@@ -958,6 +968,11 @@ export interface Game extends GameMap {
   strikesInFlight(): StrikeInFlight[];
   addStrikeInFlight(strike: StrikeInFlight): void;
   removeStrikeInFlight(strike: StrikeInFlight): void;
+  // Every strike alive, in flight or landed (H8): while this is empty the
+  // Hegemon owns nothing beyond the moat.
+  hegemonStrikes(): HegemonStrike[];
+  addHegemonStrike(strike: HegemonStrike): void;
+  removeHegemonStrike(strike: HegemonStrike): void;
   // One live strike per target: in flight or landed.
   hegemonStrikeOn(target: Player): boolean;
   lastInvaderGainTick(): number;

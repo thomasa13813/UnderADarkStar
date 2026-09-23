@@ -68,6 +68,7 @@ export class HegemonExecution implements Execution {
       this.maybeEndSpawnPhase(hegemon, ticks);
       return;
     }
+    this.sweepBeyondTheMoat(hegemon, ticks);
     this.respondToInvasion(hegemon, ticks);
     if (hegemon.type() !== PlayerType.Human) {
       this.punish(hegemon, ticks);
@@ -93,6 +94,18 @@ export class HegemonExecution implements Execution {
       .every((p) => p.type() !== PlayerType.Nation || p.hasSpawned());
     if (nationsPlaced || ticks >= 100) {
       mg.endSpawnPhase();
+    }
+  }
+
+  // H8, belt and braces: with no strike alive the Hegemon owns nothing beyond
+  // the moat, whatever handed it over. A live strike's pop cleans up after
+  // itself (RazeExecution.pop); this catches anything that slipped past.
+  private sweepBeyondTheMoat(hegemon: Player, ticks: number): void {
+    const mg = this.mg!;
+    if (ticks % 10 !== 0 || mg.hegemonBubbleTiles() === 0) return;
+    if (mg.hegemonStrikes().length > 0) return;
+    for (const tile of Array.from(hegemon.tiles())) {
+      if (!mg.isInDarkStar(tile)) hegemon.relinquish(tile);
     }
   }
 

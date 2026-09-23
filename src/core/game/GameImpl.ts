@@ -28,6 +28,7 @@ import {
   Game,
   GameMode,
   GameUpdates,
+  HegemonStrike,
   HumansVsNations,
   MessageType,
   MutableAlliance,
@@ -135,6 +136,7 @@ export class GameImpl implements Game {
   // slot (H6): whoever is in here is the invader.
   private _domainTilesHeld = new Map<Player, number>();
   private _strikesInFlight: StrikeInFlight[] = [];
+  private _hegemonStrikes: HegemonStrike[] = [];
   private _invasionCooldownUntil = new Map<PlayerID, number>();
   private _lastInvaderGainTick = 0;
   private _invasionStalled = false;
@@ -301,6 +303,18 @@ export class GameImpl implements Game {
 
   removeStrikeInFlight(strike: StrikeInFlight): void {
     this._strikesInFlight = this._strikesInFlight.filter((s) => s !== strike);
+  }
+
+  hegemonStrikes(): HegemonStrike[] {
+    return this._hegemonStrikes;
+  }
+
+  addHegemonStrike(strike: HegemonStrike): void {
+    this._hegemonStrikes.push(strike);
+  }
+
+  removeHegemonStrike(strike: HegemonStrike): void {
+    this._hegemonStrikes = this._hegemonStrikes.filter((s) => s !== strike);
   }
 
   hegemonStrikeOn(target: Player): boolean {

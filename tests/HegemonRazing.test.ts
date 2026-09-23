@@ -189,6 +189,17 @@ describe("Razing (H8)", () => {
     expect(west.units(UnitType.City)).toHaveLength(0);
   });
 
+  test("with no strike alive, the Hegemon keeps nothing beyond the moat, whatever handed it over", () => {
+    const domain = game.darkStar()!.domainTileCount;
+    const tile = anyTile(east);
+    hegemon.conquer(tile);
+    expect(game.hegemonBubbleTiles()).toBe(1);
+    executeTicks(game, 11);
+    expect(game.hegemonBubbleTiles()).toBe(0);
+    expect(hegemon.numTilesOwned()).toBe(domain);
+    expect(game.hasOwner(tile)).toBe(false);
+  });
+
   test("a strike cannot be aimed at the Dark Star or at unowned land", () => {
     const g = game.darkStar()!;
     const troops = hegemon.troops();
@@ -312,6 +323,130 @@ describe("Strike counterplay (H17)", () => {
     expect(hegemon.outgoingAttacks()).toHaveLength(0);
     expect(game.hegemonBubbleTiles()).toBe(0);
     expect(hegemon.troops()).toBeGreaterThan(before + 100_000);
+  });
+
+  // An east tile next to the bubble, and one far from any Hegemon land.
+  function orphanSites(): { touching: TileRef; far: TileRef } {
+    const touchesHegemon = (t: TileRef) =>
+      game.neighbors(t).some((n) => game.owner(n) === hegemon);
+    const eastTiles = Array.from(east.tiles());
+    const touching = eastTiles.find(touchesHegemon)!;
+    const far = eastTiles
+      .filter((t) => !touchesHegemon(t))
+      .sort((a, b) => game.x(b) - game.x(a))[0];
+    expect(touching).toBeDefined();
+    expect(game.neighbors(far).some((n) => game.owner(n) === hegemon)).toBe(
+      false,
+    );
+    return { touching, far };
+  }
+
+  test("land handed to the Hegemon behind the strike's back pops with the bubble, touching it or not", () => {
+    const raze = new RazeExecution(hegemon, anyTile(east), 300_000);
+    game.addExecution(raze);
+    while (hegemon.outgoingAttacks().length === 0) game.executeNextTick();
+    executeTicks(game, 30);
+    const domain = game.darkStar()!.domainTileCount;
+    const bubble = game.hegemonBubbleTiles();
+    expect(bubble).toBeGreaterThan(0);
+
+    // What PlayerExecution's enclave rule does: a conquest the strike never
+    // made, so its bubble never heard of the tile.
+    const { touching, far } = orphanSites();
+    hegemon.conquer(touching);
+    hegemon.conquer(far);
+    expect(game.hegemonBubbleTiles()).toBe(bubble + 2);
+    expect(raze.holdsTile(touching)).toBe(false);
+
+    raze.recall();
+    executeTicks(game, 2);
+    expect(hegemon.outgoingAttacks()).toHaveLength(0);
+    expect(game.hegemonBubbleTiles()).toBe(0);
+    expect(hegemon.numTilesOwned()).toBe(domain);
+    expect(game.hasOwner(touching)).toBe(false);
+    expect(game.hasOwner(far)).toBe(false);
+  });
+
+  test("a pocket of the target's land the bubble seals in is swallowed into the bubble, and pops with it", () => {
+    game.addExecution(new PlayerExecution(east));
+    const raze = new RazeExecution(hegemon, anyTile(east), 300_000);
+    game.addExecution(raze);
+    while (hegemon.outgoingAttacks().length === 0) game.executeNextTick();
+    executeTicks(game, 30);
+
+    // A ring of bubble two tiles in from the front, around one east tile.
+    const ring = (p: TileRef) => {
+      const out: TileRef[] = [];
+      for (let dx = -1; dx <= 1; dx++) {
+        for (let dy = -1; dy <= 1; dy++) {
+          if (dx !== 0 || dy !== 0) {
+            out.push(game.ref(game.x(p) + dx, game.y(p) + dy));
+          }
+        }
+      }
+      return out;
+    };
+    let pocket: TileRef | null = null;
+    for (const b of hegemon.tiles()) {
+      if (game.isInDarkStar(b)) continue;
+      const p = game.ref(game.x(b) + 2, game.y(b));
+      if (
+        game.owner(p) === east &&
+        ring(p).every((t) => game.owner(t) === east)
+      ) {
+        pocket = p;
+        break;
+      }
+    }
+    expect(pocket).not.toBeNull();
+    for (const t of ring(pocket!)) hegemon.conquer(t);
+    expect(game.owner(pocket!)).toBe(east);
+
+    // The engine's enclave rule hands the pocket to the Hegemon.
+    executeTicks(game, 25);
+    expect(game.owner(pocket!)).toBe(hegemon);
+    expect(game.hegemonBubbleTiles()).toBeGreaterThan(0);
+
+    raze.recall();
+    executeTicks(game, 2);
+    expect(hegemon.outgoingAttacks()).toHaveLength(0);
+    expect(game.hegemonBubbleTiles()).toBe(0);
+    expect(game.hasOwner(pocket!)).toBe(false);
+  });
+
+  test("two strikes: one popping leaves the other's bubble, and its orphans, alone", () => {
+    // West, grown to east's size, so a strike on it lasts as well.
+    settle(west, -1, 40, 100_000, 20);
+    const onEast = new RazeExecution(hegemon, anyTile(east), 300_000);
+    const onWest = new RazeExecution(hegemon, anyTile(west), 300_000);
+    game.addExecution(onEast);
+    game.addExecution(onWest);
+    while (hegemon.outgoingAttacks().length < 2) game.executeNextTick();
+    executeTicks(game, 30);
+    expect(onEast.isActive()).toBe(true);
+    expect(onWest.isActive()).toBe(true);
+    const { touching } = orphanSites();
+    hegemon.conquer(touching);
+    const eastBubble = Array.from(hegemon.tiles()).filter(
+      (t) =>
+        !game.isInDarkStar(t) &&
+        game.neighbors(t).some((n) => game.owner(n) === east),
+    );
+    expect(eastBubble.length).toBeGreaterThan(0);
+
+    onWest.recall();
+    executeTicks(game, 2);
+    expect(hegemon.outgoingAttacks()).toHaveLength(1);
+    expect(east.isStruckBy(hegemon)).toBe(true);
+    expect(west.isStruckBy(hegemon)).toBe(false);
+    // The east strike keeps its bubble, and the orphan it touches is now its.
+    expect(game.owner(touching)).toBe(hegemon);
+    expect(onEast.holdsTile(touching)).toBe(true);
+    expect(game.hegemonBubbleTiles()).toBe(onEast.bubbleSize());
+
+    onEast.recall();
+    executeTicks(game, 2);
+    expect(game.hegemonBubbleTiles()).toBe(0);
   });
 
   test("the throne falls with its last Dark Star tile: a bubble does not keep it alive", () => {
