@@ -170,6 +170,11 @@ export class HeadsUpMessage extends LitElement implements Controller {
         ? translateText("heads_up_message.random_spawn_spectator")
         : translateText("heads_up_message.choose_spawn_spectator");
     }
+    if (this.game.myPlayer()?.isHegemon()) {
+      // Seated on the Dark Star already; the round starts once the
+      // challengers have taken their places.
+      return translateText("heads_up_message.hegemon_spawn");
+    }
     return this.game.config().isRandomSpawn()
       ? translateText("heads_up_message.random_spawn")
       : translateText("heads_up_message.choose_spawn");

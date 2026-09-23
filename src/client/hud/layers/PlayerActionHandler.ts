@@ -12,6 +12,7 @@ import {
   SendEmbargoIntentEvent,
   SendEmojiIntentEvent,
   SendSpawnIntentEvent,
+  SendStrikeIntentEvent,
   SendTargetPlayerIntentEvent,
 } from "../../Transport";
 import { UIState } from "../../UIState";
@@ -35,6 +36,16 @@ export class PlayerActionHandler {
   handleBoatAttack(player: PlayerView, targetTile: TileRef) {
     this.eventBus.emit(
       new SendBoatAttackIntentEvent(
+        targetTile,
+        this.uiState.attackRatio * player.troops(),
+      ),
+    );
+  }
+
+  // The Hegemon's strike (H8): sized by the troop slider like any attack.
+  handleStrike(player: PlayerView, targetTile: TileRef) {
+    this.eventBus.emit(
+      new SendStrikeIntentEvent(
         targetTile,
         this.uiState.attackRatio * player.troops(),
       ),

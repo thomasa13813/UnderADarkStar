@@ -102,6 +102,7 @@ export const COLORS = {
   info: "#475569",
   target: "#ef4444",
   attack: "#ef4444",
+  strike: "#a855f7",
   infoDetails: "#7f8c8d",
   infoEmoji: "#fbbf24",
   trade: "#0891b2",
@@ -724,6 +725,82 @@ export const boatMenuElement: MenuElement = {
   },
 };
 
+// The Hegemon's strike (H8, H16): aimed at any challenger tile beyond the
+// Dark Star, sized by the troop slider, no fleet. Built per opening so the
+// tooltip can show the tyranny cost for this target.
+export function strikeMenuElement(params: MenuElementParams): MenuElement {
+  const owner = params.game.owner(params.tile);
+  const target = owner.isPlayer() ? (owner as PlayerView) : null;
+  const inDarkStar = params.game.isInDarkStar(params.tile);
+  let tyranny: number | null = null;
+  let busy = false;
+  if (target !== null && !inDarkStar) {
+    tyranny = params.game
+      .config()
+      .hegemonTyrannyLossPercent(
+        target.numTilesOwned() - target.domainTilesHeld(),
+      );
+    busy = params.myPlayer
+      .outgoingAttacks()
+      .some((a) => a.isStrike && a.targetID === target.smallID());
+  }
+  const troops = Math.floor(
+    (params.uiState?.attackRatio ?? 1) * params.myPlayer.troops(),
+  );
+  const tooltipItems: TooltipItem[] = [];
+  if (target !== null && !inDarkStar) {
+    tooltipItems.push({
+      text: translateText("dark_star.strike_tooltip", {
+        name: target.displayName(),
+        troops: renderNumber(troops),
+      }),
+      className: "text-white font-bold",
+    });
+    if (busy) {
+      tooltipItems.push({
+        text: translateText("dark_star.strike_busy"),
+        className: "text-yellow-300",
+      });
+    } else if (tyranny === null) {
+      tooltipItems.push({
+        text: translateText("dark_star.strike_tyranny_immune"),
+        className: "text-red-400",
+      });
+    } else if (tyranny > 100) {
+      tooltipItems.push({
+        text: translateText("dark_star.strike_tyranny_cost", {
+          mult: tyranny > 9900 ? "99+" : (tyranny / 100).toFixed(1),
+        }),
+        className: "text-orange-300",
+      });
+    } else {
+      tooltipItems.push({
+        text: translateText("dark_star.strike_tyranny_free"),
+        className: "text-green-400",
+      });
+    }
+  }
+  return {
+    id: Slot.Boat,
+    name: "strike",
+    icon: targetIcon,
+    color: COLORS.strike,
+    tooltipItems,
+    disabled: () =>
+      params.game.inSpawnPhase() ||
+      target === null ||
+      target.id() === params.myPlayer.id() ||
+      inDarkStar ||
+      tyranny === null ||
+      busy ||
+      troops < 1,
+    action: () => {
+      params.playerActionHandler.handleStrike(params.myPlayer, params.tile);
+      params.closeMenu();
+    },
+  };
+}
+
 export const centerButtonElement: CenterButtonElement = {
   disabled: (params: MenuElementParams): boolean => {
     const tileOwner = params.game.owner(params.tile);
@@ -806,7 +883,12 @@ export const rootMenuElement: MenuElement = {
       ...(isOwnTerritory
         ? [deleteUnitElement, allyRequestElement, buildMenuElement]
         : [
-            isAllied && !isDisconnected ? allyBreakElement : boatMenuElement,
+            // The Hegemon sends no fleets: its boat slot is the strike (H8).
+            params.myPlayer.isHegemon()
+              ? strikeMenuElement(params)
+              : isAllied && !isDisconnected
+                ? allyBreakElement
+                : boatMenuElement,
             inExtensionWindow ? allyExtendElement : allyRequestElement,
             showDonateInsteadOfAttack
               ? donateGoldRadialElement

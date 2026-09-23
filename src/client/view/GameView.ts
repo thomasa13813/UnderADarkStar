@@ -1055,6 +1055,14 @@ export class GameView implements GameMap {
   }
 
   private _darkStar: DarkStarGeometry | null = null;
+  isInDarkStar(tile: TileRef): boolean {
+    const g = this.darkStar();
+    if (g === null) return false;
+    const dx = this.x(tile) - g.cx;
+    const dy = this.y(tile) - g.cy;
+    return dx * dx + dy * dy <= g.radius * g.radius;
+  }
+
   darkStar(): DarkStarGeometry | null {
     if (this._darkStar === null && this._config.hegemonConfig().enabled) {
       this._darkStar = computeDarkStarGeometry(

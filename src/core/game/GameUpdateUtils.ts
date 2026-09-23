@@ -286,7 +286,8 @@ function attackArrayMembershipEqual(
       x.targetID !== y.targetID ||
       x.id !== y.id ||
       x.retreating !== y.retreating ||
-      x.isStrike !== y.isStrike
+      x.isStrike !== y.isStrike ||
+      x.landsAtTick !== y.landsAtTick
     ) {
       return false;
     }

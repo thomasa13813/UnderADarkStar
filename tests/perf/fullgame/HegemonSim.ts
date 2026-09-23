@@ -9,6 +9,7 @@
  *   npx tsx tests/perf/fullgame/HegemonSim.ts [--map milkyway] [--bots 400]
  *                                             [--minutes 20] [--seed hegemon-sim]
  *                                             [--loss 100] [--slow 100] [--ceiling 100]
+ *                                             [--set key=value,...] [--human]
  *
  * Troop figures are the sim's; the HUD shows them divided by 10.
  */
@@ -23,6 +24,8 @@ import {
   GameMode,
   GameType,
   Player,
+  PlayerInfo,
+  PlayerType,
   UnitType,
 } from "../../../src/core/game/Game";
 import { createGame } from "../../../src/core/game/GameImpl";
@@ -127,8 +130,27 @@ async function main(): Promise<void> {
     0,
     new PseudoRandom(simpleHash(gameStart.gameID)),
   );
+  // --human seats a human on the throne who does nothing at all: no response
+  // waves, no punitive strikes — only the stall routing every Hegemon gets
+  // (H13). The floor a real player starts from.
+  const humans = process.argv.includes("--human")
+    ? [
+        new PlayerInfo(
+          "You",
+          PlayerType.Human,
+          "human",
+          "human",
+          false,
+          null,
+          [],
+          null,
+          null,
+          true,
+        ),
+      ]
+    : [];
   const game = createGame(
-    [],
+    humans,
     nations,
     terrain.gameMap,
     terrain.miniGameMap,

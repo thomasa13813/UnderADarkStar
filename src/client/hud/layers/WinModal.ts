@@ -370,7 +370,7 @@ export class WinModal extends LitElement implements Controller {
           .playerViews()
           .some((p) => p.isHegemon() && p.name() === wu.winner![1]);
         this._title = hegemonWon
-          ? translateText("win_modal.hegemon_endures")
+          ? translateText("win_modal.hegemon_reigns")
           : translateText("win_modal.nation_won", {
               nation: wu.winner[1],
             });
@@ -386,17 +386,26 @@ export class WinModal extends LitElement implements Controller {
             new SendWinnerEvent(["player", winnerClient], wu.allPlayersStats),
           );
         }
-        if (
-          winnerClient !== null &&
-          winnerClient === this.game.myPlayer()?.clientID()
-        ) {
-          this._title = translateText("win_modal.you_won");
+        const me = this.game.myPlayer();
+        if (winnerClient !== null && winnerClient === me?.clientID()) {
+          // From the throne, outlasting the round is the reign continuing (R4).
+          this._title = winner.isHegemon()
+            ? translateText("win_modal.hegemon_reigns")
+            : translateText("win_modal.you_won");
           this.isWin = true;
           crazyGamesSDK.happytime();
-        } else {
-          this._title = translateText("win_modal.other_won", {
+        } else if (me?.isHegemon() && !me.isAlive()) {
+          // The killing blow (R3), seen from the throne.
+          this._title = translateText("win_modal.overthrown", {
             player: winner.displayName(),
           });
+          this.isWin = false;
+        } else {
+          this._title = winner.isHegemon()
+            ? translateText("win_modal.hegemon_reigns")
+            : translateText("win_modal.other_won", {
+                player: winner.displayName(),
+              });
           this.isWin = false;
         }
         this.playEndOfGameSound();

@@ -1,6 +1,7 @@
 import {
   Execution,
   Game,
+  GameType,
   Player,
   PlayerType,
   Unit,
@@ -63,10 +64,35 @@ export class HegemonExecution implements Execution {
       // init(): executions added during the init pass are lost.
       this.mg.addExecution(new PlayerExecution(hegemon));
     }
-    if (this.mg.inSpawnPhase()) return;
+    if (this.mg.inSpawnPhase()) {
+      this.maybeEndSpawnPhase(hegemon, ticks);
+      return;
+    }
     this.respondToInvasion(hegemon, ticks);
     if (hegemon.type() !== PlayerType.Human) {
       this.punish(hegemon, ticks);
+    }
+  }
+
+  // A singleplayer round's spawn phase ends when the human spawns — but a
+  // human Hegemon is seated, never spawns, and would wait forever. End it
+  // once the nations have taken their places (they place themselves during
+  // the spawn phase only), or after a short grace if any never does.
+  private maybeEndSpawnPhase(hegemon: Player, ticks: number): void {
+    const mg = this.mg!;
+    if (
+      hegemon.type() !== PlayerType.Human ||
+      mg.config().gameConfig().gameType !== GameType.Singleplayer
+    ) {
+      return;
+    }
+    if (ticks < 10) return;
+    // allPlayers: an unplaced nation owns nothing, so players() omits it.
+    const nationsPlaced = mg
+      .allPlayers()
+      .every((p) => p.type() !== PlayerType.Nation || p.hasSpawned());
+    if (nationsPlaced || ticks >= 100) {
+      mg.endSpawnPhase();
     }
   }
 

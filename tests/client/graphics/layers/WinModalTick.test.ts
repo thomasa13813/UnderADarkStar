@@ -60,6 +60,7 @@ function makeGame(opts: {
   winUpdateCount?: number;
   winnerPlayer?: {
     isPlayer: () => boolean;
+    isHegemon: () => boolean;
     clientID: () => string | null;
     displayName: () => string;
   };
@@ -72,6 +73,7 @@ function makeGame(opts: {
   return {
     myPlayer: () => ({
       isAlive: () => true,
+      isHegemon: () => false,
       hasSpawned: () => true,
       team: () => opts.myTeam ?? null,
       clientID: () => opts.myClientID ?? null,
@@ -139,6 +141,7 @@ describe("WinModal tick win handling", () => {
         myClientID: "my-client",
         winnerPlayer: {
           isPlayer: () => true,
+          isHegemon: () => false,
           clientID: () => "winner-client",
           displayName: () => "Bob",
         },
@@ -159,6 +162,7 @@ describe("WinModal tick win handling", () => {
         myClientID: "my-client",
         winnerPlayer: {
           isPlayer: () => true,
+          isHegemon: () => false,
           clientID: () => "my-client",
           displayName: () => "Me",
         },

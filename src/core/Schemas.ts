@@ -54,12 +54,14 @@ export type Intent =
   | KickPlayerIntent
   | TogglePauseIntent
   | UpdateGameConfigIntent
-  | ToggleGameStartTimer;
+  | ToggleGameStartTimer
+  | StrikeIntent;
 
 export type AttackIntent = z.infer<typeof AttackIntentSchema>;
 export type CancelAttackIntent = z.infer<typeof CancelAttackIntentSchema>;
 export type SpawnIntent = z.infer<typeof SpawnIntentSchema>;
 export type BoatAttackIntent = z.infer<typeof BoatAttackIntentSchema>;
+export type StrikeIntent = z.infer<typeof StrikeIntentSchema>;
 export type EmbargoAllIntent = z.infer<typeof EmbargoAllIntentSchema>;
 export type CancelBoatIntent = z.infer<typeof CancelBoatIntentSchema>;
 export type AllianceRequestIntent = z.infer<typeof AllianceRequestIntentSchema>;
@@ -645,6 +647,14 @@ export const BoatAttackIntentSchema = z.object({
   dst: zb.uint(),
 });
 
+// A Hegemon strike (H8): the Dark Star sends no fleets — the strike falls
+// directly on the aimed tile, anywhere beyond the moat, after a flight time.
+export const StrikeIntentSchema = z.object({
+  type: z.literal("strike"),
+  tile: zb.uint(),
+  troops: zb.float({ min: 0 }),
+});
+
 export const AllianceRequestIntentSchema = z.object({
   type: z.literal("allianceRequest"),
   recipient: MappedID,
@@ -799,6 +809,8 @@ export const IntentSchema = z.discriminatedUnion("type", [
   TogglePauseIntentSchema,
   UpdateGameConfigIntentSchema,
   ToggleGameStartTimerIntentSchema,
+  // Appended: zbin encodes the union variant by position.
+  StrikeIntentSchema,
 ]);
 
 // StampedIntent = Intent with server-stamped clientID (used in turns and execution)

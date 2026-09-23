@@ -1,10 +1,12 @@
 import { AttackExecution } from "../src/core/execution/AttackExecution";
 import { ConstructionExecution } from "../src/core/execution/ConstructionExecution";
+import { Executor } from "../src/core/execution/ExecutionManager";
 import { HegemonExecution } from "../src/core/execution/HegemonExecution";
 import { PlayerExecution } from "../src/core/execution/PlayerExecution";
 import { RazeExecution } from "../src/core/execution/RazeExecution";
 import {
   Game,
+  GameType,
   Player,
   PlayerInfo,
   PlayerType,
@@ -375,5 +377,144 @@ describe("Punitive strikes (H11)", () => {
     settle(west, -1, 60, 100_000, 40);
     executeTicks(game, 1500);
     expect(hegemon.outgoingAttacks()).toHaveLength(0);
+  });
+});
+
+describe("Playing the Hegemon: the seat and the strike order", () => {
+  beforeEach(() => start(PlayerType.Human));
+
+  test("a strike intent from the Hegemon launches a strike; from anyone else it does nothing", () => {
+    const executor = new Executor(game, "game", undefined);
+    const tile = anyTile(east);
+    const before = hegemon.troops();
+    game.addExecution(
+      executor.createExec({
+        type: "strike",
+        tile,
+        troops: 200_000,
+        clientID: "client1", // east
+      }),
+    );
+    executeTicks(game, 2);
+    expect(game.strikesInFlight()).toHaveLength(0);
+    expect(hegemon.troops()).toBe(before);
+
+    game.addExecution(
+      executor.createExec({
+        type: "strike",
+        tile,
+        troops: 200_000,
+        clientID: "client3", // the throne
+      }),
+    );
+    executeTicks(game, 1);
+    const flight = game.strikesInFlight();
+    expect(flight).toHaveLength(1);
+    expect(flight[0].targetPlayer()).toBe(east);
+    expect(flight[0].troopCount()).toBe(200_000);
+    expect(flight[0].aimTile()).toBe(tile);
+    expect(flight[0].landsAtTick()).toBeGreaterThan(game.ticks());
+    expect(hegemon.troops()).toBe(before - 200_000);
+
+    // The landed attack keeps the in-flight id: one HUD row from launch to end.
+    const id = flight[0].id();
+    while (hegemon.outgoingAttacks().length === 0) game.executeNextTick();
+    expect(game.strikesInFlight()).toHaveLength(0);
+    expect(hegemon.outgoingAttacks()[0].id()).toBe(id);
+    expect(hegemon.outgoingAttacks()[0].isStrike()).toBe(true);
+  });
+
+  test("one live strike per target, any number of targets", () => {
+    const before = hegemon.troops();
+    game.addExecution(new RazeExecution(hegemon, anyTile(east), 100_000));
+    game.addExecution(new RazeExecution(hegemon, anyTile(east), 100_000));
+    game.addExecution(new RazeExecution(hegemon, anyTile(west), 100_000));
+    executeTicks(game, 1);
+    expect(game.strikesInFlight()).toHaveLength(2);
+    expect(hegemon.troops()).toBe(before - 200_000);
+    expect(game.hegemonStrikeOn(east)).toBe(true);
+    expect(game.hegemonStrikeOn(west)).toBe(true);
+
+    // Still refused once it is on the ground.
+    while (hegemon.outgoingAttacks().length < 2) game.executeNextTick();
+    game.addExecution(new RazeExecution(hegemon, anyTile(east), 100_000));
+    executeTicks(game, 1);
+    expect(game.strikesInFlight()).toHaveLength(0);
+    expect(hegemon.outgoingAttacks()).toHaveLength(2);
+  });
+
+  test("a strike recalled in flight comes home whole, by the ordinary cancel-attack order", () => {
+    const before = hegemon.troops();
+    game.addExecution(new RazeExecution(hegemon, anyTile(east), 100_000));
+    executeTicks(game, 1);
+    const id = game.strikesInFlight()[0].id();
+    hegemon.orderRetreat(id);
+    expect(game.strikesInFlight()).toHaveLength(0);
+    expect(hegemon.troops()).toBe(before);
+    executeTicks(game, 60);
+    expect(hegemon.outgoingAttacks()).toHaveLength(0);
+    expect(game.hegemonBubbleTiles()).toBe(0);
+  });
+
+  test("the Hegemon cannot order a plain attack beyond the Dark Star, even next to its bubble", () => {
+    expect(hegemon.canAttack(anyTile(east))).toBe(false);
+    game.addExecution(new RazeExecution(hegemon, anyTile(east), 300_000));
+    while (hegemon.outgoingAttacks().length === 0) game.executeNextTick();
+    executeTicks(game, 20);
+    expect(game.hegemonBubbleTiles()).toBeGreaterThan(0);
+    for (const tile of east.borderTiles()) {
+      expect(hegemon.canAttack(tile)).toBe(false);
+    }
+  });
+});
+
+describe("Playing the Hegemon: the singleplayer spawn phase", () => {
+  async function startSingleplayer(humanHegemon: boolean) {
+    const humans = [
+      new PlayerInfo("east", PlayerType.Human, "client1", "east"),
+    ];
+    if (humanHegemon) {
+      humans.push(
+        new PlayerInfo(
+          "throne",
+          PlayerType.Human,
+          "client3",
+          "throne",
+          false,
+          null,
+          [],
+          null,
+          null,
+          true,
+        ),
+      );
+    }
+    game = await setup(
+      "big_plains",
+      {
+        hegemon: { enabled: true },
+        gameType: GameType.Singleplayer,
+        disableNavMesh: false,
+      },
+      humans,
+      undefined,
+      undefined,
+      false,
+    );
+    game.addExecution(new HegemonExecution());
+  }
+
+  test("a seated human ends the spawn phase without spawning; a challenger still has to pick", async () => {
+    await startSingleplayer(true);
+    executeTicks(game, 5);
+    expect(game.inSpawnPhase()).toBe(true);
+    executeTicks(game, 100);
+    expect(game.inSpawnPhase()).toBe(false);
+    expect(game.hegemon()!.type()).toBe(PlayerType.Human);
+    expect(game.hegemonDomainTiles()).toBe(game.darkStar()!.domainTileCount);
+
+    await startSingleplayer(false);
+    executeTicks(game, 150);
+    expect(game.inSpawnPhase()).toBe(true);
   });
 });

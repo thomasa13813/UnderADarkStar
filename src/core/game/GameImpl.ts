@@ -38,6 +38,7 @@ import {
   PlayerType,
   Quads,
   SpawnArea,
+  StrikeInFlight,
   Team,
   TeamGameSpawnAreas,
   TerrainType,
@@ -133,6 +134,7 @@ export class GameImpl implements Game {
   // Domain tiles held by anyone but the Hegemon. Occupancy IS the invasion
   // slot (H6): whoever is in here is the invader.
   private _domainTilesHeld = new Map<Player, number>();
+  private _strikesInFlight: StrikeInFlight[] = [];
   private _invasionCooldownUntil = new Map<PlayerID, number>();
   private _lastInvaderGainTick = 0;
   private _invasionStalled = false;
@@ -287,6 +289,27 @@ export class GameImpl implements Game {
     const hegemon = this.hegemon();
     if (hegemon === null) return 0;
     return hegemon.numTilesOwned() - this.hegemonDomainTiles();
+  }
+
+  strikesInFlight(): StrikeInFlight[] {
+    return this._strikesInFlight;
+  }
+
+  addStrikeInFlight(strike: StrikeInFlight): void {
+    this._strikesInFlight.push(strike);
+  }
+
+  removeStrikeInFlight(strike: StrikeInFlight): void {
+    this._strikesInFlight = this._strikesInFlight.filter((s) => s !== strike);
+  }
+
+  hegemonStrikeOn(target: Player): boolean {
+    const hegemon = this.hegemon();
+    if (hegemon === null) return false;
+    return (
+      target.isStruckBy(hegemon) ||
+      this._strikesInFlight.some((s) => s.targetPlayer() === target)
+    );
   }
 
   invasionCooldownUntil(player: Player): number {

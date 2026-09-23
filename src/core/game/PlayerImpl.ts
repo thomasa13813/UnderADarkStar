@@ -34,6 +34,7 @@ import {
   PlayerProfile,
   PlayerType,
   Relation,
+  StrikeInFlight,
   Structures,
   Team,
   TerraNullius,
@@ -94,10 +95,12 @@ const EMPTY_STRING_ARRAY: string[] = [];
 const EMPTY_ATTACK_UPDATES: AttackUpdate[] = [];
 const EMPTY_ALLIANCE_VIEWS: AllianceView[] = [];
 const NO_STRIKE_FIELDS = {};
-const STRIKE_FIELDS = { isStrike: true } as const;
 
-function strikeFields(a: Attack): Pick<AttackUpdate, "isStrike"> {
-  return a.isStrike() ? STRIKE_FIELDS : NO_STRIKE_FIELDS;
+function strikeFields(a: Attack): Pick<AttackUpdate, "isStrike" | "aimTile"> {
+  // A landed strike's source tile is where it fell (RazeExecution).
+  return a.isStrike()
+    ? { isStrike: true, aimTile: a.sourceTile() ?? undefined }
+    : NO_STRIKE_FIELDS;
 }
 const EMPTY_EMOJIS: EmojiMessage[] = [];
 const EMPTY_EMBARGOES = new Set<string>();
@@ -329,7 +332,7 @@ export class PlayerImpl implements Player {
       }
     }
 
-    const outgoingAttacks =
+    let outgoingAttacks =
       this._outgoingAttacks.length === 0
         ? EMPTY_ATTACK_UPDATES
         : this._outgoingAttacks.map((a) => {
@@ -357,6 +360,30 @@ export class PlayerImpl implements Player {
             ...strikeFields(a),
           } satisfies AttackUpdate;
         });
+      }
+    }
+
+    // Strikes in flight (H8) ride the attack arrays too, so the Hegemon sees
+    // what it launched and the target what is coming, with a landing tick.
+    const inFlight = this.mg.strikesInFlight();
+    if (inFlight.length > 0) {
+      const toUpdate = (s: StrikeInFlight): AttackUpdate => ({
+        attackerID: this.mg.hegemon()!.smallID(),
+        targetID: s.targetPlayer().smallID(),
+        troops: s.troopCount(),
+        id: s.id(),
+        retreating: false,
+        isStrike: true,
+        aimTile: s.aimTile(),
+        landsAtTick: s.landsAtTick(),
+      });
+      if (this.isHegemon()) {
+        outgoingAttacks = [...outgoingAttacks, ...inFlight.map(toUpdate)];
+      } else {
+        const mine = inFlight.filter((s) => s.targetPlayer() === this);
+        if (mine.length > 0) {
+          incomingAttacks = [...incomingAttacks, ...mine.map(toUpdate)];
+        }
       }
     }
 
@@ -701,6 +728,12 @@ export class PlayerImpl implements Player {
   orderRetreat(id: string) {
     const attack = this._outgoingAttacks.find((attack) => attack.id() === id);
     if (!attack) {
+      // A strike still in flight is not an attack yet: recall it (H8).
+      const strike = this.mg.strikesInFlight().find((s) => s.id() === id);
+      if (strike !== undefined) {
+        strike.recall();
+        return;
+      }
       console.warn(`Didn't find outgoing attack with id ${id}`);
       return;
     }
@@ -1882,9 +1915,10 @@ export class PlayerImpl implements Player {
     troops: number,
     sourceTile: TileRef | null,
     border: Set<number>,
+    id?: string,
   ): Attack {
     const attack = new AttackImpl(
-      this._pseudo_random.nextID(),
+      id ?? this._pseudo_random.nextID(),
       target,
       this,
       troops,
@@ -1939,6 +1973,11 @@ export class PlayerImpl implements Player {
     }
 
     if (owner.isPlayer() && !this.canAttackPlayer(owner)) {
+      return false;
+    }
+    // The Hegemon never conquers beyond the Dark Star (H8): its attacks
+    // there are strikes, ordered separately.
+    if (this.isHegemon() && !this.mg.isInDarkStar(tile)) {
       return false;
     }
     // The Hegemon's land beyond the moat is a strike's bubble (H17): only the

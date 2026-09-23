@@ -213,6 +213,9 @@ export interface AttackUpdate {
   retreating: boolean;
   // A Hegemon's strike (RazeExecution); absent on every other attack.
   isStrike?: true;
+  // Strikes only: where it falls, and — while still in flight — when.
+  aimTile?: TileRef;
+  landsAtTick?: number;
 }
 
 /**

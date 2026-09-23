@@ -6,6 +6,7 @@ import {
   Game,
   MessageType,
   Player,
+  StrikeInFlight,
   TerrainType,
   UnitType,
 } from "../game/Game";
@@ -33,13 +34,16 @@ const malusForRetreat = 25;
 // and by tyranny: the smaller the target, the more each tile costs, without
 // limit; at the floor a player cannot be struck at all, so a strike never
 // eliminates anyone.
-export class RazeExecution implements Execution {
+export class RazeExecution implements Execution, StrikeInFlight {
   private active = true;
   private mg: Game;
   private map: GameMap;
   private target: Player;
   private attack: Attack | null = null;
   private arrivalTick = 0;
+  // Set at launch; the landed Attack keeps it, so the HUD sees one strike.
+  private strikeID = "";
+  private inFlight = false;
 
   private bubble = new Set<TileRef>();
   private toConquer = new FlatBinaryHeap();
@@ -93,6 +97,18 @@ export class RazeExecution implements Execution {
       this.active = false;
       return;
     }
+    // One live strike per target: in flight or on the ground.
+    if (mg.hegemonStrikeOn(owner)) {
+      mg.displayMessage(
+        "events_display.dark_star_strike_busy",
+        MessageType.ATTACK_FAILED,
+        this.hegemon.id(),
+        undefined,
+        { name: owner.displayName() },
+      );
+      this.active = false;
+      return;
+    }
     this.target = owner;
     this.targetSmallID = owner.smallID();
     this.hegemonSmallID = this.hegemon.smallID();
@@ -125,10 +141,34 @@ export class RazeExecution implements Execution {
       { troops: renderTroops(this.troops) },
     );
     mg.stats().attack(this.hegemon, owner, this.troops);
+
+    this.strikeID = `strike-${ticks}-${this.ref}`;
+    this.inFlight = true;
+    mg.addStrikeInFlight(this);
+  }
+
+  // StrikeInFlight: what the HUD and a recall see between launch and landing.
+  id(): string {
+    return this.strikeID;
+  }
+  troopCount(): number {
+    return this.troops ?? 0;
+  }
+  aimTile(): TileRef {
+    return this.ref;
+  }
+  landsAtTick(): number {
+    return this.arrivalTick;
   }
 
   targetPlayer(): Player {
     return this.target;
+  }
+
+  private landed(): void {
+    if (!this.inFlight) return;
+    this.inFlight = false;
+    this.mg.removeStrikeInFlight(this);
   }
 
   // Tiles the bubble holds right now.
@@ -242,11 +282,13 @@ export class RazeExecution implements Execution {
       this.comeHome(troops);
       return;
     }
+    this.landed();
     this.attack = this.hegemon.createAttack(
       this.target,
       troops,
       this.ref,
       new Set<TileRef>(),
+      this.strikeID,
     );
     this.attack.markStrike();
     // The impact: the aimed tile is taken outright, and the bubble grows from it.
@@ -270,6 +312,7 @@ export class RazeExecution implements Execution {
   }
 
   private comeHome(troops: number): void {
+    this.landed();
     this.pop();
     this.hegemon.addTroops(troops);
     this.attack?.delete();

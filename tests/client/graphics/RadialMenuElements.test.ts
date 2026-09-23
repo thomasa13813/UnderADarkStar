@@ -91,6 +91,7 @@ describe("RadialMenuElements", () => {
   beforeEach(() => {
     mockPlayer = {
       id: () => 1,
+      isHegemon: vi.fn(() => false),
       isAlliedWith: vi.fn(() => false),
       isPlayer: vi.fn(() => true),
       isTraitor: vi.fn(() => false),

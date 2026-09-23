@@ -107,6 +107,10 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   troops and three times the time of an ordinary conquest) — runs until its troops are spent, the target
   has no land within reach, or it is recalled (survivors come home). It **can never eliminate** a
   challenger (H16). **Structures on razed land are destroyed.** The target can fight it (H17).
+  [Built 2026-09-22] A human Hegemon orders one with the **Strike** action — its own `strike` order,
+  never a fleet — on any challenger tile, sized by the troop slider; **one live strike per target**,
+  any number of targets; a recall in flight brings the troops home whole, on the ground it pays the
+  engine's retreat malus.
 - **H9 — Diplomacy.** The Hegemon **cannot ally** with anyone. It **can donate** to any player, and any
   player can donate to it (H6). This needs a change to the engine, where donation currently requires
   the two players to be allied or team-mates (`canDonateGold` / `canDonateTroops` → `isFriendly`).
@@ -207,7 +211,7 @@ resettlement — C1.)
 | F6  | **Raids (C2).** The Hegemon's side is decided (H8, H16, H17: direct strike at a poor rate, structures destroyed, cannot eliminate, can be held). Still open for challenger raids: what does a raid cost, and what stops raiding from being strictly better than conquering against a rival you can't hold ground from? Can a raid target the Hegemon's domain (presumably not — H6)? Measured caveat: a large AI resettles razed land almost at once, so a raze's lasting harm is the structures it destroys.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | F8  | **Nukes around the Dark Star (H7).** Domain tiles are immune but targetable: a nuke aimed at them lands and does nothing [Decided]. Still open: Can the Hegemon itself build silos and nuke challengers, and if so is that land razed or merely irradiated? Are SAMs/defense posts available to it?                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | F9  | **Donations (H6, H9).** Are donations open between _any_ two players now, or only to/from the Hegemon and to the current invader? Any limits to prevent a coalition funnelling everything into one super-invader — or is that the intended strategy?                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| F11 | **Hegemon toolkit (H15).** The role is decided — balance-of-power counterweight — and strikes cost normal troops, so spending the pool on strikes versus keeping it for defence **is** the core decision [Decided]. Still open: are razing and donations enough, or does the Hegemon need more (nukes — see F8; embargo-like edicts; visibility into challengers' strength)? Note that regeneration at the current F1 placeholder refills a 25% strike in under a minute, so the tension is weak until F1 is calibrated.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| F11 | **Hegemon toolkit (H15).** The role is decided — balance-of-power counterweight — and strikes cost normal troops, so spending the pool on strikes versus keeping it for defence **is** the core decision [Decided]. Still open: are razing and donations enough, or does the Hegemon need more (nukes — see F8; embargo-like edicts; visibility into challengers' strength)? Note that regeneration at the current F1 placeholder refills a 25% strike in under a minute, so the tension is weak until F1 is calibrated. [2026-09-22] Visibility is built: the throne's challenger table (§6.7). New from the first human seat: a do-nothing Hegemon loses 95% of the domain to one invader (H13 only bites on a stall) — should a human get the AI's landing wave too, or is active defence the point?                                                                                                                                                                                                                                                                                                 |
 | F12 | **Edge cases.** Hegemon disconnects mid-round (AI takes over?); the invader disconnects; an AI challenger (Nation/Tribe) lands the killing blow (next round gets an AI Hegemon per R6?); team modes (probably out of scope at first).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | F13 | **Hegemon identity across rounds.** Beyond the high-score table (S5): titles, reign counter in the lobby, anything inherited besides the seat.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | F14 | **Names.** Sci-fi names for units, structures, Tribes/Nations and resources (rename surface in §5.4).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
@@ -269,7 +273,10 @@ persistence was OpenFront's closed-source API, which we do not have.
 - **Singleplayer.** `src/client/LocalServer.ts` sees the winner message; `src/client/SinglePlayerModal.ts`
   builds `gameStartInfo` client-side. Persisting "you are the reigning Hegemon" needs a new
   `localStorage` key (no results store exists). With one human, the loop is: beat the AI Hegemon →
-  next round you defend the throne against AI challengers.
+  next round you defend the throne against AI challengers. [2026-09-22] The **seat** is a modal
+  toggle ("Play as the Hegemon") that sets `isHegemon` on the human's player entry and nothing else:
+  that one boolean is the seam a future throne module drives (persisting the reign, the winner
+  choosing the next map, rule sliders — none built).
 - **Identity.** `clientID` is per-join (useless across rounds). `persistentID` (localStorage UUID, or
   the JWT `sub`) is the only stable key available without the API — treat it as a secret, never
   broadcast it. `publicId` requires the API.
@@ -531,6 +538,50 @@ it on). With it off the sim is bit-identical to before: no extra player, no PRNG
   Hegemon burns 2–7M troops a round on strikes for 150–8,000 popped tiles — very poor value, as intended.
   Overthrows: 2/6 without the floor, 0/6 with it (small samples; re-measure with the last stand).
 
+### 6.7 As built — playing the Hegemon in singleplayer (2026-09-22)
+
+Narrow by design: the seat in one game, nothing about who holds the throne between games.
+
+- **The seat.** The singleplayer modal's "Play as the Hegemon" toggle (shown under the Dark Star
+  toggle, FFA only) puts `isHegemon: true` on the human's player entry; everything downstream already
+  existed (`GameImpl.seatHegemon` takes a flagged human over creating the AI, `SpawnExecution` refuses
+  its spawn, `HegemonExecution` skips the AI's response waves and punitive strikes for a human). Two
+  things did not: a singleplayer spawn phase only ended when the human spawned, so a seated human waited
+  forever — `HegemonExecution.maybeEndSpawnPhase` now ends it once every nation has taken its place (or
+  after 10 s); and the win modal treated an enduring Hegemon as an AI "nation" win.
+- **The strike order.** A new `strike` intent (`tile`, `troops`; appended to the wire union) replaces
+  the boat piggyback — the Dark Star sends no fleets, and the schema now says so. The radial menu's boat
+  slot becomes **Strike** for the Hegemon (any challenger tile beyond the Dark Star, sized by the troop
+  slider), with a tooltip giving the troops and the tyranny cost ("×N", "too small to strike", or
+  "already striking"). No left-click auto-strike: launching a share of the army takes the menu. The
+  Hegemon's plain attack is refused beyond the Dark Star (`Player.canAttack`), so the centre button and
+  a left click on a challenger do nothing.
+- **In flight.** `Game.strikesInFlight()` holds a strike between launch and landing (`StrikeInFlight`,
+  implemented by `RazeExecution`); `PlayerImpl.toUpdate` rides it on the attack arrays as an
+  `AttackUpdate` with `isStrike`, `aimTile` and `landsAtTick`, for the Hegemon (outgoing) and the target
+  (incoming). The landed `Attack` keeps the in-flight id, so the HUD sees one row from launch to end.
+  **One live strike per target** (`Game.hegemonStrikeOn`, refused with a message). A recall is the
+  ordinary `cancel_attack`: `PlayerImpl.orderRetreat` recalls an in-flight strike by id.
+- **HUD.** `attacks-display`: the Hegemon's strike row ("Strike on X · landing in Ns / Razing", Recall);
+  the target's inbound row shows the countdown and hides Counter-attack until it lands; clicking either
+  jumps to the aim tile. `dark-star-panel` from the throne: the H13 line reads "your income is being sent
+  against the invader", a "Your strikes hold N tiles" line, and a **sortable challenger table**
+  (nations and humans, never Tribes): troops, capacity (`Config.maxTroops`), cities, land share, and
+  strike status (Free / ×N / Immune / Striking / Invading). Win modal: "The Hegemon Reigns Supreme"
+  (a win from the throne, a loss for everyone else) and "Overthrown by X" for a fallen human Hegemon.
+- **Sim.** `HegemonSim --human` seats a passive human (no waves, no punitive strikes; stall routing
+  only). **World, seed a: a do-nothing throne survives on the timer with the domain at 5%** — Ethiopia
+  lands at 15:12 and grinds it down while the Hegemon's troops never drop below 5.2M, because H13 only
+  fires on a stall and an advancing invader is otherwise unopposed. A human Hegemon must defend by
+  attacking the invader's domain tiles; whether it should also get the AI's landing wave is a playtest
+  question. AI-only rounds are unchanged (4 strikes, all fought, 5 landings, throne holds).
+- **Verified in the browser** (Playwright, World, 50 Tribes): toggle → seated with the whole domain and
+  full troops at tick 14, no spawn prompt, table populated; at minute ~0.6 Russia crossed the tyranny
+  floor, tooltip "Strike Russia with 1.25M troops / Tyranny: ×11.8", strike row "Landing in 4s", landed
+  with a 211-tile bubble and "Razing", recall returned the survivors (troops 5.29M → 6.18M).
+- **Deferred:** donations (H9), the all-in last stand (an AI rule tied to F1), a map marker or arc for
+  the flight, throne persistence (§5.2).
+
 ## 7. Constraints (non-negotiable engineering rules)
 
 - `src/core/` must stay **deterministic** (seeded PRNG, no wall-clock, careful with floats) and
@@ -576,13 +627,13 @@ these before any public release.
 
 **M1 slices** (each independently testable):
 
-| Slice | Goal                                                                                                                                                                                                                                                 | Status               |
-| ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
-| 1     | **The throne exists:** `hegemon` config + `isHegemon` flag, disc/moat terrain, seated passive AI Hegemon, fixed map-scaled strength, troop bleed, win rules R1–R5, cheap guards (no mop-up/cluster capture/nuke damage on the domain, no alliances). | **Built 2026-09-20** |
-| 2 ✔   | **Invasion economics:** the invader gains nothing from domain tiles (H5); units standing on the domain survive nukes too (rest of H7).                                                                                                               |                      |
-| 3 ✔   | **Single-invader slot:** claimed on landing, held while any domain tile is held, inbound transports turn back, 5-minute cooldown from eviction (H6, H12).                                                                                            |                      |
-| 4     | **The Dark Star fights back, razing, diplomacy:** stall detector and forced counter-attack (H13) ✔, raze mode (H8) ✔, open donations (H9).                                                                                                           | H9 outstanding       |
-| 5     | **AI Hegemon + calibration:** punitive strikes (H11) ✔, Nations treat the Hegemon as the objective ✔, strike counterplay + tyranny (H16, H17) ✔, all-in last stand, headless F1 calibration, private-lobby toggle.                                   | In progress          |
+| Slice | Goal                                                                                                                                                                                                                                                             | Status               |
+| ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
+| 1     | **The throne exists:** `hegemon` config + `isHegemon` flag, disc/moat terrain, seated passive AI Hegemon, fixed map-scaled strength, troop bleed, win rules R1–R5, cheap guards (no mop-up/cluster capture/nuke damage on the domain, no alliances).             | **Built 2026-09-20** |
+| 2 ✔   | **Invasion economics:** the invader gains nothing from domain tiles (H5); units standing on the domain survive nukes too (rest of H7).                                                                                                                           |                      |
+| 3 ✔   | **Single-invader slot:** claimed on landing, held while any domain tile is held, inbound transports turn back, 5-minute cooldown from eviction (H6, H12).                                                                                                        |                      |
+| 4     | **The Dark Star fights back, razing, diplomacy:** stall detector and forced counter-attack (H13) ✔, raze mode (H8) ✔, open donations (H9).                                                                                                                       | H9 outstanding       |
+| 5     | **AI Hegemon + calibration:** punitive strikes (H11) ✔, Nations treat the Hegemon as the objective ✔, strike counterplay + tyranny (H16, H17) ✔, play as the Hegemon in singleplayer (§6.7) ✔, all-in last stand, headless F1 calibration, private-lobby toggle. | In progress          |
 
 Confirm F5 on a test map early in M1 (F1 is calibrated during it); F6 before M1.5; the rest can be
 settled by playtesting.
@@ -597,7 +648,7 @@ settled by playtesting.
 | **Invader**                   | The single challenger currently allowed to attack the domain.                              |
 | **Raze / Raid**               | An attack that returns land to neutral instead of claiming it.                             |
 | **Tyranny**                   | The cost penalty on striking a small player; at the floor they cannot be struck at all.    |
-| **Hold**                      | Troops a struck player commits to a strike: razing stops while they last.                  |
+| **Bubble**                    | The land a strike holds while it lasts; fought over by the struck player, pops to neutral. |
 | **Overthrow**                 | Eliminating the Hegemon (zero tiles).                                                      |
 | **Killing blow**              | The conquest that eliminates the Hegemon; its owner wins the round.                        |
 | **Round / Reign**             | One game / the consecutive rounds a player holds the throne.                               |
@@ -675,3 +726,12 @@ settled by playtesting.
   and it pops to neutral when the strike ends. The hold, Defend button, grace timer and AI defence rule
   were removed; commit `409388f20`. Follow-up: `razeBubbleMinTiles` (200) so a fresh bubble is not
   snuffed in a second.
+- **2026-09-22** — **Play as the Hegemon in singleplayer** built (§6.7), narrow by design. Decided with
+  Tom: the strike is aimed from the radial menu on any challenger tile and sized by the troop slider
+  (no fleet — a direct hit from anywhere is the mechanic, and it now has its own `strike` order); one
+  live strike per target, any number of targets; a recall keeps the engine's retreat malus; H13 stays
+  automatic and visible, not overridable, and a human gets no landing wave; the throne sees a sortable
+  table of the challengers; AI challengers are unchanged against a human; the flight keeps its short
+  travel time (an arc or marker is later, and instant strikes are a tunable away); "The Hegemon Reigns
+  Supreme" / "Overthrown by X". Deferred: donations (H9), the last stand, throne persistence. Measured:
+  a passive human throne keeps only 5% of the domain on World seed a (F11 note).

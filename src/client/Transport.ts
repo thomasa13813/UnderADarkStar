@@ -102,6 +102,14 @@ export class SendBoatAttackIntentEvent implements GameEvent {
   ) {}
 }
 
+// The Hegemon's direct strike on a tile beyond the Dark Star (H8).
+export class SendStrikeIntentEvent implements GameEvent {
+  constructor(
+    public readonly tile: TileRef,
+    public readonly troops: number,
+  ) {}
+}
+
 export class BuildUnitIntentEvent implements GameEvent {
   constructor(
     public readonly unit: UnitType,
@@ -299,6 +307,7 @@ export class Transport {
     this.subscribe(SendBoatAttackIntentEvent, (e) =>
       this.onSendBoatAttackIntent(e),
     );
+    this.subscribe(SendStrikeIntentEvent, (e) => this.onSendStrikeIntent(e));
     this.subscribe(SendTargetPlayerIntentEvent, (e) =>
       this.onSendTargetPlayerIntent(e),
     );
@@ -750,6 +759,14 @@ export class Transport {
       type: "boat",
       troops: event.troops,
       dst: event.dst,
+    });
+  }
+
+  private onSendStrikeIntent(event: SendStrikeIntentEvent) {
+    this.sendIntent({
+      type: "strike",
+      tile: event.tile,
+      troops: event.troops,
     });
   }
 

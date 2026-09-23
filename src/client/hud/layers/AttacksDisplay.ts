@@ -177,6 +177,16 @@ export class AttacksDisplay extends LitElement implements Controller {
   }
 
   private async attackWarningOnClick(attack: AttackUpdate) {
+    if (attack.aimTile !== undefined) {
+      // A strike: jump to where it fell (or will fall).
+      this.eventBus.emit(
+        new GoToPositionEvent(
+          this.game.x(attack.aimTile),
+          this.game.y(attack.aimTile),
+        ),
+      );
+      return;
+    }
     const playerView = this.game.playerBySmallID(attack.attackerID);
     if (playerView !== undefined) {
       if (playerView instanceof PlayerView) {
@@ -260,7 +270,17 @@ export class AttacksDisplay extends LitElement implements Controller {
   // A Dark Star strike (H17): the Hegemon's bubble borders us, so the
   // ordinary attack order is the counter-attack — the engine costs bubble
   // tiles to the strike's own troops.
+  // Seconds until a strike in flight lands; null once it has.
+  private landingIn(attack: AttackUpdate): number | null {
+    if (attack.landsAtTick === undefined) return null;
+    return Math.max(
+      0,
+      Math.ceil((attack.landsAtTick - this.game.ticks()) / 10),
+    );
+  }
+
   private renderStrike(attack: AttackUpdate) {
+    const landing = this.landingIn(attack);
     return html`
       <div
         class="flex items-center gap-1 w-full bg-purple-950/92 backdrop-blur-sm sm:rounded-lg px-1.5 py-1 overflow-hidden border border-purple-500/70"
@@ -271,15 +291,19 @@ export class AttacksDisplay extends LitElement implements Controller {
               ${renderTroops(attack.troops)}</span
             >
             <span class="text-xs whitespace-nowrap text-purple-300"
-              >${attack.retreating
-                ? `${translateText("events_display.retreating")}...`
-                : translateText("dark_star.strike_hint")}</span
+              >${landing !== null
+                ? translateText("dark_star.strike_inbound_hint", {
+                    seconds: landing,
+                  })
+                : attack.retreating
+                  ? `${translateText("events_display.retreating")}...`
+                  : translateText("dark_star.strike_hint")}</span
             >`,
           onClick: () => this.attackWarningOnClick(attack),
           className: "text-left text-purple-200 flex flex-col min-w-0",
           translate: false,
         })}
-        ${attack.retreating
+        ${attack.retreating || landing !== null
           ? ""
           : this.renderButton({
               content: translateText("dark_star.strike_counter"),
@@ -292,44 +316,90 @@ export class AttacksDisplay extends LitElement implements Controller {
     `;
   }
 
+  // The Hegemon's own strike (H8): where it is, what it is doing, and Recall
+  // (the ordinary cancel-attack order; in flight the troops come home whole,
+  // on the ground the engine's retreat malus applies).
+  private renderOutgoingStrike(attack: AttackUpdate) {
+    const landing = this.landingIn(attack);
+    const target = this.game.playerBySmallID(attack.targetID) as
+      | PlayerView
+      | undefined;
+    const status = attack.retreating
+      ? `${translateText("events_display.retreating")}...`
+      : landing !== null
+        ? translateText("dark_star.strike_landing", { seconds: landing })
+        : translateText("dark_star.strike_razing");
+    return html`
+      <div
+        class="flex items-center gap-1 w-full bg-purple-950/92 backdrop-blur-sm sm:rounded-lg px-1.5 py-1 overflow-hidden border border-purple-500/70"
+      >
+        ${this.renderButton({
+          content: html`<span class="font-bold whitespace-nowrap"
+              >${translateText("dark_star.strike_outgoing", {
+                name: target?.displayName() ?? "",
+              })}
+              ${renderTroops(attack.troops)}</span
+            >
+            <span class="text-xs whitespace-nowrap text-purple-300"
+              >${status}</span
+            >`,
+          onClick: () => this.attackWarningOnClick(attack),
+          className: "text-left text-purple-200 flex flex-col min-w-0",
+          translate: false,
+        })}
+        ${attack.retreating
+          ? ""
+          : this.renderButton({
+              content: translateText("dark_star.strike_recall"),
+              onClick: () => this.emitCancelAttackIntent(attack.id),
+              className:
+                "ml-auto cursor-pointer font-bold text-white bg-purple-700/80 hover:bg-purple-600 sm:rounded-lg px-2 py-1 border border-purple-400/70 whitespace-nowrap",
+              translate: false,
+            })}
+      </div>
+    `;
+  }
+
   private renderOutgoingAttacks() {
     if (this.outgoingAttacks.length === 0) return html``;
 
-    return this.outgoingAttacks.map(
-      (attack) => html`
-        <div
-          class="flex items-center gap-0.5 w-full bg-gray-800/92 backdrop-blur-sm sm:rounded-lg px-1.5 py-0.5 overflow-hidden"
-        >
-          ${this.renderButton({
-            content: html`<span class="inline-flex items-center"
-                ><img
-                  src="${soldierIcon}"
-                  class="h-4 w-4"
-                  style="filter: brightness(0) saturate(100%) invert(62%) sepia(80%) saturate(500%) hue-rotate(175deg) brightness(100%)"
-                />↑</span
-              ><span class="ml-1">${renderTroops(attack.troops)}</span>
-              <span class="truncate ml-1"
-                >${(
-                  this.game.playerBySmallID(attack.targetID) as PlayerView
-                )?.displayName()}</span
-              > `,
-            onClick: async () => this.attackWarningOnClick(attack),
-            className:
-              "text-left text-aquarius inline-flex items-center gap-0.5 lg:gap-1 min-w-0",
-            translate: false,
-          })}
-          ${!attack.retreating
-            ? this.renderButton({
-                content: "❌",
-                onClick: () => this.emitCancelAttackIntent(attack.id),
-                className: "ml-auto text-left shrink-0",
-                disabled: attack.retreating,
-              })
-            : html`<span class="ml-auto truncate text-aquarius"
-                >(${translateText("events_display.retreating")}...)</span
-              >`}
-        </div>
-      `,
+    return this.outgoingAttacks.map((attack) =>
+      attack.isStrike
+        ? this.renderOutgoingStrike(attack)
+        : html`
+            <div
+              class="flex items-center gap-0.5 w-full bg-gray-800/92 backdrop-blur-sm sm:rounded-lg px-1.5 py-0.5 overflow-hidden"
+            >
+              ${this.renderButton({
+                content: html`<span class="inline-flex items-center"
+                    ><img
+                      src="${soldierIcon}"
+                      class="h-4 w-4"
+                      style="filter: brightness(0) saturate(100%) invert(62%) sepia(80%) saturate(500%) hue-rotate(175deg) brightness(100%)"
+                    />↑</span
+                  ><span class="ml-1">${renderTroops(attack.troops)}</span>
+                  <span class="truncate ml-1"
+                    >${(
+                      this.game.playerBySmallID(attack.targetID) as PlayerView
+                    )?.displayName()}</span
+                  > `,
+                onClick: async () => this.attackWarningOnClick(attack),
+                className:
+                  "text-left text-aquarius inline-flex items-center gap-0.5 lg:gap-1 min-w-0",
+                translate: false,
+              })}
+              ${!attack.retreating
+                ? this.renderButton({
+                    content: "❌",
+                    onClick: () => this.emitCancelAttackIntent(attack.id),
+                    className: "ml-auto text-left shrink-0",
+                    disabled: attack.retreating,
+                  })
+                : html`<span class="ml-auto truncate text-aquarius"
+                    >(${translateText("events_display.retreating")}...)</span
+                  >`}
+            </div>
+          `,
     );
   }
 

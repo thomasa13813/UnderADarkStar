@@ -118,6 +118,7 @@ const DEFAULT_OPTIONS = {
   doomsdayClock: false,
   doomsdayClockSpeed: "normal" as DoomsdayClockSpeed,
   hegemon: true,
+  playAsHegemon: false,
   overtime: false,
   overtimeStartMinutes: undefined as number | undefined,
 } as const;
@@ -206,6 +207,9 @@ export class SinglePlayerModal extends BaseModal {
     DEFAULT_OPTIONS.customAllianceMinutes;
   @state() private waterNukes: boolean = DEFAULT_OPTIONS.waterNukes;
   @state() private hegemon: boolean = DEFAULT_OPTIONS.hegemon;
+  // The seat for this round only: who holds the throne between rounds is
+  // not modelled yet (docs/DarkStar-Design.md §5.2).
+  @state() private playAsHegemon: boolean = DEFAULT_OPTIONS.playAsHegemon;
   @state() private doomsdayClock: boolean = DEFAULT_OPTIONS.doomsdayClock;
   @state() private doomsdayClockSpeed: DoomsdayClockSpeed =
     DEFAULT_OPTIONS.doomsdayClockSpeed;
@@ -524,6 +528,11 @@ export class SinglePlayerModal extends BaseModal {
                     checked: this.hegemon,
                   },
                   {
+                    labelKey: "game_settings.play_as_hegemon",
+                    checked: this.playAsHegemon,
+                    hidden: !this.hegemon || this.gameMode !== GameMode.FFA,
+                  },
+                  {
                     labelKey: "game_settings.instant_build",
                     checked: this.instantBuild,
                   },
@@ -617,6 +626,7 @@ export class SinglePlayerModal extends BaseModal {
       this.customAllianceMinutes !== DEFAULT_OPTIONS.customAllianceMinutes ||
       this.waterNukes !== DEFAULT_OPTIONS.waterNukes ||
       this.hegemon !== DEFAULT_OPTIONS.hegemon ||
+      this.playAsHegemon !== DEFAULT_OPTIONS.playAsHegemon ||
       this.doomsdayClock !== DEFAULT_OPTIONS.doomsdayClock ||
       // Pace only matters when the mode is on (startGame drops it when off).
       (this.doomsdayClock &&
@@ -694,6 +704,7 @@ export class SinglePlayerModal extends BaseModal {
     this.customAllianceMinutes = DEFAULT_OPTIONS.customAllianceMinutes;
     this.waterNukes = DEFAULT_OPTIONS.waterNukes;
     this.hegemon = DEFAULT_OPTIONS.hegemon;
+    this.playAsHegemon = DEFAULT_OPTIONS.playAsHegemon;
     this.doomsdayClock = DEFAULT_OPTIONS.doomsdayClock;
     this.doomsdayClockSpeed = DEFAULT_OPTIONS.doomsdayClockSpeed;
     this.overtime = DEFAULT_OPTIONS.overtime;
@@ -797,6 +808,9 @@ export class SinglePlayerModal extends BaseModal {
         break;
       case "game_settings.hegemon":
         this.hegemon = checked;
+        break;
+      case "game_settings.play_as_hegemon":
+        this.playAsHegemon = checked;
         break;
       default:
         break;
@@ -1139,6 +1153,13 @@ export class SinglePlayerModal extends BaseModal {
                   username: resolvedName.name,
                   clanTag: usernameInput?.getClanTag() ?? null,
                   cosmetics,
+                  // The seat (isHegemon) is the only thing the sim needs to
+                  // know; the throne between rounds is not modelled yet.
+                  ...(this.hegemon &&
+                  this.gameMode === GameMode.FFA &&
+                  this.playAsHegemon
+                    ? { isHegemon: true }
+                    : {}),
                 },
               ],
               config: {

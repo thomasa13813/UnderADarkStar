@@ -409,6 +409,16 @@ export interface Attack {
   markStrike(): void;
 }
 
+// A Hegemon strike between launch and landing (RazeExecution).
+export interface StrikeInFlight {
+  id(): string;
+  targetPlayer(): Player;
+  troopCount(): number;
+  aimTile(): TileRef;
+  landsAtTick(): number;
+  recall(): void;
+}
+
 export interface AllianceRequest {
   accept(): void;
   reject(): void;
@@ -775,6 +785,8 @@ export interface Player {
     troops: number,
     sourceTile: TileRef | null,
     border: Set<number>,
+    // A strike keeps the id it had in flight, so the HUD row is one row.
+    id?: string,
   ): Attack;
   outgoingAttacks(): Attack[];
   incomingAttacks(): Attack[];
@@ -940,6 +952,14 @@ export interface Game extends GameMap {
   // the bubbles of its strikes (H17).
   hegemonDomainTiles(): number;
   hegemonBubbleTiles(): number;
+  // Strikes launched but not yet landed (H8). A landed strike is an Attack
+  // (Attack.isStrike); in flight it exists only here, so the HUD can show it
+  // and a recall can reach it.
+  strikesInFlight(): StrikeInFlight[];
+  addStrikeInFlight(strike: StrikeInFlight): void;
+  removeStrikeInFlight(strike: StrikeInFlight): void;
+  // One live strike per target: in flight or landed.
+  hegemonStrikeOn(target: Player): boolean;
   lastInvaderGainTick(): number;
   invasionCooldownUntil(player: Player): number;
   // Set by HegemonExecution: the current invasion has stalled (H13).
