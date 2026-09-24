@@ -775,6 +775,13 @@ export class AiAttackBehavior {
     );
   }
 
+  // Troops for a stargate shot at the target (C4): sized like a boat landing
+  // (a fifth of the army), under the same difficulty caps and refusals.
+  // Null when the nation would not send a boat there either.
+  gateShotTroops(target: Player | TerraNullius): number | null {
+    return this.calculateAttackTroops(target, () => this.player.troops() / 5);
+  }
+
   sendAttack(target: Player | TerraNullius, force = false): boolean {
     if (!force && !this.shouldAttack(target)) return false;
 

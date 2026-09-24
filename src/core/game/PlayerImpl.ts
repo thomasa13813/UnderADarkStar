@@ -780,6 +780,10 @@ export class PlayerImpl implements Player {
     return this._beachheads.size;
   }
 
+  beachheads(): ReadonlySet<TileRef> {
+    return this._beachheads;
+  }
+
   domainTilesHeld(): number {
     return this.mg.domainTilesHeldBy(this);
   }

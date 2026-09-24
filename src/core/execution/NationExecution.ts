@@ -20,6 +20,7 @@ import { NationEmojiBehavior } from "./nation/NationEmojiBehavior";
 import { NationHegemonBehavior } from "./nation/NationHegemonBehavior";
 import { NationMIRVBehavior } from "./nation/NationMIRVBehavior";
 import { NationNukeBehavior } from "./nation/NationNukeBehavior";
+import { NationStargateBehavior } from "./nation/NationStargateBehavior";
 import { NationStructureBehavior } from "./nation/NationStructureBehavior";
 import { NationWarshipBehavior } from "./nation/NationWarshipBehavior";
 import { SpawnExecution } from "./SpawnExecution";
@@ -38,6 +39,7 @@ export class NationExecution implements Execution {
   private nukeBehavior!: NationNukeBehavior;
   private structureBehavior!: NationStructureBehavior;
   private hegemonBehavior!: NationHegemonBehavior;
+  private stargateBehavior!: NationStargateBehavior;
   private mg: Game;
   private player: Player | null = null;
 
@@ -206,9 +208,12 @@ export class NationExecution implements Execution {
     this.structureBehavior.handleStructures();
     this.warshipBehavior.maybeSpawnWarship();
     this.handleEmbargoesToHostileNations();
-    // Hegemon mode: the throne comes first; a nation busy with it leaves its
-    // other wars alone this turn.
-    if (!this.hegemonBehavior.considerInvasion()) {
+    // Hegemon mode: the throne comes first, then a stargate shot; a nation
+    // busy with either leaves its other wars alone this turn.
+    if (
+      !this.hegemonBehavior.considerInvasion() &&
+      !this.stargateBehavior.maybeFire()
+    ) {
       this.attackBehavior.maybeAttack();
     }
     this.warshipBehavior.counterWarshipInfestation();
@@ -258,12 +263,19 @@ export class NationExecution implements Execution {
       this.attackBehavior,
       this.emojiBehavior,
     );
+    this.hegemonBehavior = new NationHegemonBehavior(this.mg, this.player);
     this.structureBehavior = new NationStructureBehavior(
       this.random,
       this.mg,
       this.player,
+      this.hegemonBehavior,
     );
-    this.hegemonBehavior = new NationHegemonBehavior(this.mg, this.player);
+    this.stargateBehavior = new NationStargateBehavior(
+      this.random,
+      this.mg,
+      this.player,
+      this.attackBehavior,
+    );
     this.behaviorsInitialized = true;
   }
 

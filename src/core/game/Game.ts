@@ -660,6 +660,7 @@ export interface Player {
   markBeachhead(tile: TileRef): void;
   isBeachhead(tile: TileRef): boolean;
   beachheadCount(): number;
+  beachheads(): ReadonlySet<TileRef>;
 
   // State & Properties
   isAlive(): boolean;

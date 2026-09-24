@@ -10,6 +10,7 @@
  *                                             [--minutes 20] [--seed hegemon-sim]
  *                                             [--loss 100] [--slow 100] [--ceiling 100]
  *                                             [--set key=value,...] [--human]
+ *                                             [--difficulty easy|medium|hard|impossible]
  *
  * Troop figures are the sim's; the HUD shows them divided by 10.
  */
@@ -58,6 +59,14 @@ function resolveMap(name: string): GameMapType {
   return GameMapType[key as keyof typeof GameMapType];
 }
 
+function resolveDifficulty(name: string): Difficulty {
+  const key = Object.keys(Difficulty).find(
+    (k) => k.toLowerCase() === name.toLowerCase(),
+  );
+  if (key === undefined) throw new Error(`unknown difficulty "${name}"`);
+  return Difficulty[key as keyof typeof Difficulty];
+}
+
 const k = (n: number): string => `${Math.round(n / 1000)}k`;
 
 async function main(): Promise<void> {
@@ -71,7 +80,7 @@ async function main(): Promise<void> {
     gameMapSize: GameMapSize.Normal,
     gameMode: GameMode.FFA,
     gameType: GameType.Public,
-    difficulty: Difficulty.Medium,
+    difficulty: resolveDifficulty(arg("difficulty", "medium")),
     nations: "default",
     donateGold: false,
     donateTroops: false,
@@ -207,6 +216,43 @@ async function main(): Promise<void> {
     popped: number; // tiles left neutral when the bubble popped
   } | null = null;
   const strikeTotals = { count: 0, sent: 0, lost: 0, popped: 0, fought: 0 };
+
+  // AI stargates (C4, §6.8 stage 5): every gate built or upgraded, every
+  // shot and its fate (landed / turned back / joined; the pocket still held
+  // 30 s after landing), Dark Star landings by gate versus fleet, and the
+  // landlocked beachhead pockets alive at the end (the exclave question).
+  const gateLevels = new Map<number, number>();
+  const gateOwners = new Set<string>();
+  const gateTotals = { built: 0, upgrades: 0 };
+  interface ShotLog {
+    unitId: number;
+    owner: Player;
+    target: number;
+    targetName: string;
+    troops: number;
+    start: number;
+    landedAt: number;
+  }
+  const shotsInAir = new Map<number, ShotLog>();
+  const heldChecks: ShotLog[] = [];
+  const shotTotals = {
+    fired: 0,
+    landed: 0,
+    back: 0,
+    joined: 0,
+    held: 0,
+    checked: 0,
+    darkStar: 0,
+  };
+  const gateLandingTick = new Map<Player, number>();
+  let darkStarByGate = 0;
+  let darkStarByFleet = 0;
+  const minute = (t: number) => (t / 600).toFixed(2);
+  const moatDist = (tile: number) =>
+    Math.round(
+      Math.sqrt(game.euclideanDistSquared(tile, game.ref(g.cx, g.cy))) -
+        g.radius,
+    );
   while (win === undefined && fatal === undefined) {
     runner.addTurn({ turnNumber: turn++, intents: [] });
     runner.executeNextTick();
@@ -214,9 +260,105 @@ async function main(): Promise<void> {
     startTurn ??= turn;
     const elapsed = turn - startTurn;
 
+    // Gates: new ones and upgrades, sampled every second.
+    if (elapsed % 10 === 0) {
+      for (const p of game.players()) {
+        if (p === hegemon) continue;
+        for (const gate of p.units(UnitType.Stargate)) {
+          if (gate.isUnderConstruction()) continue;
+          const seen = gateLevels.get(gate.id());
+          if (seen === undefined) {
+            gateTotals.built++;
+            gateOwners.add(p.name());
+            log(
+              `      gate @${minute(elapsed)} built by ${p.name()} at ${game.x(gate.tile())},${game.y(gate.tile())}, ` +
+                `${moatDist(gate.tile())} tiles from the moat (range ${config.stargateRange(gate.level())})`,
+            );
+          } else if (gate.level() > seen) {
+            gateTotals.upgrades++;
+            log(
+              `      gate @${minute(elapsed)} ${p.name()} upgraded to level ${gate.level()} ` +
+                `(range ${config.stargateRange(gate.level())}, ${moatDist(gate.tile())} tiles from the moat)`,
+            );
+          }
+          gateLevels.set(gate.id(), gate.level());
+        }
+      }
+    }
+
+    // Shots: launches, and how each one ended.
+    const inFlight = new Set<number>();
+    for (const shot of game.gateShotsInFlight()) {
+      inFlight.add(shot.unitId());
+      if (shotsInAir.has(shot.unitId())) continue;
+      const owner = shot.owner();
+      const target = shot.targetTile();
+      const targetOwner = game.owner(target);
+      const entry: ShotLog = {
+        unitId: shot.unitId(),
+        owner,
+        target,
+        targetName: targetOwner.isPlayer()
+          ? targetOwner.name()
+          : game.isInDarkStar(target)
+            ? "the Dark Star"
+            : "neutral land",
+        troops: game.unit(shot.unitId())?.troops() ?? 0,
+        start: elapsed,
+        landedAt: -1,
+      };
+      shotsInAir.set(entry.unitId, entry);
+      shotTotals.fired++;
+    }
+    for (const [unitId, entry] of shotsInAir) {
+      if (inFlight.has(unitId)) continue;
+      shotsInAir.delete(unitId);
+      const target = entry.target;
+      let fate: string;
+      if (
+        game.owner(target) === entry.owner &&
+        entry.owner.isBeachhead(target)
+      ) {
+        fate = "landed";
+        shotTotals.landed++;
+        entry.landedAt = elapsed;
+        heldChecks.push(entry);
+        if (game.isInDarkStar(target)) {
+          shotTotals.darkStar++;
+          gateLandingTick.set(entry.owner, elapsed);
+        }
+      } else if (game.owner(target) === entry.owner) {
+        fate = "joined (ours by then)";
+        shotTotals.joined++;
+      } else {
+        fate = "turned back";
+        shotTotals.back++;
+      }
+      log(
+        `      shot @${minute(entry.start)} ${entry.owner.name()} -> ${entry.targetName} ` +
+          `(${k(entry.troops)} troops, ${game.x(target)},${game.y(target)}): ${fate} @${minute(elapsed)}`,
+      );
+    }
+    // The pocket 30 s after landing: still ours if the landing tile is.
+    while (heldChecks.length > 0 && elapsed - heldChecks[0].landedAt >= 300) {
+      const entry = heldChecks.shift()!;
+      const held = entry.owner.isBeachhead(entry.target);
+      shotTotals.checked++;
+      if (held) shotTotals.held++;
+      log(
+        `      pocket of ${entry.owner.name()} on ${entry.targetName} (landed @${minute(entry.landedAt)}): ` +
+          `${held ? "held" : "lost"} after 30 s`,
+      );
+    }
+
     const invader = game.darkStarInvader();
     if (invader !== null && invader !== lastInvader) {
-      landings.push(`${invader.name()}@${(elapsed / 600).toFixed(1)}`);
+      const byGate = (gateLandingTick.get(invader) ?? -Infinity) >= elapsed - 2;
+      if (byGate) darkStarByGate++;
+      else darkStarByFleet++;
+      landings.push(
+        `${invader.name()}@${(elapsed / 600).toFixed(1)}${byGate ? " by gate" : ""}`,
+      );
     }
     lastInvader = invader;
     lowestTiles = Math.min(lowestTiles, game.hegemonDomainTiles());
@@ -309,6 +451,48 @@ async function main(): Promise<void> {
       (strikeTotals.popped > 0
         ? ` = ${Math.round(strikeTotals.lost / strikeTotals.popped)} troops/tile`
         : ""),
+  );
+  // Landlocked pockets: a beachhead whose territory touches no water and is
+  // not the owner's mainland stands only by the tag (§6.10).
+  const exclaves: string[] = [];
+  let beachheadTiles = 0;
+  for (const p of game.players()) {
+    if (p === hegemon || !p.isAlive()) continue;
+    const visited = new Set<number>();
+    for (const head of p.beachheads()) {
+      beachheadTiles++;
+      if (visited.has(head)) continue;
+      const queue = [head];
+      visited.add(head);
+      let touchesWater = false;
+      let size = 0;
+      while (queue.length > 0 && size < 20000) {
+        const tile = queue.pop()!;
+        size++;
+        if (game.isShore(tile)) touchesWater = true;
+        game.forEachNeighbor(tile, (n) => {
+          if (!visited.has(n) && game.owner(n) === p) {
+            visited.add(n);
+            queue.push(n);
+          }
+        });
+      }
+      if (!touchesWater && size * 2 < p.numTilesOwned()) {
+        exclaves.push(
+          `${p.name()} ${size}t at ${game.x(head)},${game.y(head)}`,
+        );
+      }
+    }
+  }
+  log(
+    `Gates: ${gateTotals.built} built by ${gateOwners.size} nations, ${gateTotals.upgrades} upgrades; ` +
+      `shots: ${shotTotals.fired} fired, ${shotTotals.landed} landed (${shotTotals.darkStar} on the Dark Star), ` +
+      `${shotTotals.back} turned back, ${shotTotals.joined} joined; pockets held after 30 s: ${shotTotals.held}/${shotTotals.checked}`,
+  );
+  log(
+    `Dark Star landings: ${darkStarByGate} by gate, ${darkStarByFleet} by fleet; ` +
+      `beachhead tiles held at the end: ${beachheadTiles}; landlocked pockets: ${exclaves.length}` +
+      (exclaves.length > 0 ? ` [${exclaves.join(", ")}]` : ""),
   );
   const seconds = Math.round((turn - (startTurn ?? turn)) / 10);
   log(

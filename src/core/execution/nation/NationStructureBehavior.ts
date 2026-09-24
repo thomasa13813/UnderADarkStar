@@ -17,6 +17,7 @@ import { assertNever } from "../../Util";
 import { ConstructionExecution } from "../ConstructionExecution";
 import { UpgradeStructureExecution } from "../UpgradeStructureExecution";
 import { nearestTileDist, nearestTileDistCapped } from "../Util";
+import { NationHegemonBehavior } from "./NationHegemonBehavior";
 import { randTerritoryTileArray } from "./NationUtils";
 
 /**
@@ -60,8 +61,41 @@ function getStructureRatios(
       ratioPerCity: 0.2,
       perceivedCostIncreasePerOwned: 1,
     },
+    [UnitType.Stargate]: {
+      ratioPerCity: STARGATE_RATIO_BY_DIFFICULTY[difficulty],
+      perceivedCostIncreasePerOwned: 1,
+    },
   };
 }
+
+// Stargates (C4 in docs/DarkStar-Design.md, §6.8 stage 5): nations build
+// them like silos — the same affordability and save-up logic, a first one
+// early, a hard cap — with the difficulty setting how many per city. A nation
+// that wants the throne (NationHegemonBehavior.wantsThrone) also wants one
+// gate whose range reaches the moat, whatever its city count: it upgrades the
+// gate that falls least short, or builds a first one pulled towards the
+// Dark Star.
+
+/** Stargate ratio per city, keyed by difficulty */
+const STARGATE_RATIO_BY_DIFFICULTY: Record<Difficulty, number> = {
+  [Difficulty.Easy]: 0.1,
+  [Difficulty.Medium]: 0.15,
+  [Difficulty.Hard]: 0.2,
+  [Difficulty.Impossible]: 0.25,
+};
+
+/** Maximum number of stargates a nation will build */
+const MAX_STARGATES = 3;
+
+/** Ratio per city used for the first stargate so nations get one early */
+const FIRST_STARGATE_RATIO = 0.4;
+
+/**
+ * Weight of the pull towards a gate's aim (the moat, or the nearest enemy
+ * beyond our land) when placing it: one tile nearer the aim is worth this
+ * many points against the interior and spacing terms.
+ */
+const STARGATE_AIM_WEIGHT = 1 / 3;
 
 /** Perceived cost increase percentage per city owned */
 const CITY_PERCEIVED_COST_INCREASE_PER_OWNED = 1;
@@ -149,6 +183,9 @@ export class NationStructureBehavior {
     private random: PseudoRandom,
     private game: Game,
     private player: Player,
+    // Hegemon mode only: whether the nation wants the throne, and how far its
+    // gates fall short of the moat (NationExecution hands it in).
+    private hegemonBehavior: NationHegemonBehavior | null = null,
   ) {}
 
   handleStructures(): boolean {
@@ -489,11 +526,22 @@ export class NationStructureBehavior {
       }
     }
 
+    // Hegemon mode: a nation ready for the throne wants a gate that reaches
+    // the moat before anything else (C4).
+    const stargatesEnabled =
+      this.hegemonBehavior !== null &&
+      this.game.darkStar() !== null &&
+      !config.isUnitDisabled(UnitType.Stargate);
+    if (stargatesEnabled && this.maybeGateForThrone()) {
+      return true;
+    }
+
     // Build order for non-city structures (priority order)
     const buildOrder: UnitType[] = [
       UnitType.Port,
       UnitType.Factory,
       UnitType.SAMLauncher,
+      UnitType.Stargate,
       UnitType.MissileSilo,
     ];
 
@@ -524,6 +572,11 @@ export class NationStructureBehavior {
 
       // Skip SAM launchers if missile silos are disabled
       if (!missileSilosEnabled && structureType === UnitType.SAMLauncher) {
+        continue;
+      }
+
+      // Stargates are a Hegemon-mode structure
+      if (structureType === UnitType.Stargate && !stargatesEnabled) {
         continue;
       }
 
@@ -596,6 +649,12 @@ export class NationStructureBehavior {
     // First missile silo uses a higher ratio so nations can start nuking earlier
     if (type === UnitType.MissileSilo && owned === 0) {
       ratio = FIRST_MISSILE_SILO_RATIO;
+    }
+
+    // Stargates: the silo's pattern, a cap and an early first one
+    if (type === UnitType.Stargate) {
+      if (owned >= MAX_STARGATES) return false;
+      if (owned === 0) ratio = FIRST_STARGATE_RATIO;
     }
 
     const targetCount = Math.floor(cityCount * ratio);
@@ -912,9 +971,136 @@ export class NationStructureBehavior {
         return this.portValue();
       case UnitType.SAMLauncher:
         return this.samLauncherValue();
+      case UnitType.Stargate:
+        return this.stargateValue();
       default:
         throw new Error(`Value function not implemented for ${type}`);
     }
+  }
+
+  /**
+   * Hegemon mode: while the nation wants the throne and no gate of its
+   * reaches the moat, upgrade the gate that falls least short if its levels
+   * left would close the gap, else build a first gate (the value function
+   * pulls it towards the Dark Star). Cap and gold as for any structure.
+   */
+  private maybeGateForThrone(): boolean {
+    const hegemon = this.hegemonBehavior;
+    if (hegemon === null || !hegemon.wantsThrone()) return false;
+    const reaches = hegemon.gateReaches();
+    if (reaches.some((r) => r.shortfall <= 0)) return false;
+    const config = this.game.config();
+    const perLevel = config.stargateConfig().rangePerLevel;
+    const maxLevel = config.stargateConfig().maxLevel;
+    const closable = reaches
+      .filter(
+        (r) =>
+          r.shortfall <= perLevel * (maxLevel - r.gate.level()) &&
+          this.player.canUpgradeUnit(r.gate),
+      )
+      .sort((a, b) => a.shortfall - b.shortfall);
+    if (closable.length > 0) {
+      if (this.player.gold() < this.cost(UnitType.Stargate)) return false;
+      this.game.addExecution(
+        new UpgradeStructureExecution(this.player, closable[0].gate.id()),
+      );
+      return true;
+    }
+    if (this.player.unitsOwned(UnitType.Stargate) >= MAX_STARGATES) {
+      return false;
+    }
+    return this.maybeSpawnStructure(UnitType.Stargate);
+  }
+
+  /**
+   * Value function for stargates.
+   * Interior like a silo, spaced from other gates, and pulled towards the
+   * aim: the Dark Star while the nation wants the throne, else the nearest
+   * enemy it shares no land border with (across water or beyond someone).
+   */
+  private stargateValue(): (tile: TileRef) => number {
+    const game = this.game;
+    const player = this.player;
+    const borderTiles = player.borderTiles();
+    const otherTiles: Set<TileRef> = new Set(
+      player.units(UnitType.Stargate).map((u) => u.tile()),
+    );
+    const { borderSpacing, structureSpacing } = this.spacingConstants();
+    const aim = this.stargateAim();
+
+    return (tile) => {
+      let w = 0;
+
+      // Prefer higher elevations
+      w += game.magnitude(tile);
+
+      // Prefer to be away from the border
+      const closestBorderDist = nearestTileDistCapped(
+        game,
+        borderTiles,
+        tile,
+        borderSpacing,
+      );
+      w += Math.min(closestBorderDist, borderSpacing);
+
+      // Prefer to be away from other gates
+      const d = nearestTileDist(game, otherTiles, tile);
+      if (d !== Infinity) w += Math.min(d, structureSpacing);
+
+      // Prefer to be near the aim
+      if (aim !== null) {
+        const dist = Math.sqrt(game.euclideanDistSquared(tile, aim.tile));
+        w -= Math.max(0, dist - aim.radius) * STARGATE_AIM_WEIGHT;
+      }
+
+      return w;
+    };
+  }
+
+  // What a new gate should reach: the Dark Star's edge when the nation wants
+  // the throne, else the centre of the nearest hostile player whose land does
+  // not touch ours. Null when there is nothing in particular to aim at.
+  private stargateAim(): { tile: TileRef; radius: number } | null {
+    const game = this.game;
+    const g = game.darkStar();
+    if (g === null) return null;
+    if (this.hegemonBehavior?.wantsThrone() === true) {
+      return { tile: game.ref(g.cx, g.cy), radius: g.radius };
+    }
+    const player = this.player;
+    const neighbours = new Set(player.nearby());
+    const centre = this.territoryCentre(player);
+    if (centre === null) return null;
+    let best: { tile: TileRef; radius: number } | null = null;
+    let bestDist = Infinity;
+    for (const other of game.players()) {
+      if (
+        other === player ||
+        other.isHegemon() ||
+        !other.isAlive() ||
+        neighbours.has(other) ||
+        player.isFriendly(other) ||
+        !player.canAttackPlayer(other)
+      ) {
+        continue;
+      }
+      const otherCentre = this.territoryCentre(other);
+      if (otherCentre === null) continue;
+      const dist = game.euclideanDistSquared(centre, otherCentre);
+      if (dist < bestDist) {
+        bestDist = dist;
+        best = { tile: otherCentre, radius: 0 };
+      }
+    }
+    return best;
+  }
+
+  private territoryCentre(player: Player): TileRef | null {
+    const box = player.largestClusterBoundingBox;
+    if (box === null) return null;
+    const x = Math.floor((box.min.x + box.max.x) / 2);
+    const y = Math.floor((box.min.y + box.max.y) / 2);
+    return this.game.isValidCoord(x, y) ? this.game.ref(x, y) : null;
   }
 
   /**
