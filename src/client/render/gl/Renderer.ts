@@ -1093,6 +1093,11 @@ export class GPURenderer {
     );
   }
 
+  /** DarkStar: the range ring drawn while aiming a stargate shot. */
+  updateAimRange(circle: { x: number; y: number; r: number } | null): void {
+    this.rangeCirclePass.setAimRange(circle);
+  }
+
   updateNukeTrajectory(data: NukeTrajectoryData | null): void {
     this.nukeTrajectoryPass.update(data);
   }

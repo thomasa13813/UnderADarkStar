@@ -27,6 +27,9 @@ export class RangeCirclePass {
   private centerY = 0;
   private radius = 0;
   private warning = false;
+  // DarkStar: a second ring while aiming a stargate shot (the firing gate's
+  // range), independent of the ghost preview.
+  private aim: { x: number; y: number; r: number } | null = null;
 
   constructor(gl: WebGL2RenderingContext) {
     this.gl = gl;
@@ -64,22 +67,34 @@ export class RangeCirclePass {
     }
   }
 
+  setAimRange(circle: { x: number; y: number; r: number } | null): void {
+    this.aim = circle;
+  }
+
   draw(cameraMatrix: Float32Array): void {
-    if (this.radius <= 0) return;
+    if (this.radius <= 0 && this.aim === null) return;
 
     const gl = this.gl;
     gl.useProgram(this.program);
     gl.uniformMatrix3fv(this.uCamera, false, cameraMatrix);
     gl.bindVertexArray(this.vao);
 
-    gl.uniform2f(this.uCenter, this.centerX, this.centerY);
-    gl.uniform1f(this.uRadius, this.radius);
-    if (this.warning) {
-      gl.uniform3f(this.uColor, 1.0, 0.2, 0.2);
-    } else {
-      gl.uniform3f(this.uColor, 1.0, 1.0, 1.0);
+    if (this.radius > 0) {
+      gl.uniform2f(this.uCenter, this.centerX, this.centerY);
+      gl.uniform1f(this.uRadius, this.radius);
+      if (this.warning) {
+        gl.uniform3f(this.uColor, 1.0, 0.2, 0.2);
+      } else {
+        gl.uniform3f(this.uColor, 1.0, 1.0, 1.0);
+      }
+      gl.drawArrays(gl.TRIANGLES, 0, 6);
     }
-    gl.drawArrays(gl.TRIANGLES, 0, 6);
+    if (this.aim !== null) {
+      gl.uniform2f(this.uCenter, this.aim.x, this.aim.y);
+      gl.uniform1f(this.uRadius, this.aim.r);
+      gl.uniform3f(this.uColor, 0.6, 0.85, 1.0);
+      gl.drawArrays(gl.TRIANGLES, 0, 6);
+    }
   }
 
   dispose(): void {

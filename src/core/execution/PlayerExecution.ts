@@ -497,6 +497,13 @@ export class PlayerExecution implements Execution {
       (tile) => this.mg.ownerID(tile) === this.player.smallID(),
     );
 
+    // A stargate beachhead is not an enclave (C4): a pocket founded by a gate
+    // shot stands, however sealed in, for as long as its landing tile is
+    // held. Lose that tile and the pocket is an ordinary enclave again.
+    if (this.holdsBeachhead(tiles)) {
+      return;
+    }
+
     if (this.player.numTilesOwned() === tiles.length) {
       this.mg.conquerPlayer(capturing, this.player);
     }
@@ -504,6 +511,15 @@ export class PlayerExecution implements Execution {
     for (const tile of tiles) {
       capturing.conquer(tile);
     }
+  }
+
+  // Whether `tiles` holds one of the player's beachhead tiles.
+  private holdsBeachhead(tiles: readonly TileRef[]): boolean {
+    if (this.player.beachheadCount() === 0) return false;
+    for (const tile of tiles) {
+      if (this.player.isBeachhead(tile)) return true;
+    }
+    return false;
   }
 
   /**

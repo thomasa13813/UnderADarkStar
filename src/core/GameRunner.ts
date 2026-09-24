@@ -263,6 +263,9 @@ export class GameRunner {
       canSendEmojiAllPlayers: player.canSendEmoji(AllPlayers),
       canEmbargoAll: player.canEmbargoAll(),
     } as PlayerActions;
+    if (tile !== null) {
+      actions.gateShot = player.stargateFor(tile) ?? undefined;
+    }
 
     if (tile !== null && this.game.hasOwner(tile)) {
       const other = this.game.owner(tile) as Player;

@@ -2,7 +2,7 @@ import * as d3 from "d3";
 import { assetUrl } from "../../../core/AssetUrls";
 import { EventBus, GameEvent } from "../../../core/EventBus";
 import { Controller } from "../../Controller";
-import { CloseViewEvent } from "../../InputHandler";
+import { CloseViewEvent, ShowAimRangeEvent } from "../../InputHandler";
 import { PlaySoundEffectEvent } from "../../sound/Sounds";
 import { getSvgAspectRatio, translateText } from "../../Utils";
 import {
@@ -893,6 +893,8 @@ export class RadialMenu implements Controller {
     if (!this.isVisible) {
       return;
     }
+    // The stargate aim ring (C4) lives only while the menu is open.
+    this.eventBus.emit(new ShowAimRangeEvent(null));
 
     // Force transition state to false to ensure menu hides
     this.isTransitioning = false;

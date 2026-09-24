@@ -153,6 +153,10 @@
       "Missile Silo": {
         "scale": 1.55,
         "iconFill": 0.85
+      },
+      "Stargate": {
+        "scale": 1.4,
+        "iconFill": 0.85
       }
     },
     "highlightOutlineWidth": 0.04,
@@ -381,6 +385,10 @@
     "Missile Silo": {
       "radius": 18,
       "intensity": 1.2
+    },
+    "Stargate": {
+      "radius": 22,
+      "intensity": 1.4
     },
     "Transport": {
       "radius": 6,

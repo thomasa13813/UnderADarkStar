@@ -23,6 +23,7 @@ import {
   EmojiMessage,
   GameMode,
   GameType,
+  GateShotOption,
   Gold,
   MAX_UPGRADE_AMOUNT,
   MutableAlliance,
@@ -164,6 +165,8 @@ export class PlayerImpl implements Player {
     { version: number; owned: number }
   >();
   public _tiles = new TileSet();
+  // Landing tiles of stargate shots still held (C4); see Player.markBeachhead.
+  public _beachheads = new Set<TileRef>();
 
   public pastOutgoingAllianceRequests: AllianceRequest[] = [];
   private _expiredAlliances: Alliance[] = [];
@@ -763,6 +766,18 @@ export class PlayerImpl implements Player {
 
   isHegemon(): boolean {
     return this.playerInfo.isHegemon;
+  }
+
+  markBeachhead(tile: TileRef): void {
+    if (this.mg.owner(tile) === this) this._beachheads.add(tile);
+  }
+
+  isBeachhead(tile: TileRef): boolean {
+    return this._beachheads.has(tile);
+  }
+
+  beachheadCount(): number {
+    return this._beachheads.size;
   }
 
   domainTilesHeld(): number {
@@ -1487,6 +1502,10 @@ export class PlayerImpl implements Player {
     if (this.mg.config().isUnitDisabled(unitType)) {
       return false;
     }
+    // The Hegemon never expands (H8), so it has no use for a gate.
+    if (unitType === UnitType.Stargate && this.isHegemon()) {
+      return false;
+    }
     const cost = knownCost ?? this.mg.unitInfo(unitType).cost(this.mg, this);
     if (this._gold < cost) {
       return false;
@@ -1516,6 +1535,10 @@ export class PlayerImpl implements Player {
 
   public canUpgradeUnit(unit: Unit): boolean {
     if (!this.canUpgradeUnitType(unit.type())) {
+      return false;
+    }
+    const maxLevel = this.mg.config().unitInfo(unit.type()).maxLevel;
+    if (maxLevel !== undefined && unit.level() >= maxLevel) {
       return false;
     }
     if (!this.canBuildUnitType(unit.type())) {
@@ -1651,6 +1674,7 @@ export class PlayerImpl implements Player {
       case UnitType.SAMLauncher:
       case UnitType.City:
       case UnitType.Factory:
+      case UnitType.Stargate:
         return this.landBasedStructureSpawn(targetTile, validTiles);
       default:
         assertNever(unitType);
@@ -1707,6 +1731,44 @@ export class PlayerImpl implements Player {
         mg.manhattanDist(a.tile(), tile) - mg.manhattanDist(b.tile(), tile),
     );
     return readySilos[0]?.tile() ?? false;
+  }
+
+  // The gate that would fire at the tile (C4): the nearest built one with
+  // the tile in range, a ready one before a reloading one.
+  stargateFor(tile: TileRef): GateShotOption | null {
+    const mg = this.mg;
+    const config = mg.config();
+    const cooldown = config.stargateCooldown();
+    let best: GateShotOption | null = null;
+    let bestDist = Infinity;
+    for (const gate of this.units(UnitType.Stargate)) {
+      if (!gate.isActive() || gate.isUnderConstruction()) continue;
+      const range = config.stargateRange(gate.level());
+      const dist = mg.euclideanDistSquared(gate.tile(), tile);
+      if (dist > range * range) continue;
+      const firedAt = gate.missileTimerQueue()[0];
+      const readyInTicks =
+        firedAt === undefined
+          ? 0
+          : Math.max(0, cooldown - (mg.ticks() - firedAt));
+      if (
+        best !== null &&
+        ((best.readyInTicks === 0) !== (readyInTicks === 0)
+          ? best.readyInTicks === 0
+          : dist >= bestDist)
+      ) {
+        continue;
+      }
+      best = {
+        gateId: gate.id(),
+        gateTile: gate.tile(),
+        level: gate.level(),
+        range,
+        readyInTicks,
+      };
+      bestDist = dist;
+    }
+    return best;
   }
 
   portSpawn(tile: TileRef, validTiles: TileRef[] | null): TileRef | false {

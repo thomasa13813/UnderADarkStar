@@ -28,6 +28,7 @@ import {
   Game,
   GameMode,
   GameUpdates,
+  GateShotInFlight,
   HegemonStrike,
   HumansVsNations,
   MessageType,
@@ -136,6 +137,7 @@ export class GameImpl implements Game {
   // slot (H6): whoever is in here is the invader.
   private _domainTilesHeld = new Map<Player, number>();
   private _strikesInFlight: StrikeInFlight[] = [];
+  private _gateShotsInFlight: GateShotInFlight[] = [];
   private _hegemonStrikes: HegemonStrike[] = [];
   private _invasionCooldownUntil = new Map<PlayerID, number>();
   private _lastInvaderGainTick = 0;
@@ -303,6 +305,18 @@ export class GameImpl implements Game {
 
   removeStrikeInFlight(strike: StrikeInFlight): void {
     this._strikesInFlight = this._strikesInFlight.filter((s) => s !== strike);
+  }
+
+  gateShotsInFlight(): GateShotInFlight[] {
+    return this._gateShotsInFlight;
+  }
+
+  addGateShotInFlight(shot: GateShotInFlight): void {
+    this._gateShotsInFlight.push(shot);
+  }
+
+  removeGateShotInFlight(shot: GateShotInFlight): void {
+    this._gateShotsInFlight = this._gateShotsInFlight.filter((s) => s !== shot);
   }
 
   hegemonStrikes(): HegemonStrike[] {
@@ -1005,6 +1019,7 @@ export class GameImpl implements Game {
       previousOwner._tileChangeVersion++;
       previousOwner._tiles.delete(tile);
       previousOwner._borderTiles.delete(tile);
+      previousOwner._beachheads.delete(tile);
     }
     this._territoryVersion++;
     this._map.setOwnerID(tile, owner.smallID());
@@ -1043,6 +1058,7 @@ export class GameImpl implements Game {
     previousOwner._tileChangeVersion++;
     previousOwner._tiles.delete(tile);
     previousOwner._borderTiles.delete(tile);
+    previousOwner._beachheads.delete(tile);
 
     this._territoryVersion++;
     this._map.setOwnerID(tile, 0);

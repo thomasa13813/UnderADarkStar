@@ -11,6 +11,7 @@ import {
   SendDonateTroopsIntentEvent,
   SendEmbargoIntentEvent,
   SendEmojiIntentEvent,
+  SendGateShotIntentEvent,
   SendSpawnIntentEvent,
   SendStrikeIntentEvent,
   SendTargetPlayerIntentEvent,
@@ -46,6 +47,16 @@ export class PlayerActionHandler {
   handleStrike(player: PlayerView, targetTile: TileRef) {
     this.eventBus.emit(
       new SendStrikeIntentEvent(
+        targetTile,
+        this.uiState.attackRatio * player.troops(),
+      ),
+    );
+  }
+
+  // A stargate shot (C4): sized by the troop slider like a boat.
+  handleGateShot(player: PlayerView, targetTile: TileRef) {
+    this.eventBus.emit(
+      new SendGateShotIntentEvent(
         targetTile,
         this.uiState.attackRatio * player.troops(),
       ),

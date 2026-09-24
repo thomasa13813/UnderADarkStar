@@ -271,6 +271,11 @@ export class MapRenderer {
     this.renderer?.updateGhostPreview(data);
   }
 
+  /** DarkStar: the range ring drawn while aiming a stargate shot. null = clear. */
+  updateAimRange(circle: { x: number; y: number; r: number } | null): void {
+    this.renderer?.updateAimRange(circle);
+  }
+
   // ---- Nuke UI ----
 
   /** Update nuke trajectory preview arc. null = hide. */

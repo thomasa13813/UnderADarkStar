@@ -181,6 +181,8 @@ export interface UnitInfo {
   damage?: number;
   constructionDuration?: number;
   upgradable?: boolean;
+  // Highest level an upgrade may reach (unlimited when absent).
+  maxLevel?: number;
 }
 
 function unitTypeGroup<T extends readonly UnitType[]>(types: T) {
@@ -212,6 +214,8 @@ export enum UnitType {
   // DarkStar: the flying strike / stargate shot (§6.8). Appended: the enum
   // order is a zbin wire contract.
   Projectile = "Projectile",
+  // DarkStar: the challenger structure that fires gate shots (C4). Appended.
+  Stargate = "Stargate",
 }
 
 export enum TrainType {
@@ -241,6 +245,7 @@ export const Structures = unitTypeGroup([
   UnitType.MissileSilo,
   UnitType.Port,
   UnitType.Factory,
+  UnitType.Stargate,
 ] as const);
 
 export const BuildMenus = unitTypeGroup([
@@ -325,7 +330,11 @@ export interface UnitParamsMap {
   [UnitType.Projectile]: {
     targetTile?: number;
     trajectory: TrajectoryTile[];
+    // A gate shot carries its troops (a strike's ride on the Attack instead).
+    troops?: number;
   };
+
+  [UnitType.Stargate]: Record<string, never>;
 }
 
 // Type helper to get params type for a specific unit type
@@ -435,6 +444,15 @@ export interface HegemonStrike {
   // Take in any Hegemon land beyond the moat that touches the bubble.
   adoptOrphans(): void;
   holdsTile(tile: TileRef): boolean;
+}
+
+// A stargate shot between launch and landing (GateShotExecution): the HUD's
+// recall (the cancel_boat order on the projectile's unit id) goes through it.
+export interface GateShotInFlight {
+  unitId(): number;
+  owner(): Player;
+  targetTile(): TileRef;
+  recall(): void;
 }
 
 export interface AllianceRequest {
@@ -636,6 +654,12 @@ export interface Player {
   isHegemon(): boolean;
   // Dark Star tiles held by a challenger; they count for nothing (H5).
   domainTilesHeld(): number;
+  // DarkStar beachheads (C4): a tile a stargate shot landed on. While the
+  // player holds one, the pocket of land around it is never absorbed by the
+  // enclave rule (PlayerExecution); the tag goes when the tile changes hands.
+  markBeachhead(tile: TileRef): void;
+  isBeachhead(tile: TileRef): boolean;
+  beachheadCount(): number;
 
   // State & Properties
   isAlive(): boolean;
@@ -710,6 +734,9 @@ export interface Player {
   unitCount(type: UnitType): number;
   unitsConstructed(type: UnitType): number;
   unitsOwned(type: UnitType): number;
+  // DarkStar: the stargate that would fire at the tile (C4), null when none
+  // of the player's built gates has it in range.
+  stargateFor(tile: TileRef): GateShotOption | null;
   buildableUnits(
     tile: TileRef | null,
     units?: readonly PlayerBuildableUnitType[],
@@ -983,6 +1010,10 @@ export interface Game extends GameMap {
   removeHegemonStrike(strike: HegemonStrike): void;
   // One live strike per target: in flight or landed.
   hegemonStrikeOn(target: Player): boolean;
+  // Stargate shots in the air (C4).
+  gateShotsInFlight(): GateShotInFlight[];
+  addGateShotInFlight(shot: GateShotInFlight): void;
+  removeGateShotInFlight(shot: GateShotInFlight): void;
   lastInvaderGainTick(): number;
   invasionCooldownUntil(player: Player): number;
   // Set by HegemonExecution: the current invasion has stalled (H13).
@@ -1026,6 +1057,18 @@ export interface PlayerActions {
   canSendEmojiAllPlayers: boolean;
   canEmbargoAll?: boolean;
   interaction?: PlayerInteraction;
+  // DarkStar: the stargate that would fire at the queried tile, if any (C4).
+  gateShot?: GateShotOption;
+}
+
+// The nearest of a player's built stargates whose range covers a tile:
+// ready to fire, or reloading for readyInTicks more ticks.
+export interface GateShotOption {
+  gateId: number;
+  gateTile: TileRef;
+  level: number;
+  range: number;
+  readyInTicks: number;
 }
 
 export interface BuildableUnit {

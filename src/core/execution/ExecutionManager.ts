@@ -15,6 +15,7 @@ import { DonateTroopsExecution } from "./DonateTroopExecution";
 import { EmbargoAllExecution } from "./EmbargoAllExecution";
 import { EmbargoExecution } from "./EmbargoExecution";
 import { EmojiExecution } from "./EmojiExecution";
+import { GateShotExecution } from "./GateShotExecution";
 import { MarkDisconnectedExecution } from "./MarkDisconnectedExecution";
 import { MoveWarshipExecution } from "./MoveWarshipExecution";
 import { NationExecution } from "./NationExecution";
@@ -83,6 +84,9 @@ export class Executor {
         );
       case "boat":
         return new TransportShipExecution(player, intent.dst, intent.troops);
+      case "gate_shot":
+        // A stargate shot (C4); GateShotExecution refuses what it must.
+        return new GateShotExecution(player, intent.tile, intent.troops);
       case "strike":
         // The Hegemon's direct strike (H8); RazeExecution refuses anyone else.
         return new RazeExecution(player, intent.tile, intent.troops);

@@ -21,7 +21,7 @@ import {
 const donateTroopIcon = assetUrl("images/DonateTroopIconWhite.svg");
 const swordIcon = assetUrl("images/SwordIconWhite.svg");
 
-import { ContextMenuEvent } from "../../InputHandler";
+import { ContextMenuEvent, ShowAimRangeEvent } from "../../InputHandler";
 
 function emptyPlayerActions(): PlayerActions {
   return {
@@ -167,6 +167,19 @@ export class MainRadialMenu implements Controller {
     );
 
     this.radialMenu.setParams(params);
+    // The firing gate's range while the menu is open on a tile it can reach.
+    const gate = actions.gateShot;
+    this.eventBus.emit(
+      new ShowAimRangeEvent(
+        gate === undefined
+          ? null
+          : {
+              x: this.game.x(gate.gateTile),
+              y: this.game.y(gate.gateTile),
+              r: gate.range,
+            },
+      ),
+    );
     if (screenX !== null && screenY !== null) {
       this.radialMenu.showRadialMenu(screenX, screenY);
     } else {

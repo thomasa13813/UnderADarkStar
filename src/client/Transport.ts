@@ -110,6 +110,14 @@ export class SendStrikeIntentEvent implements GameEvent {
   ) {}
 }
 
+// A stargate shot at a tile (C4): the nearest ready gate in range fires it.
+export class SendGateShotIntentEvent implements GameEvent {
+  constructor(
+    public readonly tile: TileRef,
+    public readonly troops: number,
+  ) {}
+}
+
 export class BuildUnitIntentEvent implements GameEvent {
   constructor(
     public readonly unit: UnitType,
@@ -308,6 +316,9 @@ export class Transport {
       this.onSendBoatAttackIntent(e),
     );
     this.subscribe(SendStrikeIntentEvent, (e) => this.onSendStrikeIntent(e));
+    this.subscribe(SendGateShotIntentEvent, (e) =>
+      this.onSendGateShotIntent(e),
+    );
     this.subscribe(SendTargetPlayerIntentEvent, (e) =>
       this.onSendTargetPlayerIntent(e),
     );
@@ -765,6 +776,14 @@ export class Transport {
   private onSendStrikeIntent(event: SendStrikeIntentEvent) {
     this.sendIntent({
       type: "strike",
+      tile: event.tile,
+      troops: event.troops,
+    });
+  }
+
+  private onSendGateShotIntent(event: SendGateShotIntentEvent) {
+    this.sendIntent({
+      type: "gate_shot",
       tile: event.tile,
       troops: event.troops,
     });

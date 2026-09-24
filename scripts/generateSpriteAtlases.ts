@@ -84,6 +84,8 @@ const ICON_COLUMNS: IconColumn[] = [
   { name: "Defense Post", svg: "ShieldIconWhite.svg" },
   { name: "SAM Launcher", svg: "SamLauncherIconWhite.svg" },
   { name: "Missile Silo", png: "gl/missileSiloIcon.png" },
+  // DarkStar: the stargate (C4), a placeholder ring for now.
+  { name: "Stargate", svg: "StargateIconWhite.svg" },
 ];
 
 /** Fx atlas: horizontal sprite strips stacked top to bottom, left-aligned.

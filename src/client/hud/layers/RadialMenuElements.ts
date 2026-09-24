@@ -31,6 +31,7 @@ import {
 } from "../../Transport";
 const allianceIcon = assetUrl("images/AllianceIconWhite.svg");
 const boatIcon = assetUrl("images/BoatIconWhite.svg");
+const stargateIcon = assetUrl("images/StargateIconWhite.svg");
 const buildIcon = assetUrl("images/BuildIconWhite.svg");
 const chatIcon = assetUrl("images/ChatIconWhite.svg");
 const donateGoldIcon = assetUrl("images/DonateGoldIconWhite.svg");
@@ -590,6 +591,59 @@ function createMenuElements(
     });
 }
 
+// A stargate shot (C4) at the clicked tile, offered in the attack submenu
+// whenever one of the player's gates has the tile in range; sized by the
+// troop slider like a boat. The sim refuses what the tooltip cannot know
+// (the Dark Star's slot and cooldown, a strike's bubble).
+function gateShotMenuElement(params: MenuElementParams): MenuElement | null {
+  const option = params.playerActions?.gateShot;
+  if (option === undefined || params.myPlayer.isHegemon()) return null;
+  const troops = Math.floor(
+    (params.uiState?.attackRatio ?? 1) * params.myPlayer.troops(),
+  );
+  const reloading = option.readyInTicks > 0;
+  const tooltipItems: TooltipItem[] = [
+    {
+      text: translateText("stargate.shot_tooltip", {
+        troops: renderTroops(troops),
+      }),
+      className: "text-white font-bold",
+    },
+    {
+      text: translateText("stargate.shot_gate", {
+        level: option.level,
+        range: option.range,
+      }),
+      className: "text-slate-300",
+    },
+  ];
+  if (reloading) {
+    tooltipItems.push({
+      text: translateText("stargate.shot_reloading", {
+        seconds: Math.ceil(option.readyInTicks / 10),
+      }),
+      className: "text-yellow-300",
+    });
+  }
+  return {
+    id: "attack_gate_shot",
+    name: "gate_shot",
+    icon: stargateIcon,
+    color: COLORS.attack,
+    tooltipItems,
+    disabled: () =>
+      params.game.inSpawnPhase() ||
+      reloading ||
+      troops < 1 ||
+      params.selected?.id() === params.myPlayer.id() ||
+      isFriendlyTarget(params),
+    action: () => {
+      params.playerActionHandler.handleGateShot(params.myPlayer, params.tile);
+      params.closeMenu();
+    },
+  };
+}
+
 export const attackMenuElement: MenuElement = {
   id: Slot.Attack,
   name: "radial_attack",
@@ -599,7 +653,9 @@ export const attackMenuElement: MenuElement = {
 
   subMenu: (params: MenuElementParams) => {
     if (params === undefined) return [];
-    return createMenuElements(params, "attack", "attack");
+    const items = createMenuElements(params, "attack", "attack");
+    const gateShot = gateShotMenuElement(params);
+    return gateShot === null ? items : [...items, gateShot];
   },
 };
 

@@ -276,6 +276,23 @@ const OVERTIME_DEFAULTS = {
 // Hegemon's own territory (H5). These are F1 placeholders until calibrated
 // against AI-only games: the ceiling is a share of what ONE player owning every
 // land tile could field, which on Milky Way (~443k tiles) is ~5M troops.
+// Stargates (C4 in docs/DarkStar-Design.md): a challenger structure that
+// fires troops as a projectile at any tile in range. Numbers are F15's
+// starting points (decided 2026-09-24), tunable here.
+const STARGATE_DEFAULTS = {
+  // Range in tiles at level 1, what each upgrade adds, and the last level an
+  // upgrade may reach (range 120 / 180 / 240 / 300 / 360). On World, nations
+  // spawn a median 75 tiles apart and ~280 from the moat.
+  rangeBase: 120,
+  rangePerLevel: 60,
+  maxLevel: 5,
+  // A gate holds one shot; this is the reload after firing, whatever the
+  // level (upgrades buy range, not throughput; a silo reloads in 9 s).
+  cooldownSeconds: 60,
+  costGold: 1_000_000,
+  constructionSeconds: 10,
+};
+
 const HEGEMON_DEFAULTS = {
   enabled: false,
   defaultRoundMinutes: 20, // R5, used when maxTimerValue is unset
@@ -428,6 +445,16 @@ export class Config {
       enabled:
         (c?.enabled ?? d.enabled) && this._gameConfig.gameMode === GameMode.FFA,
     };
+  }
+  stargateConfig(): typeof STARGATE_DEFAULTS {
+    return STARGATE_DEFAULTS;
+  }
+  stargateRange(level: number): number {
+    const c = this.stargateConfig();
+    return c.rangeBase + c.rangePerLevel * (Math.min(level, c.maxLevel) - 1);
+  }
+  stargateCooldown(): number {
+    return this.stargateConfig().cooldownSeconds * 10;
   }
   setHegemonMapLandTiles(landTiles: number): void {
     this._hegemonMapLandTiles = landTiles;
@@ -725,11 +752,24 @@ export class Config {
         };
         break;
       case UnitType.Projectile:
-        // Never bought: RazeExecution launches it, troops already paid.
+        // Never bought: RazeExecution / GateShotExecution launch it, troops
+        // already paid.
         info = {
           cost: () => 0n,
         };
         break;
+      case UnitType.Stargate: {
+        const c = this.stargateConfig();
+        info = {
+          cost: this.costWrapper(() => c.costGold, UnitType.Stargate),
+          constructionDuration: this.instantBuild()
+            ? 0
+            : c.constructionSeconds * 10,
+          upgradable: true,
+          maxLevel: c.maxLevel,
+        };
+        break;
+      }
       case UnitType.Port:
         info = {
           cost: this.costWrapper(

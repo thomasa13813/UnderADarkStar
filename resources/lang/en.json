@@ -166,6 +166,7 @@
       "missile_silo": "Used to launch nukes",
       "port": "Sends trade ships to generate gold",
       "sam_launcher": "Defends against incoming nukes",
+      "stargate": "Fires troops through space at any tile in range; the shot lands like a fleet, even on the Dark Star",
       "warship": "Captures trade ships, destroys ships and boats"
     },
     "not_enough_money": "Not enough money",
@@ -804,6 +805,7 @@
     "duration_second": "1 second",
     "duration_seconds_plural": "{seconds} seconds",
     "focus": "Focus",
+    "gate_shot_no_gate": "No stargate in range is ready to fire",
     "hydrogen_bomb_detonated": "{name} - hydrogen bomb detonated",
     "ignore": "Ignore",
     "missile_intercepted": "SAM intercepted {unit}",
@@ -1873,6 +1875,11 @@
   "spawn_timer": {
     "team_percent_tooltip": "{team}: {percent}"
   },
+  "stargate": {
+    "shot_gate": "From a level {level} gate ({range} tiles range)",
+    "shot_reloading": "Gate reloading: {seconds}s",
+    "shot_tooltip": "Gate shot: {troops} troops"
+  },
   "steam_handoff": {
     "launched": "Opening this lobby in the Steam app. If nothing happens, make sure Steam is running.",
     "open_in_steam": "Open in Steam",
@@ -2165,6 +2172,7 @@
     "missile_silo": "Missile Silo",
     "port": "Port",
     "sam_launcher": "SAM Launcher",
+    "stargate": "Stargate",
     "warship": "Warship"
   },
   "update_available": {

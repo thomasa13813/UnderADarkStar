@@ -55,13 +55,15 @@ export type Intent =
   | TogglePauseIntent
   | UpdateGameConfigIntent
   | ToggleGameStartTimer
-  | StrikeIntent;
+  | StrikeIntent
+  | GateShotIntent;
 
 export type AttackIntent = z.infer<typeof AttackIntentSchema>;
 export type CancelAttackIntent = z.infer<typeof CancelAttackIntentSchema>;
 export type SpawnIntent = z.infer<typeof SpawnIntentSchema>;
 export type BoatAttackIntent = z.infer<typeof BoatAttackIntentSchema>;
 export type StrikeIntent = z.infer<typeof StrikeIntentSchema>;
+export type GateShotIntent = z.infer<typeof GateShotIntentSchema>;
 export type EmbargoAllIntent = z.infer<typeof EmbargoAllIntentSchema>;
 export type CancelBoatIntent = z.infer<typeof CancelBoatIntentSchema>;
 export type AllianceRequestIntent = z.infer<typeof AllianceRequestIntentSchema>;
@@ -655,6 +657,14 @@ export const StrikeIntentSchema = z.object({
   troops: zb.float({ min: 0 }),
 });
 
+// A stargate shot (C4): troops fired from the nearest ready gate in range at
+// a tile, landing as a fleet does.
+export const GateShotIntentSchema = z.object({
+  type: z.literal("gate_shot"),
+  tile: zb.uint(),
+  troops: zb.float({ min: 0 }),
+});
+
 export const AllianceRequestIntentSchema = z.object({
   type: z.literal("allianceRequest"),
   recipient: MappedID,
@@ -811,6 +821,7 @@ export const IntentSchema = z.discriminatedUnion("type", [
   ToggleGameStartTimerIntentSchema,
   // Appended: zbin encodes the union variant by position.
   StrikeIntentSchema,
+  GateShotIntentSchema,
 ]);
 
 // StampedIntent = Intent with server-stamped clientID (used in turns and execution)

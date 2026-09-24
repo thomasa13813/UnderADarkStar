@@ -26,6 +26,7 @@ import { GameView, PlayerView, UnitView } from "../../view";
 import { getColoredSprite } from "../SpriteLoader";
 const soldierIcon = assetUrl("images/SoldierIcon.svg");
 const swordIcon = assetUrl("images/SwordIcon.svg");
+const stargateIcon = assetUrl("images/StargateIconWhite.svg");
 
 @customElement("attacks-display")
 export class AttacksDisplay extends LitElement implements Controller {
@@ -83,7 +84,12 @@ export class AttacksDisplay extends LitElement implements Controller {
     const resolvedIncomingBoats: UnitView[] = [];
     for (const unitID of this.incomingBoatIDs) {
       const unit = this.game.unit(unitID);
-      if (unit && unit.isActive() && unit.type() === UnitType.TransportShip) {
+      if (
+        unit &&
+        unit.isActive() &&
+        (unit.type() === UnitType.TransportShip ||
+          unit.type() === UnitType.Projectile)
+      ) {
         resolvedIncomingBoats.push(unit);
       } else {
         this.incomingBoatIDs.delete(unitID);
@@ -104,9 +110,15 @@ export class AttacksDisplay extends LitElement implements Controller {
       .outgoingAttacks()
       .filter((a) => a.targetID === 0);
 
+    // A challenger's projectiles are its stargate shots (C4): they ride the
+    // boat rows (troops, target, ETA, recall). The Hegemon's are strikes.
     this.outgoingBoats = myPlayer
       .units()
-      .filter((u) => u.type() === UnitType.TransportShip);
+      .filter(
+        (u) =>
+          u.type() === UnitType.TransportShip ||
+          (u.type() === UnitType.Projectile && !myPlayer.isHegemon()),
+      );
 
     this.requestUpdate();
   }
@@ -449,6 +461,9 @@ export class AttacksDisplay extends LitElement implements Controller {
   }
 
   private renderBoatIcon(boat: UnitView) {
+    if (boat.type() === UnitType.Projectile) {
+      return html`<img src="${stargateIcon}" class="h-4 w-4 inline-block" />`;
+    }
     const dataURL = this.getBoatSpriteDataURL(boat);
     if (!dataURL) return html``;
     return html`<img

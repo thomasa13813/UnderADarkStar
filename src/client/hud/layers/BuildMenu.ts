@@ -32,6 +32,7 @@ const factoryIcon = assetUrl("images/FactoryIconWhite.svg");
 const goldCoinIcon = assetUrl("images/GoldCoinIcon.svg");
 const mirvIcon = assetUrl("images/MIRVIcon.svg");
 const missileSiloIcon = assetUrl("images/MissileSiloIconWhite.svg");
+const stargateIcon = assetUrl("images/StargateIconWhite.svg");
 const hydrogenBombIcon = assetUrl("images/MushroomCloudIconWhite.svg");
 const atomBombIcon = assetUrl("images/NukeIconWhite.svg");
 const portIcon = assetUrl("images/PortIcon.svg");
@@ -116,6 +117,14 @@ export const buildTable: BuildItemDisplay[][] = [
       icon: factoryIcon,
       description: "build_menu.desc.factory",
       key: "unit_type.factory",
+      countable: true,
+    },
+    {
+      // DarkStar: the stargate (C4). No hotkey.
+      unitType: UnitType.Stargate,
+      icon: stargateIcon,
+      description: "build_menu.desc.stargate",
+      key: "unit_type.stargate",
       countable: true,
     },
   ],

@@ -25,6 +25,7 @@ import {
   ConfirmGhostStructureEvent,
   MouseMoveEvent,
   MouseUpEvent,
+  ShowAimRangeEvent,
 } from "../InputHandler";
 import { buildNukeTrajectory, MapRenderer } from "../render/gl";
 import type { SAMInfo } from "../render/gl/utils/NukeTrajectory";
@@ -105,6 +106,9 @@ export class BuildPreviewController implements Controller {
   ) {}
 
   init() {
+    this.eventBus.on(ShowAimRangeEvent, (e) =>
+      this.view.updateAimRange(e.circle),
+    );
     this.eventBus.on(MouseMoveEvent, (e) => this.moveGhost(e));
     this.eventBus.on(MouseUpEvent, (e) => this.requestConfirmStructure(e));
     this.eventBus.on(ConfirmGhostStructureEvent, () =>
@@ -462,6 +466,11 @@ export class BuildPreviewController implements Controller {
       case UnitType.DefensePost:
         rangeRadius = this.game.config().defensePostRange();
         break;
+      case UnitType.Stargate: {
+        const level = this.resolveGhostRangeLevel(u) ?? 1;
+        rangeRadius = this.game.config().stargateRange(level);
+        break;
+      }
     }
     let radiusTileX = this.game.x(tileRef);
     let radiusTileY = this.game.y(tileRef);
@@ -663,13 +672,18 @@ export class BuildPreviewController implements Controller {
   private resolveGhostRangeLevel(
     buildableUnit: BuildableUnit,
   ): number | undefined {
-    if (buildableUnit.type !== UnitType.SAMLauncher) return undefined;
+    if (
+      buildableUnit.type !== UnitType.SAMLauncher &&
+      buildableUnit.type !== UnitType.Stargate
+    ) {
+      return undefined;
+    }
     if (buildableUnit.canUpgrade !== false) {
       const existing = this.game.unit(buildableUnit.canUpgrade);
       if (existing) {
         return existing.level() + 1;
       } else {
-        console.error("Failed to find existing SAMLauncher for upgrade");
+        console.error("Failed to find existing structure for upgrade");
       }
     }
     return 1;

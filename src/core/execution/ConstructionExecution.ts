@@ -8,6 +8,7 @@ import { MissileSiloExecution } from "./MissileSiloExecution";
 import { NukeExecution } from "./NukeExecution";
 import { PortExecution } from "./PortExecution";
 import { SAMLauncherExecution } from "./SAMLauncherExecution";
+import { StargateExecution } from "./StargateExecution";
 import { WarshipExecution } from "./WarshipExecution";
 
 export class ConstructionExecution implements Execution {
@@ -136,6 +137,9 @@ export class ConstructionExecution implements Execution {
       case UnitType.MissileSilo:
         this.mg.addExecution(new MissileSiloExecution(this.structure!));
         break;
+      case UnitType.Stargate:
+        this.mg.addExecution(new StargateExecution(this.structure!));
+        break;
       case UnitType.DefensePost:
         this.mg.addExecution(new DefensePostExecution(this.structure!));
         break;
@@ -166,6 +170,7 @@ export class ConstructionExecution implements Execution {
       case UnitType.SAMLauncher:
       case UnitType.City:
       case UnitType.Factory:
+      case UnitType.Stargate:
         return true;
       default:
         return false;

@@ -87,6 +87,14 @@ export class AlternateViewEvent implements GameEvent {
   constructor(public readonly alternateView: boolean) {}
 }
 
+// DarkStar: a range ring to draw while aiming (the radial menu open on a
+// tile a stargate can reach); null clears it.
+export class ShowAimRangeEvent implements GameEvent {
+  constructor(
+    public readonly circle: { x: number; y: number; r: number } | null,
+  ) {}
+}
+
 export class CloseViewEvent implements GameEvent {}
 
 export class RefreshGraphicsEvent implements GameEvent {}
