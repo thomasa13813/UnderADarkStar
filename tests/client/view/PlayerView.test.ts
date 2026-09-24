@@ -7,6 +7,7 @@
  */
 
 import { beforeEach, describe, expect, it } from "vitest";
+import { themeProvider } from "../../../src/client/theme/ThemeProvider";
 import { PlayerView } from "../../../src/client/view/PlayerView";
 import {
   AllPlayers,
@@ -22,6 +23,80 @@ import {
   makePlayerUpdate,
   makePlayerView,
 } from "../../util/viewStubs";
+
+describe("Hegemon default look", () => {
+  const hegemonColors = () => themeProvider.current().hegemonColors();
+
+  it("gives the Hegemon the theme's dark fill, purple border and a rim", () => {
+    const p = makePlayerView({ data: { isHegemon: true } });
+    const h = hegemonColors();
+    expect(p.territoryColor().isEqual(h.territory)).toBe(true);
+    expect(p.borderColor().isEqual(h.border)).toBe(true);
+    expect(p.rimColor()?.isEqual(h.rim)).toBe(true);
+  });
+
+  it("keeps the Hegemon look for the local player instead of the focus border", () => {
+    const game = makeGameView({ myClientID: "client-a" });
+    const p = makePlayerView({
+      game,
+      data: { clientID: "client-a", isHegemon: true },
+    });
+    expect(p.borderColor().isEqual(hegemonColors().border)).toBe(true);
+  });
+
+  it("leaves other players on their allocated colours with no rim", () => {
+    const p = makePlayerView({ data: { isHegemon: false } });
+    const h = hegemonColors();
+    expect(p.territoryColor().isEqual(h.territory)).toBe(false);
+    expect(p.rimColor()).toBeNull();
+  });
+
+  it("yields to a colour cosmetic the seat holder chose", () => {
+    const p = makePlayerView({
+      data: { isHegemon: true },
+      cosmetics: { color: { color: "#dc2626" } },
+    });
+    expect(p.territoryColor().toHex()).toBe("#dc2626");
+    expect(p.rimColor()).toBeNull();
+  });
+
+  it("yields to a pattern with its own palette", () => {
+    const p = makePlayerView({
+      data: { isHegemon: true },
+      cosmetics: {
+        pattern: {
+          name: "stripes",
+          patternData: "AAAADw",
+          colorPalette: {
+            name: "sunset",
+            primaryColor: "#f97316",
+            secondaryColor: "#7c2d12",
+          },
+        },
+      },
+    });
+    expect(p.territoryColor().toHex()).toBe("#f97316");
+    expect(p.borderColor().toHex()).toBe("#7c2d12");
+    expect(p.rimColor()).toBeNull();
+  });
+
+  it("uses the Hegemon look as the base of a pattern without a palette", () => {
+    const p = makePlayerView({
+      data: { isHegemon: true },
+      cosmetics: { pattern: { name: "stripes", patternData: "AAAADw" } },
+    });
+    const h = hegemonColors();
+    expect(p.territoryColor().isEqual(h.territory)).toBe(true);
+    expect(p.borderColor().isEqual(h.border)).toBe(true);
+    expect(p.rimColor()?.isEqual(h.rim)).toBe(true);
+  });
+
+  it("lets the team colour win in team games", () => {
+    const p = makePlayerView({ data: { isHegemon: true, team: "Blue" } });
+    expect(p.territoryColor().isEqual(hegemonColors().territory)).toBe(false);
+    expect(p.rimColor()).toBeNull();
+  });
+});
 
 describe("PlayerView accessors", () => {
   it("forwards data fields", () => {

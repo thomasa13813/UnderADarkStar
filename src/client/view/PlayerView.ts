@@ -128,6 +128,12 @@ export class PlayerView {
   private _territoryColor!: Colord;
   private _borderColor!: Colord;
   private _railColor!: Colord;
+  /**
+   * Outermost one-tile ring drawn outside the border band, or null when the
+   * territory has an ordinary single border. Only the Hegemon's default look
+   * sets it (see computeColors); BorderStampPass draws it.
+   */
+  private _rimColor: Colord | null = null;
   // Update here to include structure light and dark colors
   private _structureColors!: { light: Colord; dark: Colord };
 
@@ -199,10 +205,27 @@ export class PlayerView {
   private computeColors(): void {
     const theme = themeProvider.current();
 
-    const defaultTerritoryColor = theme.territoryColor(this);
-    const defaultBorderColor = theme.borderColor(defaultTerritoryColor);
+    let defaultTerritoryColor = theme.territoryColor(this);
+    let defaultBorderColor = theme.borderColor(defaultTerritoryColor);
 
+    // The Hegemon seat defaults to the theme's dark-star look (near-black
+    // fill, purple band, pale rim) instead of an allocated colour — but only
+    // as a default: a chosen colour or a pattern with its own palette wins,
+    // and in team games the team colour still applies.
     const pattern = this.cosmetics.pattern;
+    const hasOwnColors =
+      this.cosmetics.color !== undefined || pattern?.colorPalette !== undefined;
+    const useHegemonLook =
+      this.isHegemon() && this.team() === null && !hasOwnColors;
+    if (useHegemonLook) {
+      const hegemon = theme.hegemonColors();
+      defaultTerritoryColor = hegemon.territory;
+      defaultBorderColor = hegemon.border;
+      this._rimColor = hegemon.rim;
+    } else {
+      this._rimColor = null;
+    }
+
     if (pattern) {
       pattern.colorPalette ??= {
         name: "",
@@ -223,8 +246,10 @@ export class PlayerView {
 
     this._structureColors = theme.structureColors(this._territoryColor);
 
+    // The Hegemon look already marks its owner out (the rim), so it keeps its
+    // band colour even for the local player.
     const maybeFocusedBorderColor =
-      this.game.myClientID() === this.static.clientID
+      this.game.myClientID() === this.static.clientID && !useHegemonLook
         ? theme.focusedBorderColor()
         : defaultBorderColor;
 
@@ -332,6 +357,15 @@ export class PlayerView {
 
   railColor(): Colord {
     return this._railColor;
+  }
+
+  /**
+   * Colour of the one-tile ring outside this player's border band, or null
+   * for an ordinary single border. Non-null only for the Hegemon's default
+   * look — a seat holder with their own colour scheme gets a normal border.
+   */
+  rimColor(): Colord | null {
+    return this._rimColor;
   }
 
   /**

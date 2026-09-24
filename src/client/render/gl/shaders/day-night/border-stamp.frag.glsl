@@ -15,6 +15,8 @@ uniform float uEmbargoTintRatio;
 uniform float uFriendlyTintRatio;
 uniform vec3 uEmbargoTint;
 uniform vec3 uFriendlyTint;
+uniform uint uDualBorderOwner; // 0 = none; owner whose border ring is the rim
+uniform vec3 uDualBorderRim;   // rim colour for that owner (0-1 RGB)
 
 in vec2 vWorldPos;
 out vec4 fragColor;
@@ -34,16 +36,24 @@ void main() {
 
   bool isBorder = borderType > 0.25;
   bool isHighlightBorder = borderType > 0.75;
+  // Dual border: the band just inside the ring (only the uDualBorderOwner
+  // has one). The ring itself takes the rim colour, the band the border colour.
+  bool isDualOwner = uDualBorderOwner != 0u && owner == uDualBorderOwner;
+  bool isInnerBand = isDualOwner && borderData.g > 0.5;
 
   // --- Border stamp: full-brightness border color ---
-  if (isBorder && owner != 0u) {
+  if ((isBorder || isInnerBand) && owner != 0u) {
     vec3 bc;
     if (uAltView != 0) {
-      // Alt-view: pure affiliation color from palette row 0
+      // Alt-view: pure affiliation color from palette row 0, ring only
+      if (!isBorder) discard;
       bc = texelFetch(uAffiliation, ivec2(int(owner), 0), 0).rgb;
     } else {
       float u = (float(owner) + 0.5) / float(PALETTE_SIZE);
       bc = texture(uPalette, vec2(u, 0.75)).rgb;
+      if (isDualOwner && isBorder) {
+        bc = uDualBorderRim;
+      }
       if (isHighlightBorder) {
         bc = mix(bc, vec3(1.0), uHighlightBrighten);
       }

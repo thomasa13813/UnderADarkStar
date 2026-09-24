@@ -42,6 +42,17 @@ export interface ThemeSettings {
   focusedBorderColor: string;
   /** Tint applied to unit sprites during spawn highlight. */
   spawnHighlightColor: string;
+  /**
+   * Default look of the Hegemon seat (DarkStar). Used only when the player
+   * holding the seat has no colour cosmetic of their own — a chosen colour or
+   * pattern palette always wins. `rimColor` is the outermost one-tile ring,
+   * `borderColor` the band inside it (mapOverlay.hegemonBorderThicken tiles).
+   */
+  hegemon: {
+    territoryColor: string;
+    borderColor: string;
+    rimColor: string;
+  };
 }
 
 export interface RenderSettings {
@@ -152,6 +163,17 @@ export interface RenderSettings {
     highlightBrighten: number;
     highlightFillBrighten: number;
     highlightThicken: number;
+    /**
+     * Width in tiles of the Hegemon's inner border band (theme.hegemon
+     * .borderColor), drawn inside the one-tile rim. 0 = rim only.
+     */
+    hegemonBorderThicken: number;
+    /**
+     * Fill opacity of the Hegemon's territory while it uses the default look
+     * (theme.hegemon). Near 1 so the near-black fill reads as black instead
+     * of the terrain showing through at territoryAlpha.
+     */
+    hegemonFillAlpha: number;
     defensePostRange: number;
     embargoTintRatio: number;
     friendlyTintRatio: number;
@@ -288,6 +310,8 @@ export interface RenderSettings {
     /** Name fill grayscale shade by player type (0 = black). Human is always 0. */
     nameShadeNation: number;
     nameShadeBot: number;
+    /** Name fill shade over the Hegemon's default near-black fill (light). */
+    nameShadeHegemon: number;
     emojiRowOffset: number;
     statusRowOffset: number;
     /** Dark outline radius (atlas texels) drawn behind the alliance icon; 0 = off. */

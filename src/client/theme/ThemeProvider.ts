@@ -28,6 +28,12 @@ export interface Theme {
   defendedBorderColors(territoryColor: Colord): { light: Colord; dark: Colord };
   focusedBorderColor(): Colord;
   spawnHighlightColor(): Colord;
+  /**
+   * Default colours of the Hegemon seat: near-black fill, a purple border
+   * band and a pale rim outside it. PlayerView applies them only when the
+   * seat holder has no colour cosmetic of their own.
+   */
+  hegemonColors(): { territory: Colord; border: Colord; rim: Colord };
 }
 
 /**
@@ -95,6 +101,7 @@ export class SettingsTheme implements Theme {
 
   private _focusedBorderColor: Colord;
   private _spawnHighlightColor: Colord;
+  private _hegemonColors: { territory: Colord; border: Colord; rim: Colord };
 
   constructor(private settings: ThemeSettings) {
     const humanColors = settings.humanColors.map(colord);
@@ -112,6 +119,11 @@ export class SettingsTheme implements Theme {
 
     this._focusedBorderColor = colord(settings.focusedBorderColor);
     this._spawnHighlightColor = colord(settings.spawnHighlightColor);
+    this._hegemonColors = {
+      territory: colord(settings.hegemon.territoryColor),
+      border: colord(settings.hegemon.borderColor),
+      rim: colord(settings.hegemon.rimColor),
+    };
   }
 
   /** Per-team color variations; index 0 is the team's base color. */
@@ -265,6 +277,11 @@ export class SettingsTheme implements Theme {
   /** Highlight color for a spawnable tile during the spawn phase. */
   spawnHighlightColor(): Colord {
     return this._spawnHighlightColor;
+  }
+
+  /** Default Hegemon look (see Theme.hegemonColors). */
+  hegemonColors(): { territory: Colord; border: Colord; rim: Colord } {
+    return this._hegemonColors;
   }
 }
 

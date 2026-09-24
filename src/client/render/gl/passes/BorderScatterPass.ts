@@ -42,6 +42,8 @@ export class BorderScatterPass {
   private uMapSize: WebGLUniformLocation;
   private uHighlightOwner: WebGLUniformLocation;
   private uHighlightThicken: WebGLUniformLocation;
+  private uDualBorderOwner: WebGLUniformLocation;
+  private uDualBorderInner: WebGLUniformLocation;
 
   private fbo: WebGLFramebuffer;
   private vao: WebGLVertexArrayObject;
@@ -49,6 +51,7 @@ export class BorderScatterPass {
 
   // Mirrored from BorderComputePass — set via setters when those change.
   private highlightOwner = 0;
+  private dualBorderOwner = 0;
 
   /** CPU-side patch buffer: [x, y, x, y, …]. */
   private patchData: Float32Array;
@@ -86,6 +89,14 @@ export class BorderScatterPass {
     this.uHighlightThicken = gl.getUniformLocation(
       this.program,
       "uHighlightThicken",
+    )!;
+    this.uDualBorderOwner = gl.getUniformLocation(
+      this.program,
+      "uDualBorderOwner",
+    )!;
+    this.uDualBorderInner = gl.getUniformLocation(
+      this.program,
+      "uDualBorderInner",
     )!;
 
     gl.useProgram(this.program);
@@ -136,6 +147,10 @@ export class BorderScatterPass {
    * of the highlight band tracks the change instead of lagging until the next
    * full recompute. Changes elsewhere on the map don't touch the band, so they
    * keep the cheap cardinal cross.
+   *
+   * The dual-border owner's inner band is the same kind of expansion
+   * (`hegemonBorderThicken` tiles), so tiles gained or lost by that owner
+   * widen the repaint the same way.
    */
   pushWithNeighbors(
     x: number,
@@ -143,11 +158,22 @@ export class BorderScatterPass {
     prevOwner: number,
     newOwner: number,
   ): void {
-    const touchesHighlight =
+    const mo = this.settings.mapOverlay;
+    let r = 0;
+    if (
       this.highlightOwner !== 0 &&
-      (prevOwner === this.highlightOwner || newOwner === this.highlightOwner);
+      (prevOwner === this.highlightOwner || newOwner === this.highlightOwner)
+    ) {
+      r = Math.max(r, Math.floor(mo.highlightThicken));
+    }
+    if (
+      this.dualBorderOwner !== 0 &&
+      (prevOwner === this.dualBorderOwner || newOwner === this.dualBorderOwner)
+    ) {
+      r = Math.max(r, Math.floor(mo.hegemonBorderThicken));
+    }
 
-    if (!touchesHighlight) {
+    if (r === 0) {
       this.push(x, y);
       if (x > 0) this.push(x - 1, y);
       if (x < this.mapW - 1) this.push(x + 1, y);
@@ -156,10 +182,7 @@ export class BorderScatterPass {
       return;
     }
 
-    const r = Math.max(
-      1,
-      Math.floor(this.settings.mapOverlay.highlightThicken),
-    );
+    r = Math.max(1, r);
     const x0 = Math.max(0, x - r);
     const x1 = Math.min(this.mapW - 1, x + r);
     const y0 = Math.max(0, y - r);
@@ -181,6 +204,10 @@ export class BorderScatterPass {
 
   setHighlightOwner(owner: number): void {
     this.highlightOwner = owner;
+  }
+
+  setDualBorderOwner(owner: number): void {
+    this.dualBorderOwner = owner;
   }
 
   flush(): void {
@@ -209,6 +236,8 @@ export class BorderScatterPass {
     gl.uniform2f(this.uMapSize, this.mapW, this.mapH);
     gl.uniform1ui(this.uHighlightOwner, this.highlightOwner);
     gl.uniform1i(this.uHighlightThicken, Math.floor(mo.highlightThicken));
+    gl.uniform1ui(this.uDualBorderOwner, this.dualBorderOwner);
+    gl.uniform1i(this.uDualBorderInner, Math.floor(mo.hegemonBorderThicken));
 
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, this.tileTex);

@@ -113,6 +113,24 @@ describe("default theme team colors", () => {
   });
 });
 
+describe("hegemon colors", () => {
+  test("come from the theme JSON", () => {
+    const theme = new SettingsTheme(createThemeSettings("default"));
+    const h = theme.hegemonColors();
+    expect(h.territory.toHex()).toBe(defaultTheme.hegemon.territoryColor);
+    expect(h.border.toHex()).toBe(defaultTheme.hegemon.borderColor);
+    expect(h.rim.toHex()).toBe(defaultTheme.hegemon.rimColor);
+  });
+
+  test("read as a dark fill with a bright rim", () => {
+    const theme = new SettingsTheme(createThemeSettings("default"));
+    const h = theme.hegemonColors();
+    expect(h.territory.brightness()).toBeLessThan(0.15);
+    expect(h.rim.brightness()).toBeGreaterThan(0.85);
+    expect(h.border.isEqual(h.territory)).toBe(false);
+  });
+});
+
 describe("colorblind theme", () => {
   test("applies a palette distinct from the default theme", () => {
     const defaultTheme = new SettingsTheme(createThemeSettings("default"));

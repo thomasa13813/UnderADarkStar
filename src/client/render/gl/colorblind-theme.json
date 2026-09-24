@@ -426,5 +426,10 @@
   "defendedBorderDarkenDark": 0.4,
   "structureContrastTarget": 0.5,
   "focusedBorderColor": "#e6e6e6",
-  "spawnHighlightColor": "#ffd54f"
+  "spawnHighlightColor": "#ffd54f",
+  "hegemon": {
+    "territoryColor": "#07030d",
+    "borderColor": "#7c3aed",
+    "rimColor": "#f4f0ff"
+  }
 }

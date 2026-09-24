@@ -179,6 +179,24 @@ export function buildTree(s: RenderSettings, d: RenderSettings): DebugNode[] {
         1,
         "Highlight Thicken (tiles)",
       ),
+      slider(
+        s.mapOverlay,
+        "hegemonBorderThicken",
+        d.mapOverlay,
+        0,
+        4,
+        1,
+        "Hegemon Border Band (tiles)",
+      ),
+      slider(
+        s.mapOverlay,
+        "hegemonFillAlpha",
+        d.mapOverlay,
+        0,
+        1,
+        0.01,
+        "Hegemon Fill Alpha",
+      ),
 
       folder("Railroad", [
         slider(s.railroad, "railMinZoom", d.railroad, 0, 10, 0.1, "Min Zoom"),

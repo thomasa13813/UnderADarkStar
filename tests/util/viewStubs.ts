@@ -41,6 +41,11 @@ export function stubTheme(): Theme {
     defendedBorderColors: () => defended,
     focusedBorderColor: () => grey,
     spawnHighlightColor: () => white,
+    hegemonColors: () => ({
+      territory: colord("#07030d"),
+      border: colord("#7c3aed"),
+      rim: colord("#f4f0ff"),
+    }),
   };
 }
 

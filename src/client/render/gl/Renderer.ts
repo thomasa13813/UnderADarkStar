@@ -1121,6 +1121,17 @@ export class GPURenderer {
     this.structurePass.setHighlightOwner(ownerID);
     this.railroadPass.setHighlightOwner(ownerID);
   }
+  /**
+   * Owner drawn with the default Hegemon look (0 = none): a rim ring in
+   * `rim` (0-1 RGB) plus an inner border band, a near-opaque fill and a
+   * light name fill.
+   */
+  setHegemonLook(ownerID: number, rim: [number, number, number]): void {
+    this.borderPass.setDualBorderOwner(ownerID);
+    this.borderStampPass.setDualBorder(ownerID, rim);
+    this.territoryPass.setHegemonOwner(ownerID);
+    this.namePass.setHegemonOwner(ownerID);
+  }
   setMouseWorldPos(x: number, y: number): void {
     this.namePass.setMouseWorldPos(x, y);
   }

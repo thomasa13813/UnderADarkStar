@@ -30,6 +30,8 @@ export class BorderStampPass {
   private uEmbargoTint: WebGLUniformLocation;
   private uFriendlyTint: WebGLUniformLocation;
   private uAltView: WebGLUniformLocation;
+  private uDualBorderOwner: WebGLUniformLocation;
+  private uDualBorderRim: WebGLUniformLocation;
 
   private vao: WebGLVertexArrayObject;
   private tileTex: WebGLTexture;
@@ -38,6 +40,8 @@ export class BorderStampPass {
   private defenseCoverageTex: WebGLTexture | null = null;
   private affiliationTex: WebGLTexture | null = null;
   private altView = false;
+  private dualBorderOwner = 0;
+  private dualBorderRim: [number, number, number] = [1, 1, 1];
 
   constructor(
     gl: WebGL2RenderingContext,
@@ -85,6 +89,14 @@ export class BorderStampPass {
     this.uEmbargoTint = gl.getUniformLocation(this.program, "uEmbargoTint")!;
     this.uFriendlyTint = gl.getUniformLocation(this.program, "uFriendlyTint")!;
     this.uAltView = gl.getUniformLocation(this.program, "uAltView")!;
+    this.uDualBorderOwner = gl.getUniformLocation(
+      this.program,
+      "uDualBorderOwner",
+    )!;
+    this.uDualBorderRim = gl.getUniformLocation(
+      this.program,
+      "uDualBorderRim",
+    )!;
 
     gl.useProgram(this.program);
     gl.uniform1i(gl.getUniformLocation(this.program, "uTileTex"), 0);
@@ -98,6 +110,15 @@ export class BorderStampPass {
 
   setAltView(active: boolean): void {
     this.altView = active;
+  }
+  /**
+   * Owner drawn with a dual border (0 = none): their border ring is painted
+   * in `rim` (0-1 RGB) and the inner band flagged by BorderComputePass in
+   * their palette border colour.
+   */
+  setDualBorder(ownerID: number, rim: [number, number, number]): void {
+    this.dualBorderOwner = ownerID;
+    this.dualBorderRim = rim;
   }
   setAffiliationTex(tex: WebGLTexture): void {
     this.affiliationTex = tex;
@@ -131,6 +152,13 @@ export class BorderStampPass {
       mo.friendlyTintB,
     );
     gl.uniform1i(this.uAltView, this.altView ? 1 : 0);
+    gl.uniform1ui(this.uDualBorderOwner, this.dualBorderOwner);
+    gl.uniform3f(
+      this.uDualBorderRim,
+      this.dualBorderRim[0],
+      this.dualBorderRim[1],
+      this.dualBorderRim[2],
+    );
 
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, this.tileTex);

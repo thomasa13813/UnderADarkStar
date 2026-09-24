@@ -43,7 +43,10 @@ export class TerritoryPass {
   private uSaturation: WebGLUniformLocation;
   private uTerritoryAlpha: WebGLUniformLocation;
   private uAltFillAlpha: WebGLUniformLocation;
+  private uHegemonOwner: WebGLUniformLocation;
+  private uHegemonFillAlpha: WebGLUniformLocation;
   private highlightOwner = 0;
+  private hegemonOwner = 0;
   private isTeamMode = false;
 
   private vao: WebGLVertexArrayObject;
@@ -182,6 +185,11 @@ export class TerritoryPass {
       "uTerritoryAlpha",
     )!;
     this.uAltFillAlpha = gl.getUniformLocation(this.program, "uAltFillAlpha")!;
+    this.uHegemonOwner = gl.getUniformLocation(this.program, "uHegemonOwner")!;
+    this.uHegemonFillAlpha = gl.getUniformLocation(
+      this.program,
+      "uHegemonFillAlpha",
+    )!;
 
     gl.useProgram(this.program);
     gl.uniform1i(gl.getUniformLocation(this.program, "uTileTex"), 0);
@@ -401,6 +409,14 @@ export class TerritoryPass {
     this.highlightOwner = ownerID;
   }
 
+  /**
+   * Owner drawn with the default Hegemon look (0 = none): their fill uses
+   * `mapOverlay.hegemonFillAlpha` so the near-black reads as black.
+   */
+  setHegemonOwner(ownerID: number): void {
+    this.hegemonOwner = ownerID;
+  }
+
   /** Defense-coverage texture (R8) — darkens the fill on defended tiles. */
   setDefenseCoverageTex(tex: WebGLTexture): void {
     this.defenseCoverageTex = tex;
@@ -447,6 +463,8 @@ export class TerritoryPass {
     gl.uniform1f(this.uSaturation, mo.territorySaturation);
     gl.uniform1f(this.uTerritoryAlpha, mo.territoryAlpha);
     gl.uniform1f(this.uAltFillAlpha, this.settings.altView.fillAlpha);
+    gl.uniform1ui(this.uHegemonOwner, this.hegemonOwner);
+    gl.uniform1f(this.uHegemonFillAlpha, mo.hegemonFillAlpha);
 
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, this.tileTex);

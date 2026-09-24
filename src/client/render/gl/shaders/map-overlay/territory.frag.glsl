@@ -27,6 +27,8 @@ uniform float uDefenseDarken;      // multiplier applied to fill on defended til
 uniform sampler2D uBorderTex;      // RGBA8 — border flags; R > 0.25 = border tile
 uniform float uSaturation;         // 1 = full color, 0 = grayscale
 uniform float uTerritoryAlpha;     // absolute fill opacity; 1 = fully opaque
+uniform uint uHegemonOwner;        // 0 = none; owner using the default Hegemon look
+uniform float uHegemonFillAlpha;   // fill opacity for that owner (near-black fill)
 uniform sampler2D uAffiliation;    // RGBA8 — alt-view relation colors (row 0)
 uniform float uAltFillAlpha;       // alt-view translucent fill opacity
 
@@ -136,7 +138,9 @@ void main() {
     color.rgb = mix(vec3(luma), color.rgb, uSaturation);
   }
 
-  color.a = uTerritoryAlpha;
+  color.a = (uHegemonOwner != 0u && owner == uHegemonOwner)
+    ? uHegemonFillAlpha
+    : uTerritoryAlpha;
 
   fragColor = color;
 }

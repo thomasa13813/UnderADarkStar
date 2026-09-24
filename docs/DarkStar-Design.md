@@ -322,6 +322,15 @@ persistence was OpenFront's closed-source API, which we do not have.
 - **Colours are data:** terrain palette in `src/client/render/gl/render-settings.json` (`terrain.*`,
   overridable via `TerrainColorOverrides` → `TerrainPass.setTerrainColors`); player palettes in
   `src/client/render/gl/default-theme.json`. A DarkStar theme is mostly a new JSON file.
+- **The Hegemon's look (2026-09-24):** by default the seat is drawn as a black hole — near-black fill,
+  a purple border band two tiles wide and a pale one-tile rim outside it (`theme.hegemon.*` in the
+  theme JSONs, band width `mapOverlay.hegemonBorderThicken`). The fill is drawn near-opaque
+  (`mapOverlay.hegemonFillAlpha`) so the terrain does not tint it, and the name is drawn light
+  (`name.nameShadeHegemon`). It is a default, not a uniform: a seat holder with their own colour
+  cosmetic or pattern palette keeps it and gets an ordinary single border, and in team games the
+  team colour wins. `PlayerView.rimColor()` decides; `WebGLFrameBuilder.syncHegemonLook` pushes the
+  owner to the renderer; `BorderComputePass` flags the band (G channel), `BorderStampPass` paints
+  rim and band, `TerritoryPass` and the name pass apply the fill alpha and name shade.
 - **Sprites:** committed atlas PNGs in `resources/atlases/` (`unit-atlas`, `icon-atlas`, `status-atlas`
   \+ meta JSON, `fx-atlas`). The generator script they reference is missing from the repo — repaint in
   place, preserving the grid. A Hegemon marker = new `status-atlas` icon (crown is the precedent) wired
@@ -877,3 +886,7 @@ settled by playtesting.
   type drawn in its owner's colours (no nuke flicker) so stargate shots reuse it. The generator revealed
   that five GL unit glyphs and the silo icon had no source in the repo; they are now checked-in sprites.
   F15 loses the speed question; H8 and C4 note the visible flight.
+- **2026-09-24** — **The Hegemon looks like a black hole by default (§5.4).** Near-black fill, a
+  two-tile purple band and a pale one-tile rim, from `theme.hegemon.*`; overridden by the seat
+  holder’s own colour cosmetic or pattern palette, and by team colours. New `rimColor()` on
+  `PlayerView`, a dual-border owner on the border compute/stamp passes, `hegemonBorderThicken`.

@@ -7,6 +7,8 @@ uniform usampler2D uRelationTex; // R8UI — relationship matrix (ownerA × owne
 uniform vec2 uMapSize;
 uniform uint uHighlightOwner;
 uniform int uHighlightThicken; // Chebyshev radius for highlight expansion
+uniform uint uDualBorderOwner; // 0 = none; owner drawn with a rim + inner band
+uniform int uDualBorderInner;  // Chebyshev width of the inner band (tiles)
 
 out vec4 fragColor;
 
@@ -25,6 +27,7 @@ void main() {
 
   // --- Border detection ---
   float borderType = 0.0; // 0=interior, ~0.5=normal border, ~1.0=highlight border
+  float innerBand = 0.0;  // 1.0 = dual-border owner's band just inside the border
   uint maxRel = 0u;       // 0=neutral, 1=friendly, 2=embargo
 
   if (owner != 0u) {
@@ -75,12 +78,36 @@ void main() {
         }
       }
     }
+
+    // Dual border (the Hegemon's default look): interior tiles within
+    // uDualBorderInner of another owner form a second band inside the
+    // one-tile border ring. Same ring walk as the highlight above.
+    if (uDualBorderOwner != 0u && owner == uDualBorderOwner && !isBorder) {
+      for (int d = 1; d <= 4; d++) {
+        if (d > uDualBorderInner) break;
+        bool found = false;
+        for (int i = -d; i <= d; i++) {
+          if (getOwner(tc + ivec2(i, -d)) != owner) { found = true; break; }
+          if (getOwner(tc + ivec2(i,  d)) != owner) { found = true; break; }
+        }
+        if (!found) {
+          for (int i = -d + 1; i <= d - 1; i++) {
+            if (getOwner(tc + ivec2(-d, i)) != owner) { found = true; break; }
+            if (getOwner(tc + ivec2( d, i)) != owner) { found = true; break; }
+          }
+        }
+        if (found) {
+          innerBand = 1.0;
+          break;
+        }
+      }
+    }
   }
 
   // A = relationship: 0.0=neutral, 0.5=friendly, 1.0=embargo
   float relation = float(maxRel) * 0.5;
-  // G channel is unused (formerly emberIntensity; ember is now computed in
-  // FalloutBloomPass and FalloutLightPass). B channel is unused (defense post
-  // proximity is now computed per-tile by DefenseCoveragePass).
-  fragColor = vec4(borderType, 0.0, 0.0, relation);
+  // G = dual-border inner band (1.0) for the uDualBorderOwner, else 0.
+  // B channel is unused (defense post proximity is now computed per-tile by
+  // DefenseCoveragePass).
+  fragColor = vec4(borderType, innerBand, 0.0, relation);
 }

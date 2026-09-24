@@ -370,6 +370,10 @@ export class MapRenderer {
   setHighlightOwner(ownerID: number): void {
     this.renderer?.setHighlightOwner(ownerID);
   }
+  /** Owner drawn with the default Hegemon look (0 = none); rim is 0-1 RGB. */
+  setHegemonLook(ownerID: number, rim: [number, number, number]): void {
+    this.renderer?.setHegemonLook(ownerID, rim);
+  }
   setMouseWorldPos(x: number, y: number): void {
     this.renderer?.setMouseWorldPos(x, y);
   }

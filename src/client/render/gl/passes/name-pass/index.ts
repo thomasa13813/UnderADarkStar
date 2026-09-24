@@ -119,6 +119,9 @@ export class NamePass {
 
   // Hovered player's small ID (0 = no highlight, matches TerritoryPass).
   private highlightOwnerID = 0;
+  // Owner drawn with the default Hegemon look (0 = none): light name fill
+  // so the name stays legible over the near-black territory.
+  private hegemonOwnerID = 0;
   // Cursor in world coords — fades names under it (far off-map = no fade).
   private mouseWorldX = -1e9;
   private mouseWorldY = -1e9;
@@ -656,7 +659,12 @@ export class NamePass {
     // Name fill darkens by type: human black, nation a bit gray, bot greyer.
     const ns = this.settings.name;
     let nameShade = 0.0;
-    if (slot.static.playerType === PlayerTypeEnum.Nation) {
+    if (
+      this.hegemonOwnerID !== 0 &&
+      slot.static.smallID === this.hegemonOwnerID
+    ) {
+      nameShade = ns.nameShadeHegemon;
+    } else if (slot.static.playerType === PlayerTypeEnum.Nation) {
       nameShade = ns.nameShadeNation;
     } else if (slot.static.playerType === PlayerTypeEnum.Bot) {
       nameShade = ns.nameShadeBot;
@@ -727,6 +735,17 @@ export class NamePass {
 
   setHighlightOwner(ownerID: number): void {
     this.highlightOwnerID = ownerID;
+  }
+
+  /** Owner using the default Hegemon look (0 = none); rewrites their row. */
+  setHegemonOwner(ownerID: number): void {
+    if (ownerID === this.hegemonOwnerID) return;
+    const prev = this.hegemonOwnerID;
+    this.hegemonOwnerID = ownerID;
+    for (const slot of this.slots.values()) {
+      const id = slot.static.smallID;
+      if (id === prev || id === ownerID) this.writePlayerDataRow(slot);
+    }
   }
 
   setMouseWorldPos(x: number, y: number): void {

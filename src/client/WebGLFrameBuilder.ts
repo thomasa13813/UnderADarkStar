@@ -296,6 +296,7 @@ export class WebGLFrameBuilder {
 
   update(gameView: GameView): void {
     this.syncPlayers(gameView);
+    this.syncHegemonLook(gameView);
     this.syncPlayerEffects(gameView);
     this.syncPlayerSpawns(gameView);
     this.syncLocalPlayer(gameView);
@@ -554,6 +555,29 @@ export class WebGLFrameBuilder {
         this.patternData,
       );
     }
+  }
+
+  private hegemonLookOwner = 0;
+  private hegemonLookRim = "";
+
+  /**
+   * Push the Hegemon's default look (pale rim + purple band, near-opaque
+   * black fill, light name) to the renderer whenever it changes. The seat
+   * holder only gets it while using the theme's default look: their own
+   * colour scheme, once visible, turns it off (PlayerView.rimColor).
+   */
+  private syncHegemonLook(gameView: GameView): void {
+    const hegemon = gameView.hegemon();
+    const rim = hegemon?.rimColor() ?? null;
+    const owner = rim === null ? 0 : hegemon!.smallID();
+    const rimHex = rim?.toHex() ?? "";
+    if (owner === this.hegemonLookOwner && rimHex === this.hegemonLookRim) {
+      return;
+    }
+    this.hegemonLookOwner = owner;
+    this.hegemonLookRim = rimHex;
+    const rgb = rim?.toRgb() ?? { r: 255, g: 255, b: 255 };
+    this.view.setHegemonLook(owner, [rgb.r / 255, rgb.g / 255, rgb.b / 255]);
   }
 
   /**

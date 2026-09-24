@@ -4,7 +4,8 @@
  * Runs a fullscreen quad at tile resolution (mapW × mapH) and writes to an
  * RGBA8 texture:
  *   R = border type: 0 = interior, 0.5 = normal border, 1.0 = highlight border
- *   G = unused (was ember intensity — moved to FalloutBloomPass/FalloutLightPass)
+ *   G = dual-border inner band (1.0) for the dual-border owner: the Hegemon's
+ *       default look, a rim ring with a coloured band inside it
  *   B = unused (was defense proximity — now computed per-tile by DefenseCoveragePass)
  *
  * Both MapOverlayPass (daytime) and the night stamp overlay read this buffer
@@ -47,8 +48,11 @@ export class BorderComputePass {
   private uMapSize: WebGLUniformLocation;
   private uHighlightOwner: WebGLUniformLocation;
   private uHighlightThicken: WebGLUniformLocation;
+  private uDualBorderOwner: WebGLUniformLocation;
+  private uDualBorderInner: WebGLUniformLocation;
 
   private highlightOwner = 0;
+  private dualBorderOwner = 0;
   /**
    * True when something that affects ALL borders (highlight owner, relation
    * matrix) has changed since the last draw. Forces a full recompute next
@@ -85,6 +89,14 @@ export class BorderComputePass {
     this.uHighlightThicken = gl.getUniformLocation(
       this.program,
       "uHighlightThicken",
+    )!;
+    this.uDualBorderOwner = gl.getUniformLocation(
+      this.program,
+      "uDualBorderOwner",
+    )!;
+    this.uDualBorderInner = gl.getUniformLocation(
+      this.program,
+      "uDualBorderInner",
     )!;
 
     // Texture unit binding
@@ -151,6 +163,18 @@ export class BorderComputePass {
     if (ownerID === this.highlightOwner) return;
     this.highlightOwner = ownerID;
     this.scatter.setHighlightOwner(ownerID);
+    this.globalDirty = true;
+  }
+
+  /**
+   * Set the owner drawn with a dual border (0 = none). Their border ring
+   * becomes the rim and a band `mapOverlay.hegemonBorderThicken` tiles wide
+   * is flagged inside it.
+   */
+  setDualBorderOwner(ownerID: number): void {
+    if (ownerID === this.dualBorderOwner) return;
+    this.dualBorderOwner = ownerID;
+    this.scatter.setDualBorderOwner(ownerID);
     this.globalDirty = true;
   }
 
@@ -237,6 +261,8 @@ export class BorderComputePass {
       gl.uniform2f(this.uMapSize, this.mapW, this.mapH);
       gl.uniform1ui(this.uHighlightOwner, this.highlightOwner);
       gl.uniform1i(this.uHighlightThicken, Math.floor(mo.highlightThicken));
+      gl.uniform1ui(this.uDualBorderOwner, this.dualBorderOwner);
+      gl.uniform1i(this.uDualBorderInner, Math.floor(mo.hegemonBorderThicken));
 
       gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_2D, this._tileTex);
