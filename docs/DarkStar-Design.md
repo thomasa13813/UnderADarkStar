@@ -179,7 +179,19 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
 - **C2 — Raids [Direction agreed, details open].** Challengers get an option to **raid** another player:
   an attack that razes territory back to neutral instead of claiming it.
 - **C3 — Launch from the core.** At round start all challengers visibly **launch from the Dark Star to
-  their starting territory** (an arc animation like the engine's nuke trajectories).
+  their starting territory** (an arc animation like the engine's nuke trajectories). [Planned
+  2026-09-22, §6.8] Presentation only, played during the spawn-immunity window after the spawn phase
+  ends, on the same projectile flight as strikes and stargate shots.
+- **C4 — Stargates.** [Decided 2026-09-22; plan in §6.8] A challenger **structure** that launches a
+  **strike-style projectile** carrying troops at any tile within its **range**: the shot flies an arc
+  like a nuke and, on landing, **conquers** the tile and fights outward from it exactly as a transport
+  landing does (the land is kept — a beachhead behind any coastline). Silo-like: costs gold, builds
+  over time, one shot then a **cooldown**; the range is **small and grows with the gate's upgrade
+  level**; a player may build **any number** of gates, each with its own reload. A shot **may land on
+  the Dark Star** — an invasion that bypasses the moat, subject to the single-invader rule and the
+  cooldown (H6, H12) — so gates are the late-game road to the throne. Troops for a shot come from the
+  troop slider and leave at launch. **SAMs do not intercept** gate shots. One projectile sprite serves
+  strikes and gate shots for now. Raids (C2) will reuse the same delivery with a razing landing, later.
 
 ### 3.4 Setting and delivery
 
@@ -208,7 +220,8 @@ resettlement — C1.)
 | F1  | **Calibrating Hegemon strength (H4).** Approach is decided; the numbers are not. [Proposed placeholders, in `HEGEMON_DEFAULTS`] troop ceiling = 100% of what ONE player owning every land tile of the map as authored could field (`2·(L^0.6·1000+50000)`; Milky Way ≈ 5.0M), regeneration = the standard curve against that ceiling, gold = 100/tick per 50k land tiles (Milky Way ≈ 886). To settle while building M1: what counts as "mid-round" (10 of 20 minutes?), which AI mix and difficulty the calibration games use, whether one curve over land-tile count fits all map sizes, and where in the 25–40% band to start. **Target [Decided 2026-09-20]:** roughly a third to a half of AI-only rounds end in an overthrow. First measurement (§6.5): 0/6 at ceiling 100%, 1/6 at 70%, 3/6 at 50%. **Superseded by §6.6:** with strike counterplay, 3/6 at ceiling 100% — re-measure after the last stand before changing the ceiling.                                                                                                                                                          |
 | F2  | **Invasion slot — presentation and tuning (H6, H12, H13).** Rules are settled. Remaining: how the slot, the invader, the stall state and each player's cooldown are shown to everyone (HUD indicator); whether the forced counter-attack switches off again if a stalled invader resumes advancing; and playtest tuning of the 5 s stall threshold and the 5 min cooldown.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | F5  | **Domain and moat dimensions (H1, H14).** Intent is decided (large legible disc; thin moat); numbers are not. Implemented as tunables in `HEGEMON_DEFAULTS` (`domainRadiusPermille: 90`, `moatWidthPermille: 10`, `moatMinTiles: 15` → Milky Way: radius 157, moat 17), centred on the map centre, **confirmed by Tom in play 2026-09-20 (name legible at full zoom-out, moat reads well)**; the `info.json` override is deferred to M2. [Proposed] Express both as fractions of the map's shorter side so they scale with any map: **domain radius ≈ 8–10%** (on a 2000-tile-wide map that is a disc ~350 tiles across, ~100k tiles — the engine sizes name labels to territory, so this reads clearly at full zoom-out) and **moat width ≈ 1%, minimum ~15 tiles**, tuned so a transport crosses in a few seconds. Confirm by building a test map and looking at it. Maps declare the centre in `info.json` (`hegemon: { center, radius }`) with a computed centre disc as fallback. Still open: what terrain the domain is, and how it is drawn (accretion-disc shader vs. ordinary territory fill). |
-| F6  | **Raids (C2).** The Hegemon's side is decided (H8, H16, H17: direct strike at a poor rate, structures destroyed, cannot eliminate, can be held). Still open for challenger raids: what does a raid cost, and what stops raiding from being strictly better than conquering against a rival you can't hold ground from? Can a raid target the Hegemon's domain (presumably not — H6)? Measured caveat: a large AI resettles razed land almost at once, so a raze's lasting harm is the structures it destroys.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| F6  | **Raids (C2).** The Hegemon's side is decided (H8, H16, H17: direct strike at a poor rate, structures destroyed, cannot eliminate, can be held). Still open for challenger raids: what does a raid cost, and what stops raiding from being strictly better than conquering against a rival you can't hold ground from? Can a raid target the Hegemon's domain (presumably not — H6)? Measured caveat: a large AI resettles razed land almost at once, so a raze's lasting harm is the structures it destroys. [2026-09-22] Delivery is decided: a raid will be a stargate shot (C4) with a razing landing instead of a conquering one.                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| F15 | **Stargate numbers and details (C4).** The rules are decided; the numbers are not: range per level, gold cost and construction time, cooldown, whether an upgrade improves range or reload (or both), minimum troops per shot, how a shot on the Dark Star interacts with a fleet already bound for it, whether nations build and use gates from the start (§6.8 stage 5), the projectile's speed relative to nukes, and the final name (F14).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | F8  | **Nukes around the Dark Star (H7).** Domain tiles are immune but targetable: a nuke aimed at them lands and does nothing [Decided]. Still open: Can the Hegemon itself build silos and nuke challengers, and if so is that land razed or merely irradiated? Are SAMs/defense posts available to it?                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | F9  | **Donations (H6, H9).** Are donations open between _any_ two players now, or only to/from the Hegemon and to the current invader? Any limits to prevent a coalition funnelling everything into one super-invader — or is that the intended strategy?                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | F11 | **Hegemon toolkit (H15).** The role is decided — balance-of-power counterweight — and strikes cost normal troops, so spending the pool on strikes versus keeping it for defence **is** the core decision [Decided]. Still open: are razing and donations enough, or does the Hegemon need more (nukes — see F8; embargo-like edicts; visibility into challengers' strength)? Note that regeneration at the current F1 placeholder refills a 25% strike in under a minute, so the tension is weak until F1 is calibrated. [2026-09-22] Visibility is built: the throne's challenger table (§6.7). New from the first human seat: a do-nothing Hegemon loses 95% of the domain to one invader (H13 only bites on a stall) — should a human get the AI's landing wave too, or is active defence the point?                                                                                                                                                                                                                                                                                                 |
@@ -590,6 +603,60 @@ Narrow by design: the seat in one game, nothing about who holds the throne betwe
 - **Deferred:** donations (H9), the all-in last stand (an AI rule tied to F1), a map marker or arc for
   the flight, throne persistence (§5.2).
 
+### 6.8 Plan — projectiles, stargates and the opening (2026-09-22) [Proposed]
+
+Tom's direction: balance later, gameplay first; stargates (C4) are the mechanic that sets DarkStar apart
+from OpenFront, and the flight they need is the same one the throne's strike and the opening (C3) want.
+Decisions taken 2026-09-22 are in C4. What the engine offers, then the stages.
+
+**What is already there.**
+
+- **A gate shot is a boat landing without the boat.** `TransportShipExecution` on arrival does
+  `attacker.conquer(dst)` and starts `new AttackExecution(troops, attacker, target, dst, false)` — an
+  attack seeded from the landing tile, troops paid at departure. That is the beachhead. The throne's
+  `RazeExecution` differs only in razing instead of keeping the land.
+- **The nuke flight is a real unit on a sim-driven Bezier arc** (`NukeExecution` +
+  `PathFinder.Parabola`), with a **motion plan** recorded at launch so the client derives its position
+  each tick and `UnitPass.applyMissileSmoothing` lerps between ticks. Incoming-target circles
+  (`NukeTelegraphPass`), launch/impact sounds and shockwave FX hang off small per-type registrations
+  (`SMOOTHED_NUKE_TYPES`, `MISSILE_TYPES`, `FxSettings.nukeExplosionRadius`, `SoundEffectController`).
+- **The throne's strike has no visual today** — it counts ticks and lands. Making it a projectile unit is
+  the change that unifies strikes, gate shots and the opening.
+- **Costs to know.** The sprite atlases (`resources/atlases/*.png`) are committed PNGs and the generator
+  the code refers to is not in the repo — a new unit or structure column is hand-edited until we write
+  one. `UnitType` enum order and `StatsSchemas.otherUnits` order are zbin wire contracts: **append
+  only**. No SAM interception means no entry in `SAMMissileExecution`'s whitelist.
+
+**Stages** — each its own branch with tests and a browser check; the game stays playable after each.
+
+1. **Tooling (small).** An in-repo atlas generator from `resources/sprites/` for the unit, structure and
+   fx atlases, and an "adding a unit type" checklist in `src/client/render/CLAUDE.md`. v1 art: the atom
+   bomb sprite recoloured for the projectile, a placeholder SVG for the gate.
+2. **The strike as a projectile (medium).** A new projectile `UnitType` (appended), launched from the
+   Dark Star's centre on the Parabola pathfinder with a motion plan; `RazeExecution` lands when the unit
+   arrives (flight time = distance ÷ speed, like a nuke, replacing `razeTravel*`). Registered as a
+   smoothed missile, with a telegraph circle on the aim tile, launch and impact cues. Delivers the
+   "nuke-style strike" on its own; everything after reuses it.
+3. **Stargates (large).** `UnitType.Stargate` in `Structures` (cost, construction time, `upgradable`,
+   silo-style cooldown via `missileTimerQueue`; `StargateExecution` modelled on `MissileSiloExecution`).
+   A `stargateSpawn` beside `nukeSpawn`: nearest ready gate within `stargateRange(level)`. Aiming like a
+   nuke: on a tile in range the attack submenu offers the shot, sized by the troop slider; a range ring
+   (`RangeCirclePass`) while placing and hovering. A `gate_shot` intent (tile, troops — it carries
+   troops, so not `build_unit`). The shot flies as the stage-2 projectile and lands as the boat landing;
+   a landing on the Dark Star goes through `canInvadeDarkStar` and turns back like a fleet if the slot
+   is taken. Humans only.
+4. **Build-menu growth (medium, parallel with 3).** The modal already wraps and scrolls; the radial build
+   submenu becomes a **scrollable list** past the current slice count; **no hotkey** for new types.
+5. **AI gates (medium).** Nations build gates (`NationStructureBehavior` ratio table) and shoot at
+   neighbours they cannot reach over land, and at the throne when `NationHegemonBehavior` would invade.
+   Without this, gates are a human-only edge and the sim's numbers mislead.
+6. **The opening, C3 (medium, M2).** Presentation only: during the spawn-immunity window after the
+   spawn phase ends, the camera pulls out, every player's projectile flies from the Dark Star to its
+   spawn tile on the stage-2 flight drawing, territory is revealed as each lands, play begins when
+   immunity ends. No sim change; the Hegemon watches its subjects scatter.
+
+Balance (F1, the last stand) follows stage 5.
+
 ## 7. Constraints (non-negotiable engineering rules)
 
 - `src/core/` must stay **deterministic** (seeded PRNG, no wall-clock, careful with floats) and
@@ -626,7 +693,7 @@ these before any public release.
 | Milestone | Goal                                                                                                                                                                                                                                                                                                                                             |
 | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **M1**    | Hegemon core in the sim, with tests: role flag, central domain (H1–H3), map-scaled strength decoupled from tiles (H4–H5), single-invader rule (H6–H7), razing attacks (H8), no alliances + open donations (H9), win logic (R1–R5). Playable in singleplayer against a basic AI Hegemon (H11) on an existing map. Built as the five slices below. |
-| **M1.5**  | Challenger systems: raids (C2), defensive-only Hegemon warships (H10).                                                                                                                                                                                                                                                                           |
+| **M1.5**  | Challenger systems, in the §6.8 order: atlas tooling → the strike as a projectile → stargates (C4) → build-menu growth → AI gates; then raids (C2) on the same delivery, defensive-only Hegemon warships (H10). Balance (F1, last stand) follows, once a round contains everything a round will contain.                                         |
 | **M2**    | First galaxy map authored around the Dark Star; HUD: Hegemon marker, invasion-slot indicator, round countdown, victory screens; launch-from-the-core opening (C3).                                                                                                                                                                               |
 | **M3**    | Succession: private-lobby hand-off through the successor-lobby flow; singleplayer throne persistence.                                                                                                                                                                                                                                            |
 | **M4**    | Sci-fi re-theme: strings, palette/theme JSON, atlases, names, audio.                                                                                                                                                                                                                                                                             |
@@ -648,21 +715,23 @@ settled by playtesting.
 
 ## 10. Glossary
 
-| Term                          | Meaning                                                                                    |
-| ----------------------------- | ------------------------------------------------------------------------------------------ |
-| **Hegemon**                   | The asymmetric ruler role: starts dominant, cannot expand. One per round. Human or AI.     |
-| **Challenger**                | Any non-Hegemon player.                                                                    |
-| **Dark Star / Domain**        | The central black-hole region: the Hegemon's territory, the only tiles it may ever own.    |
-| **Invader**                   | The single challenger currently allowed to attack the domain.                              |
-| **Raze / Raid**               | An attack that returns land to neutral instead of claiming it.                             |
-| **Tyranny**                   | The cost penalty on striking a small player; at the floor they cannot be struck at all.    |
-| **Bubble**                    | The land a strike holds while it lasts; fought over by the struck player, pops to neutral. |
-| **Overthrow**                 | Eliminating the Hegemon (zero tiles).                                                      |
-| **Killing blow**              | The conquest that eliminates the Hegemon; its owner wins the round.                        |
-| **Round / Reign**             | One game / the consecutive rounds a player holds the throne.                               |
-| **Tribe**                     | Engine term for a simple bot (`PlayerType.Bot`).                                           |
-| **Nation**                    | Engine term for the smarter, map-defined AI (`PlayerType.Nation`).                         |
-| **Intent / Turn / Execution** | Player action → server-bundled tick of intents → deterministic sim object that applies it. |
+| Term                          | Meaning                                                                                                           |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| **Hegemon**                   | The asymmetric ruler role: starts dominant, cannot expand. One per round. Human or AI.                            |
+| **Challenger**                | Any non-Hegemon player.                                                                                           |
+| **Dark Star / Domain**        | The central black-hole region: the Hegemon's territory, the only tiles it may ever own.                           |
+| **Invader**                   | The single challenger currently allowed to attack the domain.                                                     |
+| **Raze / Raid**               | An attack that returns land to neutral instead of claiming it.                                                    |
+| **Stargate**                  | A challenger structure that fires a troop-carrying projectile at any tile in range; it lands as a beachhead (C4). |
+| **Projectile**                | The shared flight — a unit on a nuke-style arc with a motion plan — used by strikes, gate shots and the opening.  |
+| **Tyranny**                   | The cost penalty on striking a small player; at the floor they cannot be struck at all.                           |
+| **Bubble**                    | The land a strike holds while it lasts; fought over by the struck player, pops to neutral.                        |
+| **Overthrow**                 | Eliminating the Hegemon (zero tiles).                                                                             |
+| **Killing blow**              | The conquest that eliminates the Hegemon; its owner wins the round.                                               |
+| **Round / Reign**             | One game / the consecutive rounds a player holds the throne.                                                      |
+| **Tribe**                     | Engine term for a simple bot (`PlayerType.Bot`).                                                                  |
+| **Nation**                    | Engine term for the smarter, map-defined AI (`PlayerType.Nation`).                                                |
+| **Intent / Turn / Execution** | Player action → server-bundled tick of intents → deterministic sim object that applies it.                        |
 
 ## 11. Changelog
 
@@ -748,3 +817,12 @@ settled by playtesting.
   attackable again. Cause: the engine's enclave rule gave the Hegemon sealed-in pockets the strike never
   took. Bubbles now adopt touching orphans, a pop sweeps everything beyond the moat that no live strike
   holds, and the Hegemon's own execution sweeps when no strike is alive (§6.6).
+- **2026-09-22** — **Stargates decided (C4) and the projectile plan written (§6.8).** Tom: balance can
+  wait, gameplay is still too undefined; stargates are the mechanic that differentiates DarkStar. Decided:
+  a gate shot **conquers** (a beachhead, like a transport landing without the boat); it **may land on the
+  Dark Star** under the single-invader rule; silo-like cost/build/cooldown with a small range that grows
+  by upgrade level, any number of gates; no SAM interception; one projectile sprite for strikes and gate
+  shots; the throne's strike will fly visibly with an impact circle (fine that the target sees it coming);
+  the build menu grows as a scrollable list with no hotkeys for new types. Staged: atlas tooling → the
+  strike as a projectile → stargates → menu growth → AI gates → the C3 opening on the same flight. F15
+  holds the numbers. F1 moves to after AI gates.
