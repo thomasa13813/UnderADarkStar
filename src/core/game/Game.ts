@@ -209,6 +209,9 @@ export enum UnitType {
   MIRVWarhead = "MIRV Warhead",
   Train = "Train",
   Factory = "Factory",
+  // DarkStar: the flying strike / stargate shot (§6.8). Appended: the enum
+  // order is a zbin wire contract.
+  Projectile = "Projectile",
 }
 
 export enum TrainType {
@@ -318,6 +321,11 @@ export interface UnitParamsMap {
   [UnitType.SAMLauncher]: Record<string, never>;
 
   [UnitType.City]: Record<string, never>;
+
+  [UnitType.Projectile]: {
+    targetTile?: number;
+    trajectory: TrajectoryTile[];
+  };
 }
 
 // Type helper to get params type for a specific unit type

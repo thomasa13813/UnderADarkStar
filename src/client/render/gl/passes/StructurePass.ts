@@ -2,7 +2,7 @@
  * StructurePass — GPU-rendered structures with icon sprites.
  *
  * Renders a filled circle in player color with a white icon overlay,
- * sampled from a pre-built 6-column sprite atlas (generate-sprite-atlases.mjs).
+ * sampled from a pre-built 6-column sprite atlas (scripts/generateSpriteAtlases.ts).
  *
  * Two LODs based on zoom:
  *   - zoom > 0.5: full icon with circle background

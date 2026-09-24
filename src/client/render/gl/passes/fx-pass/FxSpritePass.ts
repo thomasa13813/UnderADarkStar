@@ -3,13 +3,14 @@
  *
  * Manages: sprite FX state (explosions, dust, conquest, debris).
  * Atlas layout: 12 horizontal sprite strips stacked vertically.
- * Pre-built by generate-sprite-atlases.mjs.
+ * Pre-built by scripts/generateSpriteAtlases.ts.
  */
 
 import type { Config } from "../../../../../core/configuration/Config";
 import type { ConquestFx, DeadUnitFx, RendererConfig } from "../../../types";
 import {
   STRUCTURE_TYPES,
+  UT_PROJECTILE,
   UT_SHELL,
   UT_TRAIN,
   UT_WARSHIP,
@@ -369,6 +370,11 @@ export class FxSpritePass {
 
     if (typeName === UT_SHELL && unit.reachedTarget) {
       this.pushFx(x, y, FX_MINI_EXPLOSION, now);
+      return;
+    }
+
+    if (typeName === UT_PROJECTILE) {
+      if (unit.reachedTarget) this.pushFx(x, y, FX_UNIT_EXPLOSION, now);
       return;
     }
 

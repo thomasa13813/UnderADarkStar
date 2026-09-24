@@ -302,11 +302,11 @@ const HEGEMON_DEFAULTS = {
   // fight of about four minutes.
   domainAttackerLossPercent: 300,
   domainConquestSlowPercent: 300,
-  // Razing (H8): the Hegemon borders nobody, so a strike falls directly on the
-  // tile it is aimed at, after a flight time that grows with the distance from
-  // the Dark Star's centre.
-  razeTravelMinTicks: 30,
-  razeTravelTicksPer100Tiles: 10,
+  // Razing (H8): the Hegemon borders nobody, so a strike flies as a
+  // projectile from the Dark Star's centre to the tile it is aimed at, on the
+  // nuke's arc at this many tiles per tick (a nuke flies at 10). Flight time
+  // is the arc length divided by this.
+  strikeSpeed: 10,
   // Razing is deliberately poor value for the Hegemon: each tile costs the
   // strike this much more than an ordinary conquest and takes this much longer
   // (100 = no change) — the fortress multipliers, turned against the throne.
@@ -720,6 +720,12 @@ export class Config {
         };
         break;
       case UnitType.SAMMissile:
+        info = {
+          cost: () => 0n,
+        };
+        break;
+      case UnitType.Projectile:
+        // Never bought: RazeExecution launches it, troops already paid.
         info = {
           cost: () => 0n,
         };

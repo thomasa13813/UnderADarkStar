@@ -9,9 +9,14 @@ import {
   Player,
   StrikeInFlight,
   TerrainType,
+  TrajectoryTile,
+  Unit,
   UnitType,
 } from "../game/Game";
 import { GameMap, TileRef } from "../game/GameMap";
+import { UniversalPathFinding } from "../pathfinding/PathFinder";
+import { ParabolaUniversalPathFinder } from "../pathfinding/PathFinder.Parabola";
+import { PathStatus } from "../pathfinding/types";
 import { PseudoRandom } from "../PseudoRandom";
 import { FlatBinaryHeap } from "./utils/FlatBinaryHeap";
 
@@ -19,8 +24,11 @@ const malusForRetreat = 25;
 
 // A Hegemon strike (H8, H16, H17 in docs/DarkStar-Design.md).
 //
-// The Hegemon borders nobody (the moat), so a strike falls directly on the
-// tile it was aimed at after a flight time. From there it is an ordinary
+// The Hegemon borders nobody (the moat), so a strike flies from the Dark
+// Star's centre to the tile it was aimed at as a Projectile unit on the nuke's
+// arc (NukeExecution is the model: the Parabola pathfinder steps it each tick
+// and a motion plan lets the client draw it between ticks), and lands the
+// tick it arrives. A recall in flight simply removes it. From there it is an ordinary
 // conquest: the land it takes is the strike's BUBBLE, Hegemon-owned while the
 // strike lasts, and the target fights it like any other invader — by taking
 // the bubble back over land (AttackExecution; the bubble is defended by the
@@ -48,6 +56,9 @@ export class RazeExecution implements Execution, StrikeInFlight, HegemonStrike {
   private target: Player;
   private attack: Attack | null = null;
   private arrivalTick = 0;
+  private projectile: Unit | null = null;
+  private launchTile: TileRef = 0;
+  private pathFinder: ParabolaUniversalPathFinder | null = null;
   // Set at launch; the landed Attack keeps it, so the HUD sees one strike.
   private strikeID = "";
   private inFlight = false;
@@ -129,16 +140,7 @@ export class RazeExecution implements Execution, StrikeInFlight, HegemonStrike {
       return;
     }
 
-    const cfg = mg.config().hegemonConfig();
-    const dx = mg.x(this.ref) - geometry.cx;
-    const dy = mg.y(this.ref) - geometry.cy;
-    const distance = Math.floor(Math.sqrt(dx * dx + dy * dy));
-    this.arrivalTick =
-      ticks +
-      Math.max(
-        cfg.razeTravelMinTicks,
-        Math.floor((distance * cfg.razeTravelTicksPer100Tiles) / 100),
-      );
+    this.launch(ticks, mg.ref(geometry.cx, geometry.cy));
 
     mg.displayMessage(
       "events_display.dark_star_strike_inbound",
@@ -173,10 +175,79 @@ export class RazeExecution implements Execution, StrikeInFlight, HegemonStrike {
     return this.target;
   }
 
+  // The unit in the air, while there is one.
+  unit(): Unit | null {
+    return this.projectile;
+  }
+
+  // Build the projectile at the Dark Star's centre and record its flight, the
+  // way NukeExecution does: the plan is the exact tile sequence tick() will
+  // step through, so the client can derive the position between updates. The
+  // arrival tick is known at launch, so the HUD can count down to it.
+  private launch(ticks: number, from: TileRef): void {
+    const speed = this.mg.config().hegemonConfig().strikeSpeed;
+    this.launchTile = from;
+    this.pathFinder = UniversalPathFinding.Parabola(this.mg, {
+      increment: speed,
+    });
+    const replay = UniversalPathFinding.Parabola(this.mg, {
+      increment: speed,
+    });
+    const path: TileRef[] = [from];
+    let result = replay.next(from, this.ref, speed);
+    while (result.status === PathStatus.NEXT) {
+      path.push(result.node);
+      result = replay.next(from, this.ref, speed);
+    }
+    // tick() first runs the tick after init: path[1] then, and the landing
+    // step (COMPLETE) one tick after the last path tile.
+    this.arrivalTick = ticks + path.length;
+
+    const trajectory: TrajectoryTile[] = (
+      this.pathFinder.findPath(from, this.ref) ?? []
+    ).map((tile) => ({ tile, targetable: false }));
+    this.projectile = this.hegemon.buildUnit(UnitType.Projectile, from, {
+      targetTile: this.ref,
+      trajectory,
+    });
+    this.mg.recordMotionPlan({
+      kind: "grid",
+      unitId: this.projectile.id(),
+      planId: 1,
+      startTick: ticks + 1,
+      ticksPerStep: 1,
+      path,
+    });
+  }
+
+  // One step along the arc; true once the projectile has come down on the
+  // aimed tile (it is deleted there, reachedTarget set, so the client plays
+  // the impact).
+  private fly(): boolean {
+    if (this.projectile === null || this.pathFinder === null) return true;
+    const speed = this.mg.config().hegemonConfig().strikeSpeed;
+    const result = this.pathFinder.next(this.launchTile, this.ref, speed);
+    if (result.status === PathStatus.NEXT) {
+      this.projectile.move(result.node);
+      this.projectile.setTrajectoryIndex(this.pathFinder.currentIndex());
+      return false;
+    }
+    this.projectile.move(this.ref);
+    this.projectile.setReachedTarget();
+    this.projectile.delete(false);
+    this.projectile = null;
+    return true;
+  }
+
   private landed(): void {
     if (!this.inFlight) return;
     this.inFlight = false;
     this.mg.removeStrikeInFlight(this);
+    if (this.projectile !== null) {
+      // Recalled, or nothing to land on: gone without an impact.
+      if (this.projectile.isActive()) this.projectile.delete(false);
+      this.projectile = null;
+    }
   }
 
   // Tiles the bubble holds right now.
@@ -202,7 +273,19 @@ export class RazeExecution implements Execution, StrikeInFlight, HegemonStrike {
 
   tick(ticks: number): void {
     if (this.attack === null) {
-      if (ticks < this.arrivalTick) return;
+      if (!this.hegemon.isAlive()) {
+        // The throne fell while the strike was in the air.
+        this.landed();
+        this.mg.removeHegemonStrike(this);
+        this.active = false;
+        return;
+      }
+      if (this.projectile !== null && !this.projectile.isActive()) {
+        // Something else removed the unit (the Hegemon's death sweep).
+        this.comeHome(this.troops ?? 0);
+        return;
+      }
+      if (!this.fly()) return;
       this.land();
       return;
     }

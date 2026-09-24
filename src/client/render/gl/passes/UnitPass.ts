@@ -13,7 +13,7 @@
  *   Ground/sea (boats, trains) → rendered below structures
  *   Missiles (nukes, shells, SAM, MIRV warheads) → rendered above structures
  *
- * Atlas layout (12 columns × 13px cells, pre-built by generate-sprite-atlases.mjs):
+ * Atlas layout (13 columns × 13px cells, pre-built by scripts/generateSpriteAtlases.ts):
  *   Col 0: Transport (5×5)
  *   Col 1: Trade Ship (5×5)
  *   Col 2: Warship (11×11)
@@ -26,6 +26,7 @@
  *   Col 9: Train Engine (5×5)
  *   Col 10: Train Carriage (5×5)
  *   Col 11: Train Carriage Loaded (5×5)
+ *   Col 12: Projectile (7×7, the DarkStar strike — owner-coloured, no flicker)
  *
  * Data flow:
  *   FrameSnapshot.units → filter by typeToAtlasIdx → instance VBO → GPU
@@ -42,6 +43,7 @@ import {
   UT_HYDROGEN_BOMB,
   UT_MIRV,
   UT_MIRV_WARHEAD,
+  UT_PROJECTILE,
   UT_SAM_MISSILE,
   UT_SHELL,
   UT_TRADE_SHIP,
@@ -85,6 +87,7 @@ const UNIT_ORDER = [
   "TrainEngine",
   "TrainCarriage",
   "TrainCarriageLoaded",
+  UT_PROJECTILE,
 ] as const;
 
 const ATLAS_COLS = UNIT_ORDER.length;
@@ -147,6 +150,7 @@ const MISSILE_TYPES: ReadonlySet<string> = new Set([
   UT_SAM_MISSILE,
   UT_SHELL,
   UT_MIRV_WARHEAD,
+  UT_PROJECTILE,
 ]);
 
 /** Values per smoothing segment in the flat `smoothSegs` array:

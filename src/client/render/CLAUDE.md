@@ -138,6 +138,52 @@ WebGL texture upload doesn't get blocked cross-origin). Atlas metadata
 JSONs are imported as TS modules (`resources/atlases/foo-meta.json`) and
 bundled.
 
+The atlases are generated, never hand-edited: `npm run gen-atlases` (=
+`npx tsx scripts/generateSpriteAtlases.ts`) rebuilds `unit-atlas.png`,
+`icon-atlas.png`, `fx-atlas.png` and `fx-atlas-meta.json` from
+`resources/sprites/` (+ `resources/images/*.svg` for icons); `--check`
+verifies without writing. The column/row orders live in that script and
+must match `UNIT_ORDER` (UnitPass), `STRUCTURE_ORDER` (StructurePass +
+StructureLevelPass) and the `FX_*` indices (FxSpritePass). Unit sprites are
+grayscale bands the shader recolours (180 territory / 130 mid / 100 centre /
+70 border); `resources/sprites/gl/` holds the GL renderer's own small glyphs
+where they differ from the legacy HUD sprites of the same name. Icon columns
+are Chromium renders of the SVG (48px in a 64px cell); columns already in the
+committed atlas are copied unchanged so a rebuild never churns anti-aliasing.
+
+### Adding a unit type (checklist)
+
+Sim side first — both lists are zbin wire order, so **append only**:
+
+1. `UnitType` enum in `src/core/game/Game.ts` (append), a `UnitParamsMap`
+   entry, and `unitInfo()` in `src/core/configuration/Config.ts`. `tsc` then
+   points at every exhaustive `switch` (`PlayerImpl.canSpawnUnitType`, …).
+2. `StatsSchemas.ts` only if the unit is counted in stats (append there too).
+
+Client side:
+
+3. `src/client/render/types/UnitType.ts`: a `UT_*` constant, append it to
+   `ALL_UNIT_TYPES` (this is the header order the worker sends), and add it
+   to the derived sets it belongs to (`STRUCTURE_TYPES`, `NUKE_TYPES`,
+   `SMOOTHED_NUKE_TYPES` for lerped missiles, `NUKE_MAGNITUDES` for a
+   telegraph circle).
+4. Sprite: a grayscale PNG in `resources/sprites/` (or `sprites/gl/`), an
+   entry appended to `UNIT_COLUMNS` in `scripts/generateSpriteAtlases.ts`,
+   and the same name appended to `UNIT_ORDER` in `UnitPass.ts`. Structures
+   instead: an SVG in `resources/images/`, `ICON_COLUMNS`, `STRUCTURE_ORDER`
+   in both structure passes, and a `shapes` entry in `render-settings.json`.
+   Then `npm run gen-atlases`.
+5. `UnitPass.ts`: `MISSILE_TYPES` (draws above structures, smoothed) and
+   `FLICKER_TYPES` (hot cycling colours) if it is a projectile.
+6. Trails: `TRAIL_TYPES` in `src/client/view/GameView.ts`.
+7. Death FX: `nukeExplosionRadius` in `fx-pass/FxSettings.ts` or a branch in
+   `FxSpritePass.spawnFxForUnit` / `fx-pass/index.ts`.
+8. Sounds: `SoundEffectController` (`onCreated` for a launch cue,
+   `handleUnit` for an impact cue); new cues need `Sounds.ts` + an mp3.
+9. HUD strings through `translateText()` + `resources/lang/en.json`.
+10. Tests: client tests mock `PlayerView`/`UnitView` by hand — search
+    `tests/client/` for the type lists they pin.
+
 ## Render settings
 
 `render-settings.json` is the single source of truth for all per-pass tuning

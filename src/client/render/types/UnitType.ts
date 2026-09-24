@@ -21,6 +21,8 @@ export const UT_SAM_MISSILE = "SAMMissile" as const;
 export const UT_SHELL = "Shell" as const;
 export const UT_MIRV_WARHEAD = "MIRV Warhead" as const;
 export const UT_TRAIN = "Train" as const;
+/** DarkStar: the Hegemon's flying strike (later also stargate shots). */
+export const UT_PROJECTILE = "Projectile" as const;
 
 // Structures
 export const UT_CITY = "City" as const;
@@ -57,7 +59,13 @@ export const SMOOTHED_NUKE_TYPES: ReadonlySet<string> = new Set([
   UT_HYDROGEN_BOMB,
   UT_MIRV,
   UT_MIRV_WARHEAD,
+  UT_PROJECTILE,
 ]);
+
+/** A strike has no blast: its impact ring marks the aim tile and the
+ *  footprint a fresh bubble is costed as (razeBubbleMinTiles = 200 tiles,
+ *  a disc of radius ~8). One ring, so inner = outer. */
+export const PROJECTILE_TELEGRAPH_RADIUS = 8;
 
 /** Blast radii (in tiles) matching upstream DefaultConfig.nukeMagnitudes(). */
 export const NUKE_MAGNITUDES: Readonly<
@@ -66,6 +74,10 @@ export const NUKE_MAGNITUDES: Readonly<
   [UT_ATOM_BOMB]: { inner: 12, outer: 30 },
   [UT_HYDROGEN_BOMB]: { inner: 80, outer: 100 },
   [UT_MIRV_WARHEAD]: { inner: 12, outer: 18 },
+  [UT_PROJECTILE]: {
+    inner: PROJECTILE_TELEGRAPH_RADIUS,
+    outer: PROJECTILE_TELEGRAPH_RADIUS,
+  },
 };
 
 // ---------------------------------------------------------------------------
@@ -90,4 +102,5 @@ export const ALL_UNIT_TYPES = [
   UT_SAM_LAUNCHER,
   UT_MISSILE_SILO,
   UT_TRAIN,
+  UT_PROJECTILE,
 ] as const;

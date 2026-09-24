@@ -317,6 +317,8 @@ export interface RenderSettings {
     nukeRadiusAtom: number;
     nukeRadiusHydro: number;
     nukeRadiusMirv: number;
+    /** Shockwave radius (tiles) when a DarkStar strike projectile lands. */
+    strikeImpactRadius: number;
     /** Multiplier on the nuke debris sprite count (1 = default scatter). */
     debrisDensity: number;
   };

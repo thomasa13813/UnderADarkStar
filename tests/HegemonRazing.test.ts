@@ -14,7 +14,7 @@ import {
 } from "../src/core/game/Game";
 import { TileRef } from "../src/core/game/GameMap";
 import { setup } from "./util/Setup";
-import { UseRealAttackLogic } from "./util/TestConfig";
+import { TestConfig, UseRealAttackLogic } from "./util/TestConfig";
 import { executeTicks } from "./util/utils";
 
 let game: Game;
@@ -651,5 +651,142 @@ describe("Playing the Hegemon: the singleplayer spawn phase", () => {
     await startSingleplayer(false);
     executeTicks(game, 150);
     expect(game.inSpawnPhase()).toBe(true);
+  });
+});
+
+// The strike as a projectile (§6.8 stage 2): a Projectile unit flies the
+// nuke's arc from the Dark Star's centre and the strike lands the tick it
+// comes down.
+class FastStrike extends TestConfig {
+  hegemonConfig() {
+    return { ...super.hegemonConfig(), strikeSpeed: 40 };
+  }
+}
+
+describe("The strike as a projectile", () => {
+  async function startWith(ConfigClass: typeof TestConfig) {
+    const humans = [
+      new PlayerInfo("east", PlayerType.Human, "client1", "east"),
+      new PlayerInfo("west", PlayerType.Human, "client2", "west"),
+    ];
+    game = await setup(
+      "big_plains",
+      { hegemon: { enabled: true }, disableNavMesh: false, instantBuild: true },
+      humans,
+      undefined,
+      ConfigClass,
+    );
+    hegemon = game.hegemon()!;
+    east = game.player("east");
+    west = game.player("west");
+    settle(east, 1, 40, 100_000, 20);
+    settle(west, -1, 20, 100_000);
+    while (game.inSpawnPhase()) game.executeNextTick();
+  }
+
+  // Ticks from launch to landing at the given speed.
+  async function flightTicks(ConfigClass: typeof TestConfig): Promise<number> {
+    await startWith(ConfigClass);
+    game.addExecution(new RazeExecution(hegemon, anyTile(east), 100_000));
+    game.executeNextTick();
+    const launched = game.ticks();
+    const strike = game.strikesInFlight()[0];
+    let ticks = 0;
+    while (game.strikesInFlight().length > 0 && ticks++ < 1000) {
+      game.executeNextTick();
+    }
+    // landsAtTick is the tick it lands IN; the counter is one past it after.
+    expect(game.ticks()).toBe(strike.landsAtTick() + 1);
+    return game.ticks() - launched;
+  }
+
+  test("a launched strike is a Projectile unit of the Hegemon's, flying the arc from the Dark Star's centre to the aim tile", async () => {
+    await startWith(TestConfig);
+    const g = game.darkStar()!;
+    const aim = anyTile(east);
+    game.addExecution(new RazeExecution(hegemon, aim, 100_000));
+    game.executeNextTick();
+    const units = game.units(UnitType.Projectile);
+    expect(units).toHaveLength(1);
+    const unit = units[0];
+    expect(unit.owner()).toBe(hegemon);
+    expect(unit.tile()).toBe(game.ref(g.cx, g.cy));
+    expect(unit.targetTile()).toBe(aim);
+    expect(unit.trajectory().length).toBeGreaterThan(2);
+    const trajectory = unit.trajectory();
+    expect(trajectory[trajectory.length - 1].tile).toBe(aim);
+    const strike = game.strikesInFlight()[0];
+    expect(strike.landsAtTick()).toBeGreaterThan(game.ticks() + 5);
+
+    // It moves every tick, towards the target.
+    const before = game.euclideanDistSquared(unit.tile(), aim);
+    executeTicks(game, 3);
+    expect(unit.tile()).not.toBe(game.ref(g.cx, g.cy));
+    expect(game.euclideanDistSquared(unit.tile(), aim)).toBeLessThan(before);
+    expect(unit.isActive()).toBe(true);
+    expect(east.numTilesOwned()).toBeGreaterThan(0);
+
+    // The landing: the unit comes down on the aim tile the tick the HUD was
+    // told, marked as having reached it (the client's impact cue), and the
+    // strike is on the ground from that tick.
+    while (game.ticks() < strike.landsAtTick()) game.executeNextTick();
+    expect(unit.isActive()).toBe(true);
+    expect(game.strikesInFlight()).toHaveLength(1);
+    // The next tick to run is landsAtTick: it lands in it.
+    game.executeNextTick();
+    expect(unit.isActive()).toBe(false);
+    expect(unit.reachedTarget()).toBe(true);
+    expect(unit.tile()).toBe(aim);
+    expect(game.units(UnitType.Projectile)).toHaveLength(0);
+    expect(game.strikesInFlight()).toHaveLength(0);
+    expect(hegemon.outgoingAttacks()).toHaveLength(1);
+    expect(hegemon.outgoingAttacks()[0].id()).toBe(strike.id());
+    expect(game.owner(aim)).toBe(hegemon);
+  });
+
+  test("flight time is the arc divided by strikeSpeed", async () => {
+    const slow = await flightTicks(TestConfig);
+    const fast = await flightTicks(FastStrike);
+    // big_plains is small: the hop over the moat is a few tiles' worth of arc.
+    expect(slow).toBeGreaterThan(5);
+    // Four times the speed: a fraction of the time (the arc is sampled in
+    // whole tiles, so not exactly a quarter).
+    expect(fast).toBeLessThan(slow / 2);
+    expect(fast).toBeGreaterThanOrEqual(1);
+  });
+
+  test("a recall in flight removes the projectile without an impact", async () => {
+    await startWith(TestConfig);
+    const before = hegemon.troops();
+    game.addExecution(new RazeExecution(hegemon, anyTile(east), 100_000));
+    executeTicks(game, 3);
+    const unit = game.units(UnitType.Projectile)[0];
+    expect(unit.isActive()).toBe(true);
+    hegemon.orderRetreat(game.strikesInFlight()[0].id());
+    expect(unit.isActive()).toBe(false);
+    expect(unit.reachedTarget()).toBe(false);
+    expect(game.units(UnitType.Projectile)).toHaveLength(0);
+    expect(hegemon.troops()).toBe(before);
+    executeTicks(game, 200);
+    expect(hegemon.outgoingAttacks()).toHaveLength(0);
+    expect(game.hegemonBubbleTiles()).toBe(0);
+  });
+
+  test("the throne falling in flight removes the projectile", async () => {
+    await startWith(TestConfig);
+    game.addExecution(new RazeExecution(hegemon, anyTile(east), 100_000));
+    executeTicks(game, 3);
+    const unit = game.units(UnitType.Projectile)[0];
+    for (const tile of Array.from(hegemon.tiles())) {
+      if (game.isInDarkStar(tile)) west.conquer(tile);
+    }
+    expect(hegemon.isAlive()).toBe(false);
+    executeTicks(game, 2);
+    expect(unit.isActive()).toBe(false);
+    expect(game.strikesInFlight()).toHaveLength(0);
+    expect(game.hegemonStrikes()).toHaveLength(0);
+    executeTicks(game, 100);
+    expect(game.units(UnitType.Projectile)).toHaveLength(0);
+    expect(game.hegemonBubbleTiles()).toBe(0);
   });
 });

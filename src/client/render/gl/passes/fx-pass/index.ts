@@ -15,6 +15,7 @@ import type {
   DeadUnitFx,
   RendererConfig,
 } from "../../../types";
+import { UT_PROJECTILE } from "../../../types";
 import type { RenderSettings } from "../../RenderSettings";
 import { FxAttackRingPass } from "./FxAttackRingPass";
 import { nukeExplosionRadius } from "./FxSettings";
@@ -74,6 +75,20 @@ export class FxPass {
         // SAM interception: sprite pass handles the SAM explosion sprite
         this.spritePass.spawnFxForUnit(unit, now);
         this.shockwavePass.pushSAMShockwave(x, y);
+      }
+      return;
+    }
+
+    // A DarkStar strike coming down: a flash and a small shockwave on the
+    // aim tile (a recalled one just vanishes).
+    if (typeName === UT_PROJECTILE) {
+      if (unit.reachedTarget) {
+        this.spritePass.spawnFxForUnit(unit, now);
+        this.shockwavePass.pushNukeShockwave(
+          x,
+          y,
+          this.settings.fx.strikeImpactRadius,
+        );
       }
       return;
     }

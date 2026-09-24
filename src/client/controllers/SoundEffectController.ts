@@ -127,6 +127,10 @@ export class SoundEffectController implements Controller {
       case UnitType.HydrogenBomb:
         this.onNukeDetonation(unit, "hydrogen-hit");
         break;
+      case UnitType.Projectile:
+        // A DarkStar strike coming down; the atom cues stand in for now.
+        this.onNukeDetonation(unit, "atom-hit");
+        break;
     }
   }
 
@@ -152,6 +156,9 @@ export class SoundEffectController implements Controller {
         break;
       case UnitType.MIRV:
         this.emit("mirv-launch");
+        break;
+      case UnitType.Projectile:
+        this.emit("atom-launch");
         break;
       case UnitType.Warship:
         if (unit.owner() === myPlayer) this.emit("build-warship");

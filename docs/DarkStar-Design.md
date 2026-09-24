@@ -102,7 +102,9 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   tiles it has lost. It **may attack** challengers, but land it takes **reverts to neutral** ("razed").
   [Decided 2026-09-20] A raze is a **direct strike**: the Hegemon aims at any challenger tile and, after
   a flight time that grows with distance, the strike falls there and razes outward — no fleet, so it
-  reaches inland players and works where the moat is a landlocked lake. It pays for the land from the Hegemon's fixed pool — [Decided 2026-09-21] at a
+  reaches inland players and works where the moat is a landlocked lake. [Built 2026-09-23, §6.9] The
+  flight is a visible **projectile** on the nuke's arc from the Dark Star's centre, at nuke speed, with
+  an impact ring on the aim tile; everyone sees it coming. It pays for the land from the Hegemon's fixed pool — [Decided 2026-09-21] at a
   **deliberately poor rate** (`razeAttackerLossPercent` / `razeSlowPercent`, 300/300: three times the
   troops and three times the time of an ordinary conquest) — runs until its troops are spent, the target
   has no land within reach, or it is recalled (survivors come home). It **can never eliminate** a
@@ -190,8 +192,8 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   level**; a player may build **any number** of gates, each with its own reload. A shot **may land on
   the Dark Star** — an invasion that bypasses the moat, subject to the single-invader rule and the
   cooldown (H6, H12) — so gates are the late-game road to the throne. Troops for a shot come from the
-  troop slider and leave at launch. **SAMs do not intercept** gate shots. One projectile sprite serves
-  strikes and gate shots for now. Raids (C2) will reuse the same delivery with a razing landing, later.
+  troop slider and leave at launch. **SAMs do not intercept** gate shots. One projectile unit type (`Projectile`, built 2026-09-23 for
+  the throne's strike, §6.9) will carry gate shots too, drawn in its owner's colours. Raids (C2) will reuse the same delivery with a razing landing, later.
 
 ### 3.4 Setting and delivery
 
@@ -221,7 +223,7 @@ resettlement — C1.)
 | F2  | **Invasion slot — presentation and tuning (H6, H12, H13).** Rules are settled. Remaining: how the slot, the invader, the stall state and each player's cooldown are shown to everyone (HUD indicator); whether the forced counter-attack switches off again if a stalled invader resumes advancing; and playtest tuning of the 5 s stall threshold and the 5 min cooldown.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | F5  | **Domain and moat dimensions (H1, H14).** Intent is decided (large legible disc; thin moat); numbers are not. Implemented as tunables in `HEGEMON_DEFAULTS` (`domainRadiusPermille: 90`, `moatWidthPermille: 10`, `moatMinTiles: 15` → Milky Way: radius 157, moat 17), centred on the map centre, **confirmed by Tom in play 2026-09-20 (name legible at full zoom-out, moat reads well)**; the `info.json` override is deferred to M2. [Proposed] Express both as fractions of the map's shorter side so they scale with any map: **domain radius ≈ 8–10%** (on a 2000-tile-wide map that is a disc ~350 tiles across, ~100k tiles — the engine sizes name labels to territory, so this reads clearly at full zoom-out) and **moat width ≈ 1%, minimum ~15 tiles**, tuned so a transport crosses in a few seconds. Confirm by building a test map and looking at it. Maps declare the centre in `info.json` (`hegemon: { center, radius }`) with a computed centre disc as fallback. Still open: what terrain the domain is, and how it is drawn (accretion-disc shader vs. ordinary territory fill). |
 | F6  | **Raids (C2).** The Hegemon's side is decided (H8, H16, H17: direct strike at a poor rate, structures destroyed, cannot eliminate, can be held). Still open for challenger raids: what does a raid cost, and what stops raiding from being strictly better than conquering against a rival you can't hold ground from? Can a raid target the Hegemon's domain (presumably not — H6)? Measured caveat: a large AI resettles razed land almost at once, so a raze's lasting harm is the structures it destroys. [2026-09-22] Delivery is decided: a raid will be a stargate shot (C4) with a razing landing instead of a conquering one.                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| F15 | **Stargate numbers and details (C4).** The rules are decided; the numbers are not: range per level, gold cost and construction time, cooldown, whether an upgrade improves range or reload (or both), minimum troops per shot, how a shot on the Dark Star interacts with a fleet already bound for it, whether nations build and use gates from the start (§6.8 stage 5), the projectile's speed relative to nukes, and the final name (F14).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| F15 | **Stargate numbers and details (C4).** The rules are decided; the numbers are not: range per level, gold cost and construction time, cooldown, whether an upgrade improves range or reload (or both), minimum troops per shot, how a shot on the Dark Star interacts with a fleet already bound for it, whether nations build and use gates from the start (§6.8 stage 5), and the final name (F14). [Decided 2026-09-23] The projectile flies at **nuke speed** (`strikeSpeed`, 10 tiles per tick) on the standard nuke arc, with a single impact ring at the 200-tile bubble footprint and no aim preview.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | F8  | **Nukes around the Dark Star (H7).** Domain tiles are immune but targetable: a nuke aimed at them lands and does nothing [Decided]. Still open: Can the Hegemon itself build silos and nuke challengers, and if so is that land razed or merely irradiated? Are SAMs/defense posts available to it?                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | F9  | **Donations (H6, H9).** Are donations open between _any_ two players now, or only to/from the Hegemon and to the current invader? Any limits to prevent a coalition funnelling everything into one super-invader — or is that the intended strategy?                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | F11 | **Hegemon toolkit (H15).** The role is decided — balance-of-power counterweight — and strikes cost normal troops, so spending the pool on strikes versus keeping it for defence **is** the core decision [Decided]. Still open: are razing and donations enough, or does the Hegemon need more (nukes — see F8; embargo-like edicts; visibility into challengers' strength)? Note that regeneration at the current F1 placeholder refills a 25% strike in under a minute, so the tension is weak until F1 is calibrated. [2026-09-22] Visibility is built: the throne's challenger table (§6.7). New from the first human seat: a do-nothing Hegemon loses 95% of the domain to one invader (H13 only bites on a stall) — should a human get the AI's landing wave too, or is active defence the point?                                                                                                                                                                                                                                                                                                 |
@@ -464,8 +466,8 @@ it on). With it off the sim is bit-identical to before: no extra player, no PRNG
   land; the Hegemon borders nobody and razed tiles never become its own, so a strike keeps **its own
   frontier**: the set of tiles it has razed, advancing over the target's tiles next to those (whoever
   holds them now; rebuilt from the whole set when it runs dry, since the target may have resettled).
-  Troops leave the Hegemon at launch; after `razeTravelMinTicks` / `razeTravelTicksPer100Tiles` from the
-  domain centre it lands on the aimed tile, creates an ordinary `Attack` (source tile set, so the HUD and
+  Troops leave the Hegemon at launch; after a flight from the domain centre (a counted delay at first;
+  since 2026-09-23 a real projectile, §6.9) it lands on the aimed tile, creates an ordinary `Attack` (source tile set, so the HUD and
   the engine's troop-for-troop cancelling of opposing attacks work) and razes with `Config.attackLogic`
   costs via `relinquish()`. Structures die because `PlayerExecution` already deletes units on unowned
   land. If the tile changed hands in flight the troops come home. A recall costs the engine's 25% retreat
@@ -603,7 +605,7 @@ Narrow by design: the seat in one game, nothing about who holds the throne betwe
 - **Deferred:** donations (H9), the all-in last stand (an AI rule tied to F1), a map marker or arc for
   the flight, throne persistence (§5.2).
 
-### 6.8 Plan — projectiles, stargates and the opening (2026-09-22) [Proposed]
+### 6.8 Plan — projectiles, stargates and the opening (2026-09-22) [Stages 1–2 built, §6.9]
 
 Tom's direction: balance later, gameplay first; stargates (C4) are the mechanic that sets DarkStar apart
 from OpenFront, and the flight they need is the same one the throne's strike and the opening (C3) want.
@@ -629,10 +631,10 @@ Decisions taken 2026-09-22 are in C4. What the engine offers, then the stages.
 
 **Stages** — each its own branch with tests and a browser check; the game stays playable after each.
 
-1. **Tooling (small).** An in-repo atlas generator from `resources/sprites/` for the unit, structure and
+1. **Tooling (small). [Built 2026-09-23]** An in-repo atlas generator from `resources/sprites/` for the unit, structure and
    fx atlases, and an "adding a unit type" checklist in `src/client/render/CLAUDE.md`. v1 art: the atom
-   bomb sprite recoloured for the projectile, a placeholder SVG for the gate.
-2. **The strike as a projectile (medium).** A new projectile `UnitType` (appended), launched from the
+   bomb glyph for the projectile (in its owner's colours — the shader does the colouring), a placeholder SVG for the gate (stage 3).
+2. **The strike as a projectile (medium). [Built 2026-09-23]** A new projectile `UnitType` (appended), launched from the
    Dark Star's centre on the Parabola pathfinder with a motion plan; `RazeExecution` lands when the unit
    arrives (flight time = distance ÷ speed, like a nuke, replacing `razeTravel*`). Registered as a
    smoothed missile, with a telegraph circle on the aim tile, launch and impact cues. Delivers the
@@ -656,6 +658,49 @@ Decisions taken 2026-09-22 are in C4. What the engine offers, then the stages.
    immunity ends. No sim change; the Hegemon watches its subjects scatter.
 
 Balance (F1, the last stand) follows stage 5.
+
+### 6.9 As built — atlas tooling and the strike as a projectile (2026-09-23)
+
+Stages 1 and 2 of §6.8, narrow by design: no stargate structure, no menu changes.
+
+- **The atlas generator.** `npm run gen-atlases` (`scripts/generateSpriteAtlases.ts`, node only — its
+  own PNG codec, since `canvas` is not built under `--ignore-scripts`) rebuilds `unit-atlas.png`,
+  `icon-atlas.png`, `fx-atlas.png` and `fx-atlas-meta.json`; `--check` verifies without writing. The
+  generator the passes cited (`generate-sprite-atlases.mjs`) never existed in the repo or upstream.
+  Findings from reproducing the committed atlases: the unit and fx atlases rebuild **pixel-for-pixel**,
+  but five unit glyphs (warship, atom bomb, hydrogen bomb, MIRV, SAM missile) were never the
+  `resources/sprites/` PNGs of that name — the GL renderer's glyphs are smaller resamples with no source
+  in git — so they now live as their own files in `resources/sprites/gl/`, extracted from the atlas. The
+  icon atlas is anti-aliased SVG renders from an unknown rasteriser: a Chromium render (Playwright) of
+  the same SVGs matches five columns to within anti-aliasing (max alpha delta 55), while the committed
+  silo glyph matches no SVG in the repo and is kept as a PNG cell. Icon columns already in the committed
+  atlas are therefore copied unchanged; only new columns are rendered. The renderer guide gained the
+  "adding a unit type" checklist.
+- **`UnitType.Projectile`** (appended — enum order is zbin wire order; no stats entry, the strike already
+  records `stats().attack`) with `targetTile` + `trajectory` params, cost 0, spawnable anywhere. It is
+  skipped by a nuke's unit kill, and SAMs cannot target it (whitelist).
+- **`RazeExecution`** builds the projectile at the Dark Star's centre and records a grid motion plan the
+  way `NukeExecution` does (the same Parabola pathfinder, `strikeSpeed` tiles per tick, replacing
+  `razeTravelMinTicks` / `razeTravelTicksPer100Tiles`); `landsAtTick` is the exact landing tick, known at
+  launch. On arrival the unit is moved onto the aim tile, marked `reachedTarget` (the client's impact
+  cue) and deleted, and the strike lands as before. A recall in flight deletes the unit without an
+  impact; the throne falling in flight removes it too. The in-flight HUD row and `Game.strikesInFlight()`
+  are unchanged.
+- **Client.** `UT_PROJECTILE` appended to `ALL_UNIT_TYPES`; a 13th unit-atlas column (the atom bomb
+  glyph); `SMOOTHED_NUKE_TYPES` + `MISSILE_TYPES` (lerped between ticks, drawn above structures, a
+  nuke-style trail), **owner colours, no flicker** (decided: one shared type, so a future gate shot flies
+  in its owner's colours for free); an impact ring on the aim tile through `NUKE_MAGNITUDES`
+  (`PROJECTILE_TELEGRAPH_RADIUS` = 8, the ~200-tile bubble footprint, one ring); a small shockwave and
+  flash at impact (`fx.strikeImpactRadius`); the atom launch/hit sounds stand in as cues.
+- **Measured.** World seed a, AI-only: identical to the previous build until the first strike lands at
+  minute 2.8, then the rounds diverge on timing (a flight is now the arc ÷ 10 tiles/tick, 5–8 s on World
+  rather than 3 s + distance); both end with the throne holding on the timer (before: 4 strikes,
+  5 landings, domain low 16%; after: 3 strikes, 2 landings, domain low 36% — one seed, not a trend).
+  Browser (Playwright, World, 50 Tribes, human throne): a strike on Russia launched at tick 390 landed
+  at tick 447 exactly as the HUD announced, trail and impact ring visible, bubble grew from 6 to 155
+  tiles in 3 s; a second strike recalled in flight vanished and its troops came home.
+- **Deferred.** Own art and sounds for the projectile; an aim preview (no hover phase to draw it in);
+  a launch marker at the Dark Star.
 
 ## 7. Constraints (non-negotiable engineering rules)
 
@@ -826,3 +871,9 @@ settled by playtesting.
   the build menu grows as a scrollable list with no hotkeys for new types. Staged: atlas tooling → the
   strike as a projectile → stargates → menu growth → AI gates → the C3 opening on the same flight. F15
   holds the numbers. F1 moves to after AI gates.
+- **2026-09-23** — **Atlas tooling and the strike as a projectile built (§6.8 stages 1–2, §6.9).**
+  Decided with Tom: the projectile flies at nuke speed on the standard nuke arc (no flat short hops), one
+  impact ring at the 200-tile bubble footprint, no aim preview for now, and one shared `Projectile` unit
+  type drawn in its owner's colours (no nuke flicker) so stargate shots reuse it. The generator revealed
+  that five GL unit glyphs and the silo icon had no source in the repo; they are now checked-in sprites.
+  F15 loses the speed question; H8 and C4 note the visible flight.

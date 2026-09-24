@@ -253,6 +253,7 @@
     "nukeRadiusAtom": 70,
     "nukeRadiusHydro": 160,
     "nukeRadiusMirv": 70,
+    "strikeImpactRadius": 24,
     "debrisDensity": 1
   },
   "nukeTrajectory": {
