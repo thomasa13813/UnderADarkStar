@@ -1,3 +1,4 @@
+import { DarkStarOverride } from "./DarkStar";
 import { GameMapSize, GameMapType, TeamGameSpawnAreas } from "./Game";
 import { GameMap, GameMapImpl } from "./GameMap";
 import { GameMapLoader } from "./GameMapLoader";
@@ -8,6 +9,8 @@ export type TerrainMapData = {
   gameMap: GameMap;
   miniGameMap: GameMap;
   teamGameSpawnAreas?: TeamGameSpawnAreas;
+  /** The map's own Dark Star (info.json `hegemon`), in this size's tiles. */
+  hegemon?: DarkStarOverride;
   /** Map layers from the manifest, if any. */
   layers?: MapLayer[];
   /** Pre-loaded layer PNG images keyed by layer id. */
@@ -35,6 +38,12 @@ export interface MapManifest {
   teamGameSpawnAreas?: TeamGameSpawnAreas;
   /** Optional map layers rendered between terrain and territory. */
   layers?: MapLayer[];
+  /**
+   * Hegemon mode (docs/DarkStar-Design.md F5): where this map's Dark Star
+   * sits and how big it is, in full-scale tiles. Omitted → a centred disc
+   * sized from the map.
+   */
+  hegemon?: DarkStarOverride;
 }
 
 export type LayerPlacement = "land" | "water";
@@ -126,6 +135,36 @@ export async function loadTerrainMap(
     teamGameSpawnAreas = scaled;
   }
 
+  // The map's own Dark Star, halved with everything else on a compact map.
+  let hegemon = manifest.hegemon;
+  if (hegemon !== undefined) {
+    const raw = hegemon;
+    if (
+      !Array.isArray(raw.center) ||
+      raw.center.length !== 2 ||
+      !Number.isFinite(raw.center[0]) ||
+      !Number.isFinite(raw.center[1]) ||
+      !Number.isFinite(raw.radius) ||
+      (raw.moat !== undefined && !Number.isFinite(raw.moat))
+    ) {
+      throw new Error(
+        `Map ${map}: "hegemon" must be { center: [x, y], radius, moat? }`,
+      );
+    }
+    const scale = mapSize === GameMapSize.Compact ? 2 : 1;
+    hegemon = {
+      center: [
+        Math.floor(raw.center[0] / scale),
+        Math.floor(raw.center[1] / scale),
+      ],
+      radius: Math.floor(raw.radius / scale),
+      moat:
+        raw.moat === undefined
+          ? undefined
+          : Math.max(1, Math.floor(raw.moat / scale)),
+    };
+  }
+
   const layers = manifest.layers;
 
   // Validate layer placements and alpha at game start.
@@ -185,6 +224,7 @@ export async function loadTerrainMap(
     gameMap: gameMap,
     miniGameMap: miniMap,
     teamGameSpawnAreas,
+    hegemon,
     layers,
     layerImages,
   };

@@ -34,6 +34,7 @@ export default [
             "eslint.config.js",
             "scripts/sync-assets.mjs",
             "scripts/generateSpriteAtlases.ts",
+            "scripts/generateGalaxyMap.ts",
             "tests/matchmaking/*.mjs",
           ],
         },

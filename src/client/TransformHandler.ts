@@ -19,6 +19,7 @@ export class GoToPositionEvent implements GameEvent {
   constructor(
     public x: number,
     public y: number,
+    public zoom?: number,
   ) {}
 }
 
@@ -217,7 +218,17 @@ export class TransformHandler {
   onGoToPosition(event: GoToPositionEvent) {
     this.clearTarget();
     this.target = new Cell(event.x, event.y);
+    this.targetScale = event.zoom ?? null;
     this.intervalID = setInterval(() => this.goTo(), GOTO_INTERVAL_MS);
+  }
+
+  /** The scale at which the whole map fits the viewport (see centerAll). */
+  fitAllScale(fit: number = 1): number {
+    const vpWidth = this.boundingRect().width;
+    const vpHeight = this.boundingRect().height;
+    const scHor = (vpWidth / this.game.width()) * fit;
+    const scVer = (vpHeight / this.game.height()) * fit;
+    return Math.min(scHor, scVer);
   }
 
   onGoToUnit(event: GoToUnitEvent) {

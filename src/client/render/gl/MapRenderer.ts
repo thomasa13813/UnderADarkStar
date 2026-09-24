@@ -379,6 +379,10 @@ export class MapRenderer {
   setHegemonLook(ownerID: number, rim: [number, number, number]): void {
     this.renderer?.setHegemonLook(ownerID, rim);
   }
+  /** Owners whose territory fill is not drawn (the opening's flights). */
+  setHiddenOwners(ownerIDs: readonly number[]): void {
+    this.renderer?.setHiddenOwners(ownerIDs);
+  }
   setMouseWorldPos(x: number, y: number): void {
     this.renderer?.setMouseWorldPos(x, y);
   }

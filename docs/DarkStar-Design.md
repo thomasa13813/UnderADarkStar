@@ -181,9 +181,18 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
 - **C2 — Raids [Direction agreed, details open].** Challengers get an option to **raid** another player:
   an attack that razes territory back to neutral instead of claiming it.
 - **C3 — Launch from the core.** At round start all challengers visibly **launch from the Dark Star to
-  their starting territory** (an arc animation like the engine's nuke trajectories). [Planned
-  2026-09-22, §6.8] Presentation only, played during the spawn-immunity window after the spawn phase
-  ends, on the same projectile flight as strikes and stargate shots.
+  their starting territory** (an arc animation like the engine's nuke trajectories). [Built
+  2026-09-24, §6.12] Presentation only, on the same projectile flight as strikes and stargate shots:
+  when the spawn phase ends every human and nation launches from the Dark Star's centre to its spawn
+  tile (Tribes are on the map from the start), the camera pulls out to the whole map, a territory's
+  fill and name stay hidden until its projectile lands (its border shows from the start), and **the
+  round begins when the last one has landed**: the opening is a phase of the sim between the spawn
+  phase and play — nothing runs, nothing is earned, the clock holds at 20:00, orders queue — lasting
+  the longest flight, capped at 15 s (longer flights are played faster); the ordinary 5 s spawn
+  immunity starts at the landing, as in vanilla. The flights themselves are the client's alone (no
+  units in the sim, nothing on the wire), so a reconnecting client and a replay skip them. The
+  Hegemon watches its subjects scatter from the wide view. [Decided 2026-09-24 after Tom's first
+  look] No landing rings; Tribes do not fly (acceptable for now, not a decision).
 - **C4 — Stargates.** [Decided 2026-09-22; plan in §6.8] A challenger **structure** that launches a
   **strike-style projectile** carrying troops at any tile within its **range**: the shot flies an arc
   like a nuke and, on landing, **conquers** the tile and fights outward from it exactly as a transport
@@ -233,7 +242,7 @@ resettlement — C1.)
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | F1  | **Calibrating Hegemon strength (H4).** Approach is decided; the numbers are not. [Proposed placeholders, in `HEGEMON_DEFAULTS`] troop ceiling = 100% of what ONE player owning every land tile of the map as authored could field (`2·(L^0.6·1000+50000)`; Milky Way ≈ 5.0M), regeneration = the standard curve against that ceiling, gold = 100/tick per 50k land tiles (Milky Way ≈ 886). To settle while building M1: what counts as "mid-round" (10 of 20 minutes?), which AI mix and difficulty the calibration games use, whether one curve over land-tile count fits all map sizes, and where in the 25–40% band to start. **Target [Decided 2026-09-20]:** roughly a third to a half of AI-only rounds end in an overthrow. First measurement (§6.5): 0/6 at ceiling 100%, 1/6 at 70%, 3/6 at 50%. **Superseded by §6.6:** with strike counterplay, 3/6 at ceiling 100% — re-measure after the last stand before changing the ceiling.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | F2  | **Invasion slot — presentation and tuning (H6, H12, H13).** Rules are settled. Remaining: how the slot, the invader, the stall state and each player's cooldown are shown to everyone (HUD indicator); whether the forced counter-attack switches off again if a stalled invader resumes advancing; and playtest tuning of the 5 s stall threshold and the 5 min cooldown.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| F5  | **Domain and moat dimensions (H1, H14).** Intent is decided (large legible disc; thin moat); numbers are not. Implemented as tunables in `HEGEMON_DEFAULTS` (`domainRadiusPermille: 90`, `moatWidthPermille: 10`, `moatMinTiles: 15` → Milky Way: radius 157, moat 17), centred on the map centre, **confirmed by Tom in play 2026-09-20 (name legible at full zoom-out, moat reads well)**; the `info.json` override is deferred to M2. [Proposed] Express both as fractions of the map's shorter side so they scale with any map: **domain radius ≈ 8–10%** (on a 2000-tile-wide map that is a disc ~350 tiles across, ~100k tiles — the engine sizes name labels to territory, so this reads clearly at full zoom-out) and **moat width ≈ 1%, minimum ~15 tiles**, tuned so a transport crosses in a few seconds. Confirm by building a test map and looking at it. Maps declare the centre in `info.json` (`hegemon: { center, radius }`) with a computed centre disc as fallback. Still open: what terrain the domain is, and how it is drawn (accretion-disc shader vs. ordinary territory fill).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| F5  | **Domain and moat dimensions (H1, H14).** Intent is decided (large legible disc; thin moat); numbers are not. Implemented as tunables in `HEGEMON_DEFAULTS` (`domainRadiusPermille: 90`, `moatWidthPermille: 10`, `moatMinTiles: 15` → Milky Way: radius 157, moat 17), centred on the map centre, **confirmed by Tom in play 2026-09-20 (name legible at full zoom-out, moat reads well)**; **[Built 2026-09-24, §6.12] a map declares its own Dark Star in `info.json` as `hegemon: { center: [x, y], radius, moat? }` (full-scale tiles, halved on a compact map; the moat falls back to the sizing rule; a disc that does not fit the map is refused at load), and the first galaxy map, Event Horizon (§5.3), uses it at exactly the computed size (radius 162, moat 18 on 1800×1800) — the dimensions to confirm by eye there.** [Proposed] Express both as fractions of the map's shorter side so they scale with any map: **domain radius ≈ 8–10%** (on a 2000-tile-wide map that is a disc ~350 tiles across, ~100k tiles — the engine sizes name labels to territory, so this reads clearly at full zoom-out) and **moat width ≈ 1%, minimum ~15 tiles**, tuned so a transport crosses in a few seconds. Confirm by building a test map and looking at it. Maps declare the centre in `info.json` (`hegemon: { center, radius }`) with a computed centre disc as fallback. Still open: what terrain the domain is, and how it is drawn (accretion-disc shader vs. ordinary territory fill).                                                                                                                                                                                                                          |
 | F6  | **Raids (C2).** The Hegemon's side is decided (H8, H16, H17: direct strike at a poor rate, structures destroyed, cannot eliminate, can be held). Still open for challenger raids: what does a raid cost, and what stops raiding from being strictly better than conquering against a rival you can't hold ground from? Can a raid target the Hegemon's domain (presumably not — H6)? Measured caveat: a large AI resettles razed land almost at once, so a raze's lasting harm is the structures it destroys. [2026-09-22] Delivery is decided: a raid will be a stargate shot (C4) with a razing landing instead of a conquering one.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | F15 | **Stargate numbers and details (C4).** The rules are decided; the numbers are not: range per level, gold cost and construction time, cooldown, whether an upgrade improves range or reload (or both), minimum troops per shot, how a shot on the Dark Star interacts with a fleet already bound for it, whether nations build and use gates from the start (§6.8 stage 5), and the final name (F14). [Decided 2026-09-23] The projectile flies at **nuke speed** (`strikeSpeed`, 10 tiles per tick) on the standard nuke arc, with a single impact ring at the 200-tile bubble footprint and no aim preview. [Decided 2026-09-24, starting points in `STARGATE_DEFAULTS`] **Range 120 tiles at level 1, +60 per level, capped at level 5 (360)** — on World, nations spawn a median 75 tiles apart and ~280 from the moat, so a level-1 gate reaches a neighbour's heartland and the throne needs a forward gate or upgrades; **an upgrade buys range only** (reload fixed; more throughput = another gate); **1M gold, 10 s to build, 60 s reload** (a silo: 1M, 10 s, 9 s), upgrades priced as another gate; minimum 1 troop per shot, no maximum; same projectile speed as the strike; the nearest ready gate fires, the tooltip names the wait when none is. [Decided 2026-09-24, §6.11] Nations build and fire gates from the start, under the AI's own numbers (a per-city ratio by difficulty, first gate at 0.4 per city, cap 3, in `NationStructureBehavior`; firing eagerness by difficulty in `NationStargateBehavior`). Still open: what a shot on the Dark Star does to a fleet already bound for it (nothing today), whether the gate numbers survive F1, and whether exclaves need a cap (§6.11 measures them). |
 | F8  | **Nukes around the Dark Star (H7).** Domain tiles are immune but targetable: a nuke aimed at them lands and does nothing [Decided]. Still open: Can the Hegemon itself build silos and nuke challengers, and if so is that land razed or merely irradiated? Are SAMs/defense posts available to it?                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
@@ -241,7 +250,7 @@ resettlement — C1.)
 | F11 | **Hegemon toolkit (H15).** The role is decided — balance-of-power counterweight — and strikes cost normal troops, so spending the pool on strikes versus keeping it for defence **is** the core decision [Decided]. Still open: are razing and donations enough, or does the Hegemon need more (nukes — see F8; embargo-like edicts; visibility into challengers' strength)? Note that regeneration at the current F1 placeholder refills a 25% strike in under a minute, so the tension is weak until F1 is calibrated. [2026-09-22] Visibility is built: the throne's challenger table (§6.7). New from the first human seat: a do-nothing Hegemon loses 95% of the domain to one invader (H13 only bites on a stall) — should a human get the AI's landing wave too, or is active defence the point?                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | F12 | **Edge cases.** Hegemon disconnects mid-round (AI takes over?); the invader disconnects; an AI challenger (Nation/Tribe) lands the killing blow (next round gets an AI Hegemon per R6?); team modes (probably out of scope at first).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | F13 | **Hegemon identity across rounds.** Beyond the high-score table (S5): titles, reign counter in the lobby, anything inherited besides the seat.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| F14 | **Names.** Sci-fi names for units, structures, Tribes/Nations and resources (rename surface in §5.4).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| F14 | **Names.** Sci-fi names for units, structures, Tribes/Nations and resources (rename surface in §5.4). [Decided 2026-09-24] A first pass on the Event Horizon map only: its 24 nations carry sci-fi polity names (Orion Combine, Vega Ascendancy, … in its `info.json`) and its Tribes draw on the `space` theme; units, structures and resources keep their names for now.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 
 ## 5. Engine foundation — what we reuse
 
@@ -323,9 +332,19 @@ persistence was OpenFront's closed-source API, which we do not have.
 - Already shipped: a `cosmic` map category with `milkyway`, `sol`, `mars`, and others — useful
   references. `info.json` supports free-text nation names with no flag, `"themes": ["space"]` for
   Tribe names, and `custom_tribes`.
-- **Gaps for DarkStar:** (1) no way to mark a **Hegemon domain** on a map — [Proposed] an extra mask
-  layer or region in `info.json`; (2) terrain colours are global, not per-map, and map thumbnails are
-  hard-coded blue-sea/green-land in `map-generator/map_generator.go` (`getThumbnailColor`).
+- **A map's own Dark Star [Built 2026-09-24, §6.12]:** `info.json` may carry
+  `hegemon: { center: [x, y], radius, moat? }`; the Go generator passes it through to `manifest.json`
+  untouched, `loadTerrainMap` validates and halves it for a compact map, and both the sim and the
+  client build the disc from it (a centred disc sized from the map when absent, as before).
+- **Event Horizon** (`map-generator/assets/maps/eventhorizon/`, category `cosmic`, 1800×1800,
+  ~450k land tiles, 24 nations) is the first galaxy map authored around the Dark Star: three spiral
+  arms of star clusters in an annulus around an open centre, spiral lanes of deep space between the
+  sectors, void at the corners, the nations in a ring at about 400 tiles from the centre. It is
+  written by `scripts/generateGalaxyMap.ts` (deterministic for its seed; `--seed`, `--size`,
+  `--land`) — `image.png` and `info.json` — and then `npm run gen-maps` as for any map. The Go
+  toolchain lives at `<home>\go-sdk\go\bin` on Tom's machine (the official zip, no installer).
+- **Gap:** terrain colours are global, not per-map, and map thumbnails are hard-coded
+  blue-sea/green-land in `map-generator/map_generator.go` (`getThumbnailColor`).
 
 ### 5.4 Presentation
 
@@ -626,7 +645,7 @@ Narrow by design: the seat in one game, nothing about who holds the throne betwe
 - **Deferred:** donations (H9), the all-in last stand (an AI rule tied to F1), a map marker or arc for
   the flight, throne persistence (§5.2).
 
-### 6.8 Plan — projectiles, stargates and the opening (2026-09-22) [Stages 1–3 and 5 built, §6.9–§6.11]
+### 6.8 Plan — projectiles, stargates and the opening (2026-09-22) [Stages 1–3, 5 and 6 built, §6.9–§6.12]
 
 Tom's direction: balance later, gameplay first; stargates (C4) are the mechanic that sets DarkStar apart
 from OpenFront, and the flight they need is the same one the throne's strike and the opening (C3) want.
@@ -673,7 +692,7 @@ Decisions taken 2026-09-22 are in C4. What the engine offers, then the stages.
 5. **AI gates (medium). [Built 2026-09-24, §6.11]** Nations build gates (`NationStructureBehavior` ratio table) and shoot at
    neighbours they cannot reach over land, and at the throne when `NationHegemonBehavior` would invade.
    Without this, gates are a human-only edge and the sim's numbers mislead.
-6. **The opening, C3 (medium, M2).** Presentation only: during the spawn-immunity window after the
+6. **The opening, C3 (medium, M2). [Built 2026-09-24, §6.12]** Presentation only: during the spawn-immunity window after the
    spawn phase ends, the camera pulls out, every player's projectile flies from the Dark Star to its
    spawn tile on the stage-2 flight drawing, territory is revealed as each lands, play begins when
    immunity ends. No sim change; the Hegemon watches its subjects scatter.
@@ -855,6 +874,95 @@ numbers for humans, no menu work, no balance change.
 - **Deferred.** An exclave cap or decay, once Tom has seen the pockets in play; gates on the AI's
   raids (C2); F1 with everything in.
 
+### 6.12 As built — the opening and the first galaxy map (2026-09-24)
+
+Stage 6 of §6.8 and the map half of M2. Decided with Tom before building: the opening is
+**client-only** (no projectile units in the sim, nothing on the wire, skipped on a reconnect
+catch-up and in replays); **spawn immunity in Hegemon mode is extended to cover the longest flight,
+capped at 15 s**, and play starts the moment the last one lands; **fill and name are hidden** until the
+landing while borders, Tribes and the Hegemon show from the start, and only **humans and nations
+fly**; the map is **Milky Way sized with 24 nations in a ring**, the Dark Star **carved by the engine**
+from an `info.json` override, **sci-fi names on this map only**, and it is called **Event Horizon**.
+Go came from the official zip into the user profile, no installer.
+
+- **The window is a phase of the sim (`src/core/game/Opening.ts`, `GameImpl.endSpawnPhase`,
+  `GameImpl.mayRun`).** When the spawn phase ends the sim measures, for every spawned human and
+  nation, the flight from the Dark Star's centre to its spawn tile on the projectile's own path
+  (`flightPath`: the Parabola stepper at `strikeSpeed`, exactly as `RazeExecution` and
+  `GateShotExecution` step it; a flight takes `path.length` ticks), fixes the **opening window** at
+  the longest, capped at `openingMaxSeconds` (15) in `HEGEMON_DEFAULTS`, and sets the round's
+  **start tick to the end of that window**. Until then `inOpening()` holds: no execution runs or is
+  initialised except a spawn already under way (`Execution.activeDuringOpening`, which only
+  `SpawnExecution` answers, so a nation's last hop still lands and a client's late pick is
+  refused), so there is no income, no expansion, no AI; orders sent meanwhile queue as intents do
+  during the spawn phase and run on the first tick of play; `ticksSinceStart` is 0, so the round
+  clock, the win check and spawn immunity all start at the landing — the ordinary 5 s immunity
+  follows the opening rather than covering it (Tom, 2026-09-24: the countdown must not tick while
+  nobody can play). The `SpawnPhaseEndUpdate` carries the deferred `startTick` and `openingTicks`
+  to the client, which mirrors `inOpening()`; `Game.openingTicks()` exposes the window.
+  Deterministic: every client runs the same sim over the same spawn tiles. Outside Hegemon mode the
+  window is 0 and nothing changes.
+- **The flights (client, `src/client/view/OpeningFlights.ts`).** Launched by `GameView` on the
+  `SpawnPhaseEnd` update once that tick's player updates (the spawn tiles) are in, as **phantom
+  units**: `UnitState` entries with negative ids that never existed in the sim, of type `Projectile`
+  in their owner's colours, stepped along the same path each tick, so the renderer cannot tell them
+  from a strike — the unit pass draws and smooths them, the trail manager stamps their trails, the
+  telegraph pass rings every landing tile, and the landing is reported as a dead unit that reached its
+  target, which plays the impact flash. The phantoms carry no target tile, so no telegraph ring is
+  drawn (Tom found the rings clutter). A flight longer than the window samples its path over fewer
+  ticks and lands as the window ends. A nation that hops once more after the phase ends re-aims its
+  flight; a human who spawns inside the window gets a flight that still lands by its end; after it,
+  players simply appear. Skipped when the config is a replay or when four ticks arrived within 150 ms
+  (a catch-up).
+- **What is hidden.** The frame carries `hiddenOwners`; `TerritoryPass` reads a one-byte-per-owner
+  texture and discards the fill of an owner still in flight (`uHiddenOwners`, TEXTURE10). Names are
+  left out of the frame's name map until the landing. Borders, the spawn ring and the Hegemon are
+  untouched.
+- **Camera and cues (`src/client/controllers/OpeningController.ts`).** At launch the camera glides
+  to the Dark Star's centre at the fit-all scale (`GoToPositionEvent` gained an optional zoom,
+  `TransformHandler.fitAllScale`) and one launch cue plays; each wave of landings plays an impact cue
+  (at most one per 5 ticks); when a challenger's own flight lands the camera glides to its landing
+  tile at the engine's post-spawn zoom of 8 — `ClientGameRunner` defers its own post-spawn go-to
+  while the opening plays, since that move used to override the pull-out a tick later. The Hegemon
+  and a spectator keep the wide view. The immunity bar (`ImmunityTimer`) and the Dark Star panel wait for the
+  round to begin (the sidebar's panels now also refresh on the phase change, since the clock holds
+  through the opening).
+- **The map's own Dark Star (`DarkStarOverride`).** `info.json` → `manifest.json` (the Go
+  generator passes unknown keys through) → `TerrainMapData.hegemon` (validated, halved for
+  `GameMapSize.Compact`) → `createGame(…, darkStar)` on the sim side and `GameView.darkStar()` on the
+  client; `computeDarkStarGeometry` takes the override and refuses a disc that does not fit.
+  `HegemonSim` and the test `setup()` helper pass it through.
+- **Event Horizon.** `scripts/generateGalaxyMap.ts` (seed 7) writes the image and `info.json`:
+  1800×1800, 449,751 land tiles after generation (Milky Way: 442,979), void beyond a ragged rim at
+  about r = 860, open deep space inside about r = 205 (the carved disc and moat end at 180), three
+  logarithmic spiral arms of noisy star clusters with scattered clusters between them, five spiral
+  lanes of deep space, elevation rising towards the arm cores; 24 nations placed on land nearest an
+  evenly spaced ring at r ≈ 400 ± 36 (jittered, at least 70 tiles apart, with room around each); flags
+  empty; `themes: ["space"]`; `multiplayer_frequency: 4`; `hegemon: { center: [900, 900], radius:
+162, moat: 18 }`. In the map list under `cosmic` as "Event Horizon" (`GameMapType.EventHorizon`).
+- **Measured (`HegemonSim`, seeds a/b/c, 400 Tribes, Medium, 20 min).** No overthrow in three
+  rounds (the Hegemon held on the timer each time); Dark Star landings 5, 5 and 3 — **13 in all, 9 by
+  gate and 4 by fleet**; domain low 63 %, 85 % and 71 %; gates built 20/19/19 by 10–13 nations with
+  5–7 upgrades; shots 25/23/29, all landed, pockets held after 30 s in 22/25, 20/23 and 23/29;
+  landlocked pockets at the end 1, 0 and 0. Against §6.11 on the same build of the AI: World and
+  Milky Way ran 26–59 gates and ~130 shots a round with 72 and 18 nations; Event Horizon's 24 nations
+  fire far less, and the Dark Star is invaded about as often as on Milky Way. The opening window on
+  this map measured 79 ticks in the browser (25 flyers, 30 Tribes); the first landing at 3.2 s and the
+  last at 7.9 s, the round beginning on that tick with the clock still at 20:00.
+- **Tests.** `tests/HegemonOpening.test.ts` (11): the window is the longest flight and the round
+  begins as it ends; nothing runs during the opening and orders queue; a spawn under way lands while
+  a late pick is refused; the window is capped and the ordinary immunity follows the landing; Tribes
+  do not lengthen it; none outside Hegemon mode; the override places the disc, the moat falls back, a disc that does not fit
+  is refused, the manifest's entry reaches the loaded map halved on a compact map, a malformed entry
+  is refused. `tests/client/OpeningFlights.test.ts` (6): a phantom launches at the start tick, follows
+  the path without going back and lands exactly when the sim's flight would, revealed and reported
+  once; a flight longer than the window lands as it ends; the hidden set is reported once per change;
+  re-aiming and late spawners; the controller's pull-out, cues, return home and the Hegemon's wide
+  view (no target tile on a phantom). `MapConsistency` covers the new map's files.
+- **Deferred.** Own art for the projectile and a launch sound of its own; the flights in replays;
+  decorative stars in the void and a per-map palette; per-map thumbnail colours; whether 24 nations is
+  the right count once Tom has played the map.
+
 ## 7. Constraints (non-negotiable engineering rules)
 
 - `src/core/` must stay **deterministic** (seeded PRNG, no wall-clock, careful with floats) and
@@ -892,7 +1000,7 @@ these before any public release.
 | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **M1**    | Hegemon core in the sim, with tests: role flag, central domain (H1–H3), map-scaled strength decoupled from tiles (H4–H5), single-invader rule (H6–H7), razing attacks (H8), no alliances + open donations (H9), win logic (R1–R5). Playable in singleplayer against a basic AI Hegemon (H11) on an existing map. Built as the five slices below. |
 | **M1.5**  | Challenger systems, in the §6.8 order: atlas tooling → the strike as a projectile → stargates (C4) → build-menu growth → AI gates; then raids (C2) on the same delivery, defensive-only Hegemon warships (H10). Balance (F1, last stand) follows, once a round contains everything a round will contain.                                         |
-| **M2**    | First galaxy map authored around the Dark Star; HUD: Hegemon marker, invasion-slot indicator, round countdown, victory screens; launch-from-the-core opening (C3).                                                                                                                                                                               |
+| **M2**    | First galaxy map authored around the Dark Star (Event Horizon, with the `info.json` Dark Star — **built 2026-09-24, §6.12**); launch-from-the-core opening (C3, **built 2026-09-24, §6.12**); HUD: Hegemon marker, invasion-slot indicator, round countdown, victory screens.                                                                    |
 | **M3**    | Succession: private-lobby hand-off through the successor-lobby flow; singleplayer throne persistence.                                                                                                                                                                                                                                            |
 | **M4**    | Sci-fi re-theme: strings, palette/theme JSON, atlases, names, audio.                                                                                                                                                                                                                                                                             |
 | **M5**    | Release hygiene: §8 cleanup, remove/stub API-dependent features, local game archive.                                                                                                                                                                                                                                                             |
@@ -1052,3 +1160,20 @@ settled by playtesting.
   updated. Measured: overthrow rate unchanged at 1 of 6, 12 of 22 Dark Star landings now by gate, 780
   shots in six rounds, and 4–23 landlocked pockets left on World at the end (1–3 on Milky Way) — the
   input for the exclave-cap question, which stays open.
+- **2026-09-24** — **The opening and the first galaxy map built (§6.8 stage 6, M2, §6.12).** Decided
+  with Tom: the opening is client-only (phantom projectiles on the strike's path, nothing in the sim
+  or on the wire, skipped on catch-up and in replays); spawn immunity in Hegemon mode is extended to
+  the longest flight, capped at 15 s, and play begins as the last one lands; fill and name are hidden
+  until the landing while borders, Tribes and the Hegemon show throughout; only humans and nations
+  fly; the map is Milky Way sized with 24 nations in a ring, the Dark Star carved by the engine from
+  a new `info.json` `hegemon: { center, radius, moat? }` override (F5's deferred piece), sci-fi names
+  on this map only (F14), and it is called **Event Horizon**. C3, F5, F14 and §5.3 updated; the map
+  is written by `scripts/generateGalaxyMap.ts`; Go runs from the official zip in the user profile.
+  Measured on Event Horizon (seeds a/b/c): no overthrow, 13 Dark Star landings (9 by gate), 0–1
+  landlocked pockets; the opening window is 7.9 s there.
+- **2026-09-24** — **The opening became a phase of the round (§6.12).** Tom's first look: the flights
+  are a great start, but the game was running underneath them (nations expanded and the clock ran while
+  a watching player waited) and the landing rings were clutter. Decided: the sim holds the round until
+  the last flight lands — nothing runs, orders queue, the clock stays at 20:00 — and the ordinary 5 s
+  immunity begins at the landing rather than covering the flights; no rings on the phantoms; Tribes
+  still do not fly (acceptable for now). `inOpening()` on both sim and client, `Execution.activeDuringOpening`.

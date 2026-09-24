@@ -76,4 +76,11 @@ export interface FrameData {
   readonly attackRings: AttackRingInput[];
   /** True when structures changed this tick (added/removed/level change). */
   readonly structuresDirty: boolean;
+  /**
+   * Owners whose territory fill is not drawn (the opening's players still in
+   * flight, see view/OpeningFlights.ts); null = nobody hidden. Only pushed
+   * to the GPU when hiddenOwnersDirty is set.
+   */
+  readonly hiddenOwners: readonly number[] | null;
+  readonly hiddenOwnersDirty: boolean;
 }

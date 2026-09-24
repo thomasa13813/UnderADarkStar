@@ -12,6 +12,7 @@ import { AllianceRequestImpl } from "./AllianceRequestImpl";
 import {
   computeDarkStarGeometry,
   DarkStarGeometry,
+  DarkStarOverride,
   generateDarkStarTerrain,
   HEGEMON_AI_NAME,
   HEGEMON_PLAYER_ID,
@@ -53,6 +54,7 @@ import {
 import { GameMap, TileRef } from "./GameMap";
 import { GameUpdate, GameUpdateType } from "./GameUpdates";
 import { MotionPlanRecord, packMotionPlans } from "./MotionPlans";
+import { flightTicks, openingWindowTicks } from "./Opening";
 import { PlayerImpl } from "./PlayerImpl";
 import { RailNetwork } from "./RailNetwork";
 import { createRailNetwork } from "./RailNetworkImpl";
@@ -70,6 +72,7 @@ export function createGame(
   miniGameMap: GameMap,
   config: Config,
   teamGameSpawnAreas?: TeamGameSpawnAreas,
+  darkStar?: DarkStarOverride,
 ): Game {
   const stats = new StatsImpl();
   return new GameImpl(
@@ -80,6 +83,7 @@ export function createGame(
     config,
     stats,
     teamGameSpawnAreas,
+    darkStar,
   );
 }
 
@@ -87,7 +91,12 @@ export type CellString = string;
 
 export class GameImpl implements Game {
   private _ticks = 0;
+  // The round's first tick. Set when the spawn phase ends — to the tick the
+  // opening's flights (C3) have all landed, so nothing moves until then.
   private startTick: number | null = null;
+  private spawnPhaseOver = false;
+  // The opening's flight window (C3), fixed when the spawn phase ends.
+  private _openingTicks = 0;
 
   private unInitExecs: Execution[] = [];
 
@@ -155,6 +164,7 @@ export class GameImpl implements Game {
     private _config: Config,
     private _stats: Stats,
     teamGameSpawnAreas?: TeamGameSpawnAreas,
+    private _darkStarOverride?: DarkStarOverride,
   ) {
     const constructorStart = performance.now();
 
@@ -191,7 +201,12 @@ export class GameImpl implements Game {
     if (!cfg.enabled) return null;
     // Strength scales with the map as authored (H3), not as carved.
     this._config.setHegemonMapLandTiles(this._map.numLandTiles());
-    this._darkStar = computeDarkStarGeometry(this._width, this._height, cfg);
+    this._darkStar = computeDarkStarGeometry(
+      this._width,
+      this._height,
+      cfg,
+      this._darkStarOverride,
+    );
     const { changed, domainTiles } = generateDarkStarTerrain(
       this._map,
       this.miniGameMap,
@@ -708,18 +723,66 @@ export class GameImpl implements Game {
   }
 
   inSpawnPhase(): boolean {
-    return this.startTick === null;
+    return !this.spawnPhaseOver;
+  }
+
+  // The opening (C3): between the spawn phase and the round's first tick,
+  // while the challengers' flights are in the air. Nothing runs, nothing
+  // counts; the round begins as the last one lands.
+  inOpening(): boolean {
+    return this.spawnPhaseOver && this._ticks < this.startTick!;
+  }
+
+  // Whether an execution runs (or is initialised) at this point of the round:
+  // the spawn phase admits spawn-phase executions, the opening only the
+  // spawns already under way, and play everything.
+  private mayRun(e: Execution): boolean {
+    if (this.inSpawnPhase()) return e.activeDuringSpawnPhase();
+    if (this.inOpening()) return e.activeDuringOpening?.() ?? false;
+    return true;
   }
 
   endSpawnPhase(): void {
     if (this.startTick !== null) {
       return;
     }
-    this.startTick = this._ticks;
+    this.spawnPhaseOver = true;
+    this._openingTicks = this.computeOpeningTicks();
+    // The round begins when the last flight has landed.
+    this.startTick = this._ticks + this._openingTicks;
     this.addUpdate({
       type: GameUpdateType.SpawnPhaseEnd,
       startTick: this.startTick,
+      openingTicks: this._openingTicks,
     });
+  }
+
+  // The opening (C3): the longest flight from the Dark Star's centre to a
+  // challenger's spawn tile, within the configured bounds. Humans and
+  // nations fly; Tribes are on the map from the start. Fixed here, from the
+  // spawn tiles as they stand when the phase ends, so every client agrees.
+  private computeOpeningTicks(): number {
+    const g = this._darkStar;
+    if (g === null) return 0;
+    const cfg = this._config.hegemonConfig();
+    const centre = this.ref(g.cx, g.cy);
+    let longest = 0;
+    for (const p of this._players.values()) {
+      if (p.isHegemon() || !p.hasSpawned()) continue;
+      const type = p.type();
+      if (type !== PlayerType.Human && type !== PlayerType.Nation) continue;
+      const spawn = p.spawnTile();
+      if (spawn === undefined) continue;
+      longest = Math.max(
+        longest,
+        flightTicks(this._map, centre, spawn, cfg.strikeSpeed),
+      );
+    }
+    return openingWindowTicks(longest, 0, cfg.openingMaxSeconds * 10);
+  }
+
+  openingTicks(): number {
+    return this._openingTicks;
   }
 
   ticks(): number {
@@ -736,17 +799,14 @@ export class GameImpl implements Game {
       this._initialTileUpdates = null;
     }
     this.execs.forEach((e) => {
-      if (
-        (!this.inSpawnPhase() || e.activeDuringSpawnPhase()) &&
-        e.isActive()
-      ) {
+      if (this.mayRun(e) && e.isActive()) {
         e.tick(this._ticks);
       }
     });
     const inited: Execution[] = [];
     const unInited: Execution[] = [];
     this.unInitExecs.forEach((e) => {
-      if (!this.inSpawnPhase() || e.activeDuringSpawnPhase()) {
+      if (this.mayRun(e)) {
         e.init(this, this._ticks);
         inited.push(e);
       } else {
@@ -883,13 +943,11 @@ export class GameImpl implements Game {
     // Compact in place to avoid reallocating the (large) executions array
     // every tick.
     const execs = this.execs;
-    const inSpawnPhase = this.inSpawnPhase();
     let w = 0;
     for (let i = 0; i < execs.length; i++) {
       const exec = execs[i];
-      const keep = inSpawnPhase
-        ? !exec.activeDuringSpawnPhase() || exec.isActive()
-        : exec.isActive();
+      // An execution this phase has not let run yet is kept for the next.
+      const keep = exec.isActive() || !this.mayRun(exec);
       if (keep) {
         execs[w++] = exec;
       }
@@ -1185,6 +1243,7 @@ export class GameImpl implements Game {
   public isSpawnImmunityActive(): boolean {
     return (
       this.inSpawnPhase() ||
+      this.inOpening() ||
       this.ticksSinceStart() < this.config().spawnImmunityDuration()
     );
   }
@@ -1196,12 +1255,13 @@ export class GameImpl implements Game {
   public isNationSpawnImmunityActive(): boolean {
     return (
       this.inSpawnPhase() ||
+      this.inOpening() ||
       this.ticksSinceStart() < this.config().nationSpawnImmunityDuration()
     );
   }
 
   private ticksSinceStart(): number {
-    if (this.inSpawnPhase()) {
+    if (this.inSpawnPhase() || this.inOpening()) {
       return 0;
     }
 

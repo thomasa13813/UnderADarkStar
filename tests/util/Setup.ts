@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { Config } from "../../src/core/configuration/Config";
+import { DarkStarOverride } from "../../src/core/game/DarkStar";
 import {
   Difficulty,
   Game,
@@ -32,6 +33,7 @@ export async function setup(
   ConfigClass: typeof Config = TestConfig,
   autoEndSpawnPhase: boolean = true,
   nations: Nation[] = [],
+  darkStar?: DarkStarOverride,
 ): Promise<Game> {
   // Suppress console.debug for tests.
   console.debug = () => {};
@@ -77,7 +79,15 @@ export async function setup(
   };
   const config = new ConfigClass(gameConfig, new UserSettings(), false);
 
-  const game = createGame(humans, nations, gameMap, miniGameMap, config);
+  const game = createGame(
+    humans,
+    nations,
+    gameMap,
+    miniGameMap,
+    config,
+    undefined,
+    darkStar,
+  );
   if (autoEndSpawnPhase) game.endSpawnPhase();
   return game;
 }

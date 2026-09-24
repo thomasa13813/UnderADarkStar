@@ -1116,7 +1116,13 @@ export class ClientGameRunner {
           this.userSettings.goToPlayer()
         ) {
           hasGoneToPlayer = true;
-          this.eventBus.emit(new GoToPlayerEvent(this.gameView.myPlayer()!, 8));
+          // The opening (C3) has pulled the camera out to watch the flights;
+          // OpeningController brings it home once the player's own lands.
+          if (!this.gameView.opening()?.isActive()) {
+            this.eventBus.emit(
+              new GoToPlayerEvent(this.gameView.myPlayer()!, 8),
+            );
+          }
         }
 
         // Track when we receive the turn to calculate delay

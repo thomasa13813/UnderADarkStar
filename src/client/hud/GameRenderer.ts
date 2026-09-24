@@ -7,6 +7,7 @@ import { BuildPreviewController } from "../controllers/BuildPreviewController";
 import { HoverHighlightController } from "../controllers/HoverHighlightController";
 import { LiveStatsController } from "../controllers/LiveStatsController";
 import { MapLayerController } from "../controllers/MapLayerController";
+import { OpeningController } from "../controllers/OpeningController";
 import { SoundEffectController } from "../controllers/SoundEffectController";
 import { StructureHighlightController } from "../controllers/StructureHighlightController";
 import { ViewModeController } from "../controllers/ViewModeController";
@@ -330,6 +331,7 @@ export function createRenderer(
     new AttackingTroopsController(game, eventBus, userSettings, view),
     new SoundEffectController(game, eventBus),
     new AmbienceController(game, eventBus, transformHandler),
+    new OpeningController(game, eventBus, transformHandler),
     ...(mapLayerController ? [mapLayerController] : []),
     eventsDisplay,
     actionableEvents,

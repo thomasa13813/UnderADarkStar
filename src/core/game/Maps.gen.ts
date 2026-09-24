@@ -46,6 +46,7 @@ export enum GameMapType {
   EastAsia = "East Asia", // map-generator/assets/maps/eastasia/info.json
   Europe = "Europe", // map-generator/assets/maps/europe/info.json
   EuropeClassic = "Europe Classic", // map-generator/assets/maps/europeclassic/info.json
+  EventHorizon = "Event Horizon", // map-generator/assets/maps/eventhorizon/info.json
   FalklandIslands = "Falkland Islands", // map-generator/assets/maps/falklandislands/info.json
   FaroeIslands = "Faroe Islands", // map-generator/assets/maps/faroeislands/info.json
   FingerLakes = "Finger Lakes", // map-generator/assets/maps/fingerlakes/info.json
@@ -764,6 +765,18 @@ export const maps: readonly MapInfo[] = [
     specialFrequency: -1,
     defaultNationCount: 37,
     themes: ["europe"],
+  },
+  {
+    id: "EventHorizon",
+    type: GameMapType.EventHorizon,
+    translationKey: "map.eventhorizon",
+    categories: ["cosmic"],
+    multiplayerFrequency: 4,
+    ffaFrequency: -1,
+    teamFrequency: -1,
+    specialFrequency: -1,
+    defaultNationCount: 24,
+    themes: ["space"],
   },
   {
     id: "FalklandIslands",

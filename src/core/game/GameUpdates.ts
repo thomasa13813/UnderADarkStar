@@ -383,6 +383,8 @@ export interface EmbargoUpdate {
 export interface SpawnPhaseEndUpdate {
   type: GameUpdateType.SpawnPhaseEnd;
   startTick: Tick;
+  /** Hegemon mode: the opening's flight window (C3); 0 otherwise. */
+  openingTicks: Tick;
 }
 
 export interface GamePausedUpdate {

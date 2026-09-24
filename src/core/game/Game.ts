@@ -397,6 +397,10 @@ export enum PlayerType {
 export interface Execution {
   isActive(): boolean;
   activeDuringSpawnPhase(): boolean;
+  // Whether it also runs during the opening (C3), while the challengers'
+  // flights are in the air and everything else waits. Only a spawn already
+  // under way should.
+  activeDuringOpening?(): boolean;
   init(mg: Game, ticks: number): void;
   tick(ticks: number): void;
 }
@@ -895,6 +899,12 @@ export interface Game extends GameMap {
   // Immunity timer
   isSpawnImmunityActive(): boolean;
   isNationSpawnImmunityActive(): boolean;
+  // Hegemon mode: how long the opening's flights take (C3), fixed when the
+  // spawn phase ends; the round begins when they have landed. 0 otherwise.
+  openingTicks(): number;
+  // Between the spawn phase and the round's first tick, while the opening's
+  // flights are in the air: nothing runs and nothing counts.
+  inOpening(): boolean;
   elapsedGameSeconds(): number;
 
   // Game State

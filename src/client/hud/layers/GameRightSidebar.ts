@@ -56,6 +56,14 @@ export class GameRightSidebar extends LitElement implements Controller {
 
   @state()
   private timer: number = 0;
+  private lastSpawnPhase: boolean | null = null;
+
+  // The panels re-render when this changes: every second of the clock, and
+  // the moment the spawn phase ends — the clock holds at the round length
+  // through the opening (C3), so the phase change has to count on its own.
+  private panelRefreshKey(): number {
+    return this.timer * 2 + (this.game?.inSpawnPhase() ? 1 : 0);
+  }
 
   // CrazyGames provides its own fullscreen control in the game frame, and the
   // desktop shell owns its window mode from the settings Display tab, so hide
@@ -139,6 +147,13 @@ export class GameRightSidebar extends LitElement implements Controller {
   }
 
   tick() {
+    // The clock holds through the opening (C3), so the phase change has to
+    // trigger a render on its own for the panels that appear with play.
+    const inSpawnPhase = this.game.inSpawnPhase();
+    if (inSpawnPhase !== this.lastSpawnPhase) {
+      this.lastSpawnPhase = inSpawnPhase;
+      this.requestUpdate();
+    }
     // Timer logic
     // Check if the player is the lobby creator
     if (!this.isLobbyCreator && this.game.myPlayer()?.isLobbyCreator()) {
@@ -403,17 +418,17 @@ export class GameRightSidebar extends LitElement implements Controller {
       <doomsday-clock-panel
         .game=${this.game}
         .hasWinner=${this.hasWinner}
-        .refreshKey=${this.timer}
+        .refreshKey=${this.panelRefreshKey()}
       ></doomsday-clock-panel>
       <dark-star-panel
         .game=${this.game}
         .hasWinner=${this.hasWinner}
-        .refreshKey=${this.timer}
+        .refreshKey=${this.panelRefreshKey()}
       ></dark-star-panel>
       <overtime-panel
         .game=${this.game}
         .hasWinner=${this.hasWinner}
-        .refreshKey=${this.timer}
+        .refreshKey=${this.panelRefreshKey()}
       ></overtime-panel>
     `;
   }

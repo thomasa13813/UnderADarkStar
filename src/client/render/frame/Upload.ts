@@ -48,6 +48,7 @@ export interface FrameUploadTarget {
   ): void;
   updateRelations(data: Uint8Array, size: number): void;
   setSAMAllianceClusters(clusters: ReadonlyMap<number, number>): void;
+  setHiddenOwners(ownerIDs: readonly number[]): void;
 }
 
 /**
@@ -94,6 +95,9 @@ export function uploadFrameData(
   view.updateUnits(frame.units, frame.tick);
   if (frame.structuresDirty) {
     view.updateStructures(frame.units);
+  }
+  if (frame.hiddenOwnersDirty) {
+    view.setHiddenOwners(frame.hiddenOwners ?? []);
   }
 
   // --- Ephemeral effects ---

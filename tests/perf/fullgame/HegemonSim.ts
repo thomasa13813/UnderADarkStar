@@ -165,6 +165,7 @@ async function main(): Promise<void> {
     terrain.miniGameMap,
     config,
     terrain.teamGameSpawnAreas,
+    terrain.hegemon,
   );
 
   let win: WinUpdate | undefined;
@@ -256,7 +257,7 @@ async function main(): Promise<void> {
   while (win === undefined && fatal === undefined) {
     runner.addTurn({ turnNumber: turn++, intents: [] });
     runner.executeNextTick();
-    if (game.inSpawnPhase()) continue;
+    if (game.inSpawnPhase() || game.inOpening()) continue;
     startTurn ??= turn;
     const elapsed = turn - startTurn;
 

@@ -46,21 +46,21 @@ export class ImmunityTimer extends LitElement implements Controller {
     this.style.top = showTeamOwnershipBar ? "7px" : "0px";
 
     const immunityDuration = this.game.config().spawnImmunityDuration();
-    const spawnPhaseTurns = this.game.config().numSpawnPhaseTurns();
 
+    // In Hegemon mode the round begins after the opening's flights (C3);
+    // immunity, and this bar, only start counting then.
     if (
       !this.game.config().hasExtendedSpawnImmunity() ||
-      this.game.inSpawnPhase()
+      this.game.inSpawnPhase() ||
+      this.game.inOpening()
     ) {
       this.setInactive();
     } else {
-      const immunityEnd = spawnPhaseTurns + immunityDuration;
-      const ticks = this.game.ticks();
+      const elapsedTicks = this.game.ticksSinceStart();
 
-      if (ticks >= immunityEnd || ticks < spawnPhaseTurns) {
+      if (elapsedTicks >= immunityDuration) {
         this.setInactive();
       } else {
-        const elapsedTicks = Math.max(0, ticks - spawnPhaseTurns);
         this.progressRatio = Math.min(
           1,
           Math.max(0, elapsedTicks / immunityDuration),

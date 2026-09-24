@@ -41,21 +41,51 @@ export interface DarkStarSizing {
   moatMinTiles: number;
 }
 
+/**
+ * A map's own Dark Star, from its info.json (`hegemon: { center, radius,
+ * moat? }`, F5 in docs/DarkStar-Design.md): where the disc sits and how big
+ * it is, in that map's tiles. Without one the disc is computed from the map
+ * size and centred. The moat falls back to the sizing rule.
+ */
+export interface DarkStarOverride {
+  center: [number, number];
+  radius: number;
+  moat?: number;
+}
+
 export function computeDarkStarGeometry(
   width: number,
   height: number,
   sizing: DarkStarSizing,
+  override?: DarkStarOverride,
 ): DarkStarGeometry {
   const shorter = Math.min(width, height);
-  const radius = Math.floor((shorter * sizing.domainRadiusPermille) / 1000);
-  const moatWidth = Math.max(
-    sizing.moatMinTiles,
-    Math.floor((shorter * sizing.moatWidthPermille) / 1000),
-  );
+  const radius =
+    override !== undefined
+      ? Math.floor(override.radius)
+      : Math.floor((shorter * sizing.domainRadiusPermille) / 1000);
+  const moatWidth =
+    override?.moat !== undefined
+      ? Math.floor(override.moat)
+      : Math.max(
+          sizing.moatMinTiles,
+          Math.floor((shorter * sizing.moatWidthPermille) / 1000),
+        );
+  const cx =
+    override !== undefined ? Math.floor(override.center[0]) : width >> 1;
+  const cy =
+    override !== undefined ? Math.floor(override.center[1]) : height >> 1;
   const outer = radius + moatWidth;
-  if (radius < 4 || 2 * outer + 4 > shorter) {
+  if (
+    radius < 4 ||
+    moatWidth < 1 ||
+    cx - outer < 2 ||
+    cy - outer < 2 ||
+    cx + outer > width - 3 ||
+    cy + outer > height - 3
+  ) {
     throw new Error(
-      `Map ${width}x${height} is too small for a Dark Star (radius ${radius}, moat ${moatWidth})`,
+      `Map ${width}x${height} is too small to hold a Dark Star at ${cx},${cy} (radius ${radius}, moat ${moatWidth})`,
     );
   }
   const rSq = radius * radius;
@@ -66,8 +96,8 @@ export function computeDarkStarGeometry(
     }
   }
   return {
-    cx: width >> 1,
-    cy: height >> 1,
+    cx,
+    cy,
     radius,
     moatWidth,
     rSq,

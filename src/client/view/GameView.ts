@@ -47,6 +47,7 @@ import type { FrameData, NameEntry } from "../render/types";
 import { STRUCTURE_TYPES } from "../render/types";
 import { resolveTeamClanTag } from "../Utils";
 import type { CosmeticVisibility } from "./CosmeticVisibility";
+import { OpeningFlights, OpeningLauncher } from "./OpeningFlights";
 import { PlayerView } from "./PlayerView";
 import { UnitView } from "./UnitView";
 
@@ -80,6 +81,13 @@ type TrainPlanState = {
 export class GameView implements GameMap {
   private lastUpdate: GameUpdateViewData | null;
   private startTick: Tick | null = null;
+  private _openingTicks = 0;
+  private spawnPhaseOver = false;
+  // The opening's flights (C3), client-only; see OpeningFlights.ts.
+  private _opening: OpeningFlights | null = null;
+  private pendingOpeningEnd: Tick | null = null;
+  private openingUnitIds: number[] = [];
+  private updateTimesMs: number[] = [];
   private smallIDToID = new Map<number, PlayerID>();
   private _players = new Map<PlayerID, PlayerView>();
   private _units = new Map<number, UnitView>();
@@ -213,6 +221,8 @@ export class GameView implements GameMap {
         bonusEvents: [],
       },
       changedTiles: null,
+      hiddenOwners: null,
+      hiddenOwnersDirty: false,
       railroadDirty: false,
       revealedRailTiles: this.railroadCache.revealedRailTiles,
       trailDirtyRowMin: 0,
@@ -298,6 +308,10 @@ export class GameView implements GameMap {
     this.toDelete.clear();
 
     this.lastUpdate = gu;
+    // Wall-clock arrival of recent ticks: a burst means a catch-up or a
+    // replay seek, when the opening must not play.
+    this.updateTimesMs.push(performance.now());
+    if (this.updateTimesMs.length > 4) this.updateTimesMs.shift();
 
     this.updatedTiles = [];
     this.updatedTerrainTiles = [];
@@ -329,7 +343,12 @@ export class GameView implements GameMap {
       | SpawnPhaseEndUpdate
       | undefined;
     if (spawnPhaseEndUpdate) {
+      // startTick is the round's first tick: after the opening's flights.
+      this.spawnPhaseOver = true;
       this.startTick = spawnPhaseEndUpdate.startTick;
+      this._openingTicks = spawnPhaseEndUpdate.openingTicks ?? 0;
+      // Launched once this tick's player updates (the spawn tiles) are in.
+      this.pendingOpeningEnd = spawnPhaseEndUpdate.startTick;
     }
     if (gu.updates[GameUpdateType.Win].length > 0) {
       this._gameOver = true;
@@ -389,6 +408,13 @@ export class GameView implements GameMap {
 
       if (existing !== undefined) {
         existing.applyUpdate(pu);
+        if (pu.spawnTile !== undefined) {
+          this._opening?.spawnChanged(
+            existing.smallID(),
+            pu.spawnTile,
+            gu.tick,
+          );
+        }
         const nextNameData = gu.playerNameViewData?.[pu.id];
         if (nextNameData !== undefined) {
           existing.nameData = nextNameData;
@@ -541,6 +567,7 @@ export class GameView implements GameMap {
 
     this.advanceMotionPlannedUnits(gu.tick);
     this.rebuildMotionPlannedUnitIdsCacheIfDirty();
+    this.tickOpening(gu.tick);
 
     this.populateFrame(gu);
   }
@@ -568,6 +595,11 @@ export class GameView implements GameMap {
         this._trailIdsScratch.push(u.id());
       }
     }
+    if (this._opening !== null) {
+      for (const u of this._opening.unitsInFlight()) {
+        this._trailIdsScratch.push(u.id);
+      }
+    }
     this.trailManager.update(
       this._unitStates as Map<number, import("../render/types").UnitState>,
       this._trailIdsScratch,
@@ -586,6 +618,8 @@ export class GameView implements GameMap {
       this._namesDirty = false;
       this._names.clear();
       for (const p of this._players.values()) {
+        // The opening: no name until the player's flight has landed.
+        if (this._opening?.isHidden(p.smallID())) continue;
         this._names.set(p.id(), {
           playerID: p.id(),
           x: p.nameData?.x ?? 0,
@@ -606,7 +640,7 @@ export class GameView implements GameMap {
       -readonly [K in keyof FrameData]: FrameData[K];
     };
     f.tick = gu.tick;
-    f.inSpawnPhase = this.startTick === null;
+    f.inSpawnPhase = !this.spawnPhaseOver;
     f.railroadDirty = this.railroadCache.railroadDirty;
     f.trailDirtyRowMin = this.trailManager.dirtyRowMin;
     f.trailDirtyRowMax = this.trailManager.dirtyRowMax;
@@ -663,6 +697,13 @@ export class GameView implements GameMap {
         )
       : [];
     f.structuresDirty = this._structuresDirty;
+    // The opening: owners still in flight have no fill; pushed on change.
+    if (this._opening !== null && this._opening.takeHiddenChanged()) {
+      f.hiddenOwners = Array.from(this._opening.hiddenOwners());
+      f.hiddenOwnersDirty = true;
+    } else {
+      f.hiddenOwnersDirty = false;
+    }
 
     // First populate: signal "full upload required" by nulling changedTiles.
     // uploadFrameData() treats null as "no delta info; do a full tile+trail
@@ -697,6 +738,12 @@ export class GameView implements GameMap {
         reachedTarget: u.reachedTarget,
         ownerSmallID: u.ownerID,
       });
+    }
+    if (this._opening !== null) {
+      // The opening's landings: the strike's impact flash on each spawn tile.
+      for (const d of this._opening.landingsAsDeadUnits()) {
+        ev.deadUnits.push(d);
+      }
     }
     const myID = this._myPlayer?.id();
     for (const c of gu.updates[GameUpdateType.ConquestEvent] ?? []) {
@@ -1070,6 +1117,7 @@ export class GameView implements GameMap {
         this._map.width(),
         this._map.height(),
         this._config.hegemonConfig(),
+        this._mapData.hegemon,
       );
     }
     return this._darkStar;
@@ -1194,28 +1242,107 @@ export class GameView implements GameMap {
   }
 
   inSpawnPhase(): boolean {
-    return this.startTick === null;
+    return !this.spawnPhaseOver;
+  }
+
+  // The opening (C3): the spawn phase is over but the round has not begun —
+  // the flights are in the air, and the sim runs nothing until they land.
+  inOpening(): boolean {
+    return this.spawnPhaseOver && this.ticks() < this.startTick!;
   }
 
   isSpawnImmunityActive(): boolean {
     return (
       this.inSpawnPhase() ||
+      this.inOpening() ||
       this.ticksSinceStart() < this._config.spawnImmunityDuration()
     );
   }
   isNationSpawnImmunityActive(): boolean {
     return (
       this.inSpawnPhase() ||
+      this.inOpening() ||
       this.ticksSinceStart() < this._config.nationSpawnImmunityDuration()
     );
   }
+  // Hegemon mode: the opening's flight window (C3), known once the spawn
+  // phase has ended; 0 otherwise.
+  openingTicks(): number {
+    return this._openingTicks;
+  }
 
+  // ── The opening (C3): flights drawn by this client alone ───────────────
+
+  /** The flights in progress, or null when there is no opening to draw. */
+  opening(): OpeningFlights | null {
+    return this._opening;
+  }
+
+  // Four ticks in a hundred and fifty milliseconds is not a live game: a
+  // reconnect replaying the turns it missed, or a replay seeking.
+  private catchingUp(): boolean {
+    const t = this.updateTimesMs;
+    return t.length >= 4 && t[t.length - 1] - t[0] < 150;
+  }
+
+  // Launch at this client tick; the flights still land by the sim's window
+  // (startTick + openingTicks), whatever tick the update reached us on.
+  private beginOpening(tick: Tick, endTick: Tick): void {
+    const g = this.darkStar();
+    if (
+      g === null ||
+      endTick <= tick ||
+      this._config.isReplay() ||
+      this.catchingUp()
+    ) {
+      return;
+    }
+    const launchers: OpeningLauncher[] = [];
+    for (const p of this._players.values()) {
+      const type = p.type();
+      if (type !== PlayerType.Human && type !== PlayerType.Nation) continue;
+      if (p.isHegemon() || !p.isAlive()) continue;
+      const spawnTile = p.state.spawnTile;
+      if (spawnTile === undefined) continue;
+      launchers.push({ smallID: p.smallID(), spawnTile });
+    }
+    if (launchers.length === 0) return;
+    const opening = new OpeningFlights(
+      this._map,
+      this.ref(g.cx, g.cy),
+      this._config.hegemonConfig().strikeSpeed,
+    );
+    opening.start(tick, launchers, endTick - tick);
+    this._opening = opening;
+    this._namesDirty = true;
+  }
+
+  // Step the flights and keep their phantom units in the frame's unit map:
+  // in the air they are drawn, trailed and ringed like any projectile; the
+  // tick they land they leave the map and buildFrameEvents plays the impact.
+  private tickOpening(tick: Tick): void {
+    if (this.pendingOpeningEnd !== null) {
+      const endTick = this.pendingOpeningEnd;
+      this.pendingOpeningEnd = null;
+      this.beginOpening(tick, endTick);
+    }
+    const opening = this._opening;
+    if (opening === null) return;
+    for (const id of this.openingUnitIds) this._unitStates.delete(id);
+    this.openingUnitIds.length = 0;
+    opening.advance(tick);
+    for (const u of opening.unitsInFlight()) {
+      this._unitStates.set(u.id, u);
+      this.openingUnitIds.push(u.id);
+    }
+    if (opening.landedThisTick().length > 0) this._namesDirty = true;
+  }
   elapsedGameSeconds(): number {
     return this.ticksSinceStart() / 10;
   }
 
   ticksSinceStart(): Tick {
-    if (this.inSpawnPhase()) {
+    if (this.inSpawnPhase() || this.inOpening()) {
       return 0;
     }
 

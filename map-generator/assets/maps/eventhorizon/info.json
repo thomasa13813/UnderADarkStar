@@ -1,0 +1,135 @@
+{
+  "id": "EventHorizon",
+  "name": "Event Horizon",
+  "translation_key": "map.eventhorizon",
+  "categories": ["cosmic"],
+  "multiplayer_frequency": 4,
+  "hegemon": {
+    "center": [900, 900],
+    "radius": 162,
+    "moat": 18
+  },
+  "themes": ["space"],
+  "nations": [
+    {
+      "coordinates": [599, 767],
+      "name": "Orion Combine",
+      "flag": ""
+    },
+    {
+      "coordinates": [666, 598],
+      "name": "Vega Ascendancy",
+      "flag": ""
+    },
+    {
+      "coordinates": [776, 512],
+      "name": "Tau Ceti Concord",
+      "flag": ""
+    },
+    {
+      "coordinates": [879, 464],
+      "name": "Kepler Directorate",
+      "flag": ""
+    },
+    {
+      "coordinates": [947, 445],
+      "name": "Rigel Syndicate",
+      "flag": ""
+    },
+    {
+      "coordinates": [970, 606],
+      "name": "Cygnus Dominion",
+      "flag": ""
+    },
+    {
+      "coordinates": [1073, 630],
+      "name": "Lyra Commonwealth",
+      "flag": ""
+    },
+    {
+      "coordinates": [1170, 651],
+      "name": "Draco Protectorate",
+      "flag": ""
+    },
+    {
+      "coordinates": [1235, 714],
+      "name": "Sirius Republic",
+      "flag": ""
+    },
+    {
+      "coordinates": [1277, 804],
+      "name": "Altair Mandate",
+      "flag": ""
+    },
+    {
+      "coordinates": [1282, 882],
+      "name": "Procyon Free Worlds",
+      "flag": ""
+    },
+    {
+      "coordinates": [1265, 996],
+      "name": "Aldebaran Sovereignty",
+      "flag": ""
+    },
+    {
+      "coordinates": [1262, 1087],
+      "name": "Deneb Collective",
+      "flag": ""
+    },
+    {
+      "coordinates": [1222, 1219],
+      "name": "Antares Crown",
+      "flag": ""
+    },
+    {
+      "coordinates": [1049, 1185],
+      "name": "Fomalhaut Assembly",
+      "flag": ""
+    },
+    {
+      "coordinates": [965, 1241],
+      "name": "Arcturus Covenant",
+      "flag": ""
+    },
+    {
+      "coordinates": [882, 1268],
+      "name": "Capella Trade League",
+      "flag": ""
+    },
+    {
+      "coordinates": [804, 1299],
+      "name": "Betelgeuse Marches",
+      "flag": ""
+    },
+    {
+      "coordinates": [665, 1242],
+      "name": "Polaris Order",
+      "flag": ""
+    },
+    {
+      "coordinates": [623, 1186],
+      "name": "Spica Confederation",
+      "flag": ""
+    },
+    {
+      "coordinates": [541, 1128],
+      "name": "Regulus Authority",
+      "flag": ""
+    },
+    {
+      "coordinates": [450, 1072],
+      "name": "Canopus Union",
+      "flag": ""
+    },
+    {
+      "coordinates": [397, 868],
+      "name": "Andromeda Compact",
+      "flag": ""
+    },
+    {
+      "coordinates": [562, 827],
+      "name": "Perseus Reach",
+      "flag": ""
+    }
+  ]
+}

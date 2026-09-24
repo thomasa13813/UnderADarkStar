@@ -324,6 +324,12 @@ const HEGEMON_DEFAULTS = {
   // nuke's arc at this many tiles per tick (a nuke flies at 10). Flight time
   // is the arc length divided by this.
   strikeSpeed: 10,
+  // The opening (C3): spawn immunity lasts until the last challenger's flight
+  // from the Dark Star's centre has landed — the longest flight at
+  // strikeSpeed, never shorter than the ordinary spawn immunity (a host's
+  // longer immunity still wins) and never longer than openingMaxSeconds
+  // (longer flights are played faster on the client).
+  openingMaxSeconds: 15,
   // Razing is deliberately poor value for the Hegemon: each tile costs the
   // strike this much more than an ordinary conquest and takes this much longer
   // (100 = no change) — the fortress multipliers, turned against the throne.

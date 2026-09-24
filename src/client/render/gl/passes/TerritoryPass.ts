@@ -14,7 +14,12 @@
 
 import type { RenderSettings } from "../RenderSettings";
 import { getPaletteSize } from "../utils/ColorUtils";
-import { createMapQuad, createProgram, shaderSrc } from "../utils/GlUtils";
+import {
+  createMapQuad,
+  createProgram,
+  createTexture2D,
+  shaderSrc,
+} from "../utils/GlUtils";
 import { FALLOUT_BIT, OWNER_MASK, TILE_DEFINES } from "../utils/TileCodec";
 
 import overlayVertSrc from "../shaders/map-overlay/overlay.vert.glsl?raw";
@@ -45,8 +50,13 @@ export class TerritoryPass {
   private uAltFillAlpha: WebGLUniformLocation;
   private uHegemonOwner: WebGLUniformLocation;
   private uHegemonFillAlpha: WebGLUniformLocation;
+  private uAnyHidden: WebGLUniformLocation;
   private highlightOwner = 0;
   private hegemonOwner = 0;
+  /** R8UI, one byte per owner: 1 = fill not drawn (the opening's flights). */
+  private hiddenTex: WebGLTexture;
+  private hiddenCpu: Uint8Array;
+  private anyHidden = false;
   private isTeamMode = false;
 
   private vao: WebGLVertexArrayObject;
@@ -202,6 +212,19 @@ export class TerritoryPass {
     gl.uniform1i(gl.getUniformLocation(this.program, "uDefenseCoverageTex"), 7);
     gl.uniform1i(gl.getUniformLocation(this.program, "uBorderTex"), 8);
     gl.uniform1i(gl.getUniformLocation(this.program, "uAffiliation"), 9);
+    gl.uniform1i(gl.getUniformLocation(this.program, "uHiddenOwners"), 10);
+    this.uAnyHidden = gl.getUniformLocation(this.program, "uAnyHidden")!;
+
+    this.hiddenCpu = new Uint8Array(getPaletteSize());
+    this.hiddenTex = createTexture2D(gl, {
+      width: getPaletteSize(),
+      height: 1,
+      internalFormat: gl.R8UI,
+      format: gl.RED_INTEGER,
+      type: gl.UNSIGNED_BYTE,
+      data: this.hiddenCpu,
+      filter: gl.NEAREST,
+    });
 
     this.vao = createMapQuad(gl, mapW, mapH);
 
@@ -417,6 +440,31 @@ export class TerritoryPass {
     this.hegemonOwner = ownerID;
   }
 
+  /**
+   * Owners whose fill is not drawn at all — the opening's players until
+   * their flight lands (view/OpeningFlights.ts). Borders are untouched.
+   */
+  setHiddenOwners(ownerIDs: readonly number[]): void {
+    this.hiddenCpu.fill(0);
+    for (const id of ownerIDs) {
+      if (id > 0 && id < this.hiddenCpu.length) this.hiddenCpu[id] = 1;
+    }
+    this.anyHidden = ownerIDs.length > 0;
+    const gl = this.gl;
+    gl.bindTexture(gl.TEXTURE_2D, this.hiddenTex);
+    gl.texSubImage2D(
+      gl.TEXTURE_2D,
+      0,
+      0,
+      0,
+      this.hiddenCpu.length,
+      1,
+      gl.RED_INTEGER,
+      gl.UNSIGNED_BYTE,
+      this.hiddenCpu,
+    );
+  }
+
   /** Defense-coverage texture (R8) — darkens the fill on defended tiles. */
   setDefenseCoverageTex(tex: WebGLTexture): void {
     this.defenseCoverageTex = tex;
@@ -492,6 +540,9 @@ export class TerritoryPass {
       gl.activeTexture(gl.TEXTURE9);
       gl.bindTexture(gl.TEXTURE_2D, this.affiliationTex);
     }
+    gl.activeTexture(gl.TEXTURE10);
+    gl.bindTexture(gl.TEXTURE_2D, this.hiddenTex);
+    gl.uniform1i(this.uAnyHidden, this.anyHidden ? 1 : 0);
 
     gl.bindVertexArray(this.vao);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
@@ -501,6 +552,7 @@ export class TerritoryPass {
     const gl = this.gl;
     gl.deleteProgram(this.program);
     gl.deleteVertexArray(this.vao);
+    gl.deleteTexture(this.hiddenTex);
     this.scatter.dispose();
     // tileTex, paletteTex, patternMetaTex, patternDataTex owned by GPUResources / renderer
   }

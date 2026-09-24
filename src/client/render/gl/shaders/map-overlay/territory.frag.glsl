@@ -31,6 +31,8 @@ uniform uint uHegemonOwner;        // 0 = none; owner using the default Hegemon 
 uniform float uHegemonFillAlpha;   // fill opacity for that owner (near-black fill)
 uniform sampler2D uAffiliation;    // RGBA8 — alt-view relation colors (row 0)
 uniform float uAltFillAlpha;       // alt-view translucent fill opacity
+uniform usampler2D uHiddenOwners;  // R8UI — 1D, 1 px per owner: 1 = fill not drawn (the opening)
+uniform int uAnyHidden;            // 0 = skip the lookup
 
 in vec2 vWorldPos;
 out vec4 fragColor;
@@ -54,6 +56,11 @@ void main() {
     float noise = uStaleNukeBase + h * uStaleNukeVariation;
     fragColor = vec4(uStaleNukeColor + vec3(noise), uStaleNukeAlpha);
     return;
+  }
+
+  // The opening: a player still in flight has no fill yet (borders stay).
+  if (uAnyHidden != 0 && texelFetch(uHiddenOwners, ivec2(int(owner), 0), 0).r != 0u) {
+    discard;
   }
 
   // Alt-view: translucent fill in the owner's relation color (matches the

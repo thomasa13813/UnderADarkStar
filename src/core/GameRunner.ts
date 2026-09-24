@@ -78,6 +78,7 @@ export async function createGameRunner(
     gameMap.miniGameMap,
     config,
     gameMap.teamGameSpawnAreas,
+    gameMap.hegemon,
   );
 
   const gr = new GameRunner(

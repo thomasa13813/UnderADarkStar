@@ -129,6 +129,12 @@ export class SpawnExecution implements Execution {
     return true;
   }
 
+  // A spawn queued on the spawn phase's last tick (a nation's final hop)
+  // still lands during the opening; a client's pick is refused above.
+  activeDuringOpening(): boolean {
+    return true;
+  }
+
   private getSpawn(center?: TileRef): Spawn | undefined {
     if (center !== undefined) {
       const tiles = getSpawnTiles(this.mg, center, false);

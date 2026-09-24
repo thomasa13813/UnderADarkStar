@@ -1131,6 +1131,10 @@ export class GPURenderer {
    * `rim` (0-1 RGB) plus an inner border band, a near-opaque fill and a
    * light name fill.
    */
+  /** Owners whose territory fill is skipped (the opening's flights). */
+  setHiddenOwners(ownerIDs: readonly number[]): void {
+    this.territoryPass.setHiddenOwners(ownerIDs);
+  }
   setHegemonLook(ownerID: number, rim: [number, number, number]): void {
     this.borderPass.setDualBorderOwner(ownerID);
     this.borderStampPass.setDualBorder(ownerID, rim);
