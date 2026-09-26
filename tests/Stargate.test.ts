@@ -21,7 +21,7 @@ import { executeTicks } from "./util/utils";
 // Stargates (C4 in docs/DarkStar-Design.md, §6.8 stage 3).
 //
 // big_plains is 200×200: the Dark Star's radius is 18 and the moat 15, so
-// with the real range (120 at level 1) a gate anywhere reaches everything.
+// with the real range (180 at level 1) a gate anywhere reaches everything.
 // ShortRange shrinks it so range can be tested at all.
 class ShortRange extends TestConfig {
   stargateConfig() {
@@ -154,16 +154,16 @@ describe("Building a stargate", () => {
   test("upgrades buy range, up to level 5", () => {
     const gate = buildGate(east, tileOf(east, 5));
     const config = game.config();
-    expect(config.stargateRange(1)).toBe(120);
-    expect(config.stargateRange(2)).toBe(180);
-    expect(config.stargateRange(5)).toBe(360);
+    expect(config.stargateRange(1)).toBe(180);
+    expect(config.stargateRange(2)).toBe(255);
+    expect(config.stargateRange(5)).toBe(480);
     for (let level = 1; level < 5; level++) {
       expect(east.canUpgradeUnit(gate)).toBe(true);
       east.upgradeUnit(gate);
       expect(gate.level()).toBe(level + 1);
     }
     expect(east.canUpgradeUnit(gate)).toBe(false);
-    expect(config.stargateRange(gate.level())).toBe(360);
+    expect(config.stargateRange(gate.level())).toBe(480);
   });
 });
 

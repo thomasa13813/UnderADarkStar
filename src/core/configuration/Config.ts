@@ -281,10 +281,11 @@ const OVERTIME_DEFAULTS = {
 // starting points (decided 2026-09-24), tunable here.
 const STARGATE_DEFAULTS = {
   // Range in tiles at level 1, what each upgrade adds, and the last level an
-  // upgrade may reach (range 120 / 180 / 240 / 300 / 360). On World, nations
-  // spawn a median 75 tiles apart and ~280 from the moat.
-  rangeBase: 120,
-  rangePerLevel: 60,
+  // upgrade may reach (range 180 / 255 / 330 / 405 / 480; raised 2026-09-26
+  // from 120 +60, which underperformed in play). On World, nations spawn a
+  // median 75 tiles apart and ~280 from the moat.
+  rangeBase: 180,
+  rangePerLevel: 75,
   maxLevel: 5,
   // A gate holds one shot; this is the reload after firing, whatever the
   // level (upgrades buy range, not throughput; a silo reloads in 9 s).
