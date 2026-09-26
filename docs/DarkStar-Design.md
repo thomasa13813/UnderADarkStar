@@ -213,6 +213,42 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   rules with the throne as payer; a gift may also upgrade the host's existing structure; every
   challenger can receive one, Tribes included; the host is told; the Gift takes the ally slot of the
   Hegemon's radial menu on a challenger's tile.
+- **H19 — Missile launches invite a punitive strike.** [Decided 2026-09-26; built the same day,
+  §6.16] A challenger who fires a
+  missile from a silo (Nuclear or Antimatter Warhead, S6; the target does not matter, the Dark Star
+  included) exposes that silo to a **punitive strike** by the Hegemon, a variant of the raze strike
+  (H8) with its own rules:
+  - **The flag.** The launch flags the silo for `punitiveFlagSeconds` (30 s) from its **most recent**
+    launch. A silo that has fired both kinds carries the **more severe** flag (Antimatter), not the
+    most recent. The Hegemon sees a badge around every flagged silo, red for Nuclear, white for
+    Antimatter, and orders the strike by **clicking the silo** (a plain click, or the radial's
+    Punish slot). The throne **may decline**: it pays
+    nothing, so declining is how it shows favour (H15) or leaves an intimidating power alone.
+  - **The levy.** The strike's troops are **not the Hegemon's**. When it is ordered, every living
+    challenger, Tribes included and the nuke's victim too, is levied a share of the troops it has at
+    home: `punitiveLevyPercentNuclear` (10%) for a Nuclear flag, `punitiveLevyPercentAntimatter` (25%)
+    for Antimatter (tunable; F20). Troops away on attacks and fleets are not levied. The levied total
+    flies from the Dark Star's centre as a strike projectile (§6.9) and lands on the silo's tile, so
+    the silo is captured at once (H17) and dies when the bubble pops unless its tile is retaken.
+  - **No tyranny, a radius instead.** The strike pays no tyranny multiplier (H16) and can never be
+    recalled. Its reach is capped: it razes only tiles within `punitiveRadius` (34: the Nuclear
+    Warhead's outer blast radius of 30 with a quarter more area) of the silo, and it never takes the target below the tyranny floor
+    (`tyrannyFloorPermille`), so H16 still holds for a player whose whole land fits in the pocket.
+  - **Halt, then pop.** When nothing within its radius is left to take (or the floor is reached) the
+    strike **halts** for `punitiveHaltSeconds` (5 s). If the target retakes any bubble tile in that
+    time the halt is cancelled and the strike resumes out to its radius, halting again once it is
+    full; the target may fight it exactly as any bubble (H17), a dense pocket that takes a real army
+    to breach. An undisturbed halt, or troops spent, ends the strike: the bubble **pops** as in H17
+    (land to neutral, the silo and every captured structure destroyed) and any troops left over are
+    **burnt**: not returned to the levied, never the throne's.
+  - **One at a time.** Ordering a strike on one of a player's silos clears every other flag that
+    player holds, and no new flag arises on any of their silos while any strike (punitive or H8) on
+    them is alive: a player under strike fires freely, and the salvo that follows a punishment is a
+    feature. One live strike per target as before; any number of targets.
+  - **The throne's silo.** While a captured silo sits in the bubble the Hegemon cannot fire it (H2's
+    spirit: no Hegemon nukes, ever).
+  - **AI Hegemon.** Strikes any flag as soon as it may, except against a challenger holding less than
+    `punitiveAIMinLandPermille` of the map's land (tunable, 50–100‰ to start).
 
 ### 3.3 Challengers
 
@@ -281,6 +317,9 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   **Antimatter Warhead** — display strings only, enum values unchanged (§5.4). Hydrogen-bomb removal
   was considered and closed by the rename. [Built 2026-09-25, §6.13] The MIRV is hard-off in core
   whenever the Hegemon round is on (hosts cannot re-enable it) and the lobby hides its row.
+  [Decided 2026-09-26] **SAM launchers are removed** the same way: the deterrent against a missile
+  is the throne's punishment (H19), and a net of interceptors would spare most players that
+  decision. The **Nuclear Warhead costs 1M gold** under a Dark Star (the engine's 750k elsewhere).
 - **S7 — Economy.** [Direction agreed 2026-09-24] The engine's structure stays: cities and factories
   joined by rail, ports spawning trade ships. **Railroads are drawn as a straight line** from station
   to station and trains ride that line — a visual change; a connection still needs a land path and
@@ -317,6 +356,7 @@ destroyers and the challenger table). The playtest checks left over from them ar
 | F17 | **The map library (S9).** Which existing maps stay — Tom decides map by map, instinct: most or all go, geography first (the `GameMapType` enum is wire format, but this fork has no replays or archive to keep compatible); whether every map's Dark Star is central (H1) or a map may place it elsewhere via `info.json`; how many nations a galaxy map wants (24 on Event Horizon, to be judged in play); what the generator needs to produce 10–20 distinct maps (seeds and parameters, or hand-authored variants).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | F18 | **Exclaves from gate landings (§6.10, §6.11).** A landlocked beachhead pocket stands until its landing tile is retaken. Measured: World ends with 4–23 such pockets, Milky Way 1–3, Event Horizon 0–1. Whether a cap or decay is needed — likely moot once the geography maps go (F17); decide after Tom has seen the pockets on a galaxy map.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | F19 | **Playtest checks outstanding.** On Event Horizon: the disc and moat by eye (radius 162, moat 18 — the computed default written into `info.json`); 24 nations as a count; the 15 s opening cap; Tribes not flying. From the throne: should a human Hegemon get the AI's landing wave, or is active defence the point (a passive throne kept 5% of the domain on World seed a); the 5 s stall threshold (H13). The HUD merge: [Closed 2026-09-25 — **dropped**] built as columns in the player table with the panel cut to a strip, played, and discarded: seen missing, the panel's fields (the throne's troop bar, domain held, the invasion status, the bubble, the challenger board with its strike status) justify a panel of their own. The panel stays as built (§6.3, §6.6); its only change is that the challenger board starts **collapsed**, with the throne's show/hide toggle to unfold it. Clean-up later if it earns it.                                                                                                                                                                                                                                                                                                                                                                                  |
+| F20 | **Punitive strike numbers (H19). [Open 2026-09-26]** The levy shares (10% / 25%, raised from 5% / 15% after the first look), the flag window (30 s), the halt (5 s), the radius (34, a quarter more area than the first 30) and the AI's land-share threshold are starting points. Because the levy taxes every challenger's troops, it moves the invasion curve, so H19 is built **before** the F1 sweep and its numbers ride with it. To judge in `HegemonSim` and in play: how often nations nuke on a galaxy map (and so how often the galaxy is levied); whether a 15% levy in a radius-30 pocket is so dense that the halt is never disturbed; whether the pocket should follow the warhead that was fired (Antimatter's 100) rather than one radius for both.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 
 ## 5. Engine foundation — what we reuse
 
@@ -582,7 +622,7 @@ it on). With it off the sim is bit-identical to before: no extra player, no PRNG
   `RazeExecution` (`ExecutionManager`); the client UI for it belongs to the play-as-Hegemon chunk.
 - **Guards.** A Hegemon `AttackExecution` skips tiles outside the Dark Star (H8), and neither absorbs a
   raze strike when merging attacks on the same player nor counts one as a defence of the domain.
-- **Punitive strikes (H11), `HegemonExecution.punish`**, AI Hegemon only; tunables `punitive*` in
+- **Leveller strikes (H11), `HegemonExecution.punish`**, AI Hegemon only; tunables `leveller*` (renamed from `punitive*` on 2026-09-26, when H19 took the name) in
   `HEGEMON_DEFAULTS`. Two findings from `HegemonSim` shaped it: (1) "most troops right now" flips every
   few seconds as nations spend their armies, so strength is **capacity** (`Config.maxTroops`); (2) with
   close leaders a single razed city ended every strike within a second, so the recall has hysteresis
@@ -1171,6 +1211,106 @@ nothing in range they **sail to meet** an inbound invasion fleet.
   outside the moat shelling a destroyer from range goes unanswered by design — revisit if a playtest
   shows it being farmed.
 
+### 6.16 As built — punitive strikes (2026-09-26)
+
+M3.5, H19 as decided the same day. Tom's four answers before the build: the order is a **radial
+slot** (not a bare click), the badge is seen by **the throne and the silo's owner**, **one radius**
+for both warheads, and **everyone is told** of the levy.
+
+- **The flag.** `Unit.punitiveFlag()` / `flagForPunishment()` / `clearPunitiveFlag()` on the silo
+  (`UnitImpl`): warhead and expiry tick, the severer warhead kept, the expiry always the latest
+  launch's; expired flags read as none. `NukeExecution` flags the silo right after `silo.launch()`
+  — a Nuclear or Antimatter Warhead only (MIRVs are off anyway), never for the Hegemon, and not
+  while `Game.hegemonStrikeOn(player)`. The flag rides `UnitUpdate.punitiveFlag`; the client's
+  `UnitState` carries `punitiveWarhead` (1/2) and `punitiveExpiresTick`.
+- **The strike is `RazeExecution` in punitive mode** (fourth constructor argument; the
+  `punitive_strike` intent, tile only, appended to the union and to the hand-written `Intent`
+  type). `init` finds the owner's flagged silo on the tile (refused with
+  `dark_star_punitive_none` otherwise), skips the tyranny refusal, keeps the one-strike-per-target
+  refusal, takes the **levy** — `levy()`: every living challenger in `players()`, Tribes included,
+  `floor(troops × percent ÷ 100)` each, told by `dark_star_levy` — clears the owner's other flags,
+  and warns the owner with `dark_star_punitive_inbound`. The landed `Attack` is `markPunitive()`
+  (which also marks it a strike, so `isStruckBy`, the bubble costing and the counter-attack rules
+  all apply). In `tick`: the tyranny multiplier is 100 for a punitive strike and the floor, or an
+  empty frontier, calls `halt()` instead of `comeHome()`; a halted strike ends after
+  `punitiveHaltSeconds` unless `bubbleBreached()` (any bubble tile no longer the Hegemon's), which
+  clears the halt and refreshes the frontier; `addNeighbors` skips tiles beyond
+  `punitiveRadius` of the aim tile; `recall()` is a no-op and `PlayerImpl.orderRetreat` ignores a
+  punitive attack; `comeHome()` adds nothing back to the throne. `StrikeInFlight.isPunitive()` and
+  `AttackUpdate.isPunitive` carry it to the HUD. `RazeExecution.punitiveOption()` is what
+  `GameRunner.playerActions` puts in `PlayerActions.punitiveStrike` for the throne on a flagged
+  silo's tile (warhead, expiry, levy share, the levy in troops as it stands).
+- **No nukes from a captured silo.** `PlayerImpl.canBuild` refuses the Hegemon the atom bomb, the
+  hydrogen bomb and the MIRV outright.
+- **AI Hegemon.** `HegemonExecution.punishLaunches()` every second: for each living challenger not
+  under a strike and holding at least `punitiveAIMinLandPermille` of the map's land, the severest
+  flag (then the freshest) is struck. The H11 leveller's tunables were renamed `leveller*`.
+- **Tunables** in `HEGEMON_DEFAULTS`: `punitiveFlagSeconds` 30, `punitiveLevyPercentNuclear` 10,
+  `punitiveLevyPercentAntimatter` 25, `punitiveRadius` 34, `punitiveHaltSeconds` 5,
+  `punitiveAIMinLandPermille` 50.
+- **Client.** Badge: a ring around each flagged silo through the nuke-telegraph pass
+  (`extractPunitiveBadges` in `frame/derive/NukeTelegraphs.ts`, relation 3 = red for Nuclear, 4 =
+  white for Antimatter, radii 3/6 tiles), derived in `GameView` for the throne and for the owner.
+  Radial: `punishMenuElement` takes the **attack slot** on a flagged silo's tile when
+  `playerActions.punitiveStrike` is set — tooltip with the warhead, the levy share and troops, the
+  seconds left; it sends `SendPunitiveStrikeIntentEvent` (`punitive_strike`). HUD: the strike rows
+  in `attacks-display` read "Punitive strike" / "Punitive strike on {name}", the incoming hint
+  says it razes only around the silo, and the outgoing row has **no Recall**. Strings under
+  `dark_star.punish_*`, `dark_star.punitive_*`, `dark_star.warhead_*` and `events_display.
+dark_star_levy / dark_star_punitive_*`.
+- **Tests.** `tests/PunitiveStrikes.test.ts` (12): the flag's life, severity and expiry; no flag
+  under a strike; the option; the levy (the throne unchanged, the offender's flags spent, the
+  leftover burnt — the throne is held at its ceiling, where it regenerates nothing); the Antimatter
+  share; the landing on the silo, the radius cap, the halt and the pop with the silo destroyed;
+  the resume on a retaken tile; no recall; the tyranny floor as a halt for a player whose land fits
+  in the pocket; the intent from the throne and from a challenger; the AI striking a flag and
+  sparing a player under the land bar. Test note: structure hand-over and clearing are
+  `PlayerExecution`'s, so the harness registers one per challenger.
+- **Measured (`HegemonSim`, which now tags punitive strikes and counts flagged launches).** AI
+  only, seed a, 20 min. **Event Horizon:** 33 flagged launches, 11 strikes of which 8 punitive,
+  levies 430–690k troops, 9–199 s each, all but one fought; three popped 1.9–2.5k tiles, the rest
+  0–90 — the target retook the whole pocket. Round: 10 landings, domain low 79%, the throne holds.
+  **Milky Way:** 22 flagged launches, 6 punitive of 11 strikes, levies 400–640k, 9–60 s, all
+  fought, almost nothing popped (291 tiles from all 11 strikes). The pattern: a nation with a
+  large standing army retakes a fresh pocket faster than the strike razes it at the 3× raze slow
+  rate, so a punitive strike against a strong power is beaten more often than not, while a
+  smaller target loses the pocket. Whether that is the balance Tom wants is F20's question; the
+  numbers to move are the levy shares, `razeSlowPercent` for punitive strikes, or the density
+  floor.
+- **Browser.** `.claude/skills/run-openfront/punitive.mjs` plays a challenger on Event Horizon:
+  builds a silo, fires a Nuclear Warhead at the Dark Star, and screenshots the badge on its own
+  silo (a solid red ring, the sprite visible inside; the AI throne then rightly spares a 52-tile
+  human, so the strike never comes). `punitive-throne.mjs` plays the human Hegemon: waits for a
+  nation's launch, screenshots the badge and the radial on that silo, clicks Punish, and follows
+  the strike to its pop. Seen working end to end (Event Horizon, minute 8): the red ring on
+  Polaris Order's silo, the radial with Punish in the attack slot, a 314k levy with the throne's
+  own troops untouched, "Landing in 3s" then "Razing around the silo" with no Recall, a 201-tile
+  bubble, Polaris counter-attacking it, and the strike over 18 s after landing with the silo
+  retaken — the target won the pocket, as the sim predicts for a strong nation. Both scripts
+  retry state reads across the client's own `/#refresh` reload, which also ended the first two
+  attempts (not a sim error).
+- **Revised the same day, after Tom's first look.** A plain left click on a flagged silo orders the
+  strike (`ClientGameRunner.inputEvent` checks `actions.punitiveStrike` before the attack/boat
+  branches; the radial slot stays). Levy 10% / 25%, radius 34. SAMs are hard-off under a Dark Star
+  (`Config.isUnitDisabled`, the lobby's `hiddenUnits`; nations already skip disabled structures).
+  The Nuclear Warhead costs 1M gold in Hegemon mode. The inbound line is one sentence.
+  **Tom then could not order one at all:** the option and the strike matched the clicked tile to
+  the silo's one tile, while the icon and its ring are drawn several tiles wide, so nearly every
+  click missed. Now `RazeExecution.flaggedSiloNear` finds the nearest flagged silo within
+  `CLICK_RADIUS` (6 tiles) of the clicked tile, `PlayerActions.punitiveStrike` carries its
+  `siloTile`, and the strike aims at the silo whatever tile was clicked (order or radial).
+  **The badge scales with zoom** (Tom: hard to spot zoomed out): `NukeTelegraphPass.draw` now
+  takes the zoom and sizes badge rings from the structure icon's own curve (`badgeRadius`, the
+  icon's half size plus 15%, without the icon's zoomed-out dot regime), with a stroke of at least
+  three screen pixels; the derive's radii are ignored for badges. The nuke telegraphs themselves
+  are unchanged. **The ring is the click target** (Tom: a fixed tile radius felt delicate):
+  `ClientGameRunner.flaggedSiloUnderClick` hit-tests a left click against every flagged silo's ring
+  as drawn at the current zoom (`badgeWorldRadius` + `badgeWorldStroke`, shared with the pass) and
+  sends that silo's tile; the radial's Punish sends the option's `siloTile` too; the worker's own
+  reach for a queried tile (`CLICK_RADIUS`) is 12.
+- **Deferred.** A per-warhead radius (F20); a badge countdown; the Dark Star panel listing flagged
+  silos; a levy line that names the total.
+
 ## 7. Constraints (non-negotiable engineering rules)
 
 - `src/core/` must stay **deterministic** (seeded PRNG, no wall-clock, careful with floats) and
@@ -1213,7 +1353,8 @@ Each milestone ships in feature branches Tom playtests one at a time.
 | **M1.5**  | Challenger systems: atlas tooling → the strike as a projectile → stargates (C4) → AI gates.                                                                                                                                                                                                                                                                                                                                                                                                                             | **Built** (§6.9–§6.11). Build-menu growth and raids dropped (C2, §6.8 stage 4); warships moved to M3.                                                                                                                                                                               |
 | **M2**    | Event Horizon, the first galaxy map with its `info.json` Dark Star; the launch-from-the-core opening (C3); HUD: Hegemon marker, Dark Star panel, victory screens.                                                                                                                                                                                                                                                                                                                                                       | **Built** (§6.12, §6.3, §6.7). Awaiting Tom's playtest — the checks are F19.                                                                                                                                                                                                        |
 | **M3**    | **The throne's toolkit and the 2026-09-24 rules review.** Nothing buildable on the Dark Star by anyone (H2); the invasion cooldown removed (H12); the Hegemon donates troops (H9); gifted structures on challengers' land (H18); destroyers spawning in the moat (H10); MIRVs off and the warhead renames (S6); the player table gains the Dark Star's fields for the throne and the separate Dark Star panel goes if the table carries it (F19). Small, mostly-sim pieces first (H2, H12, H9, S6), then H18, then H10. | **In progress** — chunk 1 (H2, H12, H9, S6) built 2026-09-25, §6.13; chunk 2 (H18 gifts) built 2026-09-25, §6.14; chunk 3 (H10 destroyers) built 2026-09-25, §6.15; the HUD merge tried and dropped the same day (F19: the panel stays, its board collapsed by default). **Built.** |
-| **M4**    | **Balance (F1).** Regeneration cut, ceiling raised as needed, the shadow tax, the AI's last stand; `HegemonSim` sweep on Event Horizon and Milky Way, three candidates, Tom playtests; then retune the AI's strike thresholds (H11) and check the gate numbers (F15).                                                                                                                                                                                                                                                   | After M3 — the toolkit changes what the pool is spent on, so calibrate once it exists.                                                                                                                                                                                              |
+| **M3.5**  | **Punitive strikes (H19).** The silo flag written at launch, the galaxy's levy, the radius-capped strike with its halt-then-pop ending, the Hegemon's badge and click, the AI Hegemon's rule, no nukes from a captured silo; tests and a `HegemonSim` line per punitive strike.                                                                                                                                                                                                                                         | **Built** 2026-09-26 (§6.16) on `feat/hegemon-toolkit`; awaiting Tom's playtest. Before M4 because the levy moves the invasion curve (F20).                                                                                                                                         |
+| **M4**    | **Balance (F1).** Regeneration cut, ceiling raised as needed, the shadow tax, the AI's last stand; `HegemonSim` sweep on Event Horizon and Milky Way, three candidates, Tom playtests; then retune the AI's strike thresholds (H11) and check the gate numbers (F15).                                                                                                                                                                                                                                                   | After M3.5 — the toolkit and the levy change what the pool is spent on and how fast challengers grow, so calibrate once they exist.                                                                                                                                                 |
 | **M5**    | **Succession.** Singleplayer throne persistence (beat the AI, defend the throne next round), then the private-lobby hand-off through the successor-lobby flow with config inheritance; the private-lobby Hegemon toggle. The first item that makes the round loop real (§1).                                                                                                                                                                                                                                            |                                                                                                                                                                                                                                                                                     |
 | **M6**    | **Sci-fi re-theme and the economy's look.** Straight-line rails (S7); spaceport / Destroyer names and icons; the remaining unit, structure and resource names (F14); palette/theme JSON; atlases and own art for the projectile and the gate.                                                                                                                                                                                                                                                                           |                                                                                                                                                                                                                                                                                     |
 | **M7**    | **The map library (S9, F17).** 10–20 galaxy maps from the generator and by hand; remove the old maps map by map; per-map palette and thumbnails (§5.3 gap); decide the exclave question on galaxy maps (F18).                                                                                                                                                                                                                                                                                                           |                                                                                                                                                                                                                                                                                     |
@@ -1426,3 +1567,25 @@ to the invader (H9), gold donations from the throne (H9), hydrogen-bomb removal 
   it: seen missing, the panel's fields justify a panel of their own. Decided: the **panel stays**,
   the throne's challenger board starts **collapsed** (the show/hide toggle unfolds it), clean-up
   later if needed. With that, **M3 is complete**; M4 (balance, F1) is next.
+- **2026-09-26** — **Punitive strikes decided (H19, F20, M3.5).** Tom's proposal, assessed against
+  the built strike: a missile launch flags the silo for 30 s (the severer warhead wins, the throne
+  sees a red or white badge and clicks the silo, or declines); the strike's troops are a levy on
+  every living challenger's troops at home (5% Nuclear, 15% Antimatter), the throne pays nothing;
+  no tyranny multiplier but a radius cap (30, the Nuclear Warhead's blast) and the tyranny floor as
+  a hard stop so H16 holds; when full it halts 5 s, resumes if the target retakes a bubble tile,
+  otherwise pops and the leftover troops are burnt; no recall; one strike per target, flags cleared
+  by a strike and none while under one (the salvo is a feature); the Hegemon cannot fire a captured
+  silo; the AI Hegemon strikes every flag except against players below a land-share threshold.
+  Scheduled as M3.5, ahead of the balance sweep, because the levy moves the invasion curve.
+- **2026-09-26** — **M3.5 built: punitive strikes** (§6.16). Tom's answers: a radial Punish slot,
+  the badge for the throne and the owner, one radius, everyone told of the levy. The silo flag
+  in `UnitImpl` written by `NukeExecution`; `RazeExecution` in punitive mode (levy, no tyranny
+  multiplier, radius cap, halt-then-pop, resume on a breach, no recall, leftovers burnt);
+  `punitive_strike` intent; the AI rule; the captured-silo guard; the badge through the telegraph
+  pass; HUD rows without Recall. 12 tests. The leveller's tunables renamed `leveller*`. First sim
+  numbers recorded for F20: strong nations beat a fresh pocket more often than not.
+- **2026-09-26** — **H19 revised after Tom's first look.** A plain **click on a flagged silo** orders
+  the punitive strike (the radial's Punish slot stays as the other way in); the levy rises to
+  **10% / 25%** and the pocket's area by a quarter (`punitiveRadius` 34); **SAM launchers are
+  removed** under a Dark Star (S6) — the punishment is the deterrent, not an interceptor net; the
+  **Nuclear Warhead costs 1M gold**; the inbound message is one line.

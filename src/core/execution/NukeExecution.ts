@@ -247,6 +247,18 @@ export class NukeExecution implements Execution {
       // after sending a nuke set the missilesilo on cooldown
       if (silo) {
         silo.launch();
+        // Under a Dark Star the launch exposes the silo to a punitive strike
+        // (H19) — unless the throne is already striking this player, who may
+        // then fire freely.
+        if (
+          this.mg.hegemon() !== null &&
+          !this.player.isHegemon() &&
+          (this.nukeType === UnitType.AtomBomb ||
+            this.nukeType === UnitType.HydrogenBomb) &&
+          !this.mg.hegemonStrikeOn(this.player)
+        ) {
+          silo.flagForPunishment(this.nukeType);
+        }
       }
       return;
     }

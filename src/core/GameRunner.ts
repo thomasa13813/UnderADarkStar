@@ -3,6 +3,7 @@ import { Config } from "./configuration/Config";
 import { DoomsdayClockExecution } from "./execution/DoomsdayClockExecution";
 import { Executor } from "./execution/ExecutionManager";
 import { HegemonExecution } from "./execution/HegemonExecution";
+import { RazeExecution } from "./execution/RazeExecution";
 import { RecomputeRailClusterExecution } from "./execution/RecomputeRailClusterExecution";
 import { SpawnTimerExecution } from "./execution/SpawnTimerExecution";
 import { WinCheckExecution } from "./execution/WinCheckExecution";
@@ -274,6 +275,12 @@ export class GameRunner {
     } as PlayerActions;
     if (tile !== null) {
       actions.gateShot = player.stargateFor(tile) ?? undefined;
+    }
+    // A punitive strike (H19): the throne may answer a flagged silo at or
+    // near the tile — near, because the icon is wider than its one tile.
+    if (tile !== null && player.isHegemon()) {
+      const option = RazeExecution.punitiveOption(this.game, tile);
+      if (option !== null) actions.punitiveStrike = option;
     }
 
     if (tile !== null && this.game.hasOwner(tile)) {

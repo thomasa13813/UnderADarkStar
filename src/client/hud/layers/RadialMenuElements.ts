@@ -105,6 +105,8 @@ export const COLORS = {
   target: "#ef4444",
   attack: "#ef4444",
   strike: "#a855f7",
+  punishNuclear: "#ef4444",
+  punishAntimatter: "#e2e8f0",
   infoDetails: "#7f8c8d",
   infoEmoji: "#fbbf24",
   trade: "#0891b2",
@@ -919,6 +921,63 @@ export function strikeMenuElement(params: MenuElementParams): MenuElement {
   };
 }
 
+// A punitive strike (H19): the Hegemon answers a flagged silo. Takes the
+// attack slot on that silo's tile (the throne attacks nothing beyond the
+// Dark Star), coloured for the warhead that flagged it, and shown only
+// while the worker offers the option: a live flag and no strike on the
+// owner. The levy is the galaxy's, so there is no troop slider.
+export function punishMenuElement(params: MenuElementParams): MenuElement {
+  const option = params.playerActions.punitiveStrike!;
+  // The silo the click meant may sit a few tiles from the clicked tile.
+  const owner = params.game.owner(option.siloTile);
+  const target = owner.isPlayer() ? (owner as PlayerView) : null;
+  const antimatter = option.warhead === UnitType.HydrogenBomb;
+  const seconds = Math.max(
+    0,
+    Math.ceil((option.expiresTick - params.game.ticks()) / 10),
+  );
+  return {
+    id: Slot.Attack,
+    name: "punish",
+    icon: targetIcon,
+    color: antimatter ? COLORS.punishAntimatter : COLORS.punishNuclear,
+    tooltipItems: [
+      {
+        text: translateText("dark_star.punish_tooltip", {
+          name: target?.displayName() ?? "",
+          warhead: translateText(
+            antimatter
+              ? "dark_star.warhead_antimatter"
+              : "dark_star.warhead_nuclear",
+          ),
+        }),
+        className: "text-white font-bold",
+      },
+      {
+        text: translateText("dark_star.punish_levy", {
+          percent: option.levyPercent,
+          troops: renderTroops(option.levyTroops),
+        }),
+        className: antimatter ? "text-slate-100" : "text-red-300",
+      },
+      {
+        text: translateText("dark_star.punish_expires", { seconds }),
+        className: "text-yellow-300",
+      },
+      {
+        text: translateText("dark_star.punish_description"),
+        className: "description",
+      },
+    ],
+    disabled: () =>
+      params.game.inSpawnPhase() || target === null || seconds <= 0,
+    action: () => {
+      params.playerActionHandler.handlePunitiveStrike(option.siloTile);
+      params.closeMenu();
+    },
+  };
+}
+
 export const centerButtonElement: CenterButtonElement = {
   disabled: (params: MenuElementParams): boolean => {
     const tileOwner = params.game.owner(params.tile);
@@ -1013,9 +1072,13 @@ export const rootMenuElement: MenuElement = {
               : inExtensionWindow
                 ? allyExtendElement
                 : allyRequestElement,
-            showDonateInsteadOfAttack
-              ? donateGoldRadialElement
-              : attackMenuElement,
+            // A flagged silo (H19): the throne's attack slot is Punish.
+            params.playerActions.punitiveStrike !== undefined &&
+            params.myPlayer.isHegemon()
+              ? punishMenuElement(params)
+              : showDonateInsteadOfAttack
+                ? donateGoldRadialElement
+                : attackMenuElement,
           ]),
     ];
 

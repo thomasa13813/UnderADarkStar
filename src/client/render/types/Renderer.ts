@@ -129,6 +129,11 @@ export interface UnitState {
   samUpgradeStartRange: number | null;
   samUpgradeTargetLevel: number | null;
   samUpgradeDuration: number | null;
+  // Silos only (H19): flagged by a missile launch — 1 = Nuclear, 2 =
+  // Antimatter — until the tick. Optional: test fixtures build partial
+  // states.
+  punitiveWarhead?: number | null;
+  punitiveExpiresTick?: number | null;
 }
 
 /** Minimal dead-unit data needed by the FX pass. */

@@ -63,6 +63,7 @@ import {
   SendBoatAttackIntentEvent,
   SendBreakAllianceIntentEvent,
   SendHashEvent,
+  SendPunitiveStrikeIntentEvent,
   SendSpawnIntentEvent,
   SendUpgradeStructureIntentEvent,
   Transport,
@@ -72,6 +73,10 @@ import { WebGLFrameBuilder } from "./WebGLFrameBuilder";
 import { MapLayerController } from "./controllers/MapLayerController";
 import { createRenderer, GameRenderer } from "./hud/GameRenderer";
 import { goldRateTracker } from "./hud/layers/lib/GoldRateTracker";
+import {
+  badgeWorldRadius,
+  badgeWorldStroke,
+} from "./render/frame/derive/NukeTelegraphs";
 import {
   applyGraphicsOverrides,
   createRenderSettings,
@@ -88,7 +93,7 @@ import { ALL_UNIT_TYPES, UnitState } from "./render/types";
 import { audioMixer, initAudioMixer } from "./sound/AudioMixer";
 import { SoundManager } from "./sound/SoundManager";
 import { themeProvider } from "./theme/ThemeProvider";
-import { GameView, PlayerView } from "./view";
+import { GameView, PlayerView, UnitView } from "./view";
 
 export interface LobbyConfig {
   cosmetics: PlayerCosmeticRefs;
@@ -904,6 +909,8 @@ async function createClientGame(
 export class ClientGameRunner {
   private myPlayer: PlayerView | null = null;
   private isActive = false;
+  // For hit-testing a click against a flagged silo's badge (H19).
+  private badgeSettings: RenderSettings | null = null;
 
   private turnsSeen = 0;
   private lastMousePosition: { x: number; y: number } | null = null;
@@ -1216,10 +1223,23 @@ export class ClientGameRunner {
       if (myPlayer === null) return;
       this.myPlayer = myPlayer;
     }
+    // The throne's click anywhere on a flagged silo's badge IS the punitive
+    // strike (H19): hit-tested here against the ring as drawn at this zoom,
+    // and sent with the silo's own tile. The radial's Punish slot is the
+    // other way in.
+    const badged = this.flaggedSiloUnderClick(cell.x, cell.y);
+    if (badged !== null) {
+      this.eventBus.emit(new SendPunitiveStrikeIntentEvent(badged.tile()));
+      return;
+    }
     this.myPlayer
       .actions(tile, [UnitType.TransportShip])
       .then((actions) => {
-        if (actions.canAttack) {
+        if (actions.punitiveStrike !== undefined) {
+          this.eventBus.emit(
+            new SendPunitiveStrikeIntentEvent(actions.punitiveStrike.siloTile),
+          );
+        } else if (actions.canAttack) {
           this.eventBus.emit(
             new SendAttackIntentEvent(
               this.gameView.owner(tile).id(),
@@ -1233,6 +1253,41 @@ export class ClientGameRunner {
       .catch((error) => {
         console.warn("Failed to check boat attack actions:", error);
       });
+  }
+
+  // The flagged silo whose badge ring, as drawn at the current zoom, covers
+  // the clicked world point — for the Hegemon only, the nearest if rings
+  // overlap. The ring is the click target, not the silo's one tile.
+  private flaggedSiloUnderClick(x: number, y: number): UnitView | null {
+    if (this.myPlayer === null || !this.myPlayer.isHegemon()) return null;
+    const zoom = this.renderer.transformHandler.scale;
+    // The defaults: graphics overrides never touch the icon curve.
+    this.badgeSettings ??= createRenderSettings();
+    const settings = this.badgeSettings;
+    const reach =
+      badgeWorldRadius(settings.structure, zoom) +
+      badgeWorldStroke(settings.nukeTelegraph.strokeWidth, zoom);
+    const ticks = this.gameView.ticks();
+    let best: UnitView | null = null;
+    let bestD2 = reach * reach;
+    for (const silo of this.gameView.units(UnitType.MissileSilo)) {
+      const s = silo.state;
+      if (
+        !s.isActive ||
+        (s.punitiveWarhead ?? null) === null ||
+        (s.punitiveExpiresTick ?? 0) <= ticks
+      ) {
+        continue;
+      }
+      const dx = this.gameView.x(silo.tile()) + 0.5 - x;
+      const dy = this.gameView.y(silo.tile()) + 0.5 - y;
+      const d2 = dx * dx + dy * dy;
+      if (d2 <= bestD2) {
+        best = silo;
+        bestD2 = d2;
+      }
+    }
+    return best;
   }
 
   private autoUpgradeEvent(event: AutoUpgradeEvent) {

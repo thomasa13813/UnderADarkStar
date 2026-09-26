@@ -91,6 +91,9 @@ export class Executor {
       case "strike":
         // The Hegemon's direct strike (H8); RazeExecution refuses anyone else.
         return new RazeExecution(player, intent.tile, intent.troops);
+      case "punitive_strike":
+        // The answer to a missile launch (H19), levied from the galaxy.
+        return new RazeExecution(player, intent.tile, null, true);
       case "gift_unit":
         // A gift (H18); GiftExecution refuses anyone but the Hegemon.
         return new GiftExecution(

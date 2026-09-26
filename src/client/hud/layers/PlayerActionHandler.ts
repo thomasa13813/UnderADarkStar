@@ -12,6 +12,7 @@ import {
   SendEmbargoIntentEvent,
   SendEmojiIntentEvent,
   SendGateShotIntentEvent,
+  SendPunitiveStrikeIntentEvent,
   SendSpawnIntentEvent,
   SendStrikeIntentEvent,
   SendTargetPlayerIntentEvent,
@@ -51,6 +52,11 @@ export class PlayerActionHandler {
         this.uiState.attackRatio * player.troops(),
       ),
     );
+  }
+
+  // A punitive strike (H19): the galaxy's levy, no slider.
+  handlePunitiveStrike(targetTile: TileRef) {
+    this.eventBus.emit(new SendPunitiveStrikeIntentEvent(targetTile));
   }
 
   // A stargate shot (C4): sized by the troop slider like a boat.

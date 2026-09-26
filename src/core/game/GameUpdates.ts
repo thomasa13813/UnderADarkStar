@@ -8,6 +8,7 @@ import {
   NukeState,
   PlayerID,
   PlayerType,
+  PunitiveFlag,
   SamLauncherState,
   Team,
   Tick,
@@ -203,6 +204,8 @@ export interface UnitUpdate {
   trainType?: TrainType; // Only for trains
   loaded?: boolean; // Only for trains
   samUpgrade?: SamLauncherState;
+  // Silos only: exposed to a punitive strike (H19) until this tick.
+  punitiveFlag?: PunitiveFlag;
 }
 
 export interface AttackUpdate {
@@ -213,6 +216,8 @@ export interface AttackUpdate {
   retreating: boolean;
   // A Hegemon's strike (RazeExecution); absent on every other attack.
   isStrike?: true;
+  // A punitive strike (H19): levied, radius-capped, never recalled.
+  isPunitive?: true;
   // Strikes only: where it falls, and — while still in flight — when.
   aimTile?: TileRef;
   landsAtTick?: number;

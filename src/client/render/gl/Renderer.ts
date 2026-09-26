@@ -1397,7 +1397,7 @@ export class GPURenderer {
     this.updateSelectionBox();
     this.selectionBoxPass.draw(cam, this.frameTick);
     this.moveIndicatorPass.draw(cam, zoom);
-    this.nukeTelegraphPass.draw(cam);
+    this.nukeTelegraphPass.draw(cam, zoom);
     if (pe.trail) this.trailPass.draw(cam);
     // Spiral vortexes sit above the plain trails, below the missiles that
     // trail them. Skipped in alt view — the strategic overlay stays effects-free.

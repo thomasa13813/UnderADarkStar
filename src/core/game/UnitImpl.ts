@@ -4,6 +4,7 @@ import {
   MessageType,
   NukeState,
   Player,
+  PunitiveFlag,
   SamLauncherState,
   TerraNullius,
   Tick,
@@ -13,6 +14,7 @@ import {
   Unit,
   UnitInfo,
   UnitType,
+  Warhead,
   WarshipState,
 } from "./Game";
 import { GameImpl } from "./GameImpl";
@@ -40,6 +42,8 @@ export class UnitImpl implements Unit {
   private _troops: number;
   // Number of missiles in cooldown, if empty all missiles are ready.
   private _missileTimerQueue: number[] = [];
+  // Silos only: exposed to a punitive strike (H19) since a launch.
+  private _punitiveFlag: PunitiveFlag | undefined;
   private _hasTrainStation: boolean = false;
   private _level: number = 1;
   private _targetable: boolean = true;
@@ -175,6 +179,7 @@ export class UnitImpl implements Unit {
       targetUnitId: this._targetUnit?.id() ?? undefined,
       targetTile: this.targetTile() ?? undefined,
       missileTimerQueue: this._missileTimerQueue,
+      punitiveFlag: this.punitiveFlag(),
       level: this.level(),
       hasTrainStation: this._hasTrainStation,
       trainType: this._trainType,
@@ -536,6 +541,40 @@ export class UnitImpl implements Unit {
 
   missileTimerQueue(): number[] {
     return this._missileTimerQueue;
+  }
+
+  // The flag lives until punitiveFlagSeconds after the LATEST launch, and
+  // carries the severer warhead fired meanwhile (the Antimatter Warhead
+  // outranks the Nuclear one), not the most recent.
+  punitiveFlag(): PunitiveFlag | undefined {
+    const flag = this._punitiveFlag;
+    if (flag === undefined) return undefined;
+    if (this.mg.ticks() >= flag.expiresTick || !this._active) {
+      this._punitiveFlag = undefined;
+      return undefined;
+    }
+    return flag;
+  }
+
+  flagForPunishment(warhead: Warhead): void {
+    const current = this.punitiveFlag();
+    const severer =
+      current?.warhead === UnitType.HydrogenBomb
+        ? UnitType.HydrogenBomb
+        : warhead;
+    this._punitiveFlag = {
+      warhead: severer,
+      expiresTick:
+        this.mg.ticks() +
+        this.mg.config().hegemonConfig().punitiveFlagSeconds * 10,
+    };
+    this.mg.addUpdate(this.toUpdate());
+  }
+
+  clearPunitiveFlag(): void {
+    if (this._punitiveFlag === undefined) return;
+    this._punitiveFlag = undefined;
+    this.mg.addUpdate(this.toUpdate());
   }
 
   samLauncherState(): SamLauncherState | undefined {

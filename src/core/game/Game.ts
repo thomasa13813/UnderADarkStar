@@ -428,6 +428,10 @@ export interface Attack {
   // it holds, and the target fights it by taking that land back.
   isStrike(): boolean;
   markStrike(): void;
+  // A punitive strike (H19): a strike that answers a missile launch, funded
+  // by the galaxy's levy; it cannot be recalled.
+  isPunitive(): boolean;
+  markPunitive(): void;
 }
 
 // A Hegemon strike between launch and landing (RazeExecution).
@@ -438,6 +442,18 @@ export interface StrikeInFlight {
   aimTile(): TileRef;
   landsAtTick(): number;
   recall(): void;
+  isPunitive(): boolean;
+}
+
+// The warheads a silo fires: the atom bomb is the Nuclear Warhead, the
+// hydrogen bomb the Antimatter Warhead (S6).
+export type Warhead = UnitType.AtomBomb | UnitType.HydrogenBomb;
+
+// A silo exposed to a punitive strike (H19): flagged by its latest missile
+// launch, for the severer of the warheads it has fired since.
+export interface PunitiveFlag {
+  warhead: Warhead;
+  expiresTick: Tick;
 }
 
 // A Hegemon strike from launch until its bubble has popped (RazeExecution).
@@ -606,6 +622,11 @@ export interface Unit {
   reloadMissile(): void;
   isInCooldown(): boolean;
   missileTimerQueue(): number[];
+  // Punitive strikes (H19), silos only: the flag a launch left, until it
+  // expires or a strike on the owner clears it.
+  punitiveFlag(): PunitiveFlag | undefined;
+  flagForPunishment(warhead: Warhead): void;
+  clearPunitiveFlag(): void;
   samLauncherState(): SamLauncherState | undefined;
 
   // Trade Ships
@@ -1083,6 +1104,22 @@ export interface PlayerActions {
   // challenger's — `buildableUnits` is then that host's list with the Hegemon
   // paying, for a gift (H18).
   giftHost?: PlayerID;
+  // DarkStar: set when the querying player is the Hegemon and the tile holds
+  // a challenger's silo flagged by a missile launch (H19).
+  punitiveStrike?: PunitiveStrikeOption;
+}
+
+// A flagged silo the Hegemon may punish: the warhead that flagged it, when
+// the flag expires, and the levy the strike would take from every challenger.
+export interface PunitiveStrikeOption {
+  // The silo the click means (the nearest flagged one within reach of the
+  // clicked tile); the strike is aimed here.
+  siloTile: TileRef;
+  warhead: Warhead;
+  expiresTick: Tick;
+  levyPercent: number;
+  // The levy as it stands now, in troops.
+  levyTroops: number;
 }
 
 // The nearest of a player's built stargates whose range covers a tile:

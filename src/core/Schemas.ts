@@ -57,13 +57,15 @@ export type Intent =
   | ToggleGameStartTimer
   | StrikeIntent
   | GateShotIntent
-  | GiftUnitIntent;
+  | GiftUnitIntent
+  | PunitiveStrikeIntent;
 
 export type AttackIntent = z.infer<typeof AttackIntentSchema>;
 export type CancelAttackIntent = z.infer<typeof CancelAttackIntentSchema>;
 export type SpawnIntent = z.infer<typeof SpawnIntentSchema>;
 export type BoatAttackIntent = z.infer<typeof BoatAttackIntentSchema>;
 export type StrikeIntent = z.infer<typeof StrikeIntentSchema>;
+export type PunitiveStrikeIntent = z.infer<typeof PunitiveStrikeIntentSchema>;
 export type GateShotIntent = z.infer<typeof GateShotIntentSchema>;
 export type GiftUnitIntent = z.infer<typeof GiftUnitIntentSchema>;
 export type EmbargoAllIntent = z.infer<typeof EmbargoAllIntentSchema>;
@@ -659,6 +661,13 @@ export const StrikeIntentSchema = z.object({
   troops: zb.float({ min: 0 }),
 });
 
+// A punitive strike (H19): the Hegemon answers a missile launch by striking
+// the flagged silo on this tile, with troops levied from every challenger.
+export const PunitiveStrikeIntentSchema = z.object({
+  type: z.literal("punitive_strike"),
+  tile: zb.uint(),
+});
+
 // A stargate shot (C4): troops fired from the nearest ready gate in range at
 // a tile, landing as a fleet does.
 export const GateShotIntentSchema = z.object({
@@ -838,6 +847,7 @@ export const IntentSchema = z.discriminatedUnion("type", [
   StrikeIntentSchema,
   GateShotIntentSchema,
   GiftUnitIntentSchema,
+  PunitiveStrikeIntentSchema,
 ]);
 
 // StampedIntent = Intent with server-stamped clientID (used in turns and execution)

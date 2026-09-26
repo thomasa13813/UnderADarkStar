@@ -110,6 +110,11 @@ export class SendStrikeIntentEvent implements GameEvent {
   ) {}
 }
 
+// A punitive strike on the flagged silo at a tile (H19).
+export class SendPunitiveStrikeIntentEvent implements GameEvent {
+  constructor(public readonly tile: TileRef) {}
+}
+
 // A stargate shot at a tile (C4): the nearest ready gate in range fires it.
 export class SendGateShotIntentEvent implements GameEvent {
   constructor(
@@ -326,6 +331,9 @@ export class Transport {
       this.onSendBoatAttackIntent(e),
     );
     this.subscribe(SendStrikeIntentEvent, (e) => this.onSendStrikeIntent(e));
+    this.subscribe(SendPunitiveStrikeIntentEvent, (e) =>
+      this.onSendPunitiveStrikeIntent(e),
+    );
     this.subscribe(SendGateShotIntentEvent, (e) =>
       this.onSendGateShotIntent(e),
     );
@@ -789,6 +797,13 @@ export class Transport {
       type: "strike",
       tile: event.tile,
       troops: event.troops,
+    });
+  }
+
+  private onSendPunitiveStrikeIntent(event: SendPunitiveStrikeIntentEvent) {
+    this.sendIntent({
+      type: "punitive_strike",
+      tile: event.tile,
     });
   }
 

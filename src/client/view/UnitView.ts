@@ -13,6 +13,12 @@ import { TrainType as RendererTrainType } from "../render/types";
 import { GameView } from "./GameView";
 import { PlayerView } from "./PlayerView";
 
+// The flag on a silo (H19) for the renderer: 1 = Nuclear, 2 = Antimatter.
+function punitiveWarhead(u: UnitUpdate): number | null {
+  if (u.punitiveFlag === undefined) return null;
+  return u.punitiveFlag.warhead === UnitType.HydrogenBomb ? 2 : 1;
+}
+
 /**
  * Convert engine TrainType (string enum) to renderer's numeric encoding.
  * UnitState uses 0/1/2 so it can be uploaded to GPU buffers without lookup.
@@ -76,6 +82,8 @@ function unitStateFromUpdate(u: UnitUpdate): UnitState {
     samUpgradeStartRange: u.samUpgrade?.startRange ?? null,
     samUpgradeTargetLevel: u.samUpgrade?.targetLevel ?? null,
     samUpgradeDuration: u.samUpgrade?.duration ?? null,
+    punitiveWarhead: punitiveWarhead(u),
+    punitiveExpiresTick: u.punitiveFlag?.expiresTick ?? null,
   };
 }
 
@@ -109,6 +117,8 @@ function applyUpdateInPlace(target: UnitState, u: UnitUpdate): void {
   target.samUpgradeStartRange = u.samUpgrade?.startRange ?? null;
   target.samUpgradeTargetLevel = u.samUpgrade?.targetLevel ?? null;
   target.samUpgradeDuration = u.samUpgrade?.duration ?? null;
+  target.punitiveWarhead = punitiveWarhead(u);
+  target.punitiveExpiresTick = u.punitiveFlag?.expiresTick ?? null;
 }
 
 export class UnitView {

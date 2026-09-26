@@ -97,11 +97,17 @@ const EMPTY_ATTACK_UPDATES: AttackUpdate[] = [];
 const EMPTY_ALLIANCE_VIEWS: AllianceView[] = [];
 const NO_STRIKE_FIELDS = {};
 
-function strikeFields(a: Attack): Pick<AttackUpdate, "isStrike" | "aimTile"> {
+function strikeFields(
+  a: Attack,
+): Pick<AttackUpdate, "isStrike" | "isPunitive" | "aimTile"> {
   // A landed strike's source tile is where it fell (RazeExecution).
-  return a.isStrike()
-    ? { isStrike: true, aimTile: a.sourceTile() ?? undefined }
-    : NO_STRIKE_FIELDS;
+  if (!a.isStrike()) return NO_STRIKE_FIELDS;
+  const fields: Pick<AttackUpdate, "isStrike" | "isPunitive" | "aimTile"> = {
+    isStrike: true,
+    aimTile: a.sourceTile() ?? undefined,
+  };
+  if (a.isPunitive()) fields.isPunitive = true;
+  return fields;
 }
 const EMPTY_EMOJIS: EmojiMessage[] = [];
 const EMPTY_EMBARGOES = new Set<string>();
@@ -377,6 +383,7 @@ export class PlayerImpl implements Player {
         id: s.id(),
         retreating: false,
         isStrike: true,
+        ...(s.isPunitive() ? { isPunitive: true as const } : {}),
         aimTile: s.aimTile(),
         landsAtTick: s.landsAtTick(),
       });
@@ -739,6 +746,8 @@ export class PlayerImpl implements Player {
       console.warn(`Didn't find outgoing attack with id ${id}`);
       return;
     }
+    // A punitive strike is the galaxy's, not the throne's to call home (H19).
+    if (attack.isPunitive()) return;
     attack.orderRetreat();
   }
   executeRetreat(id: string): void {
@@ -1533,6 +1542,16 @@ export class PlayerImpl implements Player {
     // on a strike's bubble. What it builds, it builds as a gift its host owns
     // (H18), which goes through the host's own placement, not this check.
     if (this.isHegemon() && Structures.has(unitType)) {
+      return false;
+    }
+    // Nor does it fire nukes: a silo its strike captured is not its to use
+    // (H19).
+    if (
+      this.isHegemon() &&
+      (unitType === UnitType.AtomBomb ||
+        unitType === UnitType.HydrogenBomb ||
+        unitType === UnitType.MIRV)
+    ) {
       return false;
     }
     const cost = knownCost ?? this.mg.unitInfo(unitType).cost(this.mg, this);

@@ -7,11 +7,14 @@ import {
   HegemonStrike,
   MessageType,
   Player,
+  PunitiveFlag,
+  PunitiveStrikeOption,
   StrikeInFlight,
   TerrainType,
   TrajectoryTile,
   Unit,
   UnitType,
+  Warhead,
 } from "../game/Game";
 import { GameMap, TileRef } from "../game/GameMap";
 import { UniversalPathFinding } from "../pathfinding/PathFinder";
@@ -49,6 +52,16 @@ const malusForRetreat = 25;
 // and by tyranny: the smaller the target, the more each tile costs, without
 // limit; at the floor a player cannot be struck at all, so a strike never
 // eliminates anyone.
+//
+// A PUNITIVE strike (H19) is the same strike with the rules of a punishment:
+// it answers a missile launch, aimed at the silo that fired (flagged by
+// NukeExecution), and its troops are a LEVY on every living challenger's
+// troops at home rather than the throne's own. It pays no tyranny multiplier
+// but razes only within punitiveRadius of the silo; when nothing within
+// reach is left (or the target is down to the tyranny floor) it HALTS for
+// punitiveHaltSeconds, resuming if the target retakes a bubble tile in that
+// time, and otherwise pops. It cannot be recalled, and whatever troops are
+// left when it ends are burnt — never the throne's.
 export class RazeExecution implements Execution, StrikeInFlight, HegemonStrike {
   private active = true;
   private mg: Game;
@@ -71,11 +84,81 @@ export class RazeExecution implements Execution, StrikeInFlight, HegemonStrike {
   private nbuf: TileRef[] = [0, 0, 0, 0];
   private nbuf2: TileRef[] = [0, 0, 0, 0];
 
+  // Punitive strikes (H19): the flag answered, the reach and the halt.
+  private punitive: {
+    warhead: Warhead;
+    radiusSquared: number;
+    haltTicks: number;
+  } | null = null;
+  private haltedAt: number | null = null;
+
   constructor(
     private hegemon: Player,
     private ref: TileRef,
     private troops: number | null = null,
+    private punitiveStrike = false,
   ) {}
+
+  // The levy a warhead draws, as a share of each challenger's troops at home.
+  static levyPercent(mg: Game, warhead: Warhead): number {
+    const cfg = mg.config().hegemonConfig();
+    return warhead === UnitType.HydrogenBomb
+      ? cfg.punitiveLevyPercentAntimatter
+      : cfg.punitiveLevyPercentNuclear;
+  }
+
+  // What the galaxy would pay right now for a strike on this warhead.
+  static levyTroops(mg: Game, warhead: Warhead): number {
+    const percent = RazeExecution.levyPercent(mg, warhead);
+    let total = 0;
+    for (const p of mg.players()) {
+      if (p.isHegemon() || !p.isAlive()) continue;
+      total += Math.floor((p.troops() * percent) / 100);
+    }
+    return total;
+  }
+
+  // The punitive strike the Hegemon may order on a tile: the owner's flagged
+  // silo standing there, while no strike on the owner is alive.
+  // A silo stands on one tile but is drawn, with its badge, many tiles wide
+  // (the ring's footprint grows as the camera zooms out). The client
+  // hit-tests a click against the ring as drawn and sends the silo's tile;
+  // this is the worker's own reach for a tile it is asked about (the radial
+  // on a nearby tile, an intent from an older client): the nearest flagged
+  // silo within this many tiles is the one meant.
+  static readonly CLICK_RADIUS = 12;
+
+  // The flagged silo a click on this tile means: the nearest one within
+  // CLICK_RADIUS whose owner is a challenger not already under a strike.
+  static flaggedSiloNear(mg: Game, tile: TileRef): Unit | null {
+    if (mg.hegemon() === null || !mg.isValidRef(tile)) return null;
+    const r2 = RazeExecution.CLICK_RADIUS * RazeExecution.CLICK_RADIUS;
+    let best: Unit | null = null;
+    let bestD2 = Infinity;
+    for (const silo of mg.units(UnitType.MissileSilo)) {
+      if (!silo.isActive() || silo.owner().isHegemon()) continue;
+      if (silo.punitiveFlag() === undefined) continue;
+      const d2 = mg.euclideanDistSquared(silo.tile(), tile);
+      if (d2 > r2 || d2 >= bestD2) continue;
+      if (mg.hegemonStrikeOn(silo.owner())) continue;
+      best = silo;
+      bestD2 = d2;
+    }
+    return best;
+  }
+
+  static punitiveOption(mg: Game, tile: TileRef): PunitiveStrikeOption | null {
+    const silo = RazeExecution.flaggedSiloNear(mg, tile);
+    const flag = silo?.punitiveFlag();
+    if (silo === null || flag === undefined) return null;
+    return {
+      siloTile: silo.tile(),
+      warhead: flag.warhead,
+      expiresTick: flag.expiresTick,
+      levyPercent: RazeExecution.levyPercent(mg, flag.warhead),
+      levyTroops: RazeExecution.levyTroops(mg, flag.warhead),
+    };
+  }
 
   activeDuringSpawnPhase(): boolean {
     return false;
@@ -95,6 +178,27 @@ export class RazeExecution implements Execution, StrikeInFlight, HegemonStrike {
       this.active = false;
       return;
     }
+    // A punitive strike answers a flag on the silo nearest the clicked tile
+    // (H19) and is aimed at that silo; no tyranny check — its reach is
+    // capped instead.
+    let flag: PunitiveFlag | undefined;
+    if (this.punitiveStrike) {
+      const silo = RazeExecution.flaggedSiloNear(mg, this.ref);
+      flag = silo?.punitiveFlag();
+      if (silo === null || flag === undefined) {
+        const clicked = mg.owner(this.ref);
+        mg.displayMessage(
+          "events_display.dark_star_punitive_none",
+          MessageType.ATTACK_FAILED,
+          this.hegemon.id(),
+          undefined,
+          { name: clicked.isPlayer() ? clicked.displayName() : "" },
+        );
+        this.active = false;
+        return;
+      }
+      this.ref = silo.tile();
+    }
     const owner = mg.owner(this.ref);
     if (
       !owner.isPlayer() ||
@@ -104,7 +208,7 @@ export class RazeExecution implements Execution, StrikeInFlight, HegemonStrike {
       this.active = false;
       return;
     }
-    if (this.tyrannyPercent(owner) === null) {
+    if (!this.punitiveStrike && this.tyrannyPercent(owner) === null) {
       mg.displayMessage(
         "events_display.dark_star_strike_tyranny",
         MessageType.ATTACK_FAILED,
@@ -131,10 +235,24 @@ export class RazeExecution implements Execution, StrikeInFlight, HegemonStrike {
     this.targetSmallID = owner.smallID();
     this.hegemonSmallID = this.hegemon.smallID();
 
-    this.troops ??= mg.config().attackAmount(this.hegemon, owner);
-    this.troops = this.hegemon.removeTroops(
-      Math.min(this.hegemon.troops(), this.troops),
-    );
+    if (flag !== undefined) {
+      const cfg = mg.config().hegemonConfig();
+      this.punitive = {
+        warhead: flag.warhead,
+        radiusSquared: cfg.punitiveRadius * cfg.punitiveRadius,
+        haltTicks: cfg.punitiveHaltSeconds * 10,
+      };
+      this.troops = this.levy(owner, flag.warhead);
+      // Answered: the player's other flags are spent with this one.
+      for (const silo of owner.units(UnitType.MissileSilo)) {
+        silo.clearPunitiveFlag();
+      }
+    } else {
+      this.troops ??= mg.config().attackAmount(this.hegemon, owner);
+      this.troops = this.hegemon.removeTroops(
+        Math.min(this.hegemon.troops(), this.troops),
+      );
+    }
     if (this.troops < 1) {
       this.active = false;
       return;
@@ -143,7 +261,9 @@ export class RazeExecution implements Execution, StrikeInFlight, HegemonStrike {
     this.launch(ticks, mg.ref(geometry.cx, geometry.cy));
 
     mg.displayMessage(
-      "events_display.dark_star_strike_inbound",
+      this.punitive !== null
+        ? "events_display.dark_star_punitive_inbound"
+        : "events_display.dark_star_strike_inbound",
       MessageType.NAVAL_INVASION_INBOUND,
       owner.id(),
       undefined,
@@ -260,9 +380,14 @@ export class RazeExecution implements Execution, StrikeInFlight, HegemonStrike {
     return this.bubble.has(tile);
   }
 
+  isPunitive(): boolean {
+    return this.punitiveStrike;
+  }
+
   // Bring the strike home now (the AI's recall; a human cancels the attack).
+  // A punitive strike is the galaxy's and never comes home (H19).
   recall(): void {
-    if (!this.active) return;
+    if (!this.active || this.punitiveStrike) return;
     if (this.attack === null) {
       this.comeHome(this.troops ?? 0);
       return;
@@ -323,6 +448,26 @@ export class RazeExecution implements Execution, StrikeInFlight, HegemonStrike {
     const cfg = this.mg.config().hegemonConfig();
     // The target's counter-attack spends these too (AttackExecution).
     let troopCount = attack.troops();
+
+    // A halted punitive strike (H19): the target fighting back resumes it;
+    // an undisturbed halt, or the bubble ground down, ends it.
+    if (this.haltedAt !== null && this.punitive !== null) {
+      if (troopCount >= 1 && this.bubbleBreached()) {
+        this.haltedAt = null;
+        this.refreshFrontier();
+      } else if (
+        troopCount < 1 ||
+        ticks - this.haltedAt >= this.punitive.haltTicks
+      ) {
+        this.pop();
+        attack.delete();
+        this.active = false;
+        return;
+      } else {
+        return;
+      }
+    }
+
     const borderSize = attack.borderSize() + this.random.nextInt(0, 5);
     let tickBudget = 1;
     while (tickBudget > 0) {
@@ -332,15 +477,25 @@ export class RazeExecution implements Execution, StrikeInFlight, HegemonStrike {
         this.active = false;
         return;
       }
-      const tyranny = this.tyrannyPercent(this.target);
+      let tyranny = this.tyrannyPercent(this.target);
+      if (tyranny !== null && this.punitive !== null) tyranny = 100;
       if (tyranny === null) {
-        // Struck down to the floor: the target is beneath the throne's notice.
+        // Struck down to the floor: the target is beneath the throne's notice
+        // — a punitive strike holds there, then pops.
+        if (this.punitive !== null) {
+          this.halt(ticks);
+          return;
+        }
         this.comeHome(troopCount);
         return;
       }
       if (this.toConquer.size() === 0) {
         this.refreshFrontier();
         if (this.toConquer.size() === 0) {
+          if (this.punitive !== null) {
+            this.halt(ticks);
+            return;
+          }
           this.comeHome(troopCount);
           return;
         }
@@ -388,7 +543,11 @@ export class RazeExecution implements Execution, StrikeInFlight, HegemonStrike {
       new Set<TileRef>(),
       this.strikeID,
     );
-    this.attack.markStrike();
+    if (this.punitive !== null) {
+      this.attack.markPunitive();
+    } else {
+      this.attack.markStrike();
+    }
     // The impact: the aimed tile is taken outright, and the bubble grows from it.
     this.hegemon.conquer(this.ref);
     this.bubble.add(this.ref);
@@ -447,12 +606,49 @@ export class RazeExecution implements Execution, StrikeInFlight, HegemonStrike {
     }
   }
 
+  // Survivors return to the Dark Star — unless they were levied (H19): a
+  // punitive strike's leftover troops are burnt, never the throne's.
   private comeHome(troops: number): void {
     this.landed();
     this.pop();
-    this.hegemon.addTroops(troops);
+    if (!this.punitiveStrike) this.hegemon.addTroops(troops);
     this.attack?.delete();
     this.active = false;
+  }
+
+  // A punitive strike with nothing left within reach waits out the halt,
+  // then pops; the target retaking any bubble tile meanwhile resumes it.
+  private halt(ticks: number): void {
+    this.haltedAt = ticks;
+  }
+
+  private bubbleBreached(): boolean {
+    for (const tile of this.bubble) {
+      if (this.map.ownerID(tile) !== this.hegemonSmallID) return true;
+    }
+    return false;
+  }
+
+  // The galaxy pays for a punitive strike (H19): a share of every living
+  // challenger's troops at home — the offender's and the victim's too, and
+  // Tribes' — each told what was taken and for whom.
+  private levy(offender: Player, warhead: Warhead): number {
+    const percent = RazeExecution.levyPercent(this.mg, warhead);
+    let total = 0;
+    for (const p of this.mg.players()) {
+      if (p.isHegemon() || !p.isAlive()) continue;
+      const share = Math.floor((p.troops() * percent) / 100);
+      if (share < 1) continue;
+      total += p.removeTroops(share);
+      this.mg.displayMessage(
+        "events_display.dark_star_levy",
+        MessageType.ATTACK_REQUEST,
+        p.id(),
+        undefined,
+        { name: offender.displayName(), troops: renderTroops(share) },
+      );
+    }
+    return total;
   }
 
   private tyrannyPercent(target: Player): number | null {
@@ -491,7 +687,11 @@ export class RazeExecution implements Execution, StrikeInFlight, HegemonStrike {
       const neighbor = this.nbuf[i];
       if (
         this.map.ownerID(neighbor) !== this.targetSmallID ||
-        this.mg.isInDarkStar(neighbor)
+        this.mg.isInDarkStar(neighbor) ||
+        // A punitive strike reaches only so far from the silo (H19).
+        (this.punitive !== null &&
+          this.map.euclideanDistSquared(neighbor, this.ref) >
+            this.punitive.radiusSquared)
       ) {
         continue;
       }

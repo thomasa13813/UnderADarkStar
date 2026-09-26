@@ -163,6 +163,9 @@ describe("No MIRVs under a Dark Star (S6)", () => {
     await start();
     const config = game.config();
     expect(config.isUnitDisabled(UnitType.MIRV)).toBe(true);
+    // SAMs go the same way (S6, 2026-09-26): the punishment is the deterrent.
+    expect(config.isUnitDisabled(UnitType.SAMLauncher)).toBe(true);
+    expect(east.canBuild(UnitType.SAMLauncher, homeTile(east))).toBe(false);
     expect(config.isUnitDisabled(UnitType.AtomBomb)).toBe(false);
     expect(config.isUnitDisabled(UnitType.HydrogenBomb)).toBe(false);
     const tile = homeTile(east);

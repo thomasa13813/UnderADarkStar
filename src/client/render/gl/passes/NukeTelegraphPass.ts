@@ -6,6 +6,10 @@
  * dashed ring). Similar to SAMRadiusPass but with different aesthetics.
  */
 
+import {
+  badgeWorldRadius,
+  badgeWorldStroke,
+} from "../../frame/derive/NukeTelegraphs";
 import type { NukeTelegraphData } from "../../types";
 import { DynamicInstanceBuffer } from "../DynamicBuffer";
 import type { RenderSettings } from "../RenderSettings";
@@ -31,6 +35,10 @@ export class NukeTelegraphPass {
   private uColorSelf: WebGLUniformLocation;
   private uColorAlly: WebGLUniformLocation;
   private uColorEnemy: WebGLUniformLocation;
+  // Punitive-strike badges (DarkStar H19): a ring sized like the structure
+  // icon it surrounds, so it stays visible zoomed out.
+  private uBadgeRadius: WebGLUniformLocation;
+  private uBadgeStroke: WebGLUniformLocation;
 
   private instanceCount = 0;
   private startTime = performance.now();
@@ -53,6 +61,8 @@ export class NukeTelegraphPass {
     this.uColorSelf = gl.getUniformLocation(this.program, "uColorSelf")!;
     this.uColorAlly = gl.getUniformLocation(this.program, "uColorAlly")!;
     this.uColorEnemy = gl.getUniformLocation(this.program, "uColorEnemy")!;
+    this.uBadgeRadius = gl.getUniformLocation(this.program, "uBadgeRadius")!;
+    this.uBadgeStroke = gl.getUniformLocation(this.program, "uBadgeStroke")!;
 
     // VAO
     this.vao = gl.createVertexArray()!;
@@ -120,7 +130,7 @@ export class NukeTelegraphPass {
     }
   }
 
-  draw(cameraMatrix: Float32Array): void {
+  draw(cameraMatrix: Float32Array, zoom = 1): void {
     if (this.instanceCount === 0) return;
 
     const gl = this.gl;
@@ -130,6 +140,13 @@ export class NukeTelegraphPass {
     gl.useProgram(this.program);
     gl.uniformMatrix3fv(this.uCamera, false, cameraMatrix);
     gl.uniform1f(this.uTime, time);
+    // Badge rings (DarkStar H19) are sized from the structure icon's curve,
+    // the same formula the click handler hit-tests with.
+    gl.uniform1f(
+      this.uBadgeRadius,
+      badgeWorldRadius(this.settings.structure, zoom),
+    );
+    gl.uniform1f(this.uBadgeStroke, badgeWorldStroke(s.strokeWidth, zoom));
     gl.uniform4f(
       this.uTelegraphStyle,
       s.strokeWidth,

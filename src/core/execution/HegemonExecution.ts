@@ -4,6 +4,7 @@ import {
   GameType,
   Player,
   PlayerType,
+  PunitiveFlag,
   Unit,
   UnitType,
 } from "../game/Game";
@@ -29,7 +30,12 @@ import { RazeExecution } from "./RazeExecution";
 // Opposing attacks cancel troop for troop, so the counter-attack spends the
 // Hegemon's army directly against the invader's.
 //
-// It also drives an AI Hegemon's punitive strikes (H11): see punish().
+// It also drives an AI Hegemon's leveller strikes (H11, punish()) and its
+// answers to missile launches (H19, punishLaunches()).
+function severity(flag: PunitiveFlag): number {
+  return flag.warhead === UnitType.HydrogenBomb ? 2 : 1;
+}
+
 export class HegemonExecution implements Execution {
   private active = true;
   private mg: Game | null = null;
@@ -41,7 +47,7 @@ export class HegemonExecution implements Execution {
   // While stalled, the Hegemon's troops are pinned here: anything above is sent.
   private stallTroops: number | null = null;
 
-  // An AI Hegemon's punitive strike (H11), one at a time.
+  // An AI Hegemon's leveller strike (H11), one at a time.
   private strike: RazeExecution | null = null;
   private fullSinceTick: number | null = null;
   private lastStrikeEndTick = 0;
@@ -72,6 +78,40 @@ export class HegemonExecution implements Execution {
     this.respondToInvasion(hegemon, ticks);
     if (hegemon.type() !== PlayerType.Human) {
       this.punish(hegemon, ticks);
+      this.punishLaunches(hegemon, ticks);
+    }
+  }
+
+  // H19: an AI Hegemon answers every flagged silo it may — the levy costs
+  // the throne nothing — except on a challenger too small to be worth the
+  // galaxy's troops. Of a player's flags, the severer first, then the
+  // freshest.
+  private punishLaunches(hegemon: Player, ticks: number): void {
+    const mg = this.mg!;
+    if (ticks % 10 !== 5) return;
+    const cfg = mg.config().hegemonConfig();
+    const minLand = (mg.numLandTiles() * cfg.punitiveAIMinLandPermille) / 1000;
+    for (const p of mg.players()) {
+      if (p === hegemon || !p.isAlive() || mg.hegemonStrikeOn(p)) continue;
+      if (p.numTilesOwned() - p.domainTilesHeld() < minLand) continue;
+      let best: Unit | null = null;
+      let bestFlag: PunitiveFlag | null = null;
+      for (const silo of p.units(UnitType.MissileSilo)) {
+        const flag = silo.punitiveFlag();
+        if (flag === undefined) continue;
+        if (
+          bestFlag === null ||
+          severity(flag) > severity(bestFlag) ||
+          (severity(flag) === severity(bestFlag) &&
+            flag.expiresTick > bestFlag.expiresTick)
+        ) {
+          best = silo;
+          bestFlag = flag;
+        }
+      }
+      if (best !== null) {
+        mg.addExecution(new RazeExecution(hegemon, best.tile(), null, true));
+      }
     }
   }
 
@@ -127,7 +167,7 @@ export class HegemonExecution implements Execution {
     if (ticks % 10 !== 0) return;
 
     const ceiling = mg.config().maxTroops(hegemon);
-    if (hegemon.troops() * 100 < ceiling * cfg.punitiveFullPercent) {
+    if (hegemon.troops() * 100 < ceiling * cfg.levellerFullPercent) {
       this.fullSinceTick = null;
     } else {
       this.fullSinceTick ??= ticks;
@@ -155,7 +195,7 @@ export class HegemonExecution implements Execution {
       if (
         !struck.isAlive() ||
         mg.config().maxTroops(struck) * 100 <
-          rivalCap * cfg.punitiveRecallPercentOfRival
+          rivalCap * cfg.levellerRecallPercentOfRival
       ) {
         this.strike.recall();
       }
@@ -164,9 +204,9 @@ export class HegemonExecution implements Execution {
     if (
       strongest === null ||
       this.fullSinceTick === null ||
-      ticks - this.fullSinceTick < cfg.punitiveFullSeconds * 10 ||
-      ticks - this.lastStrikeEndTick < cfg.punitiveCooldownSeconds * 10 ||
-      strongestCap * 100 < ceiling * cfg.punitiveThreatPercentOfCeiling
+      ticks - this.fullSinceTick < cfg.levellerFullSeconds * 10 ||
+      ticks - this.lastStrikeEndTick < cfg.levellerCooldownSeconds * 10 ||
+      strongestCap * 100 < ceiling * cfg.levellerThreatPercentOfCeiling
     ) {
       return;
     }
@@ -175,7 +215,7 @@ export class HegemonExecution implements Execution {
     this.strike = new RazeExecution(
       hegemon,
       aim,
-      Math.floor((hegemon.troops() * cfg.punitiveStrikePercent) / 100),
+      Math.floor((hegemon.troops() * cfg.levellerStrikePercent) / 100),
     );
     mg.addExecution(this.strike);
     this.fullSinceTick = null;

@@ -347,18 +347,36 @@ const HEGEMON_DEFAULTS = {
   // The Hegemon can therefore never eliminate a challenger.
   tyrannyFloorPermille: 5,
   tyrannyFreePermille: 30,
-  // An AI Hegemon's punitive strikes (H11, "leveller"): once its troops have
-  // sat at this share of the ceiling for long enough and nobody is invading,
-  // it strikes the challenger with the largest troop capacity, provided they
-  // are a real threat (capacity as a share of the Hegemon's ceiling). The
-  // strike is recalled once the target's capacity has fallen to punitiveRecallPercentOfRival of the next
-  // strongest challenger's, and the next strike waits out the cooldown.
-  punitiveFullPercent: 95,
-  punitiveFullSeconds: 60,
-  punitiveThreatPercentOfCeiling: 25,
-  punitiveStrikePercent: 25,
-  punitiveRecallPercentOfRival: 85,
-  punitiveCooldownSeconds: 90,
+  // An AI Hegemon's leveller strikes (H11): once its troops have sat at this
+  // share of the ceiling for long enough and nobody is invading, it strikes
+  // the challenger with the largest troop capacity, provided they are a real
+  // threat (capacity as a share of the Hegemon's ceiling). The strike is
+  // recalled once the target's capacity has fallen to
+  // levellerRecallPercentOfRival of the next strongest challenger's, and the
+  // next strike waits out the cooldown.
+  levellerFullPercent: 95,
+  levellerFullSeconds: 60,
+  levellerThreatPercentOfCeiling: 25,
+  levellerStrikePercent: 25,
+  levellerRecallPercentOfRival: 85,
+  levellerCooldownSeconds: 90,
+  // Punitive strikes (H19): a missile launch flags the silo for this long
+  // after its latest launch; the Hegemon may answer with a strike funded by a
+  // levy on every living challenger's troops at home (a share by warhead:
+  // Nuclear = the atom bomb, Antimatter = the hydrogen bomb). The strike
+  // razes only within punitiveRadius of the silo (the Nuclear Warhead's outer
+  // blast radius), then halts for punitiveHaltSeconds before its bubble
+  // pops; a retaken bubble tile during the halt resumes it. An AI Hegemon
+  // strikes every flag except on a challenger holding less than this share
+  // of the map's land (permille).
+  punitiveFlagSeconds: 30,
+  punitiveLevyPercentNuclear: 10,
+  punitiveLevyPercentAntimatter: 25,
+  // 34 = the Nuclear Warhead's outer blast (30) with 25% more area (Tom,
+  // 2026-09-26: the first cut felt weak).
+  punitiveRadius: 34,
+  punitiveHaltSeconds: 5,
+  punitiveAIMinLandPermille: 50,
   // AI challengers (Nations) treat the throne as the objective
   // (NationHegemonBehavior). A nation invades once its troops reach this share
   // of the Hegemon's CURRENT troops; the bar falls linearly over the round, so
@@ -568,6 +586,12 @@ export class Config {
     // No MIRVs under a Dark Star (S6): hard-off whenever the Hegemon round is
     // on, whatever the lobby's list says. The enum value stays (wire format).
     if (unitType === UnitType.MIRV && this.hegemonConfig().enabled) {
+      return true;
+    }
+    // Nor SAMs (S6, decided 2026-09-26): the deterrent against a missile is
+    // the Hegemon's punishment (H19), not a net of interceptors that spares
+    // most players the decision.
+    if (unitType === UnitType.SAMLauncher && this.hegemonConfig().enabled) {
       return true;
     }
     return this._gameConfig.disabledUnits?.includes(unitType) ?? false;
@@ -793,7 +817,12 @@ export class Config {
         break;
       case UnitType.AtomBomb:
         info = {
-          cost: this.costWrapper(() => 750_000, UnitType.AtomBomb),
+          // 1M under a Dark Star (decided 2026-09-26, with H19); the engine's
+          // 750k elsewhere.
+          cost: this.costWrapper(
+            () => (this.hegemonConfig().enabled ? 1_000_000 : 750_000),
+            UnitType.AtomBomb,
+          ),
         };
         break;
       case UnitType.HydrogenBomb:

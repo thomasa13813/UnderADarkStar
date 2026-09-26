@@ -36,7 +36,10 @@ import { formatPlayerDisplayName } from "../../core/Util";
 import { WorkerClient } from "../../core/worker/WorkerClient";
 import { computeAllianceClusters } from "../render/frame/derive/AllianceClusters";
 import { extractAttackRings } from "../render/frame/derive/AttackRings";
-import { extractNukeTelegraphs } from "../render/frame/derive/NukeTelegraphs";
+import {
+  extractNukeTelegraphs,
+  extractPunitiveBadges,
+} from "../render/frame/derive/NukeTelegraphs";
 import { computePlayerStatus } from "../render/frame/derive/PlayerStatus";
 import { buildRelationMatrix } from "../render/frame/derive/RelationMatrix";
 import { RailroadCache } from "../render/frame/RailroadCache";
@@ -689,6 +692,17 @@ export class GameView implements GameMap {
       this.unitMotionPlans,
       gu.tick,
     );
+    // Flagged silos (H19) ride the same pass as their own badge rings.
+    if (this._myPlayer && this.hegemon() !== null) {
+      const badges = extractPunitiveBadges(
+        this._unitStates,
+        this._map.width(),
+        this._myPlayer.smallID(),
+        this._myPlayer.isHegemon(),
+        gu.tick,
+      );
+      if (badges.length > 0) f.nukeTelegraphs.push(...badges);
+    }
     f.attackRings = this._myPlayer
       ? extractAttackRings(
           this._unitStates,

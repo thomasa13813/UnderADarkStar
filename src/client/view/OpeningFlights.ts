@@ -126,6 +126,8 @@ export class OpeningFlights {
       samUpgradeStartRange: null,
       samUpgradeTargetLevel: null,
       samUpgradeDuration: null,
+      punitiveWarhead: null,
+      punitiveExpiresTick: null,
     };
   }
 

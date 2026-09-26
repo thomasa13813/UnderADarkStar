@@ -567,7 +567,9 @@ export class SinglePlayerModal extends BaseModal {
               unitTypes: {
                 titleKey: "game_settings.disable_units",
                 disabledUnits: this.disabledUnits,
-                hiddenUnits: this.hegemon ? [UnitType.MIRV] : [],
+                hiddenUnits: this.hegemon
+                  ? [UnitType.MIRV, UnitType.SAMLauncher]
+                  : [],
               },
             }}
             @map-selected=${this.handleConfigMapSelected}

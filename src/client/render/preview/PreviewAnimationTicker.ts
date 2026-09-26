@@ -812,5 +812,7 @@ function createBaseUnitState(
     samUpgradeStartRange: null,
     samUpgradeTargetLevel: null,
     samUpgradeDuration: null,
+    punitiveWarhead: null,
+    punitiveExpiresTick: null,
   };
 }

@@ -468,14 +468,14 @@ describe("Punitive strikes (H11)", () => {
     await start(PlayerType.Nation);
     const cfg = game.config().hegemonConfig();
     // Too small to be a threat: left alone however long the Hegemon idles.
-    executeTicks(game, (cfg.punitiveFullSeconds + 10) * 10);
+    executeTicks(game, (cfg.levellerFullSeconds + 10) * 10);
     expect(hegemon.outgoingAttacks()).toHaveLength(0);
 
     settle(west, -1, 60, 100_000, 40);
     const tiles = west.numTilesOwned();
     const eastTiles = east.numTilesOwned();
     let struck = false;
-    for (let i = 0; i < (cfg.punitiveFullSeconds + 60) * 10; i++) {
+    for (let i = 0; i < (cfg.levellerFullSeconds + 60) * 10; i++) {
       game.executeNextTick();
       struck ||= hegemon.outgoingAttacks().some((a) => a.target() === west);
     }
@@ -491,7 +491,7 @@ describe("Punitive strikes (H11)", () => {
     let ticks = 0;
     while (
       !hegemon.outgoingAttacks().some((a) => a.target() === west) &&
-      ticks++ < (cfg.punitiveFullSeconds + 60) * 10
+      ticks++ < (cfg.levellerFullSeconds + 60) * 10
     ) {
       game.executeNextTick();
     }

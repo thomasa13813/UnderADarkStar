@@ -140,7 +140,7 @@ async function main(): Promise<void> {
     new PseudoRandom(simpleHash(gameStart.gameID)),
   );
   // --human seats a human on the throne who does nothing at all: no response
-  // waves, no punitive strikes — only the stall routing every Hegemon gets
+  // waves, no leveller or punitive strikes — only the stall routing every Hegemon gets
   // (H13). The floor a real player starts from.
   const humans = process.argv.includes("--human")
     ? [
@@ -215,8 +215,19 @@ async function main(): Promise<void> {
     maxBubble: number;
     fought: boolean; // the target counter-attacked the bubble
     popped: number; // tiles left neutral when the bubble popped
+    punitive: boolean; // H19: levied from the galaxy, answering a launch
   } | null = null;
-  const strikeTotals = { count: 0, sent: 0, lost: 0, popped: 0, fought: 0 };
+  const strikeTotals = {
+    count: 0,
+    punitive: 0,
+    sent: 0,
+    lost: 0,
+    popped: 0,
+    fought: 0,
+  };
+  // Missile launches that flagged a silo (H19): one per (silo, expiry).
+  const flagsSeen = new Set<string>();
+  let flaggedLaunches = 0;
 
   // AI stargates (C4, §6.8 stage 5): every gate built or upgraded, every
   // shot and its fate (landed / turned back / joined; the pocket still held
@@ -365,7 +376,24 @@ async function main(): Promise<void> {
     lowestTiles = Math.min(lowestTiles, game.hegemonDomainTiles());
     lowestTroops = Math.min(lowestTroops, hegemon.troops());
 
-    // Raze strikes (H8/H11): logged as they land and as they end.
+    // Flagged silos (H19): count each launch once.
+    if (elapsed % 10 === 0) {
+      for (const p of game.players()) {
+        if (p === hegemon) continue;
+        for (const silo of p.units(UnitType.MissileSilo)) {
+          const flag = silo.punitiveFlag();
+          if (flag === undefined) continue;
+          const key = `${silo.id()}:${flag.expiresTick}`;
+          if (!flagsSeen.has(key)) {
+            flagsSeen.add(key);
+            flaggedLaunches++;
+          }
+        }
+      }
+    }
+
+    // Raze strikes (H8/H11) and punitive strikes (H19): logged as they land
+    // and as they end.
     const razing = hegemon
       .outgoingAttacks()
       .find((a) => a.sourceTile() !== null);
@@ -383,6 +411,7 @@ async function main(): Promise<void> {
         maxBubble: 0,
         fought: false,
         popped: 0,
+        punitive: razing.isPunitive(),
       };
     } else if (razing !== undefined && strike !== null) {
       strike.left = razing.troops();
@@ -400,13 +429,14 @@ async function main(): Promise<void> {
     } else if (razing === undefined && strike !== null) {
       const t = strike.target;
       log(
-        `      strike @${(strike.start / 600).toFixed(2)} on ${t.name()}: sent ${k(strike.sent)}, ` +
+        `      ${strike.punitive ? "punitive strike" : "strike"} @${(strike.start / 600).toFixed(2)} on ${t.name()}: sent ${k(strike.sent)}, ` +
           `${((elapsed - strike.start) / 10).toFixed(0)}s, ~${k(strike.left)} left at the end; ` +
           `target tiles ${strike.tiles} -> ${t.numTilesOwned()}, troops ${k(strike.troops)} -> ${k(t.troops())}, ` +
           `cities ${strike.cities} -> ${t.units(UnitType.City).length}; ` +
           `bubble peaked at ${strike.maxBubble}, popped ${strike.popped} to neutral${strike.fought ? ", fought" : ""}`,
       );
       strikeTotals.count++;
+      if (strike.punitive) strikeTotals.punitive++;
       strikeTotals.sent += strike.sent;
       strikeTotals.lost += strike.sent - strike.left;
       strikeTotals.popped += strike.popped;
@@ -448,10 +478,11 @@ async function main(): Promise<void> {
       `${Math.round((lowestTiles * 100) / g.domainTileCount)}%, Hegemon troops low ${k(lowestTroops)}`,
   );
   log(
-    `Strikes: ${strikeTotals.count} (${strikeTotals.fought} fought), sent ${k(strikeTotals.sent)}, lost ${k(strikeTotals.lost)}, popped ${strikeTotals.popped} tiles to neutral` +
+    `Strikes: ${strikeTotals.count} (${strikeTotals.punitive} punitive, ${strikeTotals.fought} fought), sent ${k(strikeTotals.sent)}, lost ${k(strikeTotals.lost)}, popped ${strikeTotals.popped} tiles to neutral` +
       (strikeTotals.popped > 0
         ? ` = ${Math.round(strikeTotals.lost / strikeTotals.popped)} troops/tile`
-        : ""),
+        : "") +
+      `; flagged launches ${flaggedLaunches}`,
   );
   // Landlocked pockets: a beachhead whose territory touches no water and is
   // not the owner's mainland stands only by the tag (§6.10).

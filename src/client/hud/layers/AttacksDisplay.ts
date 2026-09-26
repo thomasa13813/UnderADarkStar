@@ -293,14 +293,21 @@ export class AttacksDisplay extends LitElement implements Controller {
 
   private renderStrike(attack: AttackUpdate) {
     const landing = this.landingIn(attack);
+    // A punitive strike (H19) is the same row, named for what it is: it
+    // razes the land around the silo and never holds it.
+    const label = attack.isPunitive
+      ? translateText("dark_star.punitive_label")
+      : translateText("dark_star.strike_label");
+    const hint = attack.isPunitive
+      ? translateText("dark_star.punitive_hint")
+      : translateText("dark_star.strike_hint");
     return html`
       <div
         class="flex items-center gap-1 w-full bg-purple-950/92 backdrop-blur-sm sm:rounded-lg px-1.5 py-1 overflow-hidden border border-purple-500/70"
       >
         ${this.renderButton({
           content: html`<span class="font-bold whitespace-nowrap"
-              >${translateText("dark_star.strike_label")}
-              ${renderTroops(attack.troops)}</span
+              >${label} ${renderTroops(attack.troops)}</span
             >
             <span class="text-xs whitespace-nowrap text-purple-300"
               >${landing !== null
@@ -309,7 +316,7 @@ export class AttacksDisplay extends LitElement implements Controller {
                   })
                 : attack.retreating
                   ? `${translateText("events_display.retreating")}...`
-                  : translateText("dark_star.strike_hint")}</span
+                  : hint}</span
             >`,
           onClick: () => this.attackWarningOnClick(attack),
           className: "text-left text-purple-200 flex flex-col min-w-0",
@@ -340,17 +347,23 @@ export class AttacksDisplay extends LitElement implements Controller {
       ? `${translateText("events_display.retreating")}...`
       : landing !== null
         ? translateText("dark_star.strike_landing", { seconds: landing })
-        : translateText("dark_star.strike_razing");
+        : attack.isPunitive
+          ? translateText("dark_star.punitive_razing")
+          : translateText("dark_star.strike_razing");
+    // A punitive strike (H19) is the galaxy's: no Recall.
+    const title = translateText(
+      attack.isPunitive
+        ? "dark_star.punitive_outgoing"
+        : "dark_star.strike_outgoing",
+      { name: target?.displayName() ?? "" },
+    );
     return html`
       <div
         class="flex items-center gap-1 w-full bg-purple-950/92 backdrop-blur-sm sm:rounded-lg px-1.5 py-1 overflow-hidden border border-purple-500/70"
       >
         ${this.renderButton({
           content: html`<span class="font-bold whitespace-nowrap"
-              >${translateText("dark_star.strike_outgoing", {
-                name: target?.displayName() ?? "",
-              })}
-              ${renderTroops(attack.troops)}</span
+              >${title} ${renderTroops(attack.troops)}</span
             >
             <span class="text-xs whitespace-nowrap text-purple-300"
               >${status}</span
@@ -359,7 +372,7 @@ export class AttacksDisplay extends LitElement implements Controller {
           className: "text-left text-purple-200 flex flex-col min-w-0",
           translate: false,
         })}
-        ${attack.retreating
+        ${attack.retreating || attack.isPunitive
           ? ""
           : this.renderButton({
               content: translateText("dark_star.strike_recall"),

@@ -9,6 +9,7 @@ export class AttackImpl implements Attack {
   public _retreating = false;
   public _retreated = false;
   private _isStrike = false;
+  private _isPunitive = false;
 
   constructor(
     private _id: string,
@@ -42,6 +43,13 @@ export class AttackImpl implements Attack {
   }
   markStrike(): void {
     this._isStrike = true;
+  }
+  isPunitive(): boolean {
+    return this._isPunitive;
+  }
+  markPunitive(): void {
+    this._isStrike = true;
+    this._isPunitive = true;
   }
 
   isActive() {
