@@ -36,7 +36,9 @@ export class DarkStarPanel extends LitElement {
   // Bumped by the parent each tick so the readout advances every second.
   @property({ attribute: false }) refreshKey = 0;
 
-  @state() private showChallengers = true;
+  // The board starts folded away; the throne unfolds it when it wants it
+  // (decided 2026-09-25, F19).
+  @state() private showChallengers = false;
   @state() private sortKey: SortKey = "capacity";
   @state() private sortDescending = true;
 
