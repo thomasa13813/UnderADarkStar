@@ -26,6 +26,7 @@ import {
   missileSiloIcon,
   portIcon,
   samLauncherIcon,
+  stargateIcon,
   warshipIcon,
 } from "../HotbarIcons";
 import { TutorialHighlight, TutorialHighlightEvent } from "../Tutorial";
@@ -44,6 +45,7 @@ export class UnitDisplay extends LitElement implements Controller {
   private _port = 0;
   private _defensePost = 0;
   private _samLauncher = 0;
+  private _stargate = 0;
   private allDisabled = false;
   private _hoveredUnit: PlayerBuildableUnitType | null = null;
   private tutorialHighlight: PlayerBuildableUnitType | null = null;
@@ -131,6 +133,7 @@ export class UnitDisplay extends LitElement implements Controller {
     this._port = player.totalUnitLevels(UnitType.Port);
     this._defensePost = player.totalUnitLevels(UnitType.DefensePost);
     this._samLauncher = player.totalUnitLevels(UnitType.SAMLauncher);
+    this._stargate = player.totalUnitLevels(UnitType.Stargate);
     this._factories = player.totalUnitLevels(UnitType.Factory);
     this._warships = player.totalUnitLevels(UnitType.Warship);
     this.requestUpdate();
@@ -194,6 +197,18 @@ export class UnitDisplay extends LitElement implements Controller {
             UnitType.SAMLauncher,
             "sam_launcher",
             this.keybinds["buildSamLauncher"]?.key ?? "6",
+          )}
+          ${this.renderUnitItem(
+            stargateIcon,
+            this._stargate,
+            UnitType.Stargate,
+            "stargate",
+            // DarkStar (C4): the gate takes the SAM's slot and key, since SAMs
+            // are off under a Dark Star. In a vanilla game the SAM keeps the
+            // key and the gate is click-only.
+            this.game.config().isUnitDisabled(UnitType.SAMLauncher)
+              ? (this.keybinds["buildStargate"]?.key ?? "6")
+              : "",
           )}
           ${this.renderUnitItem(
             warshipIcon,
@@ -263,9 +278,9 @@ export class UnitDisplay extends LitElement implements Controller {
                 class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 text-gray-200 text-center w-max text-xs bg-gray-800/90 backdrop-blur-xs rounded-sm p-1 z-[100] shadow-lg pointer-events-none"
               >
                 <div class="font-bold text-sm mb-1">
-                  ${translateText(
-                    "unit_type." + structureKey,
-                  )}${` [${displayHotkey}]`}
+                  ${translateText("unit_type." + structureKey)}${displayHotkey
+                    ? ` [${displayHotkey}]`
+                    : ""}
                 </div>
                 <div class="p-2">
                   ${translateText("build_menu.desc." + structureKey)}
@@ -322,9 +337,13 @@ export class UnitDisplay extends LitElement implements Controller {
           @mouseleave=${() =>
             this.eventBus?.emit(new ToggleStructureEvent(null))}
         >
-          ${html`<div class="ml-0.5 text-[10px] relative -top-1 text-gray-400">
-            ${displayHotkey}
-          </div>`}
+          ${displayHotkey
+            ? html`<div
+                class="ml-0.5 text-[10px] relative -top-1 text-gray-400"
+              >
+                ${displayHotkey}
+              </div>`
+            : null}
           <div class="flex items-center gap-0.5 pt-0.5">
             <img src=${icon} alt=${structureKey} class="align-middle size-5" />
             ${number !== null

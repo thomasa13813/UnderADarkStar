@@ -59,7 +59,8 @@ describe("InputHandler AutoUpgrade", () => {
     mockGameView = {
       inSpawnPhase: () => false,
       myPlayer: () => ({ isAlive: () => true }),
-    } as GameView;
+      config: () => ({ isUnitDisabled: () => false }),
+    } as unknown as GameView;
     mockCanvas = document.createElement("canvas");
     mockCanvas.width = 800;
     mockCanvas.height = 600;
@@ -712,6 +713,54 @@ describe("InputHandler AutoUpgrade", () => {
       );
 
       expect(inputHandler["uiState"].ghostStructure).toBeNull();
+    });
+  });
+
+  // DarkStar: the stargate shares the SAM's default key (6). A disabled unit
+  // never claims a build key, so under a Dark Star (SAMs off, S6) the key
+  // reaches the gate; in a vanilla game the SAM keeps it.
+  describe("Shared build key falls through a disabled unit", () => {
+    const newHandler = (disabled: UnitType[]) => {
+      inputHandler.destroy();
+      mockGameView.config = () =>
+        ({
+          isUnitDisabled: (u: UnitType) => disabled.includes(u),
+        }) as unknown as ReturnType<GameView["config"]>;
+      inputHandler = new InputHandler(
+        mockGameView,
+        {
+          attackRatio: 20,
+          ghostStructure: null,
+          rocketDirectionUp: true,
+        } as UIState,
+        mockCanvas,
+        eventBus,
+      );
+      inputHandler.initialize();
+    };
+
+    test("Digit6 sets the SAM when nothing is disabled", () => {
+      newHandler([]);
+      window.dispatchEvent(
+        new KeyboardEvent("keyup", { code: "Digit6", key: "6" }),
+      );
+      expect(inputHandler["uiState"].ghostStructure).toBe(UnitType.SAMLauncher);
+    });
+
+    test("Digit6 sets the Stargate when the SAM is disabled", () => {
+      newHandler([UnitType.SAMLauncher]);
+      window.dispatchEvent(
+        new KeyboardEvent("keyup", { code: "Digit6", key: "6" }),
+      );
+      expect(inputHandler["uiState"].ghostStructure).toBe(UnitType.Stargate);
+    });
+
+    test("Numpad6 alias also reaches the Stargate when the SAM is disabled", () => {
+      newHandler([UnitType.SAMLauncher]);
+      window.dispatchEvent(
+        new KeyboardEvent("keyup", { code: "Numpad6", key: "6" }),
+      );
+      expect(inputHandler["uiState"].ghostStructure).toBe(UnitType.Stargate);
     });
   });
 

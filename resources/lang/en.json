@@ -2261,6 +2261,8 @@
     "build_port_desc": "Build a Port under your cursor.",
     "build_sam_launcher": "Build SAM Launcher",
     "build_sam_launcher_desc": "Build a SAM Launcher under your cursor.",
+    "build_stargate": "Build Stargate",
+    "build_stargate_desc": "Build a Stargate under your cursor. Shares the SAM key: SAMs are off under a Dark Star.",
     "build_warship": "Build Warship",
     "build_warship_desc": "Build a Warship under your cursor.",
     "camera_movement": "Camera Movement",

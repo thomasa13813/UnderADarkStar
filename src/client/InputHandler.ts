@@ -457,6 +457,7 @@ export class InputHandler {
       "buildDefensePost",
       "buildMissileSilo",
       "buildSamLauncher",
+      "buildStargate",
       "buildAtomBomb",
       "buildHydrogenBomb",
       "buildWarship",
@@ -1233,16 +1234,23 @@ export class InputHandler {
       { key: "buildDefensePost", type: UnitType.DefensePost },
       { key: "buildMissileSilo", type: UnitType.MissileSilo },
       { key: "buildSamLauncher", type: UnitType.SAMLauncher },
+      { key: "buildStargate", type: UnitType.Stargate },
       { key: "buildAtomBomb", type: UnitType.AtomBomb },
       { key: "buildHydrogenBomb", type: UnitType.HydrogenBomb },
       { key: "buildWarship", type: UnitType.Warship },
       { key: "buildMIRV", type: UnitType.MIRV },
     ];
-    for (const { key, type } of buildKeybinds) {
+    // A disabled unit never claims a key, so a key two units share (the SAM
+    // and the stargate both default to 6) falls through to the one in play.
+    const config = this.gameView.config();
+    const enabled = buildKeybinds.filter(
+      ({ type }) => !config.isUnitDisabled(type),
+    );
+    for (const { key, type } of enabled) {
       if (this.keybindMatchesEvent({ code, shiftKey }, this.keybinds[key]))
         return type;
     }
-    for (const { key, type } of buildKeybinds) {
+    for (const { key, type } of enabled) {
       if (this.buildKeybindMatchesDigit(code, shiftKey, this.keybinds[key]))
         return type;
     }

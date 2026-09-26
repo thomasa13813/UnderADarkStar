@@ -120,7 +120,7 @@ export const buildTable: BuildItemDisplay[][] = [
       countable: true,
     },
     {
-      // DarkStar: the stargate (C4). No hotkey.
+      // DarkStar: the stargate (C4). Also on the hotbar (UnitDisplay), key 6.
       unitType: UnitType.Stargate,
       icon: stargateIcon,
       description: "build_menu.desc.stargate",
