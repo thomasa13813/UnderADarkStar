@@ -11,7 +11,6 @@ import { TileRef } from "../game/GameMap";
 import { WaterPathFinder } from "../pathfinding/PathFinder";
 import { PathStatus } from "../pathfinding/types";
 import { PseudoRandom } from "../PseudoRandom";
-import { findMinimumBy } from "../Util";
 import { ShellExecution } from "./ShellExecution";
 
 export class WarshipExecution implements Execution {
@@ -151,16 +150,21 @@ export class WarshipExecution implements Execution {
       passiveHealingRange * passiveHealingRange;
     const warshipTile = this.warship.tile();
 
+    // Near a spaceport's harbour (§6.17): an inland port repairs at the
+    // deep space its ships are launched from, not at the port itself.
     let isNearPort = false;
     for (const port of owner.units(UnitType.Port)) {
-      const distSquared = this.mg.euclideanDistSquared(
-        warshipTile,
-        port.tile(),
-      );
-      if (distSquared <= passiveHealingRangeSquared) {
-        isNearPort = true;
-        break;
+      for (const harbour of this.mg.harbours(port.tile())) {
+        const distSquared = this.mg.euclideanDistSquared(
+          warshipTile,
+          harbour.tile,
+        );
+        if (distSquared <= passiveHealingRangeSquared) {
+          isNearPort = true;
+          break;
+        }
       }
+      if (isNearPort) break;
     }
 
     // The moat is the destroyers' harbour (H10): the throne has no port.
@@ -213,30 +217,53 @@ export class WarshipExecution implements Execution {
   }
 
   private findNearestPort(): TileRef | undefined {
-    const ports = this.warship.owner().units(UnitType.Port);
-    if (ports.length === 0) {
-      return undefined;
-    }
+    return this.nearestHarbourTile()?.tile;
+  }
 
-    const warshipTile = this.warship.tile();
-    const warshipComponent = this.mg.getWaterComponent(warshipTile);
-    if (warshipComponent === null) {
-      throw new Error(`Warship at tile ${warshipTile} has no water component`);
-    }
-
-    const nearest = findMinimumBy(
-      ports,
-      (port) => this.mg.euclideanDistSquared(warshipTile, port.tile()),
-      (port) => {
-        const portComponent = this.mg.getWaterComponent(port.tile());
-        if (portComponent === null) {
-          throw new Error(`Port at tile ${port.tile()} has no water component`);
+  // The owner's spaceports and their harbours on this ship's body of space
+  // (§6.17): where it is repaired. A coastal port's harbours are its
+  // adjacent water, so the old "the port's tile" is one tile off at most.
+  private *harbours(): Generator<{ port: Unit; tile: TileRef }> {
+    const component = this.mg.getWaterComponent(this.warship.tile());
+    if (component === null) return;
+    for (const port of this.warship.owner().units(UnitType.Port)) {
+      if (!port.isActive() || port.isUnderConstruction()) continue;
+      for (const harbour of this.mg.harbours(port.tile())) {
+        if (this.mg.hasWaterComponent(harbour.tile, component)) {
+          yield { port, tile: harbour.tile };
         }
-        return portComponent === warshipComponent;
-      },
-    );
+      }
+    }
+  }
 
-    return nearest?.tile();
+  // The owner's spaceport whose harbour is `tile`, if any.
+  private portAt(tile: TileRef | undefined): Unit | undefined {
+    if (tile === undefined) return undefined;
+    for (const h of this.harbours()) {
+      if (h.tile === tile) return h.port;
+    }
+    return undefined;
+  }
+
+  private nearestHarbourTile(
+    excludeShip?: Unit,
+    availableOnly = false,
+  ): { tile: TileRef; distSquared: number } | undefined {
+    const warshipTile = this.warship.tile();
+    let best: { tile: TileRef; distSquared: number } | undefined;
+    for (const h of this.harbours()) {
+      if (
+        availableOnly &&
+        this.isPortFullOfHealing(h.port, h.tile, excludeShip)
+      ) {
+        continue;
+      }
+      const distSquared = this.mg.euclideanDistSquared(warshipTile, h.tile);
+      if (best === undefined || distSquared < best.distSquared) {
+        best = { tile: h.tile, distSquared };
+      }
+    }
+    return best;
   }
 
   private findRetreatAggroTarget(): Unit | undefined {
@@ -427,11 +454,11 @@ export class WarshipExecution implements Execution {
 
     if (distToPort <= dockingRadiusSq) {
       // Check if the port has capacity available (excluding this warship from capacity check)
-      const port = this.warship
-        .owner()
-        .units(UnitType.Port)
-        .find((p) => p.tile() === retreatPortTile);
-      if (port && !this.isPortFullOfHealing(port, this.warship)) {
+      const port = this.portAt(retreatPortTile);
+      if (
+        port &&
+        !this.isPortFullOfHealing(port, retreatPortTile, this.warship)
+      ) {
         // Port has capacity - dock here
         this.warship.setTargetTile(undefined);
         this.warship.updateWarshipState({
@@ -484,11 +511,9 @@ export class WarshipExecution implements Execution {
     const currentRetreatPort = this.warship.warshipState().retreatPort;
 
     // Check if current retreat port still exists
-    const currentPortExists =
-      currentRetreatPort !== undefined &&
-      ports.some((port) => port.tile() === currentRetreatPort);
+    const currentPort = this.portAt(currentRetreatPort);
 
-    if (!currentPortExists) {
+    if (currentPort === undefined) {
       const newPort = this.findNearestAvailablePortTile();
       this.warship.updateWarshipState({
         retreatPort: newPort,
@@ -497,8 +522,7 @@ export class WarshipExecution implements Execution {
     }
 
     // Check if current port is now full of healing (not counting arrived warships)
-    const currentPort = ports.find((p) => p.tile() === currentRetreatPort);
-    if (currentPort && this.isPortFullOfHealing(currentPort)) {
+    if (this.isPortFullOfHealing(currentPort, currentRetreatPort!)) {
       // Current port is at healing capacity, look for alternatives
       const alternativePort = this.findNearestAvailablePort();
       if (alternativePort) {
@@ -521,17 +545,23 @@ export class WarshipExecution implements Execution {
     return true;
   }
 
-  private isPortFullOfHealing(port: Unit, excludeShip?: Unit): boolean {
+  private isPortFullOfHealing(
+    port: Unit,
+    harbourTile: TileRef,
+    excludeShip?: Unit,
+  ): boolean {
     const maxShipsHealing = port.level();
-    return this.dockedShipsAtPort(port, excludeShip).length >= maxShipsHealing;
+    return (
+      this.dockedShipsAtPort(harbourTile, excludeShip).length >= maxShipsHealing
+    );
   }
 
-  private dockedShipsAtPort(port: Unit, excludeShip?: Unit): Unit[] {
+  private dockedShipsAtPort(harbourTile: TileRef, excludeShip?: Unit): Unit[] {
     const dockingRadius = this.mg.config().warshipDockingRange();
     const owner = this.warship.owner();
 
     return this.mg
-      .nearbyUnits(port.tile(), dockingRadius, [UnitType.Warship])
+      .nearbyUnits(harbourTile, dockingRadius, [UnitType.Warship])
       .filter(({ unit: ship }) => {
         if (excludeShip && ship === excludeShip) return false;
         if (ship.owner() !== owner) return false;
@@ -544,11 +574,12 @@ export class WarshipExecution implements Execution {
 
   private applyActiveDockedHealing(): void {
     const dockedPort = this.currentRetreatPort();
-    if (!dockedPort) {
+    const harbourTile = this.warship.warshipState().retreatPort;
+    if (!dockedPort || harbourTile === undefined) {
       return;
     }
 
-    const dockedShips = this.dockedShipsAtPort(dockedPort);
+    const dockedShips = this.dockedShipsAtPort(harbourTile);
     if (!dockedShips.some((ship) => ship === this.warship)) {
       return;
     }
@@ -572,50 +603,13 @@ export class WarshipExecution implements Execution {
   }
 
   private currentRetreatPort(): Unit | undefined {
-    const retreatPort = this.warship.warshipState().retreatPort;
-    if (retreatPort === undefined) {
-      return undefined;
-    }
-
-    return this.warship
-      .owner()
-      .units(UnitType.Port)
-      .find((port) => port.tile() === retreatPort);
+    return this.portAt(this.warship.warshipState().retreatPort);
   }
 
   private nearestAvailablePortTile(
     excludeShip?: Unit,
   ): { tile: TileRef; distSquared: number } | undefined {
-    const ports = this.warship.owner().units(UnitType.Port);
-    const warshipTile = this.warship.tile();
-    const warshipComponent = this.mg.getWaterComponent(warshipTile);
-    if (warshipComponent === null) {
-      throw new Error(`Warship at tile ${warshipTile} has no water component`);
-    }
-
-    let bestTile: TileRef | undefined = undefined;
-    let bestDistance = Infinity;
-
-    for (const port of ports) {
-      if (this.isPortFullOfHealing(port, excludeShip)) {
-        continue;
-      }
-
-      const portTile = port.tile();
-      if (!this.mg.hasWaterComponent(portTile, warshipComponent)) {
-        continue;
-      }
-
-      const distance = this.mg.euclideanDistSquared(warshipTile, portTile);
-      if (distance < bestDistance) {
-        bestDistance = distance;
-        bestTile = portTile;
-      }
-    }
-
-    return bestTile !== undefined
-      ? { tile: bestTile, distSquared: bestDistance }
-      : undefined;
+    return this.nearestHarbourTile(excludeShip, true);
   }
 
   private findNearestAvailablePort(): TileRef | undefined {

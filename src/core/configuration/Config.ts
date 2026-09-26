@@ -1202,8 +1202,12 @@ export class Config {
     return 20; // in ticks (one tick is 100ms)
   }
 
-  radiusPortSpawn() {
-    return 20;
+  /**
+   * How far over land a spaceport's harbour may lie (S7, §6.17): the nearest
+   * deep space reachable from the port within this many tiles.
+   */
+  harbourMaxRange(): number {
+    return 250;
   }
 
   tradeShipShortRangeDebuff(): number {

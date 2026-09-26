@@ -49,7 +49,12 @@ export class NationWarshipBehavior {
       this.player.gold() > this.cost(UnitType.Warship)
     ) {
       const port = this.random.randElement(ports);
-      const targetTile = this.warshipSpawnTile(port.tile(), 250);
+      // Around the port's harbour (§6.17): an inland port's deep space.
+      const harbours = this.game.harbours(port.tile());
+      if (harbours.length === 0) {
+        return false;
+      }
+      const targetTile = this.warshipSpawnTile(harbours[0].tile, 250);
       if (targetTile === null) {
         return false;
       }

@@ -296,6 +296,8 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   the invasion instead of a fleet; otherwise gates shoot at rivals beyond the nation's land, at neutral
   land across water, and last at a land neighbour's far side — never at friends, never a second shot on
   a pocket already fighting, never while holding the slot.
+  [2026-09-26] With spaceports anywhere (S7) nobody is landlocked for trade: the gate is a **purely
+  offensive** tool, the road past a front and to the throne.
 
 ### 3.4 Setting and delivery
 
@@ -320,12 +322,28 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   [Decided 2026-09-26] **SAM launchers are removed** the same way: the deterrent against a missile
   is the throne's punishment (H19), and a net of interceptors would spare most players that
   decision. The **Nuclear Warhead costs 1M gold** under a Dark Star (the engine's 750k elsewhere).
-- **S7 — Economy.** [Direction agreed 2026-09-24] The engine's structure stays: cities and factories
-  joined by rail, ports spawning trade ships. **Railroads are drawn as a straight line** from station
-  to station and trains ride that line — a visual change; a connection still needs a land path and
-  **never crosses deep space**. Ports are shown as spaceports and warships as **Destroyers** ("Star
-  Destroyer" is a Lucasfilm trademark) with a spaceship icon in place of the naval one; names and
-  icons are low priority (F14).
+- **S7 — Economy.** [Direction agreed 2026-09-24; revised 2026-09-26] The engine's structure stays:
+  cities and factories joined by rail, ports spawning trade ships. [Revised 2026-09-26] **The economy
+  goes to space.** (1) **Trade lanes**: a railroad is a **straight line** between its two stations —
+  in the sim, not only on screen; a lane connects only if the line crosses no void and every water
+  tile on it is shoreline water (the narrow-strait rule the rail pathfinder already applies), water
+  tiles counting six toward the length budget as they do today; a blocked line means no connection,
+  no bent fallback. (2) **Spaceports anywhere**: the port is placed **like a city**, anywhere in the
+  territory, exactly where clicked. Its **harbour** is the nearest deep space reachable over land
+  (never across the Dark Star's disc), one per body of space, where its freighters put to space and
+  its destroyers are launched and repaired; a coastal port's harbours are its adjacent water, so
+  nothing changes for it. (3) **Freighters** (the engine's trade ships) travel overland to and from a
+  harbour at **half speed** (one tile every 2 ticks; tunable) and the deep-space leg at full speed:
+  three legs — out of land, across space, into land. The route always goes via deep space and two
+  ports that share no body of space do not trade (accepted for now). They cross any land but the
+  Dark Star's disc, the moat included, and route cost never looks at who owns a tile. Spawn odds,
+  destination weighting and the global throttle are unchanged; the payout stays per tile travelled.
+  (4) **Destroyers** stay deep-space units: a challenger's is launched from the harbour of its
+  nearest spaceport on the clicked body of space and patrols from the click as before; it retreats
+  to a harbour to repair. (5) Names: **freighter**, **spaceport**, **Destroyer** ("Star Destroyer" is
+  a Lucasfilm trademark), display strings only (F14); icons later (M6). Stargates stay a purely
+  offensive tool (C4). Built in steps (M3.6): spaceports and harbours [Built 2026-09-26, §6.17],
+  then freighters overland, then straight lanes, then the names.
 - **S8 — Audio.** No audio work for now. **Before any public release:** the game must have sound
   effects — the repo carries 34 effect files that `Sounds.ts` plays, so silence in play is a bug to
   diagnose, not missing assets — and a unique, legally compliant soundtrack replacing the proprietary
@@ -1311,6 +1329,51 @@ dark_star_levy / dark_star_punitive_*`.
 - **Deferred.** A per-warhead radius (F20); a badge countdown; the Dark Star panel listing flagged
   silos; a levy line that names the total.
 
+### 6.17 As built — spaceports anywhere and their harbours (2026-09-26)
+
+Step 1 of the space economy (S7, revised the same day; M3.6). Tom's calls before the build:
+straight lanes in the sim, not only on screen; the three-leg freighter route with its two limits
+accepted; the spaceport placed exactly where clicked, like a city; freighters cross any land but
+the disc, the moat included; the overland penalty starts at **half speed** and the global spawn
+throttle is left alone; stargates stay purely offensive.
+
+- **Harbours.** `Game.harbours(portTile)` (`HarbourCache`, `src/core/game/Harbours.ts`): a
+  breadth-first search over passable land from the port, level by level in the map's fixed
+  neighbour order, stopping at the first level that touches water and keeping that level's first
+  water tile on each body of space (`getWaterComponent`); the Dark Star's disc is never entered;
+  `harbourMaxRange` (250 tiles) bounds the search. Each `Harbour` carries the tile and the overland
+  `path` from the port (exclusive) to it (inclusive) — the freighters' land legs of step 2. Cached
+  per port tile until the map's `waterVersion` changes; terrain only, so every client agrees. A
+  coastal port's harbours are its adjacent water, with one-tile paths.
+- **Placement.** `PlayerImpl.canSpawnUnitType` sends the port through `landBasedStructureSpawn`
+  like a city; `portSpawn` and `radiusPortSpawn` are gone. A blocked site moves to the nearest free
+  tile, as for any structure. The build menu and the placement ghost follow (they ask `canBuild`).
+- **Destroyers.** `PlayerImpl.warshipSpawn`'s challenger branch: the click must be water; the ship
+  spawns at the **harbour nearest the click** among the owner's active spaceports' harbours on the
+  click's body of space (ties to the lower tile) and patrols from the click as before; without a
+  spaceport reaching that body of space it is refused. `WarshipExecution` keys repair on harbours:
+  the retreat target (`retreatPort`, unchanged on the wire) is a harbour tile; docking, capacity
+  (`port.level()` per harbour) and active healing are counted around it (`portAt` finds the port
+  behind a harbour); passive healing applies within range of any harbour of the owner's. The
+  Hegemon's moat branch (H10) is untouched.
+- **Nation AI.** `NationStructureBehavior`: a landlocked nation still tries a spaceport (the
+  build order no longer skips it; the crowded-map first structure stays a factory when
+  landlocked, as before); with no
+  coastal site, `randInlandPortTileArray` samples 5 territory tiles at most every 300 ticks and
+  keeps those whose harbour reaches the ocean or a body of space shared with a trade partner.
+  Coastal nations place as before. `NationWarshipBehavior` centres its spawn search on the port's
+  harbour.
+- **Tests.** `tests/Spaceports.test.ts` (9): inland placement where clicked and the menu agrees; a
+  coastal port's harbour is its adjacent water; an inland port's harbour is the nearest water with a
+  land path to it; none out of range; the destroyer is launched from the nearest harbour, refused
+  on land and without a port; a damaged destroyer retreats to an inland port's harbour, docks and
+  repairs; beside the Dark Star a port harbours in the moat, the path never enters the disc, and a
+  challenger's destroyer is launched into the moat from an inland port. `Warship.test.ts` now
+  expects the harbour as the retreat target; the trade scenarios keep only ports standing on their
+  shore tile (a blocked site now moves instead of failing) and their snapshots moved by under 1%.
+- **Not yet.** Inland ports do not trade until step 2 (port pairing still wants adjacent water), and
+  the harbour's path is unused until then.
+
 ## 7. Constraints (non-negotiable engineering rules)
 
 - `src/core/` must stay **deterministic** (seeded PRNG, no wall-clock, careful with floats) and
@@ -1354,9 +1417,10 @@ Each milestone ships in feature branches Tom playtests one at a time.
 | **M2**    | Event Horizon, the first galaxy map with its `info.json` Dark Star; the launch-from-the-core opening (C3); HUD: Hegemon marker, Dark Star panel, victory screens.                                                                                                                                                                                                                                                                                                                                                       | **Built** (§6.12, §6.3, §6.7). Awaiting Tom's playtest — the checks are F19.                                                                                                                                                                                                        |
 | **M3**    | **The throne's toolkit and the 2026-09-24 rules review.** Nothing buildable on the Dark Star by anyone (H2); the invasion cooldown removed (H12); the Hegemon donates troops (H9); gifted structures on challengers' land (H18); destroyers spawning in the moat (H10); MIRVs off and the warhead renames (S6); the player table gains the Dark Star's fields for the throne and the separate Dark Star panel goes if the table carries it (F19). Small, mostly-sim pieces first (H2, H12, H9, S6), then H18, then H10. | **In progress** — chunk 1 (H2, H12, H9, S6) built 2026-09-25, §6.13; chunk 2 (H18 gifts) built 2026-09-25, §6.14; chunk 3 (H10 destroyers) built 2026-09-25, §6.15; the HUD merge tried and dropped the same day (F19: the panel stays, its board collapsed by default). **Built.** |
 | **M3.5**  | **Punitive strikes (H19).** The silo flag written at launch, the galaxy's levy, the radius-capped strike with its halt-then-pop ending, the Hegemon's badge and click, the AI Hegemon's rule, no nukes from a captured silo; tests and a `HegemonSim` line per punitive strike.                                                                                                                                                                                                                                         | **Built** 2026-09-26 (§6.16) on `feat/hegemon-toolkit`; awaiting Tom's playtest. Before M4 because the levy moves the invasion curve (F20).                                                                                                                                         |
+| **M3.6**  | **The space economy (S7, revised 2026-09-26).** Spaceports anywhere with harbours, destroyers launched from them; freighters overland at half speed on three legs; straight trade lanes in the sim; the freighter / spaceport / Destroyer names.                                                                                                                                                                                                                                                                        | **In progress** — step 1 (spaceports, harbours, destroyers) built 2026-09-26, §6.17.                                                                                                                                                                                                |
 | **M4**    | **Balance (F1).** Regeneration cut, ceiling raised as needed, the shadow tax, the AI's last stand; `HegemonSim` sweep on Event Horizon and Milky Way, three candidates, Tom playtests; then retune the AI's strike thresholds (H11) and check the gate numbers (F15).                                                                                                                                                                                                                                                   | After M3.5 — the toolkit and the levy change what the pool is spent on and how fast challengers grow, so calibrate once they exist.                                                                                                                                                 |
 | **M5**    | **Succession.** Singleplayer throne persistence (beat the AI, defend the throne next round), then the private-lobby hand-off through the successor-lobby flow with config inheritance; the private-lobby Hegemon toggle. The first item that makes the round loop real (§1).                                                                                                                                                                                                                                            |                                                                                                                                                                                                                                                                                     |
-| **M6**    | **Sci-fi re-theme and the economy's look.** Straight-line rails (S7); spaceport / Destroyer names and icons; the remaining unit, structure and resource names (F14); palette/theme JSON; atlases and own art for the projectile and the gate.                                                                                                                                                                                                                                                                           |                                                                                                                                                                                                                                                                                     |
+| **M6**    | **Sci-fi re-theme and the economy's look.** Icons for the spaceport, freighter and Destroyer (their names and the straight lanes moved to M3.6); the remaining unit, structure and resource names (F14); palette/theme JSON; atlases and own art for the projectile and the gate.                                                                                                                                                                                                                                       |                                                                                                                                                                                                                                                                                     |
 | **M7**    | **The map library (S9, F17).** 10–20 galaxy maps from the generator and by hand; remove the old maps map by map; per-map palette and thumbnails (§5.3 gap); decide the exclave question on galaxy maps (F18).                                                                                                                                                                                                                                                                                                           |                                                                                                                                                                                                                                                                                     |
 | **M8**    | **Release hygiene.** §8 cleanup (proprietary assets, ads, links); the splash page and main menu rebuilt for DarkStar with attribution (S10); sound effects verified and a legal soundtrack (S8); remove or stub API-dependent features; local game archive.                                                                                                                                                                                                                                                             |                                                                                                                                                                                                                                                                                     |
 | **M9**    | **Public lobbies** with a persistent Hegemon (own persistence + identity); Hegemon high scores (S5, F13).                                                                                                                                                                                                                                                                                                                                                                                                               |                                                                                                                                                                                                                                                                                     |
@@ -1366,26 +1430,29 @@ to the invader (H9), gold donations from the throne (H9), hydrogen-bomb removal 
 
 ## 10. Glossary
 
-| Term                          | Meaning                                                                                                           |
-| ----------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| **Hegemon**                   | The asymmetric ruler role: starts dominant, cannot expand. One per round. Human or AI.                            |
-| **Challenger**                | Any non-Hegemon player.                                                                                           |
-| **Dark Star / Domain**        | The central black-hole region: the Hegemon's territory, the only tiles it may ever own.                           |
-| **Invader**                   | The single challenger currently allowed to attack the domain.                                                     |
-| **Raze / Strike**             | The Hegemon's attack: land it takes returns to neutral instead of being claimed (challenger raids were dropped).  |
-| **Gift**                      | A structure the Hegemon builds on a challenger's land at its own cost; the host owns it and cannot refuse (H18).  |
-| **Shadow tax**                | The Hegemon's gold income: a share of the challengers' combined income, deducted from nobody (H4).                |
-| **Destroyer**                 | The engine's warship; the Hegemon's spawn in the moat, portless and purely defensive (H10, S7).                   |
-| **Stargate**                  | A challenger structure that fires a troop-carrying projectile at any tile in range; it lands as a beachhead (C4). |
-| **Projectile**                | The shared flight — a unit on a nuke-style arc with a motion plan — used by strikes, gate shots and the opening.  |
-| **Tyranny**                   | The cost penalty on striking a small player; at the floor they cannot be struck at all.                           |
-| **Bubble**                    | The land a strike holds while it lasts; fought over by the struck player, pops to neutral.                        |
-| **Overthrow**                 | Eliminating the Hegemon (zero tiles).                                                                             |
-| **Killing blow**              | The conquest that eliminates the Hegemon; its owner wins the round.                                               |
-| **Round / Reign**             | One game / the consecutive rounds a player holds the throne.                                                      |
-| **Tribe**                     | Engine term for a simple bot (`PlayerType.Bot`).                                                                  |
-| **Nation**                    | Engine term for the smarter, map-defined AI (`PlayerType.Nation`).                                                |
-| **Intent / Turn / Execution** | Player action → server-bundled tick of intents → deterministic sim object that applies it.                        |
+| Term                          | Meaning                                                                                                                                                                                            |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Hegemon**                   | The asymmetric ruler role: starts dominant, cannot expand. One per round. Human or AI.                                                                                                             |
+| **Challenger**                | Any non-Hegemon player.                                                                                                                                                                            |
+| **Dark Star / Domain**        | The central black-hole region: the Hegemon's territory, the only tiles it may ever own.                                                                                                            |
+| **Invader**                   | The single challenger currently allowed to attack the domain.                                                                                                                                      |
+| **Raze / Strike**             | The Hegemon's attack: land it takes returns to neutral instead of being claimed (challenger raids were dropped).                                                                                   |
+| **Gift**                      | A structure the Hegemon builds on a challenger's land at its own cost; the host owns it and cannot refuse (H18).                                                                                   |
+| **Shadow tax**                | The Hegemon's gold income: a share of the challengers' combined income, deducted from nobody (H4).                                                                                                 |
+| **Destroyer**                 | The engine's warship, a deep-space unit; a challenger's is launched from a spaceport's harbour, the Hegemon's spawn in the moat, portless and purely defensive (H10, S7).                          |
+| **Spaceport**                 | The engine's port, placed anywhere like a city; its **harbour** is the nearest deep space reachable over land, where freighters put to space and destroyers are launched and repaired (S7, §6.17). |
+| **Freighter**                 | The engine's trade ship; travels overland to and from a harbour at half speed (S7).                                                                                                                |
+| **Trade lane**                | A railroad drawn and ridden as a straight line between two stations (S7).                                                                                                                          |
+| **Stargate**                  | A challenger structure that fires a troop-carrying projectile at any tile in range; it lands as a beachhead (C4).                                                                                  |
+| **Projectile**                | The shared flight — a unit on a nuke-style arc with a motion plan — used by strikes, gate shots and the opening.                                                                                   |
+| **Tyranny**                   | The cost penalty on striking a small player; at the floor they cannot be struck at all.                                                                                                            |
+| **Bubble**                    | The land a strike holds while it lasts; fought over by the struck player, pops to neutral.                                                                                                         |
+| **Overthrow**                 | Eliminating the Hegemon (zero tiles).                                                                                                                                                              |
+| **Killing blow**              | The conquest that eliminates the Hegemon; its owner wins the round.                                                                                                                                |
+| **Round / Reign**             | One game / the consecutive rounds a player holds the throne.                                                                                                                                       |
+| **Tribe**                     | Engine term for a simple bot (`PlayerType.Bot`).                                                                                                                                                   |
+| **Nation**                    | Engine term for the smarter, map-defined AI (`PlayerType.Nation`).                                                                                                                                 |
+| **Intent / Turn / Execution** | Player action → server-bundled tick of intents → deterministic sim object that applies it.                                                                                                         |
 
 ## 11. Changelog
 
@@ -1596,3 +1663,17 @@ to the invader (H9), gold donations from the throne (H9), hydrogen-bomb removal 
   **10% / 25%** and the pocket's area by a quarter (`punitiveRadius` 34); **SAM launchers are
   removed** under a Dark Star (S6) — the punishment is the deterrent, not an interceptor net; the
   **Nuclear Warhead costs 1M gold**; the inbound message is one line.
+- **2026-09-26** — **The economy goes to space (S7 revised).** Tom's proposal and the review: rails
+  become straight **trade lanes** (in the sim; no connection where the line is blocked); the port
+  becomes a **spaceport** placed anywhere like a city, with a **harbour** — the nearest deep space
+  over land — for its ships; **freighters** cross land at half speed on three legs (land, space,
+  land), always via deep space, over any land but the disc, the moat included, ownership ignored;
+  **destroyers** stay in deep space, launched from a harbour; the names freighter / spaceport /
+  Destroyer; stargates purely offensive. Spawn odds, destination weighting and the throttle are
+  unchanged. The client keeps one motion plan per unit and takes any newer plan id, so a plan per
+  leg needs no wire change. Steps (M3.6): spaceports and harbours, freighters overland, straight
+  lanes, names.
+- **2026-09-26** — **M3.6 step 1 built: spaceports anywhere and their harbours** (§6.17).
+  `Game.harbours`; ports placed like cities; a challenger's destroyer launched from the harbour
+  nearest the click and repaired at one; landlocked nations try inland ports. 9 tests;
+  `Warship.test.ts` and the trade scenarios adjusted.

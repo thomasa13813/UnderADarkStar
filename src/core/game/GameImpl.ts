@@ -54,6 +54,7 @@ import {
 } from "./Game";
 import { GameMap, TileRef } from "./GameMap";
 import { GameUpdate, GameUpdateType } from "./GameUpdates";
+import { Harbour, HarbourCache } from "./Harbours";
 import { MotionPlanRecord, packMotionPlans } from "./MotionPlans";
 import { flightTicks, openingWindowTicks } from "./Opening";
 import { PlayerImpl } from "./PlayerImpl";
@@ -136,6 +137,7 @@ export class GameImpl implements Game {
   private _winner: Player | Team | null = null;
   private _waterManager: WaterManager;
   private _sharedWaterCache: SharedWaterCache;
+  private _harbours: HarbourCache;
   private _teamGameSpawnAreas: TeamGameSpawnAreas | undefined;
   /** Tiles from nuke blast radii this tick, drained by the renderer. */
   private _nukeImpactQueue: TileRef[] = [];
@@ -182,6 +184,7 @@ export class GameImpl implements Game {
       _config.disableNavMesh(),
     );
     this._sharedWaterCache = new SharedWaterCache(this);
+    this._harbours = new HarbourCache(this);
 
     if (_config.gameConfig().gameMode === GameMode.Team) {
       this.populateTeams();
@@ -1690,6 +1693,9 @@ export class GameImpl implements Game {
   }
   sharedWaterComponents(player: Player): Set<number> | null {
     return this._sharedWaterCache.get(player);
+  }
+  harbours(portTile: TileRef): readonly Harbour[] {
+    return this._harbours.harbours(portTile);
   }
   conquerPlayer(conqueror: Player, conquered: Player) {
     if (conquered.isHegemon()) {

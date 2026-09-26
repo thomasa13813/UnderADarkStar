@@ -174,8 +174,10 @@ function buildPorts(game: Game, player: Player, side: TradeSide): Unit[] {
       const t = map.ref(x, y);
       if (!map.isLand(t) || !map.isShore(t)) continue;
       if (oceanOf(t) !== ocean) continue;
+      // A spaceport is placed like a city (§6.17) and a blocked site is moved
+      // to the nearest free tile: keep only ports that stand on this shore.
       const spawn = player.canBuild(UnitType.Port, t);
-      if (spawn === false) continue;
+      if (spawn !== t) continue;
       ports.push(player.buildUnit(UnitType.Port, spawn, {}));
     }
   }

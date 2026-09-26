@@ -11,6 +11,7 @@ import {
   PlayerUpdate,
   UnitUpdate,
 } from "./GameUpdates";
+import { Harbour } from "./Harbours";
 import { MotionPlanRecord } from "./MotionPlans";
 import { RailNetwork } from "./RailNetwork";
 import { Stats } from "./Stats";
@@ -1079,6 +1080,12 @@ export interface Game extends GameMap {
    * heuristics. `null` means no usable water body for ports.
    */
   sharedWaterComponents(player: Player): Set<number> | null;
+  /**
+   * A spaceport's harbours (S7, §6.17): the nearest deep space reachable over
+   * land from the port tile, one per body of space, with the overland path.
+   * Cached; terrain only.
+   */
+  harbours(portTile: TileRef): readonly Harbour[];
   /** Incremented each time the water navigation graph is rebuilt (e.g. after nuke terrain change). */
   waterGraphVersion(): number;
 

@@ -1709,8 +1709,6 @@ export class PlayerImpl implements Player {
         return this.nukeSpawn(targetTile, unitType);
       case UnitType.MIRVWarhead:
         return targetTile;
-      case UnitType.Port:
-        return this.portSpawn(targetTile, validTiles);
       case UnitType.Warship:
         return this.warshipSpawn(targetTile);
       case UnitType.Shell:
@@ -1723,6 +1721,9 @@ export class PlayerImpl implements Player {
         return this.tradeShipSpawn(targetTile);
       case UnitType.Train:
         return this.landBasedUnitSpawn(targetTile);
+      // A spaceport stands anywhere in the territory, like a city (S7,
+      // §6.17); its harbour, the nearest deep space, is found on demand.
+      case UnitType.Port:
       case UnitType.MissileSilo:
       case UnitType.DefensePost:
       case UnitType.SAMLauncher:
@@ -1825,29 +1826,6 @@ export class PlayerImpl implements Player {
     return best;
   }
 
-  portSpawn(tile: TileRef, validTiles: TileRef[] | null): TileRef | false {
-    const spawns = Array.from(
-      this.mg.bfs(
-        tile,
-        manhattanDistFN(tile, this.mg.config().radiusPortSpawn()),
-      ),
-    )
-      .filter((t) => this.mg.owner(t) === this && this.mg.isShore(t))
-      .sort(
-        (a, b) =>
-          this.mg.manhattanDist(a, tile) - this.mg.manhattanDist(b, tile),
-      );
-    const validTileSet = new Set(
-      validTiles ?? this.validStructureSpawnTiles(tile),
-    );
-    for (const t of spawns) {
-      if (validTileSet.has(t)) {
-        return t;
-      }
-    }
-    return false;
-  }
-
   warshipSpawn(tile: TileRef): TileRef | false {
     if (!this.mg.isWater(tile)) {
       return false;
@@ -1858,18 +1836,31 @@ export class PlayerImpl implements Player {
       return this.mg.isInMoat(tile) ? tile : false;
     }
 
-    const tileComponent = this.mg.getWaterComponent(tile);
-    const bestPort = findClosestBy(
-      this.units(UnitType.Port),
-      (port) => this.mg.manhattanDist(port.tile(), tile),
-      (port) =>
-        port.isActive() &&
-        !port.isUnderConstruction() &&
-        tileComponent !== null &&
-        this.mg.hasWaterComponent(port.tile(), tileComponent),
-    );
-
-    return bestPort?.tile() ?? false;
+    // A challenger's destroyer is launched from the harbour of one of its
+    // spaceports on the clicked body of space, the nearest to the click, and
+    // sails from there (§6.17). Ties go to the lower tile.
+    const component = this.mg.getWaterComponent(tile);
+    if (component === null) {
+      return false;
+    }
+    let best: TileRef | false = false;
+    let bestDist = Infinity;
+    for (const port of this.units(UnitType.Port)) {
+      if (!port.isActive() || port.isUnderConstruction()) continue;
+      for (const harbour of this.mg.harbours(port.tile())) {
+        if (!this.mg.hasWaterComponent(harbour.tile, component)) continue;
+        const d = this.mg.manhattanDist(harbour.tile, tile);
+        if (
+          best === false ||
+          d < bestDist ||
+          (d === bestDist && harbour.tile < best)
+        ) {
+          best = harbour.tile;
+          bestDist = d;
+        }
+      }
+    }
+    return best;
   }
 
   landBasedUnitSpawn(tile: TileRef): TileRef | false {

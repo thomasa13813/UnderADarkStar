@@ -16,10 +16,6 @@ export class TestConfig extends Config {
     return this.gameConfig().disableNavMesh ?? true;
   }
 
-  radiusPortSpawn(): number {
-    return 1;
-  }
-
   proximityBonusPortsNb(totalPorts: number): number {
     return this._proximityBonusPortsNb;
   }

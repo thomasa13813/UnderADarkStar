@@ -14,6 +14,11 @@ import { setup } from "./util/Setup";
 import { executeTicks } from "./util/utils";
 
 const coastX = 7;
+// A retreating warship heads for its port's harbour, the deep space next to
+// it (docs/DarkStar-Design.md §6.17), not the port tile itself.
+function harbourOf(port: Unit): TileRef {
+  return game.harbours(port.tile())[0].tile;
+}
 let game: Game;
 let player1: Player;
 let player2: Player;
@@ -472,7 +477,7 @@ describe("Warship", () => {
       homePort.tile(),
     );
     expect(
-      distanceToPort <= 25 || warship.targetTile() === homePort.tile(),
+      distanceToPort <= 25 || warship.targetTile() === harbourOf(homePort),
     ).toBe(true);
   });
 
@@ -718,9 +723,9 @@ describe("Warship", () => {
     const homePort = player1.buildUnit(UnitType.Port, game.ref(coastX, 10), {});
     const warship = player1.buildUnit(
       UnitType.Warship,
-      game.ref(coastX + 6, 12),
+      game.ref(coastX + 7, 12),
       {
-        patrolTile: game.ref(coastX + 6, 12),
+        patrolTile: game.ref(coastX + 7, 12),
       },
     );
     game.addExecution(new WarshipExecution(warship));
@@ -731,15 +736,15 @@ describe("Warship", () => {
       game.executeNextTick();
       if (
         warship.warshipState().state !== "patrolling" &&
-        warship.targetTile() === homePort.tile() &&
-        warship.tile() !== homePort.tile()
+        warship.targetTile() === harbourOf(homePort) &&
+        warship.tile() !== harbourOf(homePort)
       ) {
         break;
       }
     }
 
     expect(warship.warshipState().state).not.toBe("patrolling");
-    expect(warship.targetTile()).toBe(homePort.tile());
+    expect(warship.targetTile()).toBe(harbourOf(homePort));
 
     const enemyTransport = player2.buildUnit(
       UnitType.TransportShip,
@@ -752,7 +757,7 @@ describe("Warship", () => {
     game.executeNextTick();
 
     expect(warship.warshipState().state).not.toBe("patrolling");
-    expect(warship.targetTile()).toBe(homePort.tile());
+    expect(warship.targetTile()).toBe(harbourOf(homePort));
     expect(warship.targetUnit()).toBe(enemyTransport);
   });
 
@@ -931,8 +936,8 @@ describe("Warship", () => {
     const homePort = player1.buildUnit(UnitType.Port, game.ref(coastX, 10), {});
     const warship = player1.buildUnit(
       UnitType.Warship,
-      game.ref(coastX + 6, 12),
-      { patrolTile: game.ref(coastX + 6, 12) },
+      game.ref(coastX + 7, 12),
+      { patrolTile: game.ref(coastX + 7, 12) },
     );
     game.addExecution(new WarshipExecution(warship));
 
@@ -944,13 +949,13 @@ describe("Warship", () => {
       game.executeNextTick();
       if (
         warship.warshipState().state !== "patrolling" &&
-        warship.targetTile() === homePort.tile()
+        warship.targetTile() === harbourOf(homePort)
       ) {
         break;
       }
     }
     expect(warship.warshipState().state).not.toBe("patrolling");
-    expect(warship.targetTile()).toBe(homePort.tile());
+    expect(warship.targetTile()).toBe(harbourOf(homePort));
 
     const tileBeforeCombat = warship.tile();
 
@@ -965,7 +970,7 @@ describe("Warship", () => {
     game.executeNextTick();
 
     expect(warship.warshipState().state).not.toBe("patrolling");
-    expect(warship.targetTile()).toBe(homePort.tile());
+    expect(warship.targetTile()).toBe(harbourOf(homePort));
     expect(warship.targetUnit()).toBe(enemyTransport);
 
     // Warship should still be moving (not frozen at tileBeforeCombat)

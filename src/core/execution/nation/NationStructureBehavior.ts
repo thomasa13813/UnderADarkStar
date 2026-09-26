@@ -119,6 +119,10 @@ const UPGRADE_DENSITY_THRESHOLD = 1 / 1500;
  */
 const MIN_PORT_WATER_COMPONENT_SIZE = 3000;
 
+/** A landlocked nation's search for an inland spaceport site (§6.17). */
+const INLAND_PORT_RETRY_TICKS = 300;
+const INLAND_PORT_CANDIDATES = 5;
+
 /** Estimated number of tiles per city equivalent, used when cities are disabled */
 const TILES_PER_CITY_EQUIVALENT = 2000;
 
@@ -173,6 +177,7 @@ export class NationStructureBehavior {
     weight: number;
   }> | null = null;
   private _sharedWaterComponents: Set<number> | null = null;
+  private lastInlandPortSearchTick: number | null = null;
   private lastStructureTick: number | null = null;
   private placementsCount = 0;
   private builtCrowdedMapFirstStructure = false;
@@ -556,11 +561,6 @@ export class NationStructureBehavior {
         continue;
       }
 
-      // Skip ports if no coastal tiles
-      if (structureType === UnitType.Port && !hasCoastalTiles) {
-        continue;
-      }
-
       // Skip missile silos and SAM launchers if all nukes are disabled
       if (
         !nukesEnabled &&
@@ -896,10 +896,13 @@ export class NationStructureBehavior {
   }
 
   private structureSpawnTile(type: UnitType): TileRef | null {
-    const tiles =
+    let tiles =
       type === UnitType.Port
         ? this.randCoastalTileArray(25)
         : randTerritoryTileArray(this.random, this.game, this.player, 25);
+    if (type === UnitType.Port && tiles.length === 0) {
+      tiles = this.randInlandPortTileArray();
+    }
     if (tiles.length === 0) return null;
     const valueFunction = this.structureSpawnTileValue(type);
     if (valueFunction === null) return null;
@@ -940,6 +943,37 @@ export class NationStructureBehavior {
       return false;
     });
     return Array.from(this.arraySampler(tiles, numTiles));
+  }
+
+  /**
+   * A landlocked nation's spaceport sites (S7, §6.17): territory tiles whose
+   * harbour reaches the ocean or a body of space shared with a trade
+   * partner. Each candidate costs a harbour search, so a few are tried at
+   * most every INLAND_PORT_RETRY_TICKS.
+   */
+  private randInlandPortTileArray(): TileRef[] {
+    const game = this.game;
+    const now = game.ticks();
+    if (
+      this.lastInlandPortSearchTick !== null &&
+      now - this.lastInlandPortSearchTick < INLAND_PORT_RETRY_TICKS
+    ) {
+      return [];
+    }
+    this.lastInlandPortSearchTick = now;
+    const shared = this._sharedWaterComponents;
+    return randTerritoryTileArray(
+      this.random,
+      game,
+      this.player,
+      INLAND_PORT_CANDIDATES,
+    ).filter((t) =>
+      game.harbours(t).some((h) => {
+        if (game.isOcean(h.tile)) return true;
+        const comp = game.getWaterComponent(h.tile);
+        return comp !== null && shared !== null && shared.has(comp);
+      }),
+    );
   }
 
   private *arraySampler<T>(a: T[], sampleSize: number): Generator<T> {
