@@ -97,10 +97,11 @@ export class PortExecution implements Execution {
   // It's a probability list, so if an element appears twice it's because it's
   // twice more likely to be picked later.
   tradingPorts(): Unit[] {
+    // Two ports trade when their harbours share a body of space (S7, §6.18);
+    // a coastal port's harbours are its adjacent water, as before.
     const sourceComponents = new Set<number>();
-    for (const neighbor of this.mg.neighbors(this.port!.tile())) {
-      if (!this.mg.isWater(neighbor)) continue;
-      const comp = this.mg.getWaterComponent(neighbor);
+    for (const harbour of this.mg.harbours(this.port!.tile())) {
+      const comp = this.mg.getWaterComponent(harbour.tile);
       if (comp !== null) sourceComponents.add(comp);
     }
     const ports = this.mg
@@ -108,8 +109,10 @@ export class PortExecution implements Execution {
       .filter((p) => p !== this.port!.owner() && p.canTrade(this.port!.owner()))
       .flatMap((p) => p.units(UnitType.Port))
       .filter((p) => {
-        for (const comp of sourceComponents) {
-          if (this.mg.hasWaterComponent(p.tile(), comp)) return true;
+        for (const harbour of this.mg.harbours(p.tile())) {
+          for (const comp of sourceComponents) {
+            if (this.mg.hasWaterComponent(harbour.tile, comp)) return true;
+          }
         }
         return false;
       })

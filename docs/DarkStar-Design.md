@@ -1,4 +1,4 @@
-# Under a Dark Star — Design Reference
+step 1 (spaceports, harbours, destroyers) built 2026-09-26, §6.17; step 2 (freighters overland) built 2026-09-26, §6.18. |# Under a Dark Star — Design Reference
 
 > **Purpose:** the single place a new session (human or Claude) reads to understand what we are
 > building, what has been decided, what is still open, and where in the codebase the work lands.
@@ -343,7 +343,8 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   to a harbour to repair. (5) Names: **freighter**, **spaceport**, **Destroyer** ("Star Destroyer" is
   a Lucasfilm trademark), display strings only (F14); icons later (M6). Stargates stay a purely
   offensive tool (C4). Built in steps (M3.6): spaceports and harbours [Built 2026-09-26, §6.17],
-  then freighters overland, then straight lanes, then the names.
+  freighters overland [Built 2026-09-26, §6.18], then straight lanes, then the names. A
+  freighter on a land leg cannot be captured — a destroyer's reach ends at the water's edge.
 - **S8 — Audio.** No audio work for now. **Before any public release:** the game must have sound
   effects — the repo carries 34 effect files that `Sounds.ts` plays, so silence in play is a bug to
   diagnose, not missing assets — and a unique, legally compliant soundtrack replacing the proprietary
@@ -1372,7 +1373,56 @@ throttle is left alone; stargates stay purely offensive.
   expects the harbour as the retreat target; the trade scenarios keep only ports standing on their
   shore tile (a blocked site now moves instead of failing) and their snapshots moved by under 1%.
 - **Not yet.** Inland ports do not trade until step 2 (port pairing still wants adjacent water), and
-  the harbour's path is unused until then.
+  the harbour's path is unused until then. [Done 2026-09-26, §6.18]
+
+### 6.18 As built — freighters overland (2026-09-26)
+
+Step 2 of the space economy (S7). One call made while building: a freighter on its land legs is
+**out of a destroyer's reach** (a ship in the harbour could otherwise take one on the tiles next
+to it), so inland trade is slow but safe, as the trade-off intends.
+
+- **Pairing.** `PortExecution.tradingPorts` pairs two ports when a harbour of each lies on the
+  same body of space (`Game.harbours` + `getWaterComponent` / `hasWaterComponent`); the
+  weighting, the spawn odds and the global throttle are as they were. A coastal port's harbours are
+  its adjacent water, so its partners are unchanged; a port with no harbour trades with nobody.
+- **The voyage.** `TradeShipExecution` sails three legs. `planVoyage` picks the first of the
+  source port's harbours and the destination's **landing** on that body of space (`landingFor`),
+  in harbour order, so every client agrees. **Out**: the source harbour path's land tiles;
+  **space**: the memoised `WaterPathFinder` from the last land tile to the landing (its shore
+  coercion takes the ship off the land tile as it always took it off the port tile); **in**: the
+  destination's harbour path backwards, without the harbour, ending on the port tile, where
+  `complete()` pays as before. A **coastal** destination's landing is its **port tile itself**
+  with no land leg, and a coastal source has no land leg out, so coastal trade sails port tile to
+  port tile and completes exactly as it always did; a port with no harbour at all, or a pair with
+  no shared body of space, falls back to the same port-to-port sailing. On land the ship moves one tile every
+  `Config.freighterLandTicksPerTile` ticks (**2**, half speed; a wait counter, the first step one
+  tick after the leg begins), in space a tile a tick. `tilesTraveled` counts every tile, so the
+  payout per tile is unchanged. Coastal ships are unchanged tick for tick: six of the nine trade
+  scenario snapshots are untouched and the three multi-port ones moved by a ship (port pairing
+  now reads the harbour water tile rather than the port's land tile).
+- **Motion plans.** One grid plan per leg (`planId` 1, 2, 3; `ticksPerStep` 2 / 1 / 2), each
+  recorded on the leg's first step with `startTick` the next tick and the leg's path — no change
+  to `MotionPlans.ts` or the wire: the client keeps one plan per unit and takes any newer id.
+- **Captures.** `WarshipExecution.findBestTarget` skips a trade ship standing on land, and "a
+  port to bring the prize to" now means a port with a harbour on the warship's body of space. A
+  captured ship's `retargetToCaptorsPort` picks the captor's nearest port with such a harbour
+  (anchored on the ship's tile at sea, or on the leg's harbour if ever on land), sets the new
+  harbour and land path, and sails on; taken while inland of the old port it backs out to space
+  first.
+- **Dark Star.** The harbour search never enters the disc (§6.17) and the space leg is water, so a
+  freighter only ever touches the disc's rim for a tick where the half-resolution pathfinder
+  coerces it onto a coast tile (the same slack §6.15 allows destroyers). The moat is water like
+  any other.
+- **Tests.** `tests/Freighters.test.ts` (6): inland ports pair through their harbours and a
+  harbourless port pairs with nobody; the three legs with their timing (land every 2 ticks, space
+  every tick), the delivery and the equal payout; a plan per leg with `ticksPerStep` 2/1/2 and the
+  inbound path ending on the port; a coastal port sails as before; a freighter on land is never a
+  destroyer's target and, captured at sea, sails to the captor's inland port and pays it; beside
+  the Dark Star two inland ports trade around the moat without entering the disc. The mocked
+  `tests/core/executions/TradeShipExecution.test.ts` still passes on the port-to-port fallback.
+- **Not yet.** Nations still judge trade partners from their coastline (`SharedWaterCache`), so a
+  landlocked nation's inland port is placed by harbour reach but its partners are not weighed;
+  fine for now. Freighters draw the naval sprite on land until the names and icons (steps 4, M6).
 
 ## 7. Constraints (non-negotiable engineering rules)
 
@@ -1677,3 +1727,8 @@ to the invader (H9), gold donations from the throne (H9), hydrogen-bomb removal 
   `Game.harbours`; ports placed like cities; a challenger's destroyer launched from the harbour
   nearest the click and repaired at one; landlocked nations try inland ports. 9 tests;
   `Warship.test.ts` and the trade scenarios adjusted.
+- **2026-09-26** — **M3.6 step 2 built: freighters overland** (§6.18). Ports pair through their
+  harbours; `TradeShipExecution` sails three legs with a motion plan each, land at half speed
+  (`freighterLandTicksPerTile` 2); a freighter on land cannot be captured; a captured one sails
+  to the captor's nearest port with a harbour on its body of space; coastal trade unchanged tick
+  for tick. 6 tests.

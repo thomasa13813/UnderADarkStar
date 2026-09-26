@@ -712,6 +712,14 @@ export class Config {
     return this.trainStationMaxRange() * 1.4142;
   }
 
+  /**
+   * Ticks a freighter takes per tile on its land legs (S7, §6.18): 2 is
+   * half speed against deep space's tile a tick.
+   */
+  freighterLandTicksPerTile(): number {
+    return 2;
+  }
+
   tradeShipGold(dist: number, player: Player | PlayerView): Gold {
     // Sigmoid: concave start, sharp S-curve middle, linear end - heavily punishes trades under range debuff.
     const debuff = this.tradeShipShortRangeDebuff();

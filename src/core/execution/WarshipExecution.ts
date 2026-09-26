@@ -340,12 +340,19 @@ export class WarshipExecution implements Execution {
                   port.isActive() &&
                   !port.isMarkedForDeletion() &&
                   !port.isUnderConstruction() &&
-                  mg.hasWaterComponent(port.tile(), warshipComponent!),
+                  mg
+                    .harbours(port.tile())
+                    .some((h) =>
+                      mg.hasWaterComponent(h.tile, warshipComponent!),
+                    ),
               );
           patrolTile = this.warship.warshipState().patrolTile;
           patrolRangeSquared = config.warshipPatrolRange() ** 2;
         }
         if (
+          // A freighter on its land leg is beyond a deep-space ship's reach
+          // (S7, §6.18): slow inland, but safe.
+          mg.isLand(unit.tile()) ||
           // A destroyer has no port to bring a prize to: the invader's ship
           // is simply lost to them (H10).
           (!hasReachablePort && !this.hegemon) ||
