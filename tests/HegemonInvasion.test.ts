@@ -94,20 +94,17 @@ describe("The invasion slot (H6, H12)", () => {
     expect(canBuildTransportShip(game, east, domainShore(-1))).not.toBe(false);
   });
 
-  test("an evicted invader waits out the cooldown; others are free to go", () => {
+  test("an evicted invader may land again at once: no cooldown", () => {
     east.conquer(domainShore(1));
     hegemon.conquer(domainShore(1));
     expect(game.darkStarInvader()).toBeNull();
-    expect(game.invasionCooldownTicks(east)).toBe(5 * 60 * 10);
-    expect(game.canInvadeDarkStar(east)).toBe(false);
+    expect(game.canInvadeDarkStar(east)).toBe(true);
     expect(game.canInvadeDarkStar(west)).toBe(true);
 
+    // The slot is free, so the boat sails on the tick it is ordered.
     game.addExecution(new TransportShipExecution(east, domainShore(1), 1000));
     executeTicks(game, 5);
-    expect(east.units(UnitType.TransportShip)).toHaveLength(0);
-
-    executeTicks(game, 5 * 60 * 10);
-    expect(game.canInvadeDarkStar(east)).toBe(true);
+    expect(east.units(UnitType.TransportShip)).toHaveLength(1);
   });
 
   test("a fleet bound for the Dark Star turns back when someone else lands", () => {
@@ -131,7 +128,6 @@ describe("The invasion slot (H6, H12)", () => {
     expect(west.units(UnitType.TransportShip)).toHaveLength(0);
     // Home whole (plus what it regenerated meanwhile), and free to try later.
     expect(west.troops()).toBeGreaterThanOrEqual(westTroops + 50_000);
-    expect(game.invasionCooldownTicks(west)).toBe(0);
   });
 });
 
@@ -165,7 +161,6 @@ describe("The Dark Star fights back (H13)", () => {
 
     executeTicks(game, 30); // 5 s without a gain: a wave is forced, and evicts
     expect(game.darkStarInvader()).toBeNull();
-    expect(game.invasionCooldownTicks(east)).toBeGreaterThan(0);
   });
 
   test("while stalled, everything the Hegemon gains is sent after the invader", async () => {
@@ -250,6 +245,5 @@ describe("An invader gains nothing from the Dark Star (H5)", () => {
     expect(sawStalled).toBe(true);
     expect(game.darkStarInvader()).toBeNull();
     expect(east.domainTilesHeld()).toBe(0);
-    expect(game.invasionCooldownUntil(east)).toBeGreaterThan(game.ticks());
   });
 });

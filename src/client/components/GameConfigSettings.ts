@@ -234,6 +234,9 @@ export interface GameConfigSettingsData {
   unitTypes: {
     titleKey: string;
     disabledUnits: UnitType[];
+    // Unit types the lobby never offers a choice on (S6: MIRVs are hard-off in
+    // Hegemon mode, so the row would be a lie).
+    hiddenUnits?: UnitType[];
   };
 }
 
@@ -375,21 +378,26 @@ export class GameConfigSettings extends LitElement {
     `;
   }
 
-  private renderUnitTypeOptions(disabledUnits: UnitType[]): TemplateResult[] {
-    return unitOptions.map(({ type, translationKey }) => {
-      const isEnabled = !disabledUnits.includes(type);
-      return html`
-        <button
-          class="${cardClass(isEnabled, "p-4 text-center")}"
-          aria-pressed=${isEnabled}
-          @click=${() => this.handleUnitToggle(type, isEnabled)}
-        >
-          <span class="${CARD_LABEL_CLASS} ${stateTextClass(isEnabled)}">
-            ${translateText(translationKey)}
-          </span>
-        </button>
-      `;
-    });
+  private renderUnitTypeOptions(
+    disabledUnits: UnitType[],
+    hiddenUnits: UnitType[] = [],
+  ): TemplateResult[] {
+    return unitOptions
+      .filter(({ type }) => !hiddenUnits.includes(type))
+      .map(({ type, translationKey }) => {
+        const isEnabled = !disabledUnits.includes(type);
+        return html`
+          <button
+            class="${cardClass(isEnabled, "p-4 text-center")}"
+            aria-pressed=${isEnabled}
+            @click=${() => this.handleUnitToggle(type, isEnabled)}
+          >
+            <span class="${CARD_LABEL_CLASS} ${stateTextClass(isEnabled)}">
+              ${translateText(translationKey)}
+            </span>
+          </button>
+        `;
+      });
   }
 
   private renderMapSearchInput(): TemplateResult {
@@ -637,7 +645,10 @@ export class GameConfigSettings extends LitElement {
           settings.unitTypes.titleKey,
           html`
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              ${this.renderUnitTypeOptions(settings.unitTypes.disabledUnits)}
+              ${this.renderUnitTypeOptions(
+                settings.unitTypes.disabledUnits,
+                settings.unitTypes.hiddenUnits,
+              )}
             </div>
           `,
           "space-y-6 pb-6",

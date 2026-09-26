@@ -1026,13 +1026,10 @@ export interface Game extends GameMap {
   addGateShotInFlight(shot: GateShotInFlight): void;
   removeGateShotInFlight(shot: GateShotInFlight): void;
   lastInvaderGainTick(): number;
-  invasionCooldownUntil(player: Player): number;
   // Set by HegemonExecution: the current invasion has stalled (H13).
   invasionStalled(): boolean;
   setInvasionStalled(stalled: boolean): void;
   canInvadeDarkStar(player: Player): boolean;
-  // Ticks until an evicted invader may invade again; 0 if free to.
-  invasionCooldownTicks(player: Player): number;
   miniWaterHPA(): PathFinder<number> | null;
   miniWaterGraph(): AbstractGraph | null;
   getWaterComponent(tile: TileRef): number | null;

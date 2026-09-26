@@ -123,22 +123,11 @@ export class TransportShipExecution implements Execution {
       !this.attacker.isHegemon() &&
       !mg.canInvadeDarkStar(this.attacker)
     ) {
-      const cooldown = mg.invasionCooldownTicks(this.attacker);
-      if (mg.darkStarInvader() === null && cooldown > 0) {
-        mg.displayMessage(
-          "events_display.dark_star_cooldown",
-          MessageType.ATTACK_FAILED,
-          this.attacker.id(),
-          undefined,
-          { seconds: Math.ceil(cooldown / 10) },
-        );
-      } else {
-        mg.displayMessage(
-          "events_display.dark_star_occupied",
-          MessageType.ATTACK_FAILED,
-          this.attacker.id(),
-        );
-      }
+      mg.displayMessage(
+        "events_display.dark_star_occupied",
+        MessageType.ATTACK_FAILED,
+        this.attacker.id(),
+      );
       this.active = false;
       return;
     }
@@ -239,7 +228,7 @@ export class TransportShipExecution implements Execution {
 
     // Bound for the Dark Star when someone else claimed the slot: the attack
     // is no longer valid, so turn around at once (H12). The troops come home
-    // whole, and no cooldown is burnt.
+    // whole.
     if (
       !this.boat.transportShipState().isRetreating &&
       this.dst !== null &&

@@ -84,7 +84,8 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   SAMs, defence posts or gates on domain tiles. The Hegemon therefore has no nukes, no home economy to
   grow and no navy of its own beyond H10 (F8 is closed by this rule — a Hegemon silo would have been a
   raze that skipped tyranny and the bubble). What the throne builds, it builds in its vassals' lands
-  (H18). Not yet built: today only the gate is refused to the Hegemon (`canBuildUnitType`).
+  (H18). [Built 2026-09-25, §6.13] Domain tiles are never structure sites for anyone, and the
+  Hegemon can build no structure of its own anywhere, a strike's bubble included.
 - **H3 — Strength scales with the map, not the player count** — for the troop ceiling. Gold scales
   with the round's economy (H4).
 - **H4 — Strength target.** [Revised 2026-09-24] The Hegemon is a **large pool that refills slowly**,
@@ -136,7 +137,8 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   requirement in `canDonateTroops` for a Hegemon donor only; the existing donation flow (order, HUD
   button, cooldown) is reused. **Shelved:** gold donations from the throne (liked, not a priority) and
   challengers donating to the Hegemon or to the invader (revisit if a playtest asks). F9 closed.
-  Not yet built.
+  [Built 2026-09-25, §6.13] The throne's troop donations also ignore the lobby's donation toggle
+  and may go to the current invader; gold donations and donations to the throne are refused outright.
 - **H10 — Destroyers of the Dark Star.** [Revised 2026-09-24] The Hegemon may build **destroyers**
   (the engine's warship, S7) **without a port** — it has none (H2). They **spawn in the moat** and are
   purely defensive: they move to intercept fleets bound for the domain and harass the trade of the
@@ -155,8 +157,8 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   `BoatRetreatExecution` is the precedent; troops return home). A gate shot (C4) lands and turns back
   under the same rules. [Decided 2026-09-24] **There is no re-invasion cooldown.** The 5-minute
   timer from eviction (built in §6.2) proved far too harsh in play and is removed: an evicted
-  challenger may land again as soon as the slot is free. Whether the slot itself should stay single
-  is open (F16).
+  challenger may land again as soon as the slot is free. [Built 2026-09-25, §6.13] Whether the slot
+  itself should stay single is open (F16).
 - **H13 — The Dark Star fights back against a stalled invasion.** An invasion is **stalled** once the
   invader's territory inside the domain has not changed for **5 seconds** (tunable). From that point,
   **all of the Hegemon's troop income — including troops donated to it — is automatically sent into an
@@ -274,7 +276,8 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   through the existing `disabledUnits` config, never offered in the build menu; the enum value stays
   (wire and replay format). The atom bomb is displayed as **Nuclear Warhead**, the hydrogen bomb as
   **Antimatter Warhead** — display strings only, enum values unchanged (§5.4). Hydrogen-bomb removal
-  was considered and closed by the rename.
+  was considered and closed by the rename. [Built 2026-09-25, §6.13] The MIRV is hard-off in core
+  whenever the Hegemon round is on (hosts cannot re-enable it) and the lobby hides its row.
 - **S7 — Economy.** [Direction agreed 2026-09-24] The engine's structure stays: cities and factories
   joined by rail, ports spawning trade ships. **Railroads are drawn as a straight line** from station
   to station and trains ride that line — a visual change; a connection still needs a land path and
@@ -523,7 +526,7 @@ it on). With it off the sim is bit-identical to before: no extra player, no PRNG
   (`conquer`/`relinquish` → `domainTileChanged`); whoever is in that map is `darkStarInvader()`.
   `canInvadeDarkStar(player)`: nobody holds the slot (or the player does) and the player's cooldown has
   run out. Losing the last domain tile is eviction and starts the 5-minute cooldown
-  (`invasionCooldownTicks`). The gate sits in `canBuildTransportShip` (so the UI and the AI never offer
+  (`invasionCooldownTicks`). [Removed 2026-09-25, §6.13: there is no cooldown.] The gate sits in `canBuildTransportShip` (so the UI and the AI never offer
   the boat) and in `TransportShipExecution`: launch is refused with a message, and a fleet already under
   way **turns back the moment someone else lands**, comes home with no retreat losses, and burns no
   cooldown. Land attacks need no gate: the moat means only the invader borders the Hegemon.
@@ -550,7 +553,7 @@ it on). With it off the sim is bit-identical to before: no extra player, no PRNG
   the tile count in `Config.maxTroops` and from the attacker's `numTiles` in combat (the large-territory
   bonuses). Before this, every domain tile raised the invader's own troop cap, so a successful invasion
   snowballed.
-- **Client state.** `PlayerUpdate` carries `domainTilesHeld`, `invasionCooldownUntil` (a tick) and
+- **Client state.** `PlayerUpdate` carries `domainTilesHeld`, `invasionCooldownUntil` (a tick; gone since §6.13) and
   `invasionStalled` (set on the invader; `HegemonExecution` → `Game.setInvasionStalled`). `GameView.hegemon()`
   and `GameView.darkStar()` (geometry recomputed client-side from the map size) serve the HUD.
 - **HUD (minimal, pulled forward from M2).** The **crown** marks the Hegemon while it lives — on the map
@@ -1024,6 +1027,60 @@ Go came from the official zip into the user profile, no installer.
   decorative stars in the void and a per-map palette; per-map thumbnail colours; whether 24 nations is
   the right count once Tom has played the map.
 
+### 6.13 As built — the throne's toolkit, chunk 1 (2026-09-25)
+
+M3's small sim rules from the 2026-09-24 review, on `feat/hegemon-toolkit` (off
+`feat/opening-and-galaxy-map`). Sub-questions settled with Tom the same day: the Hegemon's donations
+ignore the lobby's donation toggle; it may donate to the current invader; the MIRV is hard-off in
+core, not a lobby default; the Hegemon's build menu on the Dark Star opens greyed out rather than
+being hidden (revisited with gifts, H18).
+
+- **Nothing on the Dark Star (H2).** `PlayerImpl.validStructureSpawnTiles` — the owner-tile flood
+  every land structure and port site goes through, for humans, the build menu (`buildableUnits`) and
+  the nations (`NationStructureBehavior` asks `canBuild`) alike — skips domain tiles, so no one can
+  build on the Dark Star whoever holds the tile. `canBuildUnitType` refuses the Hegemon every
+  `Structures` type outright (it used to refuse only the gate): none on the domain, none on a strike's
+  bubble. This is what closes F8: a Hegemon silo is no longer possible. The AI Hegemon never built, so
+  nothing changes for it. Gifts (H18) will go through the host's placement, not the Hegemon's.
+- **No re-invasion cooldown (H12).** `invasionCooldownSeconds`, `GameImpl`'s per-player
+  `_invasionCooldownUntil` map and the `invasionCooldownUntil` / `invasionCooldownTicks` accessors are
+  gone; `canInvadeDarkStar` is now simply "nobody holds the slot, or you do". `PlayerUpdate` lost
+  `invasionCooldownUntil` (client-side only, no wire change). `TransportShipExecution` and
+  `GateShotExecution` refuse a Dark Star landing with `dark_star_occupied` alone; the
+  `dark_star_cooldown` message and the panel's "You may invade again in" line went with it. The
+  single-invader slot, the turn-back rule and H13 stall routing are untouched.
+- **The Hegemon donates troops to anyone (H9).** `canDonateTroops`: a Hegemon donor skips both the
+  `isFriendly` requirement and the lobby's `donateTroops` toggle (which only ever gated human
+  recipients); a Hegemon recipient is refused for everyone. `canDonateGold` refuses the throne as donor
+  or recipient explicitly (it already failed through `isFriendly`). The engine's per-recipient donation
+  cooldown still applies. Nothing else changes: the HUD's donate button reads `canDonateTroops` from
+  the player actions, so it appears on every challenger's panel for a human Hegemon; the order is the
+  ordinary `DonateTroopsExecution`. No AI use yet.
+- **No MIRVs, and the warhead names (S6).** `Config.isUnitDisabled(MIRV)` is true whenever
+  `hegemonConfig().enabled` (FFA with the Hegemon on), whatever the lobby's `disabledUnits` says; the
+  singleplayer lobby hides the MIRV row (`GameConfigSettings` gained `hiddenUnits`). The enum and the
+  `disabledUnits` wire field are unchanged. `en.json` only: Atom Bomb → **Nuclear Warhead**, Hydrogen
+  Bomb → **Antimatter Warhead**, in the unit names, build menu, keybind labels, event lines and the
+  tutorial; MIRV strings are left (they show only outside Hegemon mode).
+- **Sim baseline (`HegemonSim`, Event Horizon, seed a).** Identical to the pre-change run for the
+  first six minutes, then diverging: `NationMIRVBehavior.considerMIRV` now returns before its
+  hesitation roll, so every nation's random stream shifts from the first tick a nation with a silo and
+  MIRV gold asks; the nations also stop saving for a MIRV. A control run with only the MIRV hard-off
+  reverted matched the pre-change run tick for tick until 17.08 — right after the second gate landing
+  on the Dark Star, with the first invader (evicted at ~15) no longer barred by a cooldown — and
+  differed only in that invader's later shots: H12 (and H2, on the beachhead) acting as decided,
+  nothing else. All three runs ended on the timer with the throne alive; Dark Star landings 5 / 5 /
+  6 (control); domain low 75 % / 69 % / 92 %; strikes 7 / 4 / 7.
+- **Tests.** `tests/HegemonToolkit.test.ts` (10): the Hegemon can build no structure on the domain
+  or on a bubble; an invader cannot fortify held domain tiles; a domain tile is never chosen as the
+  site for a nearby build; challengers build as before; the throne donates to allies and strangers,
+  the invader included, with the toggle off; gold and donations to the throne stay closed; the order
+  carries the troops and the cooldown applies; MIRV off in Hegemon mode, the other warheads and
+  MIRV outside Hegemon mode untouched. `HegemonInvasion.test.ts` now checks an evicted invader may
+  sail again at once; `HegemonChallengerAI.test.ts` that the AI tries again the moment it is evicted.
+- **Deferred.** AI use of the throne's donations (H9); the build entry on the Hegemon's own tiles
+  is greyed rather than hidden until the gifts menu (H18) decides the menu's shape.
+
 ## 7. Constraints (non-negotiable engineering rules)
 
 - `src/core/` must stay **deterministic** (seeded PRNG, no wall-clock, careful with floats) and
@@ -1065,7 +1122,7 @@ Each milestone ships in feature branches Tom playtests one at a time.
 | **M1**    | Hegemon core in the sim, with tests: role flag, central domain (H1–H3), map-scaled strength decoupled from tiles (H4–H5), single-invader rule (H6–H7), razing strikes with tyranny and the bubble (H8, H16, H17), no alliances (H9), win logic (R1–R5), the AI Hegemon (H11), nations that go for the throne, playing the Hegemon in singleplayer.                                                                                                                                                                      | **Built** (§6.1–§6.7). Donations moved to M3, the last stand and calibration to M4, the private-lobby toggle to M5. |
 | **M1.5**  | Challenger systems: atlas tooling → the strike as a projectile → stargates (C4) → AI gates.                                                                                                                                                                                                                                                                                                                                                                                                                             | **Built** (§6.9–§6.11). Build-menu growth and raids dropped (C2, §6.8 stage 4); warships moved to M3.               |
 | **M2**    | Event Horizon, the first galaxy map with its `info.json` Dark Star; the launch-from-the-core opening (C3); HUD: Hegemon marker, Dark Star panel, victory screens.                                                                                                                                                                                                                                                                                                                                                       | **Built** (§6.12, §6.3, §6.7). Awaiting Tom's playtest — the checks are F19.                                        |
-| **M3**    | **The throne's toolkit and the 2026-09-24 rules review.** Nothing buildable on the Dark Star by anyone (H2); the invasion cooldown removed (H12); the Hegemon donates troops (H9); gifted structures on challengers' land (H18); destroyers spawning in the moat (H10); MIRVs off and the warhead renames (S6); the player table gains the Dark Star's fields for the throne and the separate Dark Star panel goes if the table carries it (F19). Small, mostly-sim pieces first (H2, H12, H9, S6), then H18, then H10. | Next                                                                                                                |
+| **M3**    | **The throne's toolkit and the 2026-09-24 rules review.** Nothing buildable on the Dark Star by anyone (H2); the invasion cooldown removed (H12); the Hegemon donates troops (H9); gifted structures on challengers' land (H18); destroyers spawning in the moat (H10); MIRVs off and the warhead renames (S6); the player table gains the Dark Star's fields for the throne and the separate Dark Star panel goes if the table carries it (F19). Small, mostly-sim pieces first (H2, H12, H9, S6), then H18, then H10. | **In progress** — chunk 1 (H2, H12, H9, S6) built 2026-09-25, §6.13; H18, H10 and the HUD merge next.               |
 | **M4**    | **Balance (F1).** Regeneration cut, ceiling raised as needed, the shadow tax, the AI's last stand; `HegemonSim` sweep on Event Horizon and Milky Way, three candidates, Tom playtests; then retune the AI's strike thresholds (H11) and check the gate numbers (F15).                                                                                                                                                                                                                                                   | After M3 — the toolkit changes what the pool is spent on, so calibrate once it exists.                              |
 | **M5**    | **Succession.** Singleplayer throne persistence (beat the AI, defend the throne next round), then the private-lobby hand-off through the successor-lobby flow with config inheritance; the private-lobby Hegemon toggle. The first item that makes the round loop real (§1).                                                                                                                                                                                                                                            |                                                                                                                     |
 | **M6**    | **Sci-fi re-theme and the economy's look.** Straight-line rails (S7); spaceport / Destroyer names and icons; the remaining unit, structure and resource names (F14); palette/theme JSON; atlases and own art for the projectile and the gate.                                                                                                                                                                                                                                                                           |                                                                                                                     |
@@ -1253,3 +1310,11 @@ to the invader (H9), gold donations from the throne (H9), hydrogen-bomb removal 
   **Open:** multiple invaders (F16), the map-by-map cull (F17), exclaves on galaxy maps (F18), the
   playtest checks (F19). Roadmap renumbered M1–M9 (§9): M3 toolkit → M4 balance → M5 succession → M6
   theme → M7 maps → M8 release → M9 public lobbies.
+- **2026-09-25** — **M3 chunk 1 built** (§6.13, `feat/hegemon-toolkit`): nothing is buildable on
+  the Dark Star by anyone and the Hegemon owns no structures at all (H2, F8 closed for good); the
+  5-minute re-invasion cooldown is gone from the sim, the HUD and the messages (H12); the Hegemon
+  donates troops to any challenger, the invader included, ignoring the lobby's donation toggle, with
+  gold and donations to the throne refused outright (H9); MIRVs hard-off in core in Hegemon mode and
+  hidden in the lobby, Atom Bomb → Nuclear Warhead, Hydrogen Bomb → Antimatter Warhead in `en.json`
+  (S6). Decided in the chunk's sub-questions: the toggle bypass, donating to the invader, hard-off
+  over a lobby default, and a greyed rather than hidden build menu on domain tiles.

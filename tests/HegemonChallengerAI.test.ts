@@ -81,7 +81,7 @@ describe("AI challengers treat the throne as the objective", () => {
     expect(eastAI.considerInvasion()).toBe(true);
   });
 
-  test("it does not try while someone else holds the slot, or during its cooldown", () => {
+  test("it does not try while someone else holds the slot; an eviction frees it at once", () => {
     const g = game.darkStar()!;
     east.setTroops(hegemon.troops());
     west.conquer(game.ref(g.cx - g.radius, g.cy));
@@ -89,8 +89,9 @@ describe("AI challengers treat the throne as the objective", () => {
 
     hegemon.conquer(game.ref(g.cx - g.radius, g.cy));
     east.conquer(game.ref(g.cx + g.radius, g.cy));
-    hegemon.conquer(game.ref(g.cx + g.radius, g.cy)); // evicted: cooldown
-    expect(eastAI.considerInvasion()).toBe(false);
+    hegemon.conquer(game.ref(g.cx + g.radius, g.cy)); // evicted: no cooldown (H12)
+    expect(game.canInvadeDarkStar(east)).toBe(true);
+    expect(eastAI.considerInvasion()).toBe(true);
   });
 
   test("while it holds the slot it pushes on with everything above its reserve", () => {

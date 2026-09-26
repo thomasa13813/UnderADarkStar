@@ -159,7 +159,6 @@ export function makePlayerUpdate(
     isLobbyCreator: false,
     isHegemon: false,
     domainTilesHeld: 0,
-    invasionCooldownUntil: 0,
     invasionStalled: false,
     ...overrides,
   };

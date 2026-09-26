@@ -75,7 +75,6 @@ function makeRealisticUpdate(
     isLobbyCreator: false,
     isHegemon: false,
     domainTilesHeld: 0,
-    invasionCooldownUntil: 0,
     invasionStalled: false,
     ...overrides,
   };
@@ -151,10 +150,6 @@ function diffPlayerUpdateBefore(
   setIfDifferent(
     "domainTilesHeld",
     prev.domainTilesHeld === next.domainTilesHeld,
-  );
-  setIfDifferent(
-    "invasionCooldownUntil",
-    prev.invasionCooldownUntil === next.invasionCooldownUntil,
   );
   setIfDifferent(
     "invasionStalled",

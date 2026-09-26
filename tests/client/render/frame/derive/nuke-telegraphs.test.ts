@@ -47,7 +47,6 @@ function ps(overrides: Partial<PlayerState> = {}): PlayerState {
     markedDoomsdayClockTick: -1,
     betrayals: 0,
     domainTilesHeld: 0,
-    invasionCooldownUntil: 0,
     invasionStalled: false,
     hasSpawned: true,
     lastDeleteUnitTick: 0,

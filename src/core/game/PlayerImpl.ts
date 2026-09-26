@@ -434,7 +434,6 @@ export class PlayerImpl implements Player {
       spawnTile: this._spawnTile,
       betrayals: this._betrayalCount,
       domainTilesHeld: this.domainTilesHeld(),
-      invasionCooldownUntil: this.mg.invasionCooldownUntil(this),
       invasionStalled:
         this.mg.invasionStalled() && this.mg.darkStarInvader() === this,
       lastDeleteUnitTick: this.lastDeleteUnitTick,
@@ -1145,6 +1144,11 @@ export class PlayerImpl implements Player {
     if (recipient === this) {
       return false;
     }
+    // The throne neither gives nor takes gold (H9: only troop donations from
+    // the Hegemon are open); isFriendly already fails, this is the rule stated.
+    if (this.isHegemon() || recipient.isHegemon()) {
+      return false;
+    }
     if (
       !this.isAlive() ||
       !recipient.isAlive() ||
@@ -1175,18 +1179,26 @@ export class PlayerImpl implements Player {
     if (recipient === this) {
       return false;
     }
-    if (
-      !this.isAlive() ||
-      !recipient.isAlive() ||
-      !this.isFriendly(recipient)
-    ) {
+    // Nobody props up the throne (H9).
+    if (recipient.isHegemon()) {
       return false;
     }
-    if (
-      recipient.type() === PlayerType.Human &&
-      this.mg.config().donateTroops() === false
-    ) {
+    if (!this.isAlive() || !recipient.isAlive()) {
       return false;
+    }
+    // The Hegemon may donate troops to ANY challenger, friend or not, whatever
+    // the lobby's donation toggle says (H9, H15: the throne is the balance of
+    // power, and its pool is the price). Everyone else needs an ally.
+    if (!this.isHegemon()) {
+      if (!this.isFriendly(recipient)) {
+        return false;
+      }
+      if (
+        recipient.type() === PlayerType.Human &&
+        this.mg.config().donateTroops() === false
+      ) {
+        return false;
+      }
     }
     for (const donation of this.sentDonations) {
       if (donation.recipient === recipient) {
@@ -1506,8 +1518,10 @@ export class PlayerImpl implements Player {
     if (this.mg.config().isUnitDisabled(unitType)) {
       return false;
     }
-    // The Hegemon never expands (H8), so it has no use for a gate.
-    if (unitType === UnitType.Stargate && this.isHegemon()) {
+    // The Hegemon owns no structures, ever (H2): none on the Dark Star, none
+    // on a strike's bubble. What it builds, it builds as a gift its host owns
+    // (H18), which goes through the host's own placement, not this check.
+    if (this.isHegemon() && Structures.has(unitType)) {
       return false;
     }
     const cost = knownCost ?? this.mg.unitInfo(unitType).cost(this.mg, this);
@@ -1856,11 +1870,16 @@ export class PlayerImpl implements Player {
     const cx = tile % w;
     const cy = (tile / w) | 0;
     const smallID = this.smallID();
+    // Nothing is ever built on the Dark Star, by anyone (H2): domain tiles are
+    // never structure sites, whether the Hegemon or an invader holds them.
+    const noBuildDomain = this.mg.darkStar() !== null;
     const inside = (t: TileRef): boolean => {
       const dx = (t % w) - cx;
       const dy = ((t / w) | 0) - cy;
       return (
-        dx * dx + dy * dy < searchRadiusSquared && map.ownerID(t) === smallID
+        dx * dx + dy * dy < searchRadiusSquared &&
+        map.ownerID(t) === smallID &&
+        !(noBuildDomain && this.mg.isInDarkStar(t))
       );
     };
     const scratch = tileTraversalScratch(this.mg);

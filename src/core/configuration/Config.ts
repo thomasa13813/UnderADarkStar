@@ -303,7 +303,6 @@ const HEGEMON_DEFAULTS = {
   regenPercent: 100, // of the standard regeneration curve
   goldPerTickPer50kLandTiles: 100,
   // The invasion slot (H6, H12) and the Dark Star's response (H13).
-  invasionCooldownSeconds: 5 * 60, // from eviction, before invading again
   invasionStallSeconds: 5, // no tile gained for this long = stalled
   // An AI Hegemon answers an invader with a wave of this share of its troops,
   // repeated at this interval for as long as the invader holds domain tiles.
@@ -566,6 +565,11 @@ export class Config {
   }
 
   isUnitDisabled(unitType: UnitType): boolean {
+    // No MIRVs under a Dark Star (S6): hard-off whenever the Hegemon round is
+    // on, whatever the lobby's list says. The enum value stays (wire format).
+    if (unitType === UnitType.MIRV && this.hegemonConfig().enabled) {
+      return true;
+    }
     return this._gameConfig.disabledUnits?.includes(unitType) ?? false;
   }
 

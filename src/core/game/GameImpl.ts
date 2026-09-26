@@ -148,7 +148,6 @@ export class GameImpl implements Game {
   private _strikesInFlight: StrikeInFlight[] = [];
   private _gateShotsInFlight: GateShotInFlight[] = [];
   private _hegemonStrikes: HegemonStrike[] = [];
-  private _invasionCooldownUntil = new Map<PlayerID, number>();
   private _lastInvaderGainTick = 0;
   private _invasionStalled = false;
   // The Dark Star is carved during construction, but clients load the pristine
@@ -355,10 +354,6 @@ export class GameImpl implements Game {
     );
   }
 
-  invasionCooldownUntil(player: Player): number {
-    return this._invasionCooldownUntil.get(player.id()) ?? 0;
-  }
-
   invasionStalled(): boolean {
     return this._invasionStalled;
   }
@@ -367,19 +362,13 @@ export class GameImpl implements Game {
     this._invasionStalled = stalled;
   }
 
-  invasionCooldownTicks(player: Player): number {
-    const until = this._invasionCooldownUntil.get(player.id()) ?? 0;
-    return Math.max(0, until - this._ticks);
-  }
-
   // Only the Hegemon and one invader may ever occupy the Dark Star (H6). The
-  // slot belongs to whoever holds a domain tile, and an evicted invader must
-  // wait out a cooldown (H12).
+  // slot belongs to whoever holds a domain tile and is free the moment they
+  // hold none: there is no re-invasion cooldown (H12).
   canInvadeDarkStar(player: Player): boolean {
     if (this._darkStar === null || player.isHegemon()) return false;
     const invader = this.darkStarInvader();
-    if (invader !== null) return invader === player;
-    return this.invasionCooldownTicks(player) === 0;
+    return invader === null || invader === player;
   }
 
   private domainTileChanged(
@@ -393,13 +382,8 @@ export class GameImpl implements Game {
       if (left > 0) {
         this._domainTilesHeld.set(from, left);
       } else {
-        // Evicted: the cooldown starts now (H12).
+        // Evicted: the slot is free again at once (H12).
         this._domainTilesHeld.delete(from);
-        this._invasionCooldownUntil.set(
-          from.id(),
-          this._ticks +
-            this._config.hegemonConfig().invasionCooldownSeconds * 10,
-        );
       }
     }
     if (to !== null && !to.isHegemon()) {

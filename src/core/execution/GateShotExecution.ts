@@ -22,7 +22,7 @@ import { AttackExecution } from "./AttackExecution";
 // (TransportShipExecution's arrival): the tile is conquered and an attack
 // fights outward from it, so the land is kept — a beachhead behind any
 // coastline, or an invasion of the Dark Star that skips the moat, subject to
-// the single-invader rule and the cooldown (H6, H12). Troops leave at launch
+// the single-invader rule (H6, H12). Troops leave at launch
 // and ride on the unit, so the HUD shows them like a fleet's. A recall, or the
 // slot being claimed by someone else in flight, brings them home at once.
 export class GateShotExecution implements Execution, GateShotInFlight {
@@ -119,23 +119,11 @@ export class GateShotExecution implements Execution, GateShotInFlight {
   }
 
   private refuseDarkStar(): void {
-    const mg = this.mg;
-    const cooldown = mg.invasionCooldownTicks(this.player);
-    if (mg.darkStarInvader() === null && cooldown > 0) {
-      mg.displayMessage(
-        "events_display.dark_star_cooldown",
-        MessageType.ATTACK_FAILED,
-        this.player.id(),
-        undefined,
-        { seconds: Math.ceil(cooldown / 10) },
-      );
-    } else {
-      mg.displayMessage(
-        "events_display.dark_star_occupied",
-        MessageType.ATTACK_FAILED,
-        this.player.id(),
-      );
-    }
+    this.mg.displayMessage(
+      "events_display.dark_star_occupied",
+      MessageType.ATTACK_FAILED,
+      this.player.id(),
+    );
     this.active = false;
   }
 

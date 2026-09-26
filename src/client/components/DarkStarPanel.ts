@@ -45,11 +45,6 @@ export class DarkStarPanel extends LitElement {
     return this;
   }
 
-  private formatTime(ticks: number): string {
-    const seconds = Math.ceil(ticks / 10);
-    return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
-  }
-
   private sortBy(key: SortKey) {
     if (this.sortKey === key) {
       this.sortDescending = !this.sortDescending;
@@ -216,8 +211,6 @@ export class DarkStarPanel extends LitElement {
     const onThrone = me !== null && me.isHegemon();
     const invader =
       this.game.playerViews().find((p) => p.domainTilesHeld() > 0) ?? null;
-    const cooldown =
-      me !== null ? me.invasionCooldownUntil() - this.game.ticks() : 0;
 
     let status: string;
     let statusClass = "text-gray-300";
@@ -268,13 +261,6 @@ export class DarkStarPanel extends LitElement {
           </span>
         </div>
         <div class="text-xs ${statusClass}">${status}</div>
-        ${cooldown > 0
-          ? html`<div class="text-xs text-yellow-300">
-              ${translateText("dark_star.cooldown", {
-                time: this.formatTime(cooldown),
-              })}
-            </div>`
-          : ""}
         ${onThrone && bubbleTiles > 0
           ? html`<div class="text-xs text-purple-300">
               ${translateText("dark_star.bubble", { tiles: bubbleTiles })}
