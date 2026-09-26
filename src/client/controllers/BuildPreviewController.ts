@@ -33,10 +33,11 @@ import type { GhostPreviewData } from "../render/types";
 import { TransformHandler } from "../TransformHandler";
 import {
   BuildUnitIntentEvent,
+  GiftUnitIntentEvent,
   SendUpgradeStructureIntentEvent,
 } from "../Transport";
 import { UIState } from "../UIState";
-import { GameView } from "../view";
+import { GameView, PlayerView } from "../view";
 
 /** True for nuke types (AtomBomb, HydrogenBomb): ghost is preserved after placement so user can place multiple or keep selection (Enter/key confirm). */
 export function shouldPreserveGhostAfterBuild(unitType: UnitType): boolean {
@@ -509,7 +510,8 @@ export class BuildPreviewController implements Controller {
       canAfford,
       ghostRailPaths: u.ghostRailPaths,
       overlappingRailroads: u.overlappingRailroads,
-      ownerID: myPlayer.smallID(),
+      // A gift wears the host's colours (H18).
+      ownerID: (this.giftHostAt(tileRef) ?? myPlayer).smallID(),
       upgradeTargetTile,
       rangeRadius,
       rangeWarning: targetingAlly,
@@ -541,6 +543,24 @@ export class BuildPreviewController implements Controller {
       return;
     }
     const tile = this.transformHandler.screenToWorldCoordinates(e.x, e.y);
+    // A gift (H18): the throne placing on a challenger's land sends a gift
+    // order; the sim decides between placing and upgrading, and the tile's
+    // owner at that moment is the host.
+    const giftHost = this.giftHostAt(this.game.ref(tile.x, tile.y));
+    if (giftHost !== null) {
+      this.eventBus.emit(
+        new GiftUnitIntentEvent(
+          this.ghostUnit.buildableUnit.type,
+          this.game.ref(tile.x, tile.y),
+          giftHost.id(),
+          this.ghostUnit.buildableUnit.canUpgrade !== false
+            ? this.uiState.upgradeMultiplier || 1
+            : undefined,
+        ),
+      );
+      this.removeGhostStructure();
+      return;
+    }
     if (this.ghostUnit.buildableUnit.canUpgrade !== false) {
       this.eventBus.emit(
         new SendUpgradeStructureIntentEvent(
@@ -577,6 +597,17 @@ export class BuildPreviewController implements Controller {
     } else {
       this.removeGhostStructure();
     }
+  }
+
+  // The challenger whose land the throne is building on (H18), or null when
+  // the viewer is not the Hegemon or the tile is not a challenger's.
+  private giftHostAt(tile: TileRef): PlayerView | null {
+    const myPlayer = this.game.myPlayer();
+    if (!myPlayer?.isHegemon()) return null;
+    const owner = this.game.owner(tile);
+    if (!owner.isPlayer()) return null;
+    const host = owner as PlayerView;
+    return host.isHegemon() ? null : host;
   }
 
   private shouldBlockRecentAllyNuke(

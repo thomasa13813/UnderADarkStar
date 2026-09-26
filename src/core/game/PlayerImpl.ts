@@ -1833,6 +1833,11 @@ export class PlayerImpl implements Player {
     if (!this.mg.isWater(tile)) {
       return false;
     }
+    // The throne has no port (H2): its destroyers spawn where it points,
+    // anywhere in the moat, and nowhere else (H10).
+    if (this.isHegemon()) {
+      return this.mg.isInMoat(tile) ? tile : false;
+    }
 
     const tileComponent = this.mg.getWaterComponent(tile);
     const bestPort = findClosestBy(

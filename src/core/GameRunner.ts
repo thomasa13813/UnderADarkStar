@@ -246,6 +246,14 @@ export class GameRunner {
     const player = this.game.player(playerID);
     const tile =
       x !== undefined && y !== undefined ? this.game.ref(x, y) : null;
+    // A gift (H18): on a challenger's tile the Hegemon's list is the host's,
+    // with the throne paying — the placement ghost asks here.
+    if (tile !== null && player.isHegemon() && this.game.hasOwner(tile)) {
+      const host = this.game.owner(tile) as Player;
+      if (!host.isHegemon()) {
+        return host.buildableUnits(tile, units, player);
+      }
+    }
     return player.buildableUnits(tile, units);
   }
 

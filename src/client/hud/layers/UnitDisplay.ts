@@ -6,6 +6,7 @@ import {
   BuildMenus,
   Gold,
   PlayerBuildableUnitType,
+  Structures,
   UnitType,
 } from "../../../core/game/Game";
 import { UserSettings } from "../../../core/game/UserSettings";
@@ -92,6 +93,15 @@ export class UnitDisplay extends LitElement implements Controller {
   private canBuild(item: UnitType): boolean {
     if (this.game?.config().isUnitDisabled(item)) return false;
     const player = this.game?.myPlayer();
+    // The throne needs no port for its destroyers, placed on any moat tile
+    // (H10), and places structures only as gifts on a challenger's land (H18);
+    // it has no silo, so never a warhead (H2).
+    if (player?.isHegemon()) {
+      return (
+        (item === UnitType.Warship || Structures.has(item)) &&
+        this.cost(item) <= (player.gold() ?? 0n)
+      );
+    }
     switch (item) {
       case UnitType.AtomBomb:
       case UnitType.HydrogenBomb:

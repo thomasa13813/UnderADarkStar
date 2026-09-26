@@ -25,6 +25,8 @@ export class WarshipExecution implements Execution {
   private lastObservedPatrolTile: TileRef | undefined;
   private activeHealingRemainder = 0;
   private lastEmittedCombat = false;
+  // A destroyer of the Dark Star (H10): portless, moat-bound, defensive.
+  private hegemon = false;
 
   constructor(
     private input: (UnitParams<UnitType.Warship> & OwnerComp) | Unit,
@@ -53,6 +55,7 @@ export class WarshipExecution implements Execution {
         this.input,
       );
     }
+    this.hegemon = this.warship.owner().isHegemon();
     this.lastObservedPatrolTile = this.warship.warshipState().patrolTile;
   }
 
@@ -127,6 +130,12 @@ export class WarshipExecution implements Execution {
       return;
     }
 
+    // Priority 4, the throne's destroyers (H10): with nothing in range, go
+    // and meet an invasion fleet that is still on its way.
+    if (this.hegemon && this.intercept()) {
+      return;
+    }
+
     this.patrol();
   }
 
@@ -154,7 +163,8 @@ export class WarshipExecution implements Execution {
       }
     }
 
-    if (isNearPort) {
+    // The moat is the destroyers' harbour (H10): the throne has no port.
+    if (isNearPort || (this.hegemon && this.mg.isInMoat(warshipTile))) {
       this.warship.modifyHealth(passiveHealing);
     }
 
@@ -286,6 +296,11 @@ export class WarshipExecution implements Execution {
 
       const type = unit.type();
 
+      // Purely defensive (H10): the throne's destroyers pick their fights.
+      if (this.hegemon && !this.hegemonMayEngage(unit, type)) {
+        continue;
+      }
+
       if (includeTradeShips && type === UnitType.TradeShip) {
         if (warshipComponent === undefined) {
           warshipComponent = mg.getWaterComponent(this.warship.tile());
@@ -304,7 +319,9 @@ export class WarshipExecution implements Execution {
           patrolRangeSquared = config.warshipPatrolRange() ** 2;
         }
         if (
-          !hasReachablePort ||
+          // A destroyer has no port to bring a prize to: the invader's ship
+          // is simply lost to them (H10).
+          (!hasReachablePort && !this.hegemon) ||
           patrolTile === undefined ||
           unit.isSafeFromPirates() ||
           unit.targetUnit()?.owner() === owner ||
@@ -699,6 +716,83 @@ export class WarshipExecution implements Execution {
     }
   }
 
+  // The throne's destroyers are purely defensive (H10): they engage fleets
+  // bound for the Dark Star (whoever sent them), the current invader's trade
+  // ships, and warships that have entered the moat. Nothing else, ever.
+  private hegemonMayEngage(unit: Unit, type: UnitType): boolean {
+    const mg = this.mg;
+    switch (type) {
+      case UnitType.TransportShip: {
+        const dst = unit.targetTile();
+        return dst !== undefined && mg.isInDarkStar(dst);
+      }
+      case UnitType.Warship:
+        return mg.isInMoat(unit.tile());
+      case UnitType.TradeShip: {
+        const invader = mg.darkStarInvader();
+        return invader !== null && unit.owner() === invader;
+      }
+      default:
+        return false;
+    }
+  }
+
+  // With nothing in range, sail along the moat towards the landing point of
+  // the nearest fleet bound for the Dark Star. False when there is none.
+  private intercept(): boolean {
+    const mg = this.mg;
+    let best: Unit | null = null;
+    let bestDist = Infinity;
+    for (const fleet of mg.units(UnitType.TransportShip)) {
+      const dst = fleet.targetTile();
+      if (!fleet.isActive() || dst === undefined || !mg.isInDarkStar(dst)) {
+        continue;
+      }
+      const d = mg.euclideanDistSquared(this.warship.tile(), fleet.tile());
+      // Ties go to the lower id: iteration order must not decide it.
+      if (d < bestDist || (d === bestDist && fleet.id() < best!.id())) {
+        best = fleet;
+        bestDist = d;
+      }
+    }
+    if (best === null) return false;
+    const station = this.moatTileToward(best.targetTile()!);
+    if (station === undefined || station === this.warship.tile()) {
+      return false;
+    }
+    this.warship.setTargetTile(station);
+    this.patrol();
+    return true;
+  }
+
+  // The moat tile on the ray from the Dark Star's centre through `tile`,
+  // on the ring's midline; nudged outward to the nearest moat water when
+  // the rounding lands on land. One exactly-rounded square root and
+  // division, so every client agrees.
+  private moatTileToward(tile: TileRef): TileRef | undefined {
+    const mg = this.mg;
+    const g = mg.darkStar();
+    if (g === null) return undefined;
+    const dx = mg.x(tile) - g.cx;
+    const dy = mg.y(tile) - g.cy;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist === 0) return undefined;
+    const r = g.radius + g.moatWidth / 2;
+    const x = g.cx + Math.round((dx * r) / dist);
+    const y = g.cy + Math.round((dy * r) / dist);
+    for (let ring = 0; ring <= g.moatWidth; ring++) {
+      for (let ox = -ring; ox <= ring; ox++) {
+        for (let oy = -ring; oy <= ring; oy++) {
+          if (Math.max(Math.abs(ox), Math.abs(oy)) !== ring) continue;
+          if (!mg.isValidCoord(x + ox, y + oy)) continue;
+          const t = mg.ref(x + ox, y + oy);
+          if (mg.isInMoat(t)) return t;
+        }
+      }
+    }
+    return undefined;
+  }
+
   private bestNeighborToward(targetTile: TileRef): TileRef | undefined {
     const warshipTile = this.warship.tile();
     let best: TileRef | undefined;
@@ -786,7 +880,9 @@ export class WarshipExecution implements Execution {
       const tile = this.mg.ref(x, y);
       if (
         !this.mg.isWater(tile) ||
-        (!allowShoreline && this.mg.isShoreline(tile))
+        (!allowShoreline && this.mg.isShoreline(tile)) ||
+        // The throne's destroyers never leave the moat (H10).
+        (this.hegemon && !this.mg.isInMoat(tile))
       ) {
         attempts++;
         if (attempts === maxAttemptBeforeExpand) {

@@ -17,6 +17,7 @@ import {
   HEGEMON_AI_NAME,
   HEGEMON_PLAYER_ID,
   isInDarkStar,
+  isInDarkStarOrMoat,
 } from "./DarkStar";
 import {
   Alliance,
@@ -270,6 +271,17 @@ export class GameImpl implements Game {
     return (
       this._darkStar !== null &&
       isInDarkStar(this._darkStar, this.x(tile), this.y(tile))
+    );
+  }
+
+  // The ring of deep space around the disc (H14): where the throne's
+  // destroyers live (H10).
+  isInMoat(tile: TileRef): boolean {
+    return (
+      this._darkStar !== null &&
+      this.isWater(tile) &&
+      isInDarkStarOrMoat(this._darkStar, this.x(tile), this.y(tile)) &&
+      !isInDarkStar(this._darkStar, this.x(tile), this.y(tile))
     );
   }
 

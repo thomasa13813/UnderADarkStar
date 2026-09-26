@@ -1008,6 +1008,8 @@ export interface Game extends GameMap {
   // Hegemon mode (docs/DarkStar-Design.md); null/false when the mode is off.
   darkStar(): DarkStarGeometry | null;
   isInDarkStar(tile: TileRef): boolean;
+  // Moat water: the ring of deep space around the disc (H14).
+  isInMoat(tile: TileRef): boolean;
   hegemon(): Player | null;
   // Whoever eliminated the Hegemon, once it has fallen.
   hegemonSlayer(): Player | null;
