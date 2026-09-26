@@ -27,6 +27,7 @@ import { TooltipItem } from "./RadialMenu";
 import { EventBus } from "../../../core/EventBus";
 import {
   BuildUnitIntentEvent,
+  GiftUnitIntentEvent,
   SendUpgradeStructureIntentEvent,
 } from "../../Transport";
 const allianceIcon = assetUrl("images/AllianceIconWhite.svg");
@@ -412,15 +413,19 @@ function getAllEnabledUnits(
   return units;
 }
 
+// "gift" (H18): the Hegemon's build submenu on a challenger's tile. The
+// worker has already computed `buildableUnits` for the host with the throne
+// paying, so the entries read like the host's own; only the intent differs.
 function createMenuElements(
   params: MenuElementParams,
-  filterType: "attack" | "build",
+  filterType: "attack" | "build" | "gift",
   elementIdPrefix: string,
 ): MenuElement[] {
   const unitTypes: Set<PlayerBuildableUnitType> = getAllEnabledUnits(
-    params.selected === params.myPlayer,
+    params.selected === params.myPlayer || filterType === "gift",
     params.game.config(),
   );
+  const giftHost = filterType === "gift" ? params.playerActions.giftHost : null;
 
   return flattenedBuildTable
     .filter(
@@ -456,7 +461,15 @@ function createMenuElements(
             className: "cost",
           },
           item.countable
-            ? { text: `${params.buildMenu.count(item)}x`, className: "count" }
+            ? {
+                // A gift counts the host's structures, not the throne's.
+                text: `${
+                  giftHost
+                    ? (params.selected?.totalUnitLevels(item.unitType) ?? 0)
+                    : params.buildMenu.count(item)
+                }x`,
+                className: "count",
+              }
             : null,
         ].filter(
           (tooltipItem): tooltipItem is TooltipItem => tooltipItem !== null,
@@ -541,6 +554,15 @@ function createMenuElements(
                       amount,
                     ),
                   );
+                } else if (giftHost) {
+                  p.eventBus.emit(
+                    new GiftUnitIntentEvent(
+                      buildableUnit.type,
+                      p.tile,
+                      giftHost,
+                      amount,
+                    ),
+                  );
                 } else {
                   p.eventBus.emit(
                     new SendUpgradeStructureIntentEvent(
@@ -563,7 +585,16 @@ function createMenuElements(
             return;
           }
           if (params.buildMenu.canBuildOrUpgrade(item)) {
-            if (buildableUnit.canUpgrade !== false) {
+            if (giftHost) {
+              // The sim decides between placing and upgrading (GiftExecution).
+              params.eventBus.emit(
+                new GiftUnitIntentEvent(
+                  buildableUnit.type,
+                  params.tile,
+                  giftHost,
+                ),
+              );
+            } else if (buildableUnit.canUpgrade !== false) {
               params.eventBus.emit(
                 new SendUpgradeStructureIntentEvent(
                   buildableUnit.canUpgrade,
@@ -764,6 +795,37 @@ export const buildMenuElement: MenuElement = {
   },
 };
 
+// A gift (H18): the Hegemon builds on a challenger's land at its own cost
+// and the host owns the result. Takes the ally slot, which the throne can
+// never use (H9). Shown only when the worker offered a host.
+export function giftMenuElement(params: MenuElementParams): MenuElement {
+  const host = params.selected;
+  return {
+    id: Slot.Ally,
+    name: "gift",
+    disabled: (p: MenuElementParams) =>
+      p.game.inSpawnPhase() || p.playerActions.giftHost === undefined,
+    icon: buildIcon,
+    color: COLORS.build,
+    tooltipItems: [
+      {
+        text: translateText("dark_star.gift_tooltip", {
+          name: host?.displayName() ?? "",
+        }),
+        className: "title",
+      },
+      {
+        text: translateText("dark_star.gift_description"),
+        className: "description",
+      },
+    ],
+    subMenu: (p: MenuElementParams) => {
+      if (p === undefined || p.playerActions.giftHost === undefined) return [];
+      return createMenuElements(p, "gift", "gift");
+    },
+  };
+}
+
 export const boatMenuElement: MenuElement = {
   id: Slot.Boat,
   name: "boat",
@@ -945,7 +1007,12 @@ export const rootMenuElement: MenuElement = {
               : isAllied && !isDisconnected
                 ? allyBreakElement
                 : boatMenuElement,
-            inExtensionWindow ? allyExtendElement : allyRequestElement,
+            // The Hegemon allies with no one: its ally slot is the gift (H18).
+            params.playerActions.giftHost !== undefined
+              ? giftMenuElement(params)
+              : inExtensionWindow
+                ? allyExtendElement
+                : allyRequestElement,
             showDonateInsteadOfAttack
               ? donateGoldRadialElement
               : attackMenuElement,

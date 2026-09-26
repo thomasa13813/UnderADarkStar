@@ -16,6 +16,7 @@ import { EmbargoAllExecution } from "./EmbargoAllExecution";
 import { EmbargoExecution } from "./EmbargoExecution";
 import { EmojiExecution } from "./EmojiExecution";
 import { GateShotExecution } from "./GateShotExecution";
+import { GiftExecution } from "./GiftExecution";
 import { MarkDisconnectedExecution } from "./MarkDisconnectedExecution";
 import { MoveWarshipExecution } from "./MoveWarshipExecution";
 import { NationExecution } from "./NationExecution";
@@ -90,6 +91,15 @@ export class Executor {
       case "strike":
         // The Hegemon's direct strike (H8); RazeExecution refuses anyone else.
         return new RazeExecution(player, intent.tile, intent.troops);
+      case "gift_unit":
+        // A gift (H18); GiftExecution refuses anyone but the Hegemon.
+        return new GiftExecution(
+          player,
+          intent.host,
+          intent.unit,
+          intent.tile,
+          intent.amount,
+        );
       case "allianceRequest":
         return new AllianceRequestExecution(player, intent.recipient);
       case "allianceReject":

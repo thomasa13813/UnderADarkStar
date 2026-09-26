@@ -1,4 +1,12 @@
-import { Execution, Game, Player, Tick, Unit, UnitType } from "../game/Game";
+import {
+  Execution,
+  Game,
+  MessageType,
+  Player,
+  Tick,
+  Unit,
+  UnitType,
+} from "../game/Game";
 import { TileRef } from "../game/GameMap";
 import { CityExecution } from "./CityExecution";
 import { DefensePostExecution } from "./DefensePostExecution";
@@ -18,12 +26,15 @@ export class ConstructionExecution implements Execution {
 
   private ticksUntilComplete: Tick;
 
+  // `payer` is who is charged; a gift (H18) is the Hegemon paying for a
+  // structure the host player owns from the start.
   constructor(
     private player: Player,
     private constructionType: UnitType,
     private tile: TileRef,
     private rocketDirectionUp?: boolean,
     private amount?: number,
+    private payer: Player = player,
   ) {}
 
   init(mg: Game, ticks: number): void {
@@ -57,7 +68,12 @@ export class ConstructionExecution implements Execution {
       }
 
       // Structures: build real unit and mark under construction
-      const spawnTile = this.player.canBuild(this.constructionType, this.tile);
+      const spawnTile = this.player.canBuild(
+        this.constructionType,
+        this.tile,
+        null,
+        this.payer,
+      );
       if (spawnTile === false) {
         console.warn(`cannot build ${this.constructionType}`);
         this.active = false;
@@ -67,7 +83,19 @@ export class ConstructionExecution implements Execution {
         this.constructionType,
         spawnTile,
         {},
+        this.payer,
       );
+      if (this.payer !== this.player) {
+        // A gift (H18): tell the host what the throne has placed on their land.
+        this.mg.displayMessage(
+          "events_display.dark_star_gift",
+          MessageType.DONATION_RECEIVED,
+          this.player.id(),
+          undefined,
+          { unit: this.constructionType },
+          this.structure.id(),
+        );
+      }
       const duration = info.constructionDuration ?? 0;
       if (duration > 0) {
         this.structure.setUnderConstruction(true);

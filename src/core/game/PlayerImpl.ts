@@ -1454,10 +1454,14 @@ export class PlayerImpl implements Player {
     unit.setOwner(this);
   }
 
+  // `payer` foots the bill (a gift, H18: the Hegemon paying for a structure
+  // the host owns from the start); the cost itself is always this player's,
+  // exactly as if they had built it.
   buildUnit<T extends UnitType>(
     type: T,
     spawnTile: TileRef,
     params: UnitParams<T>,
+    payer: Player = this,
   ): Unit {
     if (this.mg.config().isUnitDisabled(type)) {
       throw new Error(
@@ -1477,7 +1481,7 @@ export class PlayerImpl implements Player {
     this._units.push(b);
     this._myUnitsVersion++;
     this.recordUnitConstructed(type);
-    this.removeGold(cost);
+    payer.removeGold(cost);
     this.removeTroops("troops" in params ? (params.troops ?? 0) : 0);
     this.mg.addUpdate(b.toUpdate());
     this.mg.addUnit(b);
@@ -1485,9 +1489,13 @@ export class PlayerImpl implements Player {
     return b;
   }
 
-  public findUnitToUpgrade(type: UnitType, targetTile: TileRef): Unit | false {
+  public findUnitToUpgrade(
+    type: UnitType,
+    targetTile: TileRef,
+    payer: Player = this,
+  ): Unit | false {
     const unit = this.findExistingUnitToUpgrade(type, targetTile);
-    if (unit === false || !this.canUpgradeUnit(unit)) {
+    if (unit === false || !this.canUpgradeUnit(unit, payer)) {
       return false;
     }
     return unit;
@@ -1511,9 +1519,12 @@ export class PlayerImpl implements Player {
     return closest?.unit ?? false;
   }
 
+  // `payer` is whose gold is checked (a gift's Hegemon, H18); the cost is
+  // always this player's own.
   private canBuildUnitType(
     unitType: UnitType,
     knownCost: Gold | null = null,
+    payer: Player = this,
   ): boolean {
     if (this.mg.config().isUnitDisabled(unitType)) {
       return false;
@@ -1525,7 +1536,7 @@ export class PlayerImpl implements Player {
       return false;
     }
     const cost = knownCost ?? this.mg.unitInfo(unitType).cost(this.mg, this);
-    if (this._gold < cost) {
+    if (payer.gold() < cost) {
       return false;
     }
     if (unitType !== UnitType.MIRVWarhead && !this.isAlive()) {
@@ -1551,7 +1562,7 @@ export class PlayerImpl implements Player {
     return true;
   }
 
-  public canUpgradeUnit(unit: Unit): boolean {
+  public canUpgradeUnit(unit: Unit, payer: Player = this): boolean {
     if (!this.canUpgradeUnitType(unit.type())) {
       return false;
     }
@@ -1559,7 +1570,7 @@ export class PlayerImpl implements Player {
     if (maxLevel !== undefined && unit.level() >= maxLevel) {
       return false;
     }
-    if (!this.canBuildUnitType(unit.type())) {
+    if (!this.canBuildUnitType(unit.type(), null, payer)) {
       return false;
     }
     if (!this.isUnitValidToUpgrade(unit)) {
@@ -1568,9 +1579,9 @@ export class PlayerImpl implements Player {
     return true;
   }
 
-  upgradeUnit(unit: Unit) {
+  upgradeUnit(unit: Unit, payer: Player = this) {
     const cost = this.mg.unitInfo(unit.type()).cost(this.mg, this);
-    this.removeGold(cost);
+    payer.removeGold(cost);
     unit.increaseLevel();
     this.recordUnitConstructed(unit.type());
   }
@@ -1578,6 +1589,7 @@ export class PlayerImpl implements Player {
   public buildableUnits(
     tile: TileRef | null,
     units: readonly PlayerBuildableUnitType[] = PlayerBuildable.types,
+    payer: Player = this,
   ): BuildableUnit[] {
     const mg = this.mg;
     const config = mg.config();
@@ -1599,7 +1611,11 @@ export class PlayerImpl implements Player {
       let canUpgrade: number | false = false;
       let canBuild: TileRef | false = false;
 
-      if (tile !== null && this.canBuildUnitType(u, cost) && !inSpawnPhase) {
+      if (
+        tile !== null &&
+        this.canBuildUnitType(u, cost, payer) &&
+        !inSpawnPhase
+      ) {
         if (this.canUpgradeUnitType(u)) {
           const existingUnit = this.findExistingUnitToUpgrade(u, tile);
           if (
@@ -1649,8 +1665,9 @@ export class PlayerImpl implements Player {
     unitType: UnitType,
     targetTile: TileRef,
     validTiles: TileRef[] | null = null,
+    payer: Player = this,
   ): TileRef | false {
-    if (!this.canBuildUnitType(unitType)) {
+    if (!this.canBuildUnitType(unitType, null, payer)) {
       return false;
     }
 

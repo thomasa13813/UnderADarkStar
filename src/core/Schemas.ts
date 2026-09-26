@@ -56,7 +56,8 @@ export type Intent =
   | UpdateGameConfigIntent
   | ToggleGameStartTimer
   | StrikeIntent
-  | GateShotIntent;
+  | GateShotIntent
+  | GiftUnitIntent;
 
 export type AttackIntent = z.infer<typeof AttackIntentSchema>;
 export type CancelAttackIntent = z.infer<typeof CancelAttackIntentSchema>;
@@ -64,6 +65,7 @@ export type SpawnIntent = z.infer<typeof SpawnIntentSchema>;
 export type BoatAttackIntent = z.infer<typeof BoatAttackIntentSchema>;
 export type StrikeIntent = z.infer<typeof StrikeIntentSchema>;
 export type GateShotIntent = z.infer<typeof GateShotIntentSchema>;
+export type GiftUnitIntent = z.infer<typeof GiftUnitIntentSchema>;
 export type EmbargoAllIntent = z.infer<typeof EmbargoAllIntentSchema>;
 export type CancelBoatIntent = z.infer<typeof CancelBoatIntentSchema>;
 export type AllianceRequestIntent = z.infer<typeof AllianceRequestIntentSchema>;
@@ -665,6 +667,19 @@ export const GateShotIntentSchema = z.object({
   troops: zb.float({ min: 0 }),
 });
 
+// A gift (H18): the Hegemon places, or upgrades, a structure on a
+// challenger's tile at its own cost; the host owns it from the start. The
+// host rides along so a tile that changed hands in flight is refused rather
+// than gifted to whoever holds it now. `amount` is the upgrade step count,
+// as in build_unit.
+export const GiftUnitIntentSchema = z.object({
+  type: z.literal("gift_unit"),
+  unit: z.enum(UnitType),
+  tile: zb.uint(),
+  host: MappedID,
+  amount: zb.uint({ min: 1, max: MAX_UPGRADE_AMOUNT }).optional(),
+});
+
 export const AllianceRequestIntentSchema = z.object({
   type: z.literal("allianceRequest"),
   recipient: MappedID,
@@ -822,6 +837,7 @@ export const IntentSchema = z.discriminatedUnion("type", [
   // Appended: zbin encodes the union variant by position.
   StrikeIntentSchema,
   GateShotIntentSchema,
+  GiftUnitIntentSchema,
 ]);
 
 // StampedIntent = Intent with server-stamped clientID (used in turns and execution)

@@ -742,28 +742,38 @@ export interface Player {
   // DarkStar: the stargate that would fire at the tile (C4), null when none
   // of the player's built gates has it in range.
   stargateFor(tile: TileRef): GateShotOption | null;
+  // `payer` (default: this player) is whose gold is checked and charged —
+  // a gift (H18) is the Hegemon paying for what the host builds and owns.
+  // The cost is always this player's own, as if they had built it.
   buildableUnits(
     tile: TileRef | null,
     units?: readonly PlayerBuildableUnitType[],
+    payer?: Player,
   ): BuildableUnit[];
   canBuild(
     type: UnitType,
     targetTile: TileRef,
     validTiles?: TileRef[] | null,
+    payer?: Player,
   ): TileRef | false;
   buildUnit<T extends UnitType>(
     type: T,
     spawnTile: TileRef,
     params: UnitParams<T>,
+    payer?: Player,
   ): Unit;
 
   // Returns the existing unit that can be upgraded,
   // or false if it cannot be upgraded.
   // New units of the same type can upgrade existing units.
   // e.g. if a place a new city here, can it upgrade an existing city?
-  findUnitToUpgrade(type: UnitType, targetTile: TileRef): Unit | false;
-  canUpgradeUnit(unit: Unit): boolean;
-  upgradeUnit(unit: Unit): void;
+  findUnitToUpgrade(
+    type: UnitType,
+    targetTile: TileRef,
+    payer?: Player,
+  ): Unit | false;
+  canUpgradeUnit(unit: Unit, payer?: Player): boolean;
+  upgradeUnit(unit: Unit, payer?: Player): void;
   captureUnit(unit: Unit): void;
 
   // Relations & Diplomacy
@@ -1067,6 +1077,10 @@ export interface PlayerActions {
   interaction?: PlayerInteraction;
   // DarkStar: the stargate that would fire at the queried tile, if any (C4).
   gateShot?: GateShotOption;
+  // DarkStar: set when the querying player is the Hegemon and the tile is a
+  // challenger's — `buildableUnits` is then that host's list with the Hegemon
+  // paying, for a gift (H18).
+  giftHost?: PlayerID;
 }
 
 // The nearest of a player's built stargates whose range covers a tile:

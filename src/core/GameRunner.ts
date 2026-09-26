@@ -270,6 +270,12 @@ export class GameRunner {
 
     if (tile !== null && this.game.hasOwner(tile)) {
       const other = this.game.owner(tile) as Player;
+      // A gift (H18): on a challenger's tile the Hegemon's build list is the
+      // host's — what the host could build there, with the throne paying.
+      if (player.isHegemon() && !other.isHegemon() && units !== null) {
+        actions.buildableUnits = other.buildableUnits(tile, units, player);
+        actions.giftHost = other.id();
+      }
       actions.interaction = {
         sharedBorder: player.sharesBorderWith(other),
         canSendEmoji: player.canSendEmoji(other),

@@ -3,7 +3,7 @@ import { customElement, query, state } from "lit/decorators.js";
 import { DirectiveResult } from "lit/directive.js";
 import { unsafeHTML, UnsafeHTMLDirective } from "lit/directives/unsafe-html.js";
 import { EventBus } from "../../../core/EventBus";
-import { AllPlayers, MessageType } from "../../../core/game/Game";
+import { AllPlayers, MessageType, UnitType } from "../../../core/game/Game";
 import {
   AllianceExpiredUpdate,
   AllianceRequestReplyUpdate,
@@ -61,6 +61,17 @@ const TIER_1_TYPES: ReadonlySet<MessageType> = new Set([
 ]);
 
 const isTier1 = (type: MessageType): boolean => TIER_1_TYPES.has(type);
+
+// Structure names for sim messages that carry a `unit` param (a gift, H18).
+const UNIT_NAME_KEYS: Partial<Record<UnitType, string>> = {
+  [UnitType.City]: "city",
+  [UnitType.DefensePost]: "defense_post",
+  [UnitType.Factory]: "factory",
+  [UnitType.MissileSilo]: "missile_silo",
+  [UnitType.Port]: "port",
+  [UnitType.SAMLauncher]: "sam_launcher",
+  [UnitType.Stargate]: "stargate",
+};
 
 @customElement("events-display")
 export class EventsDisplay extends LitElement implements Controller {
@@ -256,9 +267,17 @@ export class EventsDisplay extends LitElement implements Controller {
   private resolveParams(
     event: DisplayMessageUpdate,
   ): Record<string, string | number> {
-    const params = event.params;
-    if (params?.name === undefined || event.focusPlayerID === undefined) {
-      return params ?? {};
+    let params = event.params ?? {};
+    // A `unit` param is a UnitType from the sim; show it in the viewer's
+    // language (a gift's "City", H18).
+    if (typeof params.unit === "string") {
+      const key = UNIT_NAME_KEYS[params.unit as UnitType];
+      if (key !== undefined) {
+        params = { ...params, unit: translateText(`unit_type.${key}`) };
+      }
+    }
+    if (params.name === undefined || event.focusPlayerID === undefined) {
+      return params;
     }
     const subject = this.game.playerBySmallID(event.focusPlayerID);
     if (!subject.isPlayer()) {

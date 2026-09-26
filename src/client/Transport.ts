@@ -127,6 +127,16 @@ export class BuildUnitIntentEvent implements GameEvent {
   ) {}
 }
 
+// A gift (H18): the Hegemon builds or upgrades on a challenger's tile.
+export class GiftUnitIntentEvent implements GameEvent {
+  constructor(
+    public readonly unit: UnitType,
+    public readonly tile: TileRef,
+    public readonly host: PlayerID,
+    public readonly amount?: number,
+  ) {}
+}
+
 export class SendTargetPlayerIntentEvent implements GameEvent {
   constructor(public readonly targetID: PlayerID) {}
 }
@@ -335,6 +345,7 @@ export class Transport {
       this.onSendEmbargoAllIntent(e),
     );
     this.subscribe(BuildUnitIntentEvent, (e) => this.onBuildUnitIntent(e));
+    this.subscribe(GiftUnitIntentEvent, (e) => this.onGiftUnitIntent(e));
 
     this.subscribe(PauseGameIntentEvent, (e) => this.onPauseGameIntent(e));
     this.subscribe(SendWinnerEvent, (e) => this.onSendWinnerEvent(e));
@@ -860,6 +871,16 @@ export class Transport {
       unit: event.unit,
       tile: event.tile,
       rocketDirectionUp: event.rocketDirectionUp,
+      amount: event.amount,
+    });
+  }
+
+  private onGiftUnitIntent(event: GiftUnitIntentEvent) {
+    this.sendIntent({
+      type: "gift_unit",
+      unit: event.unit,
+      tile: event.tile,
+      host: event.host,
       amount: event.amount,
     });
   }
