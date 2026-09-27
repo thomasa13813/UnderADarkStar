@@ -34,12 +34,11 @@ Tom's seven points cover the visible work. Three things are missing, and one is 
   exists. What is _not_ built anywhere is the throne's identity on screen (reign counters, high scores)
   and the edge cases (F12: the Hegemon disconnects, an AI lands the killing blow).
 
-Also worth naming: the gameplay built in sessions 12–15 (M2, M3, M3.5, M3.6, M4) has not yet had a
-full playtest, and multiplayer has **no human Hegemon at all** (the seat is always the AI outside
+Also worth naming: multiplayer has **no human Hegemon at all** (the seat is always the AI outside
 singleplayer). Closing that gap is P0 because every later phase is easier to judge with friends in a
 lobby.
 
-## P0. Close the gameplay loop for private play (M)
+## P0. Close the gameplay loop for private play (M) — built 2026-09-27, awaiting play
 
 **Goal.** Tom can play Hegemon rounds with friends in a private lobby, with the seat handed to the
 winner by hand, before any backend exists.
@@ -59,18 +58,18 @@ gets the World/FFA/Easy defaults); the archive record carries `isHegemon`.
 - **Successor lobby inherits the config** (map, mode, Hegemon on, timer) and **pre-seats the winner**
   when the previous round's winner is in the new lobby (the archive record and `hegemonSlayer` know
   who won). The host may still override.
-- **Edge cases (F12), decided and built:** the Hegemon disconnects mid-round (the AI takes the seat
-  after a grace period, or the round ends?); an AI challenger lands the killing blow (next round gets
-  the AI Hegemon per R6); the invader disconnects (the slot frees when their tiles are gone — already
-  true).
-- **The playtest debt.** Tom's checks from sessions 12–15: the opening, gifts, destroyers, punitive
-  strikes, the space economy, the M4 numbers from the throne.
+- **Edge cases (F12), decided 2026-09-27:** a human Hegemon who leaves mid-round is simply absent —
+  no AI or player swaps in, the round goes on (only H13 defends the disc); an AI killing blow leaves
+  the seat **unclaimed** next round (in a public lobby anyone may claim it, else the AI holds it; an
+  AI Hegemon's timer win leaves it open again); the invader disconnecting frees the slot when their
+  tiles are gone (already true).
 
-**Decide.** Who chooses the human Hegemon in a private lobby (host only, or first to click). What
-happens on a Hegemon disconnect.
+**Decided 2026-09-27.** The lobby creator seats the Hegemon; an absent Hegemon is nobody's problem but
+their own.
 
 **Done when** a group can play three rounds in a row in one private lobby with the winner seated each
-time, and the F12 answers are in the design doc.
+time. [Built 2026-09-27, design doc §6.22: the seat, the host toggle and crown, the successor
+inheriting the round and seating the winner. What remains is the play itself.]
 
 ## P1. Strip and rebrand (M)
 
@@ -281,7 +280,7 @@ for a large population; the mechanism should be the same at any count, so start 
 - **Identity on screen (S5, F13):** the throne's name and reign count in the lobby and on the Dark Star
   panel; a "Thrones" page with who holds what; per-player reigns and overthrows on the profile; a
   high-score table (most reigns, longest reign) — all read from the archive records P5 keeps.
-- **Edge cases:** the Hegemon disconnects (P0's answer), the winner leaves before confirming (seat
+- **Edge cases:** the Hegemon disconnects (nothing happens: P0's answer), the winner leaves before confirming (seat
   opens), two winners? (impossible: R3 is unambiguous), a round with no challengers (do not start;
   keep the seat), a server restart mid-reign (persist reservations in the database, not memory).
 - **Implementation sketch:** a new lobby type `throne` in `MasterLobbyService` with a `ThroneRegistry`
@@ -351,7 +350,7 @@ source is.
 
 | Phase | Name                                  | Size | Depends on            |
 | ----- | ------------------------------------- | ---- | --------------------- |
-| P0    | Close the loop for private play       | M    | —                     |
+| P0    | Close the loop for private play       | M    | — (built 2026-09-27)  |
 | P1    | Strip and rebrand                     | M    | —                     |
 | P2    | Deep-space map visuals                | M    | P1 (background art)   |
 | P3    | The map pool                          | L    | P2 (palette)          |

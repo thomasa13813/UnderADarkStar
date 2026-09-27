@@ -29,6 +29,7 @@ const COPIED_KEYS = [
   "anonymizeNames",
   "nameReveals",
   "nameRevealPublicIds",
+  "randomMap",
 ] as const satisfies readonly (keyof GameConfig)[];
 
 // `.nullable().optional()` in the schema: the wire says null to clear a
@@ -85,6 +86,14 @@ export function applyGameConfigPatch(
   // (the full config it sends has hostCheats: undefined when the toggle is
   // off), so `undefined` here means "clear", not "leave unchanged".
   target.hostCheats = patch.hostCheats;
+  // Under a Dark Star: the throne is always on — it is the game — so the host
+  // edits only who sits on it, never whether it exists.
+  if (patch.hegemon !== undefined) {
+    target.hegemon =
+      patch.hegemon.seat !== undefined
+        ? { enabled: true, seat: patch.hegemon.seat }
+        : { enabled: true };
+  }
 }
 
 // Whether the host-only cheat block actually grants anything: mere presence

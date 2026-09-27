@@ -486,10 +486,14 @@ export const OvertimeConfigSchema = z.object({
 // Under a Dark Star: the asymmetric Hegemon round (docs/DarkStar-Design.md).
 // One player holds the Dark Star, a disc at the map centre ringed by a moat,
 // with fixed map-scaled strength; the round ends when it is eliminated or the
-// timer expires. Only `enabled` is wire-configurable; domain size and strength
-// tuning live in HEGEMON_DEFAULTS (Config.ts).
+// timer expires. Only `enabled` and the seat are wire-configurable; domain size
+// and strength tuning live in HEGEMON_DEFAULTS (Config.ts).
 export const HegemonConfigSchema = z.object({
   enabled: z.boolean().optional(),
+  // Private lobbies (P0): the clientID of the player the lobby creator seated
+  // on the throne. Absent = the AI holds it (R6). The server resolves it to
+  // PlayerInfo.isHegemon at start, and ignores a client no longer present.
+  seat: z.string().optional(),
 });
 
 export const GameConfigSchema = z.object({
@@ -546,6 +550,10 @@ export const GameConfigSchema = z.object({
   nameRevealPublicIds: z.string().array().max(200).optional(),
   waterNukes: z.boolean().nullable().optional(),
   randomSpawn: z.boolean(),
+  // The host asked for a random map: the server picks it at prestart, so the
+  // host and the guests all see "Random" until the game starts (gameMap is a
+  // placeholder until then).
+  randomMap: z.boolean().optional(),
   maxPlayers: zb.uint().optional(),
   // OFM: allowlist of publicIds allowed to join (admin-only, see create_game).
   allowedPublicIds: z.array(z.string()).max(200).optional(),

@@ -45,6 +45,7 @@ import {
   getNationsForCompactMap,
   getRandomMapType,
   getUpdatedDisabledUnits,
+  nationsConfigToSlider,
   parseBoundedFloatFromInput,
   parseBoundedIntegerFromInput,
   preventDisallowedKeys,
@@ -72,8 +73,9 @@ export class HostLobbyModal extends BaseModal {
   @state() private donateGold: boolean = false;
   @state() private infiniteTroops: boolean = false;
   @state() private donateTroops: boolean = false;
-  @state() private maxTimer: boolean = false;
-  @state() private maxTimerValue: number | undefined = undefined;
+  // A Hegemon round is always timed (R5): 20 minutes unless the host says.
+  @state() private maxTimer: boolean = true;
+  @state() private maxTimerValue: number | undefined = 20;
   @state() private startDelayValue: number | undefined = 3;
   @state() private instantBuild: boolean = false;
   @state() private randomSpawn: boolean = false;
@@ -93,6 +95,10 @@ export class HostLobbyModal extends BaseModal {
   @state() private whitelistEnabled: boolean = false;
   @state() private allowedPublicIds: string = "";
   @state() private waterNukes: boolean = false;
+  // Under a Dark Star (P0): the throne is always there (the game itself, never
+  // a toggle). The creator seats one player from the roster; nobody seated
+  // means the AI holds it.
+  @state() private hegemonSeat: string | null = null;
   @state() private lobbyId = "";
   @state() private lobbyUrlSuffix = "";
   @state() private clients: ClientInfo[] = [];
@@ -131,6 +137,12 @@ export class HostLobbyModal extends BaseModal {
   // showing the opposite of the real listed state.
   private listingRequestInFlight = false;
 
+  // Attach mode (a successor lobby the server minted with the previous
+  // round's settings): the first lobby info hydrates the form, which
+  // otherwise shows defaults and would push them over the inherited config
+  // at the first click.
+  private hydrateFromLobby = false;
+
   private readonly handleLobbyInfo = (event: LobbyInfoEvent) => {
     const lobby = event.lobby;
     if (!this.lobbyId || lobby.gameID !== this.lobbyId) {
@@ -143,6 +155,15 @@ export class HostLobbyModal extends BaseModal {
     this.lobbyCreatorClientID = lobby.lobbyCreatorClientID ?? "";
     if (lobby.clients) {
       this.clients = lobby.clients;
+    }
+    if (lobby.gameConfig) {
+      if (this.hydrateFromLobby) {
+        this.hydrateFromLobby = false;
+        this.applyConfig(lobby.gameConfig);
+      }
+      // The seat is the server's to change under us: it seats the heir as
+      // they arrive and unseats a player who left.
+      this.hegemonSeat = lobby.gameConfig.hegemon?.seat ?? null;
     }
     // The server can delist on its own (duplicate creator / cap overflow
     // resolved by the master); follow its state unless our own toggle
@@ -608,6 +629,11 @@ export class HostLobbyModal extends BaseModal {
               unitTypes: {
                 titleKey: "game_settings.disable_units",
                 disabledUnits: this.disabledUnits,
+                // Off under a Dark Star (S6, H19), as in the singleplayer modal.
+                hiddenUnits:
+                  this.gameMode === GameMode.FFA
+                    ? [UnitType.MIRV, UnitType.SAMLauncher]
+                    : [],
               },
             }}
             @map-selected=${this.handleConfigMapSelected}
@@ -636,6 +662,12 @@ export class HostLobbyModal extends BaseModal {
             .onKickPlayer=${this.publiclyListed
               ? undefined
               : (clientID: string) => this.kickPlayer(clientID)}
+            .hegemonSeat=${this.gameMode === GameMode.FFA
+              ? this.hegemonSeat
+              : null}
+            .onSeatHegemon=${this.gameMode === GameMode.FFA
+              ? (clientID: string) => this.seatHegemon(clientID)
+              : undefined}
             .onToggleNameReveal=${(clientID: string) =>
               this.toggleNameReveal(clientID)}
             .nameReveals=${this.nameReveals}
@@ -755,6 +787,7 @@ export class HostLobbyModal extends BaseModal {
       throw new Error(`Invalid lobby ID format: ${lobbyId}`);
     }
     this.lobbyId = lobbyId;
+    this.hydrateFromLobby = true;
     crazyGamesSDK.showInviteButton(this.lobbyId);
 
     const url = await this.constructUrl();
@@ -839,8 +872,9 @@ export class HostLobbyModal extends BaseModal {
     this.donateGold = false;
     this.infiniteTroops = false;
     this.donateTroops = false;
-    this.maxTimer = false;
-    this.maxTimerValue = undefined;
+    this.maxTimer = true;
+    this.maxTimerValue = 20;
+    this.hegemonSeat = null;
     this.startDelayValue = 3;
     this.instantBuild = false;
     this.randomSpawn = false;
@@ -1320,11 +1354,92 @@ export class HostLobbyModal extends BaseModal {
     }, 300);
   };
 
+  // The form from a lobby's config (the successor of a finished round). The
+  // inverse of putGameConfig, field for field.
+  private applyConfig(c: GameConfig) {
+    this.selectedMap = c.gameMap;
+    this.useRandomMap = c.randomMap ?? false;
+    this.compactMap = c.gameMapSize === GameMapSize.Compact;
+    this.selectedDifficulty = c.difficulty;
+    this.bots = c.bots;
+    this.infiniteGold = c.infiniteGold;
+    this.donateGold = c.donateGold;
+    this.infiniteTroops = c.infiniteTroops;
+    this.donateTroops = c.donateTroops;
+    this.instantBuild = c.instantBuild;
+    this.randomSpawn = c.randomSpawn ?? false;
+    this.gameMode = c.gameMode;
+    this.teamCount = c.playerTeams ?? 2;
+    this.disabledUnits = c.disabledUnits ?? [];
+    this.spawnImmunity =
+      c.spawnImmunityDuration !== null && c.spawnImmunityDuration !== undefined;
+    this.spawnImmunityDurationMinutes = c.spawnImmunityDuration
+      ? c.spawnImmunityDuration / 600
+      : undefined;
+    this.maxTimer = c.maxTimerValue !== null && c.maxTimerValue !== undefined;
+    this.maxTimerValue = c.maxTimerValue ?? undefined;
+    this.startDelayValue = c.startDelay ?? 3;
+    this.goldMultiplier =
+      c.goldMultiplier !== null && c.goldMultiplier !== undefined;
+    this.goldMultiplierValue = c.goldMultiplier ?? undefined;
+    this.startingGold = c.startingGold !== null && c.startingGold !== undefined;
+    this.startingGoldValue =
+      c.startingGold !== null && c.startingGold !== undefined
+        ? c.startingGold / 1_000_000
+        : undefined;
+    this.customAlliances =
+      c.customAllianceDuration !== null &&
+      c.customAllianceDuration !== undefined;
+    this.customAllianceMinutes = c.customAllianceDuration ?? undefined;
+    this.doomsdayClock = c.doomsdayClock?.enabled ?? false;
+    this.doomsdayClockSpeed = c.doomsdayClock?.speed ?? "normal";
+    this.overtime = c.overtime?.enabled ?? false;
+    this.overtimeStartMinutes = c.overtime?.startMinutes;
+    this.anonymizeNames = c.anonymizeNames ?? false;
+    this.nameReveals = c.nameReveals ?? [];
+    this.whitelistEnabled = (c.allowedPublicIds?.length ?? 0) > 0;
+    this.allowedPublicIds = (c.allowedPublicIds ?? []).join(", ");
+    this.waterNukes = c.waterNukes ?? false;
+    this.hegemonSeat = c.hegemon?.seat ?? null;
+    this.hostCheatsEnabled = c.hostCheats !== undefined;
+    this.hostCheatInfiniteGold = c.hostCheats?.infiniteGold ?? false;
+    this.hostCheatInfiniteTroops = c.hostCheats?.infiniteTroops ?? false;
+    this.hostCheatGoldMultiplier =
+      c.hostCheats?.goldMultiplier !== null &&
+      c.hostCheats?.goldMultiplier !== undefined;
+    this.hostCheatGoldMultiplierValue =
+      c.hostCheats?.goldMultiplier ?? undefined;
+    this.hostCheatStartingGold =
+      c.hostCheats?.startingGold !== null &&
+      c.hostCheats?.startingGold !== undefined;
+    this.hostCheatStartingGoldValue =
+      c.hostCheats?.startingGold !== null &&
+      c.hostCheats?.startingGold !== undefined
+        ? c.hostCheats.startingGold / 1_000_000
+        : undefined;
+    // The nations slider needs the map's default count, loaded per map.
+    void this.loadNationCount().then(() => {
+      if (this.selectedMap === c.gameMap) {
+        this.nations = nationsConfigToSlider(
+          c.nations,
+          this.defaultNationCount,
+        );
+      }
+    });
+  }
+
+  private seatHegemon(clientID: string) {
+    this.hegemonSeat = this.hegemonSeat === clientID ? null : clientID;
+    this.putGameConfig();
+  }
+
   private async handleGameModeSelection(value: GameMode) {
     this.gameMode = value;
     if (this.gameMode === GameMode.Team) {
       this.donateGold = true;
       this.donateTroops = true;
+      // The throne is FFA only (Config.hegemonConfig).
+      this.hegemonSeat = null;
     } else {
       this.donateGold = false;
       this.donateTroops = false;
@@ -1401,6 +1516,9 @@ export class HostLobbyModal extends BaseModal {
         detail: {
           config: {
             gameMap: this.selectedMap,
+            // The server picks the map at prestart when this is set; the
+            // gameMap above is then only a placeholder.
+            randomMap: this.useRandomMap,
             gameMapSize: this.compactMap
               ? GameMapSize.Compact
               : GameMapSize.Normal,
@@ -1449,6 +1567,13 @@ export class HostLobbyModal extends BaseModal {
               : { enabled: false },
             anonymizeNames: this.anonymizeNames,
             nameReveals: this.nameReveals,
+            // Always on (the server enforces it); only the seat is ours.
+            hegemon: {
+              enabled: true,
+              ...(this.hegemonSeat !== null && this.gameMode === GameMode.FFA
+                ? { seat: this.hegemonSeat }
+                : {}),
+            },
             allowedPublicIds: this.whitelistEnabled
               ? (this.parseAllowedPublicIds() ?? [])
               : [],

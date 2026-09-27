@@ -523,10 +523,8 @@ export class SinglePlayerModal extends BaseModal {
                   disabledKey: "common.disabled",
                 },
                 toggles: [
-                  {
-                    labelKey: "game_settings.hegemon",
-                    checked: this.hegemon,
-                  },
+                  // The throne is always there (Under a Dark Star); the only
+                  // choice is whether you sit on it.
                   {
                     labelKey: "game_settings.play_as_hegemon",
                     checked: this.playAsHegemon,
@@ -808,9 +806,6 @@ export class SinglePlayerModal extends BaseModal {
         break;
       case "game_settings.doomsday_clock":
         this.doomsdayClock = checked;
-        break;
-      case "game_settings.hegemon":
-        this.hegemon = checked;
         break;
       case "game_settings.play_as_hegemon":
         this.playAsHegemon = checked;

@@ -230,7 +230,8 @@ export function joinLobby(
       // deduplicates in-flight loads, and prestart still re-validates the
       // authoritative map.
       const gameConfig = message.lobby.gameConfig;
-      if (gameConfig === undefined) {
+      // A random map is not known until prestart picks it: nothing to preload.
+      if (gameConfig === undefined || gameConfig.randomMap === true) {
         // No config in this broadcast — reset the debounce so a stale key /
         // streak can't prematurely trigger a preload on a later matching one.
         pendingPreloadKey = null;

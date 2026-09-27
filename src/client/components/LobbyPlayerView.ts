@@ -39,6 +39,10 @@ export class LobbyTeamView extends LitElement {
   @property({ type: String }) currentClientID: string = "";
   @property({ attribute: "team-count" }) teamCount: TeamCountConfig = 2;
   @property({ type: Function }) onKickPlayer?: (clientID: string) => void;
+  // Under a Dark Star: who holds the throne this round (null = the AI), and
+  // the creator's seat control (FFA private lobbies only).
+  @property({ type: String }) hegemonSeat: string | null = null;
+  @property({ type: Function }) onSeatHegemon?: (clientID: string) => void;
   @property({ type: Function }) onToggleNameReveal?: (clientID: string) => void;
   @property({ type: Array }) nameReveals: string[] = [];
   @property({ type: Boolean }) anonymizeNames: boolean = false;
@@ -127,6 +131,7 @@ export class LobbyTeamView extends LitElement {
               : translateText("host_modal.nation_players")}
           </div>
         </div>
+        ${this.renderThroneStatus()}
         <div
           class="players-list block rounded-lg border border-white/10 bg-white/5 p-2"
         >
@@ -263,6 +268,58 @@ export class LobbyTeamView extends LitElement {
     </button>`;
   }
 
+  // Who holds the throne this round, above the roster: the seated player, or
+  // the AI — and, for the creator, how to change it. FFA only (the throne is
+  // not a team-mode thing).
+  private renderThroneStatus() {
+    if (this.gameMode !== GameMode.FFA) return html``;
+    const seated = this.activePlayers.find(
+      (c) => c.clientID === this.hegemonSeat,
+    );
+    const holder = seated
+      ? translateText("host_modal.throne_holder", {
+          username: this.getClientDisplayName(seated),
+        })
+      : translateText("host_modal.throne_ai");
+    return html`<div
+      class="flex flex-wrap items-center gap-x-3 gap-y-1 mb-3 text-sm"
+    >
+      <span class="font-semibold text-amber-300">👑 ${holder}</span>
+      ${this.onSeatHegemon
+        ? html`<span class="text-white/50 text-xs"
+            >${translateText("host_modal.throne_hint")}</span
+          >`
+        : html``}
+    </div>`;
+  }
+
+  // The throne: a badge on whoever is seated, and for the creator a crown on
+  // every player that seats (or unseats) them.
+  private renderThrone(client: ClientInfo, displayName: string) {
+    const seated = client.clientID === this.hegemonSeat;
+    const badge = seated
+      ? html`<span class="host-badge"
+          >(${translateText("host_modal.hegemon_badge")})</span
+        >`
+      : html``;
+    if (!this.onSeatHegemon) return badge;
+    return html`${badge}<button
+        @click=${() => this.onSeatHegemon?.(client.clientID)}
+        title=${translateText("host_modal.seat_hegemon", {
+          username: displayName,
+        })}
+        aria-label=${translateText("host_modal.seat_hegemon", {
+          username: displayName,
+        })}
+        aria-pressed=${seated ? "true" : "false"}
+        style="background:none;border:none;cursor:pointer;font-size:15px;line-height:1;margin-left:4px;opacity:${seated
+          ? "1"
+          : "0.55"};"
+      >
+        👑
+      </button>`;
+  }
+
   private renderFreeForAll() {
     return html`${repeat(
       this.activePlayers,
@@ -278,6 +335,7 @@ export class LobbyTeamView extends LitElement {
             >${displayName} ${this.renderVerifiedBadge(client)}
             ${this.renderFriendBadge(client)}</span
           >
+          ${this.renderThrone(client, displayName)}
           ${this.renderRevealToggle(client.clientID)}
           ${client.clientID === this.lobbyCreatorClientID
             ? html`<span class="host-badge"

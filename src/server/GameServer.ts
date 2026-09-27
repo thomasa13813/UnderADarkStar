@@ -8,6 +8,7 @@ import { isAdminRole } from "../core/ApiSchemas";
 import { CloseCode, CloseReason } from "../core/CloseCodes";
 import { GameEnv } from "../core/configuration/Config";
 import {
+  GameMapType,
   GameMode,
   GameType,
   HumansVsNations,
@@ -243,6 +244,8 @@ export class GameServer {
   // repeated create_game?previous= call (e.g. a double click) reuses the same
   // id instead of minting another lobby.
   private successorLobbyId: GameID | null = null;
+  // The previous round's winner (persistentID), heir to this lobby's throne.
+  private hegemonHeir: string | null = null;
 
   // This match's telemetry stream: envelopes, sequence, per-tick intent
   // counters, finished-once (see MatchTelemetryRecorder.ts).
@@ -621,6 +624,7 @@ export class GameServer {
     this.clients.add(client);
     client.lastPing = Date.now();
     this.markClientDisconnected(client.clientID, false);
+    this.seatHeir(client);
     this.telemetry.emit(
       "player_joined",
       {
@@ -881,6 +885,14 @@ export class GameServer {
     this.stage = "prestart";
     this.fetchTribes();
 
+    // A random map is the server's pick, made now: the lobby showed "Random"
+    // to the host and the guests alike until this moment (Under a Dark Star).
+    if (this.gameConfig.randomMap === true) {
+      const maps = Object.values(GameMapType);
+      this.gameConfig.gameMap = maps[Math.floor(Math.random() * maps.length)];
+      this.log.info("random map picked", { gameMap: this.gameConfig.gameMap });
+    }
+
     const prestartMsg = ServerPrestartMessageSchema.safeParse({
       type: "prestart",
       gameMap: this.gameConfig.gameMap,
@@ -967,6 +979,7 @@ export class GameServer {
   }
 
   private broadcastLobbyInfo() {
+    this.reconcileHegemonSeat();
     // Off: same payload for everyone (build once). On: per-recipient.
     const shared = this.gameConfig.anonymizeNames ? null : this.gameInfo();
     this.clients.active().forEach((c) => {
@@ -1002,6 +1015,60 @@ export class GameServer {
 
   public successorLobby(): GameID | null {
     return this.successorLobbyId;
+  }
+
+  // Under a Dark Star (P0): the round's winner as the next round's Hegemon.
+  // The winner vote names a client; a nation (the AI Hegemon holding the
+  // timer, or an AI slayer) leaves the throne unclaimed (null).
+  public winnerPersistentID(): string | null {
+    const winner = this.winnerVote.winner()?.winner;
+    if (winner === undefined || winner[0] !== "player") return null;
+    return this.clients.get(winner[1])?.persistentID ?? null;
+  }
+
+  // The successor lobby's heir: the previous round's winner, seated on the
+  // throne as they arrive unless the creator has already seated someone.
+  public setHegemonHeir(persistentID: string | null) {
+    this.hegemonHeir = persistentID;
+  }
+
+  public hegemonHeirID(): string | null {
+    return this.hegemonHeir;
+  }
+
+  private seatHeir(client: Client) {
+    const h = this.gameConfig.hegemon;
+    if (this.hegemonHeir === null || client.persistentID !== this.hegemonHeir) {
+      return;
+    }
+    if (
+      this.hasStarted() ||
+      h?.enabled !== true ||
+      h.seat !== undefined ||
+      client.spectator
+    ) {
+      return;
+    }
+    this.gameConfig.hegemon = { ...h, seat: client.clientID };
+    this.log.info("heir seated on the throne", { clientID: client.clientID });
+  }
+
+  // A seated player who left takes the seat with them: the creator sees it
+  // empty in the next lobby info and may seat someone else (or the heir is
+  // re-seated when they come back).
+  private reconcileHegemonSeat() {
+    const h = this.gameConfig.hegemon;
+    if (h?.seat === undefined) return;
+    const seat = h.seat;
+    // Records outlive departures: a seat for a client who has left is
+    // cleared; one for a client who has not joined yet is kept (start()
+    // ignores it if they never do).
+    const client = this.clients.get(seat);
+    if (client === undefined || this.clients.isConnected(client)) return;
+    const cleared = { ...h };
+    delete cleared.seat;
+    this.gameConfig.hegemon = cleared;
+    this.log.info("seated player left, throne unseated", { clientID: seat });
   }
 
   private broadcastNewLobby(gameID: GameID) {
@@ -1041,6 +1108,15 @@ export class GameServer {
     delete config.allowedPublicIds;
     delete config.nameRevealPublicIds;
 
+    // The throne (Under a Dark Star): the lobby creator's seat choice becomes
+    // the one isHegemon player. FFA only (Config disables the mode
+    // otherwise); a seated client who left the lobby leaves the AI holding
+    // it. The seat's clientID stays in the config for the record.
+    const hegemonSeat =
+      config.hegemon?.enabled === true && config.gameMode === GameMode.FFA
+        ? config.hegemon.seat
+        : undefined;
+
     const result = GameStartInfoSchema.safeParse({
       gameID: this.id,
       lobbyCreatedAt: this.createdAt,
@@ -1054,6 +1130,9 @@ export class GameServer {
         isLobbyCreator: this.lobbyCreatorID === c.clientID,
         friends: friendsFor(c),
         teamIndex: this.matchmakingTeamIndex(c),
+        ...(hegemonSeat !== undefined && hegemonSeat === c.clientID
+          ? { isHegemon: true }
+          : {}),
       })),
       tribes: this.tribes,
     });

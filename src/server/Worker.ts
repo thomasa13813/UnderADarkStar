@@ -30,6 +30,7 @@ import { isSteamAuthenticated, planJoinVerify, verifyJoin } from "./JoinVerify";
 import { getUserMe, verifyClientToken } from "./jwt";
 import { logger } from "./Logger";
 import { resolveVerifiedJoin } from "./Privilege";
+import { successorConfig } from "./SuccessorLobby";
 
 import { MapPlaylist } from "./MapPlaylist";
 import { setNoStoreHeaders } from "./NoStoreHeaders";
@@ -233,10 +234,20 @@ export async function startWorker() {
       return res.status(500).json({ error: "Could not allocate game id" });
     }
 
-    const game = gm.createGame(id, gc, creatorPersistentID);
+    // A successor inherits the finished round's settings when the request
+    // carries none (Under a Dark Star, P0), and the round's winner as heir to
+    // the throne.
+    const config =
+      previousGame !== null && gc === undefined
+        ? successorConfig(previousGame.gameConfig)
+        : gc;
+    const game = gm.createGame(id, config, creatorPersistentID);
     if (game === null) {
       log.warn(`cannot create game, id ${id} already exists`);
       return res.status(409).json({ error: "Game ID already exists" });
+    }
+    if (previousGame !== null) {
+      game.setHegemonHeir(previousGame.winnerPersistentID());
     }
 
     // Tell the previous game about its successor: it remembers the id (for

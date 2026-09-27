@@ -208,6 +208,9 @@ export class MapPlaylist {
       spawnImmunityDuration: this.getSpawnImmunityDuration(playerTeams),
       disabledUnits: [],
       disableClanTags: mode === GameMode.FFA ? true : undefined,
+      // Under a Dark Star: every public FFA round has a throne (the AI holds
+      // it until P6 seats a player).
+      hegemon: mode === GameMode.FFA ? { enabled: true } : undefined,
       // Overtime (the win threshold sinking after 30 minutes) is the default
       // for every public FFA game, so it carries no lobby modifier badge.
       overtime: mode === GameMode.FFA ? { enabled: true } : undefined,
@@ -483,6 +486,9 @@ export class MapPlaylist {
       disabledUnits,
       waterNukes: isWaterNukes ? true : undefined,
       disableClanTags: mode === GameMode.FFA ? true : undefined,
+      // Under a Dark Star: every public FFA round has a throne (the AI holds
+      // it until P6 seats a player).
+      hegemon: mode === GameMode.FFA ? { enabled: true } : undefined,
     } satisfies GameConfig;
   }
 

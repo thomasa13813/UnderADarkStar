@@ -360,6 +360,9 @@ export class JoinLobbyModal extends BaseModal {
                         .clients=${this.players}
                         .lobbyCreatorClientID=${hostClientID}
                         .currentClientID=${this.currentClientID}
+                        .hegemonSeat=${this.gameConfig?.hegemon?.enabled
+                          ? (this.gameConfig.hegemon.seat ?? null)
+                          : null}
                         .anonymizeNames=${this.gameConfig?.anonymizeNames ??
                         false}
                         .teamCount=${this.gameConfig?.playerTeams ?? 2}
@@ -504,11 +507,17 @@ export class JoinLobbyModal extends BaseModal {
 
   private renderHostedLobbyRow(lobby: PublicGameInfo) {
     const c = lobby.gameConfig;
-    const mapName = c ? (getMapName(c.gameMap) ?? c.gameMap) : "";
+    const mapName = c
+      ? c.randomMap
+        ? translateText("map.random")
+        : (getMapName(c.gameMap) ?? c.gameMap)
+      : "";
     const thumbnailUrl = c
-      ? assetUrl(
-          `maps/${encodeURIComponent(normaliseMapKey(c.gameMap))}/thumbnail.webp`,
-        )
+      ? c.randomMap
+        ? assetUrl("images/RandomMap.webp")
+        : assetUrl(
+            `maps/${encodeURIComponent(normaliseMapKey(c.gameMap))}/thumbnail.webp`,
+          )
       : "";
     // Nation count for this map isn't loaded pre-join, so the numeric-nations
     // default comparison is skipped in the row chips.
@@ -822,6 +831,21 @@ export class JoinLobbyModal extends BaseModal {
         label: translateText("host_modal.crowded"),
         value: enabled,
       });
+    // Under a Dark Star: the throne and who holds it (a name once the roster
+    // is known, "AI" when nobody is seated, plain "enabled" pre-join).
+    if (c.hegemon?.enabled && c.gameMode === GameMode.FFA) {
+      const seated = c.hegemon.seat
+        ? this.players.find((p) => p.clientID === c.hegemon?.seat)
+        : undefined;
+      items.push({
+        label: translateText("game_settings.hegemon"),
+        value: seated
+          ? seated.username
+          : c.hegemon.seat && this.players.length === 0
+            ? enabled
+            : translateText("host_modal.hegemon_ai"),
+      });
+    }
     if (
       pm?.isHardNations ||
       (c.gameType === GameType.Private && c.difficulty !== Difficulty.Easy)
@@ -958,11 +982,15 @@ export class JoinLobbyModal extends BaseModal {
     if (!this.gameConfig) return html``;
 
     const c = this.gameConfig;
-    const mapName = getMapName(c.gameMap);
+    // A random map is the server's pick at start: until then everyone,
+    // host included, sees "Random".
+    const mapName = c.randomMap
+      ? translateText("map.random")
+      : getMapName(c.gameMap);
     const normalizedMap = normaliseMapKey(c.gameMap);
-    const thumbnailUrl = assetUrl(
-      `maps/${encodeURIComponent(normalizedMap)}/thumbnail.webp`,
-    );
+    const thumbnailUrl = c.randomMap
+      ? assetUrl("images/RandomMap.webp")
+      : assetUrl(`maps/${encodeURIComponent(normalizedMap)}/thumbnail.webp`);
     const modeSubtitle = this.modeSubtitle(c);
 
     const cards = this.notableSettings(c, this.nationCount).map(

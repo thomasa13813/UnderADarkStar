@@ -95,12 +95,13 @@ export class GameManager {
           nations: "default",
           infiniteGold: false,
           infiniteTroops: false,
-          maxTimerValue: undefined,
+          maxTimerValue: 20, // a Hegemon round is always timed (R5)
           instantBuild: false,
           randomSpawn: false,
           gameMode: GameMode.FFA,
           bots: 400,
           disabledUnits: [],
+          hegemon: { enabled: true }, // always on (Under a Dark Star)
           ...gameConfig,
         },
         creatorPersistentID,

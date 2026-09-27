@@ -1598,6 +1598,63 @@ like a commitment; whether the refill reads on the panel; whether 3% is the righ
 destroyers; and whether an AI throne at 75% strikes too often. Untouched, for after: the AI's strike
 thresholds beyond the 75% bar, the gate numbers (F15), the train-income note (§6.19).
 
+### 6.22 As built — P0: the throne in a private lobby, and succession by hand (2026-09-27)
+
+The first phase of `docs/DarkStar-Roadmap.md`. Before it, multiplayer had no human Hegemon at all:
+the seat was set only by the singleplayer modal. Tom's decisions: the **lobby creator seats the
+Hegemon**; a human Hegemon who leaves mid-round is simply absent (no AI or player swaps in — the
+round goes on with H13 the disc's only defence; "tough for the Hegemon"); an **AI killing blow leaves
+the seat unclaimed** next round (the creator may seat anyone, else the AI holds it), and an AI
+Hegemon's timer win leaves it open again.
+
+- **The seat on the wire.** `HegemonConfigSchema` gains `seat` (a clientID; absent = the AI, R6).
+  `hegemon` joins `ConfigPatch`'s copied keys so `update_game_config` can set it. At `start()` the
+  server flags `isHegemon` on the seated client and nobody else — FFA only, and a seat for a client
+  no longer present is ignored (`tests/server/HegemonSeat.test.ts`). `GameImpl.seatHegemon` then
+  seats that player exactly as the singleplayer path does; the throne's HUD, the opening and the
+  spawn phase needed no change (verified in the browser with two clients).
+- **The host view.** `HostLobbyModal`: a **Dark Star (Hegemon)** toggle in the options (FFA only;
+  turning it on gives the lobby the default 20-minute round, as the singleplayer modal does; MIRV and
+  SAM leave the unit menu; team mode turns it off), and on the roster a **crown on every player**
+  that seats or unseats them, with a **(Hegemon)** badge on whoever holds it (`LobbyPlayerView`,
+  `hegemonSeat` / `onSeatHegemon`). Joiners see the badge and a "Dark Star (Hegemon): name / AI
+  Hegemon" card in the join view. The seat is the server's to change under the host: the modal
+  adopts it from every lobby info.
+- **Succession by hand.** "New Lobby" from the win screen (`create_game?previous=`) now makes a
+  successor that **inherits the round's settings** (`SuccessorLobby.successorConfig`: everything but
+  the old lobby's name reveals and seat) and carries the round's **winner as heir**
+  (`GameServer.winnerPersistentID()` from the winner vote; a nation's win — the AI Hegemon on the
+  timer, or an AI slayer — names nobody). The heir is **seated as they arrive** (`seatHeir`, on
+  join, unless the creator has already seated someone or the throne is off), and a seated player who
+  leaves is **unseated** in the next lobby info (`reconcileHegemonSeat`; a returning heir is seated
+  again). The host modal re-attaching to the successor (`?host`) **hydrates its form from the
+  lobby's config** (`applyConfig`, the inverse of `putGameConfig`) instead of showing defaults that
+  the first click would have pushed over the inherited settings.
+- **Tests.** `HegemonSeat` (3), `SuccessorLobby` (7: the inherited config, the winner's identity, heir
+  seating, no displacement, throne off, unseating and re-seating), `ConfigPatch` gains the key.
+  Browser scripts `.claude/skills/run-openfront/throne-lobby.mjs` (host + joiner, seat, start: the
+  joiner is the human Hegemon with the full pool) and `throne-successor.mjs` (a 1-minute round on
+  Event Horizon won by the throne on the timer; New Lobby; the successor shows Event Horizon / 30
+  tribes / throne / 1 min, and the winner hops over already seated).
+- **After Tom's first lobby round (same day).** Three changes. (1) **The throne is always on** —
+  it is the game, not a feature: the Dark Star toggle is gone from the host and singleplayer
+  modals, `ConfigPatch` forces `hegemon.enabled` true whatever a patch says (only the seat is the
+  host's), `GameManager` creates every private lobby with the throne and a 20-minute timer, and
+  public FFA games get it too (`MapPlaylist`; the AI holds it until P6). The sim still honours the
+  flag, so tests without a throne are unaffected. (2) **The seat control was invisible** because it
+  hid behind that toggle; now the roster always shows, in FFA, a line reading "The AI holds the
+  throne" or "name holds the throne" with, for the creator, "click a player's crown to seat them",
+  and the crowns are larger and brighter. (3) **A random map stays "Random" for everyone until the
+  game starts**: before, the host's client rolled the map at selection and sent the pick, so guests
+  saw the map while the host saw "Random". Now `GameConfig.randomMap` travels with the lobby, the
+  join view shows "Random" with the random-map card, the client skips the terrain preload, and
+  `GameServer.prestart()` makes the pick and announces it in the prestart message (a successor lobby
+  inherits the flag, not the old pick). `tests/server/ThroneAlwaysOn.test.ts` (4).
+- **Seen, left for later.** OpenFront's tutorial popup talks to a Hegemon about picking a spawn
+  spot (P8 rewrites the tutorial). The Dark Star panel's text is empty in the first seconds of a
+  round. A seat change can flicker for up to a second if a stale lobby info lands between the
+  host's click and the server's next broadcast.
+
 ## 7. Constraints (non-negotiable engineering rules)
 
 - `src/core/` must stay **deterministic** (seeded PRNG, no wall-clock, careful with floats) and
@@ -1931,3 +1988,15 @@ to the invader (H9), gold donations from the throne (H9), hydrogen-bomb removal 
   non-gameplay points, checked against the repo: identity is the hinge for the persistent throne and
   the store, anti-abuse and the AGPL obligations are work items, matchmaking is smaller than feared
   and multiplayer has no human Hegemon yet (P0). Phases P0–P8 supersede §9's M5–M9.
+- **2026-09-27** — **P0 built: the throne in a private lobby and succession by hand** (§6.22).
+  Tom's answers: the creator seats the Hegemon; an absent Hegemon is nobody's problem but their own;
+  an AI killing blow leaves the seat unclaimed. Built: `hegemon.seat` on the wire, the Dark Star
+  toggle and the crown-per-player seat control in the host lobby, the badge and card for joiners,
+  `isHegemon` resolved at start; "New Lobby" inherits the round's settings and seats the winner as
+  they arrive (heir), unseating anyone who leaves; the host form hydrates from the successor's
+  config. 10 server tests; two two-client browser scripts. Next: Tom plays rounds with friends.
+- **2026-09-27** — After Tom's first lobby round: **the throne is always on** (no toggle anywhere;
+  the server forces it; every private lobby starts timed at 20 min), the **seat control is visible**
+  (a "holds the throne" line over the roster with the crown hint), and a **random map stays
+  "Random" for host and guests alike** until the server picks it at prestart (`randomMap` on the
+  wire). §6.22 amended; 4 more tests.
