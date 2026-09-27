@@ -111,19 +111,16 @@ async function main(): Promise<void> {
         if (!(key in d)) throw new Error(`--set: no tunable ${key}`);
         set[key] = Number(value);
       }
-      return {
-        ...d,
-        ...set,
-        domainAttackerLossPercent: Number(
-          arg("loss", String(d.domainAttackerLossPercent)),
-        ),
-        domainConquestSlowPercent: Number(
-          arg("slow", String(d.domainConquestSlowPercent)),
-        ),
-        troopCeilingPercentOfWholeMapCap: Number(
-          arg("ceiling", String(d.troopCeilingPercentOfWholeMapCap)),
-        ),
+      // The shorthands only when given, so they never undo a --set (the
+      // 2026-09-27 sweep's ceiling rows silently ran at the default).
+      const shorthand = (name: string, key: keyof typeof d) => {
+        const v = arg(name, "");
+        if (v !== "") set[key] = Number(v);
       };
+      shorthand("loss", "domainAttackerLossPercent");
+      shorthand("slow", "domainConquestSlowPercent");
+      shorthand("ceiling", "troopCeilingPercentOfWholeMapCap");
+      return { ...d, ...set };
     }
   }
   const config = new SimConfig(gameConfig, null, false);
@@ -189,16 +186,24 @@ async function main(): Promise<void> {
   log(
     `${gameConfig.gameMap}: domain r=${g.radius} (${g.domainTileCount} tiles), ` +
       `moat ${g.moatWidth}, Hegemon ceiling ${k(config.hegemonMaxTroops())}, ` +
-      `gold/tick ${config.hegemonGoldPerTick()}`,
+      `refill ${k(config.hegemonTroopsPerTick() * 600)}/min (${config.hegemonConfig().refillMinutes} min from empty), ` +
+      `shadow tax ${config.hegemonConfig().shadowTaxPercent}%`,
   );
   log(
-    "min | heg troops | heg tiles | invaders | strongest challenger (troops, tiles) | all challengers' troops",
+    "min | heg troops | heg tiles | heg gold (income/min) | invaders | strongest challenger (troops, tiles) | all challengers' troops (income/min)",
   );
 
   // Round summary: every landing (a new holder of the invasion slot), and how
   // close the Dark Star came to falling.
   const landings: string[] = [];
   let lastInvader: Player | null = null;
+  let lastStandLogged = false;
+  // Income since the previous printed line, for the gold columns.
+  let lastChallengerGold = 0n;
+  let lastHegemonGold = 0n;
+  let lastGoldTick = 0;
+  const perMinute = (delta: bigint, ticks: number): string =>
+    ticks > 0 ? k(Number((delta * 600n) / BigInt(ticks))) : "-";
   let lowestTiles = g.domainTileCount;
   let lowestTroops = hegemon.troops();
   let turn = 0;
@@ -364,6 +369,21 @@ async function main(): Promise<void> {
     }
 
     const invader = game.darkStarInvader();
+    // The last stand's threshold (M4), logged once per invasion.
+    if (invader !== null && !lastStandLogged) {
+      const cfg = config.hegemonConfig();
+      if (
+        invader.domainTilesHeld() * 100 >=
+        g.domainTileCount * cfg.lastStandDomainLostPercent
+      ) {
+        lastStandLogged = true;
+        log(
+          `      last stand @${minute(elapsed)}: ${invader.name()} holds ${Math.round((invader.domainTilesHeld() * 100) / g.domainTileCount)}% of the domain; ` +
+            `Hegemon troops ${k(hegemon.troops())}, invader troops ${k(invader.troops())}`,
+        );
+      }
+    }
+    if (invader === null) lastStandLogged = false;
     if (invader !== null && invader !== lastInvader) {
       const byGate = (gateLandingTick.get(invader) ?? -Infinity) >= elapsed - 2;
       if (byGate) darkStarByGate++;
@@ -464,12 +484,24 @@ async function main(): Promise<void> {
       .slice()
       .sort((a, b) => b.troops() - a.troops())[0];
     const total = challengers.reduce((sum, p) => sum + p.troops(), 0);
+    // Lifetime income of every challenger, dead or alive (allPlayers), as the
+    // shadow tax reads it.
+    const challengerGold = game
+      .allPlayers()
+      .filter((p) => p !== hegemon)
+      .reduce((sum, p) => sum + p.goldEarned(), 0n);
+    const goldTicks = elapsed - lastGoldTick;
     log(
       `${(elapsed / 600).toFixed(2).padStart(5)} | ${k(hegemon.troops()).padStart(10)} | ` +
         `${String(hegemon.numTilesOwned()).padStart(9)} | ` +
+        `${k(Number(hegemon.gold()))} (${perMinute(hegemon.goldEarned() - lastHegemonGold, goldTicks)}) | ` +
         `${[...invaders].join(", ") || "-"} | ` +
-        `${strongest?.name()} (${k(strongest?.troops() ?? 0)}, ${strongest?.numTilesOwned()}) | ${k(total)}`,
+        `${strongest?.name()} (${k(strongest?.troops() ?? 0)}, ${strongest?.numTilesOwned()}) | ${k(total)} ` +
+        `(${perMinute(challengerGold - lastChallengerGold, goldTicks)})`,
     );
+    lastChallengerGold = challengerGold;
+    lastHegemonGold = hegemon.goldEarned();
+    lastGoldTick = elapsed;
   }
 
   if (fatal !== undefined) throw new Error(fatal);

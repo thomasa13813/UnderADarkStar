@@ -41,9 +41,16 @@ describe("Hegemon strength", () => {
 
   test("starts at a ceiling set by the map as authored (H2, H3)", () => {
     const config = game.config();
-    // The whole-map cap: what one player owning every land tile could field.
+    // The whole-map cap: what one player owning every land tile could field,
+    // at the ceiling's share of it.
+    const cfg = config.hegemonConfig();
     expect(config.hegemonMaxTroops()).toBe(
-      Math.floor(2 * (Math.pow(BIG_PLAINS_LAND, 0.6) * 1000 + 50000)),
+      Math.floor(
+        (2 *
+          (Math.pow(BIG_PLAINS_LAND, 0.6) * 1000 + 50000) *
+          cfg.troopCeilingPercentOfWholeMapCap) /
+          100,
+      ),
     );
     expect(game.numLandTiles()).toBeLessThan(BIG_PLAINS_LAND);
     expect(hegemon.troops()).toBe(config.hegemonMaxTroops());
@@ -52,7 +59,8 @@ describe("Hegemon strength", () => {
     expect(config.hegemonMaxTroops()).toBeGreaterThan(
       4 * (2 * (Math.pow(hegemon.numTilesOwned(), 0.6) * 1000 + 50000)),
     );
-    expect(config.goldAdditionRate(hegemon)).toBe(80n);
+    // No workers: the throne's gold is the shadow tax (below).
+    expect(config.goldAdditionRate(hegemon)).toBe(0n);
   });
 
   test("is decoupled from the territory it still holds (H5)", () => {
@@ -73,19 +81,55 @@ describe("Hegemon strength", () => {
     expect(config.troopIncreaseRate(hegemon)).toBe(regen);
   });
 
-  test("regenerates up to the ceiling and no further", () => {
+  test("refills at a flat rate up to the ceiling and no further (H4)", () => {
     const config = game.config();
+    const cfg = config.hegemonConfig();
+    const ceiling = config.hegemonMaxTroops();
+    const perTick = ceiling / (cfg.refillMinutes * 600);
     expect(config.troopIncreaseRate(hegemon)).toBe(0);
-    hegemon.setTroops(config.hegemonMaxTroops() / 2);
-    expect(config.troopIncreaseRate(hegemon)).toBeGreaterThan(1);
+
+    // The same troops a tick whether the pool is nearly empty or half full:
+    // no curve that crawls near empty and peaks part way up.
+    hegemon.setTroops(ceiling / 2);
+    expect(config.troopIncreaseRate(hegemon)).toBeCloseTo(perTick, 6);
+    hegemon.setTroops(1000);
+    expect(config.troopIncreaseRate(hegemon)).toBeCloseTo(perTick, 6);
+    hegemon.setTroops(ceiling - 40); // troops are whole numbers
+    expect(config.troopIncreaseRate(hegemon)).toBeCloseTo(40, 6);
+
+    // Well below a challenger regenerating at its best, well above one that
+    // has spent everything (the engine's curve at zero troops).
+    const half = 2 * (Math.pow(BIG_PLAINS_LAND / 2, 0.6) * 1000 + 50000);
+    const challengerPeak = (10 + Math.pow(half * 0.6, 0.73) / 4) * 0.4;
+    expect(perTick).toBeLessThan(challengerPeak / 2);
+    expect(perTick).toBeGreaterThan(10);
 
     // HegemonExecution gives the seat its PlayerExecution, which applies it.
+    hegemon.setTroops(ceiling / 2);
     game.addExecution(new HegemonExecution());
     const before = hegemon.troops();
-    const goldBefore = hegemon.gold();
     executeTicks(game, 12);
-    expect(hegemon.troops()).toBeGreaterThan(before);
-    expect(hegemon.gold()).toBeGreaterThan(goldBefore);
+    // Its PlayerExecution starts a tick or two in, and troops are whole.
+    expect(hegemon.troops()).toBeGreaterThanOrEqual(before + 9 * (perTick - 1));
+    expect(hegemon.troops()).toBeLessThanOrEqual(before + 12 * perTick);
+  });
+
+  test("earns a shadow tax on everything the challengers earn (H4)", () => {
+    const config = game.config();
+    const share = BigInt(config.hegemonConfig().shadowTaxPercent);
+    game.addExecution(new HegemonExecution());
+    executeTicks(game, 2); // seated, and the first reading taken
+    const goldBefore = hegemon.gold();
+    const earnedBefore = invader.goldEarned();
+
+    invader.addGold(1_000_000n); // trade, say — the invader has no workers yet
+    executeTicks(game, 1);
+    const earned = invader.goldEarned() - earnedBefore;
+    expect(earned).toBeGreaterThanOrEqual(1_000_000n);
+    expect(hegemon.gold() - goldBefore).toBe((earned * share) / 100n);
+
+    // Nothing is deducted from the challenger.
+    expect(invader.gold()).toBeGreaterThanOrEqual(1_000_000n);
   });
 
   test("bleeds troops per tile as if it held the whole domain (H5)", () => {

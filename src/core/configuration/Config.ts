@@ -273,9 +273,10 @@ const OVERTIME_DEFAULTS = {
 // client derives the identical tile set (F5 — confirm by eye, then tune here).
 //
 // Strength depends only on the map's ORIGINAL land-tile count (H3), never on the
-// Hegemon's own territory (H5). These are F1 placeholders until calibrated
-// against AI-only games: the ceiling is a share of what ONE player owning every
-// land tile could field, which on Milky Way (~443k tiles) is ~5M troops.
+// Hegemon's own territory (H5). The ceiling is a share of what ONE player owning
+// every land tile could field (100% on Milky Way, ~443k tiles, is ~5M troops);
+// the numbers are the M4 first pass (F1), swept with HegemonSim and open to
+// playtest feedback.
 // Stargates (C4 in docs/DarkStar-Design.md): a challenger structure that
 // fires troops as a projectile at any tile in range. Numbers are F15's
 // starting points (decided 2026-09-24), tunable here.
@@ -300,9 +301,22 @@ const HEGEMON_DEFAULTS = {
   domainRadiusPermille: 90,
   moatWidthPermille: 10,
   moatMinTiles: 15,
-  troopCeilingPercentOfWholeMapCap: 100,
-  regenPercent: 100, // of the standard regeneration curve
-  goldPerTickPer50kLandTiles: 100,
+  // The pool (H4, M4 first pass 2026-09-27): the ceiling as a share of what
+  // ONE player owning every land tile could field, and a FLAT refill — the
+  // same troops every tick, ceiling ÷ (refillMinutes × 600) — rather than the
+  // engine's curve, which peaks around 60% full and crawls near empty. Flat
+  // so that a throne bled dry cannot be kept down by a slow-rolled invasion
+  // while its regeneration is at its weakest (Tom): the refill is well below
+  // a challenger's peak (half the map at 60% full regenerates ~2.4M/min on
+  // Milky Way) but never as low as an emptied challenger's. At 20 minutes
+  // on Milky Way (ceiling ~6.2M) that is ~310k a minute: one full strike
+  // per round, and the throne stays open for most of it.
+  troopCeilingPercentOfWholeMapCap: 125,
+  refillMinutes: 20, // from empty to the ceiling
+  // Gold is a shadow tax (H4): each tick the Hegemon earns this share of the
+  // gold every challenger earned that tick (workers, trade, trains, piracy,
+  // conquest — everything but their starting gold), deducted from nobody.
+  shadowTaxPercent: 3,
   // The invasion slot (H6, H12) and the Dark Star's response (H13).
   invasionStallSeconds: 5, // no tile gained for this long = stalled
   // An AI Hegemon answers an invader with a wave of this share of its troops,
@@ -310,6 +324,12 @@ const HEGEMON_DEFAULTS = {
   // The same wave is forced on ANY Hegemon the moment an invasion stalls.
   responseWavePercent: 20,
   responseWaveSeconds: 10,
+  // The last stand (M4): once an invader holds this share of the domain, an
+  // AI Hegemon recalls its leveller strike and, every second until the
+  // invader is evicted, sends everything above a reserve (a share of the
+  // ceiling) after them. A human Hegemon has the same tools by hand.
+  lastStandDomainLostPercent: 40,
+  lastStandReservePercent: 5,
   // The Dark Star is a fortress: taking a domain tile FROM THE HEGEMON costs the
   // attacker this much more and goes this much slower (100 = no change). Without
   // it the domain's tiles run out long before the Hegemon's troops do: measured
@@ -355,7 +375,10 @@ const HEGEMON_DEFAULTS = {
   // recalled once the target's capacity has fallen to
   // levellerRecallPercentOfRival of the next strongest challenger's, and the
   // next strike waits out the cooldown.
-  levellerFullPercent: 95,
+  // 75 (from 95, 2026-09-27): with the flat refill the throne rarely tops
+  // up again after a strike, and Tom wants it engaging the galaxy without
+  // dipping below three quarters of its pool to do so.
+  levellerFullPercent: 75,
   levellerFullSeconds: 60,
   levellerThreatPercentOfCeiling: 25,
   levellerStrikePercent: 25,
@@ -498,13 +521,15 @@ export class Config {
         100,
     );
   }
-  hegemonGoldPerTick(): Gold {
-    return BigInt(
-      Math.floor(
-        (this.hegemonMapLandTiles() *
-          this.hegemonConfig().goldPerTickPer50kLandTiles) /
-          50_000,
-      ),
+  // The flat refill: the same troops every tick, whatever the pool holds.
+  hegemonTroopsPerTick(): number {
+    return this.hegemonMaxTroops() / (this.hegemonConfig().refillMinutes * 600);
+  }
+  // The shadow tax on what the challengers earned this tick (H4).
+  hegemonShadowTax(challengerIncome: Gold): Gold {
+    if (challengerIncome <= 0n) return 0n;
+    return (
+      (challengerIncome * BigInt(this.hegemonConfig().shadowTaxPercent)) / 100n
     );
   }
   // Tyranny: what a raze strike's troop losses are multiplied by (percent)
@@ -1299,16 +1324,16 @@ export class Config {
   troopIncreaseRate(player: Player | PlayerView): number {
     const max = this.maxTroops(player);
 
+    if (player.isHegemon()) {
+      // Flat (H4): the ceiling over refillMinutes, whatever the pool holds.
+      const toAdd = this.hegemonTroopsPerTick();
+      return Math.min(player.troops() + toAdd, max) - player.troops();
+    }
+
     let toAdd = 10 + pow(player.troops(), 0.73) / 4;
 
     const ratio = 1 - player.troops() / max;
     toAdd *= ratio;
-
-    if (player.isHegemon()) {
-      // The standard curve against the fixed ceiling; no type/difficulty terms.
-      toAdd = (toAdd * this.hegemonConfig().regenPercent) / 100;
-      return Math.min(player.troops() + toAdd, max) - player.troops();
-    }
 
     if (player.type() === PlayerType.Bot) {
       toAdd *= 0.5;
@@ -1338,7 +1363,9 @@ export class Config {
 
   goldAdditionRate(player: Player | PlayerView): Gold {
     if (player.isHegemon()) {
-      return this.hegemonGoldPerTick();
+      // The throne has no workers: its income is the shadow tax, paid by
+      // HegemonExecution (Config cannot see the challengers).
+      return 0n;
     }
     const multiplier = this.goldMultiplierFor(player);
     let baseRate: bigint;

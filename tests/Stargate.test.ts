@@ -440,7 +440,7 @@ describe("A beachhead inside the Dark Star (the enclave rule)", () => {
     buildGate(east, tileOf(east, 5));
     const g = game.darkStar()!;
     const aim = game.ref(g.cx + g.radius - 12, g.cy);
-    fire(east, aim, 50_000);
+    fire(east, aim, 80_000); // 50k burned out inside 2 s once the ceiling rose to 125% (M4)
     flyUntilLanded(east);
     expect(game.darkStarInvader()).toBe(east);
     executeTicks(game, 20);

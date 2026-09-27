@@ -46,6 +46,11 @@ export class HegemonExecution implements Execution {
   private lastWaveTick = 0;
   // While stalled, the Hegemon's troops are pinned here: anything above is sent.
   private stallTroops: number | null = null;
+  // The AI's last stand: all-in against the invader until they are evicted.
+  private lastStand = false;
+
+  // The challengers' combined lifetime income at the last tick (shadow tax).
+  private challengerGold: bigint | null = null;
 
   // An AI Hegemon's leveller strike (H11), one at a time.
   private strike: RazeExecution | null = null;
@@ -70,6 +75,7 @@ export class HegemonExecution implements Execution {
       // init(): executions added during the init pass are lost.
       this.mg.addExecution(new PlayerExecution(hegemon));
     }
+    this.collectShadowTax(hegemon);
     if (this.mg.inSpawnPhase()) {
       this.maybeEndSpawnPhase(hegemon, ticks);
       return;
@@ -80,6 +86,26 @@ export class HegemonExecution implements Execution {
       this.punish(hegemon, ticks);
       this.punishLaunches(hegemon, ticks);
     }
+  }
+
+  // H4: the throne has no economy of its own. Its income is the shadow tax —
+  // a share of everything the challengers earned since the last tick,
+  // deducted from nobody. Lifetime totals, so a challenger's death changes
+  // nothing; the first tick only takes the reading.
+  private collectShadowTax(hegemon: Player): void {
+    const mg = this.mg!;
+    let total = 0n;
+    for (const p of mg.allPlayers()) {
+      if (p !== hegemon) total += p.goldEarned();
+    }
+    if (this.challengerGold !== null) {
+      const tax = mg.config().hegemonShadowTax(total - this.challengerGold);
+      if (tax > 0n) {
+        hegemon.addGold(tax);
+        mg.stats().goldWork(hegemon, tax);
+      }
+    }
+    this.challengerGold = total;
   }
 
   // H19: an AI Hegemon answers every flagged silo it may — the levy costs
@@ -257,6 +283,7 @@ export class HegemonExecution implements Execution {
     if (invader === null) {
       this.invader = null;
       this.stallTroops = null;
+      this.lastStand = false;
       mg.setInvasionStalled(false);
       return;
     }
@@ -272,6 +299,29 @@ export class HegemonExecution implements Execution {
     }
 
     const stalled = ticks - this.lastGainTick >= cfg.invasionStallSeconds * 10;
+    mg.setInvasionStalled(stalled);
+
+    // The last stand (M4): the throne truly threatened, an AI Hegemon goes
+    // all in — every second, everything above its reserve — and stays in
+    // until the invader is gone. Its leveller strike is already recalled on
+    // any landing (punish). A human Hegemon has the same tools by hand.
+    if (hegemon.type() !== PlayerType.Human) {
+      const g = mg.darkStar()!;
+      if (
+        invader.domainTilesHeld() * 100 >=
+        g.domainTileCount * cfg.lastStandDomainLostPercent
+      ) {
+        this.lastStand = true;
+      }
+      if (this.lastStand) {
+        if (ticks % 10 !== 0) return;
+        const reserve =
+          (mg.config().maxTroops(hegemon) * cfg.lastStandReservePercent) / 100;
+        this.send(hegemon, invader, hegemon.troops() - reserve);
+        return;
+      }
+    }
+
     const wave = () => {
       this.lastWaveTick = ticks;
       this.send(
@@ -288,7 +338,6 @@ export class HegemonExecution implements Execution {
       wave();
     }
 
-    mg.setInvasionStalled(stalled);
     if (!stalled) return;
     if (this.stallTroops === null) {
       if (

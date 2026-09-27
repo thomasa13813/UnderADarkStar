@@ -163,6 +163,14 @@ export class NationNukeBehavior {
     }
   }
 
+  // Under a Dark Star: a warhead on the Dark Star does nothing (H8), yet the
+  // throne is the incoming attacker, the most hated and the crown by turns,
+  // so nations kept throwing nukes at it. The Hegemon is never a nuke target;
+  // each rule below passes over it and the search goes on.
+  private nukeable(p: Player | null | undefined): p is Player {
+    return p !== null && p !== undefined && !p.isHegemon();
+  }
+
   findBestNukeTarget(): Player | null {
     // On Hard & Impossible with only 2 players left, target the only other one
     const { difficulty: diff } = this.game.config().gameConfig();
@@ -171,14 +179,14 @@ export class NationNukeBehavior {
       this.game.players().length === 2
     ) {
       const other = this.game.players().find((p) => p !== this.player);
-      if (other) {
+      if (this.nukeable(other)) {
         return other;
       }
     }
 
     // Retaliate against incoming attacks (Most important!)
     const incomingAttackPlayer = this.attackBehavior.findIncomingAttackPlayer();
-    if (incomingAttackPlayer) {
+    if (this.nukeable(incomingAttackPlayer)) {
       return incomingAttackPlayer;
     }
 
@@ -191,7 +199,7 @@ export class NationNukeBehavior {
       this.random.chance(2)
     ) {
       const denseTarget = this.findHighDensityTarget();
-      if (denseTarget !== null) {
+      if (this.nukeable(denseTarget)) {
         return denseTarget;
       }
     }
@@ -208,7 +216,11 @@ export class NationNukeBehavior {
           .sort((a, b) => b.numTilesOwned() - a.numTilesOwned());
         const crown = sortedByTiles[0];
 
-        if (crown && crown !== this.player && !this.player.isFriendly(crown)) {
+        if (
+          this.nukeable(crown) &&
+          crown !== this.player &&
+          !this.player.isFriendly(crown)
+        ) {
           const crownShare = crown.numTilesOwned() / numTilesWithoutFallout;
           if (crownShare > 0.5) {
             return crown;
@@ -225,6 +237,7 @@ export class NationNukeBehavior {
       for (const target of ally.targets()) {
         if (target === this.player) continue;
         if (this.player.isFriendly(target)) continue;
+        if (!this.nukeable(target)) continue;
         // Found a valid ally target to nuke
         return target;
       }
@@ -237,6 +250,7 @@ export class NationNukeBehavior {
       if (relation.relation !== Relation.Hostile) continue;
       const other = relation.player;
       if (this.player.isFriendly(other)) continue;
+      if (!this.nukeable(other)) continue;
 
       const otherMaxTroops = this.game.config().maxTroops(other);
       if (myMaxTroops >= otherMaxTroops * 2) continue;
@@ -246,13 +260,13 @@ export class NationNukeBehavior {
 
     // In FFAs, nuke the crown if they're far enough ahead
     const crownTarget = this.findFFACrownTarget();
-    if (crownTarget) {
+    if (this.nukeable(crownTarget)) {
       return crownTarget;
     }
 
     // In Teams, nuke the strongest team
     const teamTarget = this.findStrongestTeamTarget();
-    if (teamTarget) {
+    if (this.nukeable(teamTarget)) {
       return teamTarget;
     }
 

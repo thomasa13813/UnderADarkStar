@@ -205,6 +205,67 @@ describe("The Dark Star fights back (H13)", () => {
   });
 });
 
+describe("The last stand (M4)", () => {
+  // The invader takes the eastern share of the domain outright.
+  function seize(invader: Player, share: number) {
+    const g = game.darkStar()!;
+    const cut = g.cx + g.radius - 2 * g.radius * share;
+    for (const tile of Array.from(hegemon.tiles())) {
+      if (game.x(tile) > cut) invader.conquer(tile);
+    }
+    invader.setTroops(5_000_000);
+  }
+
+  test("an AI Hegemon goes all in once enough of the domain is lost", async () => {
+    await start(PlayerType.Nation);
+    const cfg = game.config().hegemonConfig();
+    const g = game.darkStar()!;
+    seize(east, 0.5);
+    expect(east.domainTilesHeld() * 100).toBeGreaterThanOrEqual(
+      g.domainTileCount * cfg.lastStandDomainLostPercent,
+    );
+    const ceiling = game.config().maxTroops(hegemon);
+    const before = hegemon.troops();
+
+    executeTicks(game, 12);
+    const attack = hegemon.outgoingAttacks().find((a) => a.target() === east);
+    expect(attack).toBeDefined();
+    // Everything above the reserve, not a 20% wave (plus up to a second of
+    // refill since the last send).
+    const reserve = (ceiling * cfg.lastStandReservePercent) / 100;
+    const slack = 10 * game.config().hegemonTroopsPerTick() + 1;
+    expect(hegemon.troops()).toBeLessThanOrEqual(reserve + slack);
+    expect(hegemon.troops()).toBeLessThan(before * 0.5);
+
+    // And it stays in: a donation is sent after the invader within a second.
+    hegemon.addTroops(200_000);
+    executeTicks(game, 11);
+    expect(hegemon.troops()).toBeLessThanOrEqual(reserve + slack);
+  });
+
+  test("a smaller foothold gets the ordinary waves", async () => {
+    await start(PlayerType.Nation);
+    const cfg = game.config().hegemonConfig();
+    const g = game.darkStar()!;
+    seize(east, 0.15);
+    expect(east.domainTilesHeld() * 100).toBeLessThan(
+      g.domainTileCount * cfg.lastStandDomainLostPercent,
+    );
+    const before = hegemon.troops();
+    executeTicks(game, 12);
+    // One 20% wave, and a forced wave at most: well over half the pool stays.
+    expect(hegemon.troops()).toBeGreaterThan(before * 0.6);
+  });
+
+  test("a human Hegemon is left to make its own last stand", async () => {
+    await start(PlayerType.Human);
+    seize(east, 0.5);
+    const before = hegemon.troops();
+    executeTicks(game, 12);
+    expect(hegemon.troops()).toBeGreaterThan(before * 0.6);
+  });
+});
+
 describe("An invader gains nothing from the Dark Star (H5)", () => {
   beforeEach(() => start(PlayerType.Human));
 
