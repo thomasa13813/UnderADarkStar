@@ -42,7 +42,7 @@ each frame (and animate from local time, e.g. the spawn-overlay breath).
 | `frame/derive/`           | Pure derivations that turn raw simulation state into renderer-ready shapes (attack rings, alliance clusters, relation matrix, player status, nuke telegraphs)         |
 | `frame/Upload.ts`         | `uploadFrameData(view, frame)` — single dispatch point that calls every `view.update*()` based on what's in the frame                                                 |
 | `frame/TrailManager.ts`   | Mutates the per-tile trail texture; emits dirty row range                                                                                                             |
-| `frame/RailroadCache.ts`  | Maintains the railroad tile state buffer                                                                                                                              |
+| `frame/RailroadCache.ts`  | Accumulates railroad events; packs every railroad as one straight trade-lane segment (`packSegments`) for `RailroadPass`                                                 |
 | `gl/`                     | WebGL2 renderer internals                                                                                                                                             |
 | `gl/MapRenderer.ts`       | Public facade — what `WebGLFrameBuilder` and the client talk to                                                                                                       |
 | `gl/Renderer.ts`          | Owns all passes, runs them in order each frame, manages FBOs                                                                                                          |
@@ -111,7 +111,7 @@ day/night-mode wiring).
 
 `FrameData` (in `types/`) is a **single long-lived object** on `GameView`.
 Most fields are mutable references to long-lived buffers (`tileState`,
-`trailState`, `railroadState`); some (`changedTiles`, derived arrays) are
+`trailState`, `railSegments`); some (`changedTiles`, derived arrays) are
 reused per tick. The `readonly` modifier in the type is API hygiene — it
 doesn't prevent mutation through the reference.
 

@@ -208,8 +208,8 @@ export class MapRenderer {
   setPlayerSpawn(smallID: number, x: number, y: number): void {
     this.renderer?.setPlayerSpawn(smallID, x, y);
   }
-  uploadRailroadState(data: Uint8Array): void {
-    this.renderer?.uploadRailroadState(data);
+  uploadRailSegments(segments: Float32Array, count: number): void {
+    this.renderer?.uploadRailSegments(segments, count);
   }
   updateUnits(units: Map<number, UnitState>, gameTick: number): void {
     this.renderer?.updateUnits(units, gameTick);

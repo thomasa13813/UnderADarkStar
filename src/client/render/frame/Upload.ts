@@ -31,7 +31,7 @@ export interface FrameUploadTarget {
     dirtyRowMax: number,
   ): void;
   updateSpiralRibbons(ribbons: readonly SpiralRibbon[]): void;
-  uploadRailroadState(data: Uint8Array): void;
+  uploadRailSegments(segments: Float32Array, count: number): void;
   applyRailroadDust(tileRefs: number[]): void;
   updateUnits(units: ReadonlyMap<number, UnitState>, gameTick: number): void;
   updateStructures(units: ReadonlyMap<number, UnitState>): void;
@@ -85,7 +85,7 @@ export function uploadFrameData(
 
   // --- Railroads ---
   if (frame.railroadDirty) {
-    view.uploadRailroadState(frame.railroadState);
+    view.uploadRailSegments(frame.railSegments, frame.railSegmentCount);
     if (frame.revealedRailTiles.length > 0) {
       view.applyRailroadDust(frame.revealedRailTiles);
     }

@@ -1,112 +1,61 @@
 /**
- * RailroadPass — GPU railroad overlay rendering.
+ * RailroadPass — trade lanes (DarkStar S7, docs/DarkStar-Design.md §6.19).
  *
- * Renders railroad tracks as a fullscreen quad pass, reading rail orientation
- * from an R8UI texture. Two LOD modes: detailed 3×3 sub-grid sprites at high
- * zoom, screen-space anti-aliased lines at medium zoom. Hidden below minimum
- * zoom threshold.
- *
- * Also renders ghost railroad paths (semi-transparent) for build-mode preview.
+ * Every railroad is one straight segment between its two stations, drawn as
+ * an instanced quad with round caps, anti-aliased in screen space and
+ * coloured by the owner of the tile under each fragment (as the tile rails
+ * were). A lane under construction grows in from both ends. Ghost lanes for
+ * the build preview are the same segments at half strength; a lane a new
+ * station would snap onto is drawn green. Hidden below a zoom threshold.
  *
  * Data flow:
- *   Uint8Array railroadState → R8UI texture (rail type per tile, 0=none, 1-6=type)
- *   GhostPreviewData         → R8UI ghost texture (ghost rail paths)
- *   R8UI terrainTex           → water detection for bridge rendering (shader neighbor lookup)
- *   R16UI tileTex (shared)   → owner lookup for rail color
- *   RGBA32F paletteTex        → player color lookup
+ *   Float32Array railSegments (RailroadCache.packSegments) → instance buffer
+ *   GhostPreviewData         → ghost segments + snap highlights
+ *   R8UI terrainTex          → strait crossings get the bridge tint
+ *   R16UI tileTex (shared)   → owner lookup for lane color
+ *   RGBA32F paletteTex       → player color lookup
  *   RGBA32F effectTex (shared) → per-owner railroad cosmetic effect
  */
 
 import type { GhostPreviewData, TerrainRect } from "../../types";
+import { DynamicInstanceBuffer } from "../DynamicBuffer";
 import type { RenderSettings } from "../RenderSettings";
-import overlayVertSrc from "../shaders/map-overlay/overlay.vert.glsl?raw";
-import railroadFragSrc from "../shaders/railroad/railroad.frag.glsl?raw";
+import fragSrc from "../shaders/railroad/trade-lane.frag.glsl?raw";
+import vertSrc from "../shaders/railroad/trade-lane.vert.glsl?raw";
 import {
   getPaletteSize,
   MAX_TRAIL_COLORS,
   RAILROAD_EFFECT_BLOCK,
 } from "../utils/ColorUtils";
-import {
-  createMapQuad,
-  createProgram,
-  createTexture2D,
-  shaderSrc,
-} from "../utils/GlUtils";
+import { createProgram, createTexture2D, shaderSrc } from "../utils/GlUtils";
 import { TILE_DEFINES } from "../utils/TileCodec";
 
-// ---------------------------------------------------------------------------
-// Rail orientation (0-5) → texture value (1-6, 0=none)
-// ---------------------------------------------------------------------------
-
-const VERTICAL = 0;
-const HORIZONTAL = 1;
-const TOP_LEFT = 2;
-const TOP_RIGHT = 3;
-const BOTTOM_LEFT = 4;
-const BOTTOM_RIGHT = 5;
-
-function railExtremity(tile: number, next: number, w: number): number {
-  const dx = (next % w) - (tile % w);
-  const dy = (next - (next % w)) / w - (tile - (tile % w)) / w;
-  if (dx === 0) return VERTICAL;
-  if (dy === 0) return HORIZONTAL;
-  return VERTICAL;
-}
-
-function railDirection(
-  prev: number,
-  cur: number,
-  next: number,
-  w: number,
-): number {
-  const x1 = prev % w,
-    y1 = (prev - x1) / w;
-  const x2 = cur % w,
-    y2 = (cur - x2) / w;
-  const x3 = next % w,
-    y3 = (next - x3) / w;
-  const dx1 = x2 - x1,
-    dy1 = y2 - y1;
-  const dx2 = x3 - x2,
-    dy2 = y3 - y2;
-  if (dx1 === dx2 && dy1 === dy2) {
-    return dx1 !== 0 ? HORIZONTAL : VERTICAL;
-  }
-  if ((dx1 === 0 && dx2 !== 0) || (dx1 !== 0 && dx2 === 0)) {
-    if (dx1 === 0 && dx2 === 1 && dy1 === -1) return BOTTOM_RIGHT;
-    if (dx1 === 0 && dx2 === -1 && dy1 === -1) return BOTTOM_LEFT;
-    if (dx1 === 0 && dx2 === 1 && dy1 === 1) return TOP_RIGHT;
-    if (dx1 === 0 && dx2 === -1 && dy1 === 1) return TOP_LEFT;
-    if (dx1 === 1 && dx2 === 0 && dy2 === -1) return TOP_LEFT;
-    if (dx1 === -1 && dx2 === 0 && dy2 === -1) return TOP_RIGHT;
-    if (dx1 === 1 && dx2 === 0 && dy2 === 1) return BOTTOM_LEFT;
-    if (dx1 === -1 && dx2 === 0 && dy2 === 1) return BOTTOM_RIGHT;
-  }
-  return VERTICAL;
-}
-
-// ---------------------------------------------------------------------------
-// RailroadPass
-// ---------------------------------------------------------------------------
+/** Floats per packed segment: x0, y0, x1, y1, headFrac, tailFrac. */
+export const SEGMENT_FLOATS = 6;
+// Per-instance: x0, y0, x1, y1, head, tail, kind, pad
+const FLOATS_PER_INSTANCE = 8;
+const KIND_LANE = 0;
+const KIND_GHOST = 1;
+const KIND_HIGHLIGHT = 2;
 
 export class RailroadPass {
   private program: WebGLProgram;
-  private railroadTex: WebGLTexture;
-  private ghostRailTex: WebGLTexture;
   private tileTex: WebGLTexture;
   private paletteTex: WebGLTexture;
   private effectTex: WebGLTexture;
   private terrainTex: WebGLTexture;
   private vao: WebGLVertexArrayObject;
+  private instanceBuf: DynamicInstanceBuffer;
+  private instanceCount = 0;
+  private instancesDirty = false;
 
   private uCamera: WebGLUniformLocation;
   private uMapSize: WebGLUniformLocation;
   private uZoom: WebGLUniformLocation;
   private uTime: WebGLUniformLocation;
-  private uRailDetailZoom: WebGLUniformLocation;
+  private uHalfWidth: WebGLUniformLocation;
   private uRailAlpha: WebGLUniformLocation;
   private uRailFade: WebGLUniformLocation;
-  private uRailThickness: WebGLUniformLocation;
   private uGhostOwnerID: WebGLUniformLocation;
   private uLocalPlayerID: WebGLUniformLocation;
   private uLocalRailColor: WebGLUniformLocation;
@@ -116,23 +65,12 @@ export class RailroadPass {
   private mapH: number;
   private settings: RenderSettings;
 
-  /**
-   * Reference to the caller-owned railroad state (RailroadCache's array;
-   * stable identity, mutated in place). The pass keeps no copy — the array
-   * must stay current until the flush. Null until the first upload.
-   */
-  private liveRailroadRef: Uint8Array | null = null;
-  private railroadDirty = false;
-
-  /**
-   * Current ghost overlay content, sparse: tile ref → texel value (1-6 =
-   * orientation, 7 = overlap highlight). Ghost paths cover at most a few
-   * thousand tiles, so tracking them beats a full-map array + full-map
-   * texture upload per preview change.
-   */
-  private ghostTiles = new Map<number, number>();
-  /** Pending ghost texel writes, interleaved [ref, value, …]. */
-  private ghostOps: number[] = [];
+  /** The live lanes, packed (see SEGMENT_FLOATS); a copy, ours. */
+  private segments = new Float32Array(0);
+  private segmentCount = 0;
+  /** Ghost lanes as [x0, y0, x1, y1] and the tiles of lanes to highlight. */
+  private ghostSegments: number[] = [];
+  private highlightTiles: number[] = [];
   private ghostOwnerID = 0;
 
   private localPlayerID = 0;
@@ -163,8 +101,8 @@ export class RailroadPass {
 
     this.program = createProgram(
       gl,
-      overlayVertSrc,
-      shaderSrc(railroadFragSrc, {
+      vertSrc,
+      shaderSrc(fragSrc, {
         PALETTE_SIZE: getPaletteSize(),
         RAILROAD_EFFECT_ROW_BASE: RAILROAD_EFFECT_BLOCK * MAX_TRAIL_COLORS,
         ...TILE_DEFINES,
@@ -175,16 +113,9 @@ export class RailroadPass {
     this.uMapSize = gl.getUniformLocation(this.program, "uMapSize")!;
     this.uZoom = gl.getUniformLocation(this.program, "uZoom")!;
     this.uTime = gl.getUniformLocation(this.program, "uTime")!;
-    this.uRailDetailZoom = gl.getUniformLocation(
-      this.program,
-      "uRailDetailZoom",
-    )!;
+    this.uHalfWidth = gl.getUniformLocation(this.program, "uHalfWidth")!;
     this.uRailAlpha = gl.getUniformLocation(this.program, "uRailAlpha")!;
     this.uRailFade = gl.getUniformLocation(this.program, "uRailFade")!;
-    this.uRailThickness = gl.getUniformLocation(
-      this.program,
-      "uRailThickness",
-    )!;
     this.uGhostOwnerID = gl.getUniformLocation(this.program, "uGhostOwnerID")!;
     this.uLocalPlayerID = gl.getUniformLocation(
       this.program,
@@ -196,17 +127,13 @@ export class RailroadPass {
     )!;
     this.uHoverOwner = gl.getUniformLocation(this.program, "uHoverOwner")!;
 
-    // Texture unit bindings + ghost defaults
     gl.useProgram(this.program);
-    gl.uniform1i(gl.getUniformLocation(this.program, "uRailroadTex"), 0);
     gl.uniform1i(gl.getUniformLocation(this.program, "uTileTex"), 1);
     gl.uniform1i(gl.getUniformLocation(this.program, "uPalette"), 2);
     gl.uniform1i(gl.getUniformLocation(this.program, "uTerrainTex"), 3);
-    gl.uniform1i(gl.getUniformLocation(this.program, "uGhostRailTex"), 4);
     gl.uniform1i(gl.getUniformLocation(this.program, "uEffect"), 5);
-    gl.uniform1f(this.uGhostOwnerID, 0);
 
-    // R8UI terrain texture (static, uploaded once for bridge detection)
+    // R8UI terrain texture (uploaded once; strait crossings get the bridge tint)
     this.terrainTex = createTexture2D(gl, {
       width: mapW,
       height: mapH,
@@ -217,34 +144,46 @@ export class RailroadPass {
       filter: gl.NEAREST,
     });
 
-    // R8UI railroad texture (null data = zero-initialized per the WebGL spec)
-    this.railroadTex = createTexture2D(gl, {
-      width: mapW,
-      height: mapH,
-      internalFormat: gl.R8UI,
-      format: gl.RED_INTEGER,
-      type: gl.UNSIGNED_BYTE,
-      data: null,
-      filter: gl.NEAREST,
-    });
+    // VAO: unit quad + per-instance segment and style
+    this.vao = gl.createVertexArray()!;
+    gl.bindVertexArray(this.vao);
+    const quadBuf = gl.createBuffer()!;
+    gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      new Float32Array([0, 0, 1, 0, 0, 1, 1, 0, 1, 1, 0, 1]),
+      gl.STATIC_DRAW,
+    );
+    gl.enableVertexAttribArray(0);
+    gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
 
-    // R8UI ghost railroad texture (same format, ghost paths only)
-    this.ghostRailTex = createTexture2D(gl, {
-      width: mapW,
-      height: mapH,
-      internalFormat: gl.R8UI,
-      format: gl.RED_INTEGER,
-      type: gl.UNSIGNED_BYTE,
-      data: null,
-      filter: gl.NEAREST,
-    });
-
-    this.vao = createMapQuad(gl, mapW, mapH);
+    const glBuf = gl.createBuffer()!;
+    this.instanceBuf = new DynamicInstanceBuffer(
+      gl,
+      glBuf,
+      64,
+      FLOATS_PER_INSTANCE,
+    );
+    const stride = FLOATS_PER_INSTANCE * 4;
+    gl.bindBuffer(gl.ARRAY_BUFFER, glBuf);
+    gl.enableVertexAttribArray(1);
+    gl.vertexAttribPointer(1, 4, gl.FLOAT, false, stride, 0);
+    gl.vertexAttribDivisor(1, 1);
+    gl.enableVertexAttribArray(2);
+    gl.vertexAttribPointer(2, 4, gl.FLOAT, false, stride, 16);
+    gl.vertexAttribDivisor(2, 1);
+    gl.bindVertexArray(null);
   }
 
-  uploadRailroadState(railroadState: Uint8Array): void {
-    this.liveRailroadRef = railroadState;
-    this.railroadDirty = true;
+  /** The live lanes, packed SEGMENT_FLOATS per lane; `count` lanes are read. */
+  uploadRailSegments(segments: Float32Array, count: number): void {
+    const n = count * SEGMENT_FLOATS;
+    if (this.segments.length < n) {
+      this.segments = new Float32Array(Math.max(n, 64 * SEGMENT_FLOATS));
+    }
+    this.segments.set(segments.subarray(0, n));
+    this.segmentCount = count;
+    this.instancesDirty = true;
   }
 
   setLocalPlayer(smallID: number): void {
@@ -263,8 +202,7 @@ export class RailroadPass {
 
   /**
    * Sub-upload terrain bytes for regions that changed (water-nuke
-   * conversions). Keeps the R8UI water-detection texture in sync with the
-   * simulation. Each rect's bytes are stored row-major, concatenated in
+   * conversions). Each rect's bytes are stored row-major, concatenated in
    * `bytes` in rect order; one texSubImage2D per rect.
    */
   applyTerrainRects(rects: readonly TerrainRect[], bytes: Uint8Array): void {
@@ -291,54 +229,106 @@ export class RailroadPass {
   }
 
   updateGhostPreview(data: GhostPreviewData | null): void {
-    const next = new Map<number, number>();
-
+    this.ghostSegments.length = 0;
+    this.highlightTiles.length = 0;
     if (data) {
-      const maxRef = this.mapW * this.mapH;
-
-      // Ghost rail paths (1-6 = orientation)
+      const w = this.mapW;
       for (const path of data.ghostRailPaths) {
         if (path.length === 0) continue;
-        const tiles = this.computePathOrientations(path);
-        for (const t of tiles) {
-          if (t.ref >= 0 && t.ref < maxRef) {
-            next.set(t.ref, t.type + 1);
-          }
-        }
+        const a = path[0];
+        const b = path[path.length - 1];
+        this.ghostSegments.push(
+          a % w,
+          (a - (a % w)) / w,
+          b % w,
+          (b - (b % w)) / w,
+        );
       }
-
-      // Overlapping railroad highlights (7 = green highlight marker)
-      // overlappingRailroads contains resolved tile refs (not rail IDs)
-      for (const ref of data.overlappingRailroads) {
-        if (ref >= 0 && ref < maxRef) {
-          next.set(ref, 7);
-        }
-      }
-
+      for (const ref of data.overlappingRailroads)
+        this.highlightTiles.push(ref);
       this.ghostOwnerID = data.ownerID;
     } else {
       this.ghostOwnerID = 0;
     }
-
-    // Queue texel writes for the diff: clear tiles that left the ghost,
-    // (re)write tiles whose value is new or changed.
-    for (const ref of this.ghostTiles.keys()) {
-      if (!next.has(ref)) this.ghostOps.push(ref, 0);
-    }
-    for (const [ref, value] of next) {
-      if (this.ghostTiles.get(ref) !== value) this.ghostOps.push(ref, value);
-    }
-    this.ghostTiles = next;
+    this.instancesDirty = true;
   }
 
-  /** Draw the railroad overlay. Must be called with alpha blending enabled. */
+  // A lane is highlighted when any tile the build would snap onto lies on
+  // it (within a tile of its centreline).
+  private touchesHighlight(
+    x0: number,
+    y0: number,
+    x1: number,
+    y1: number,
+  ): boolean {
+    const w = this.mapW;
+    const dx = x1 - x0;
+    const dy = y1 - y0;
+    const len2 = dx * dx + dy * dy;
+    for (const ref of this.highlightTiles) {
+      const px = ref % w;
+      const py = (ref - px) / w;
+      let t = len2 > 0 ? ((px - x0) * dx + (py - y0) * dy) / len2 : 0;
+      t = Math.max(0, Math.min(1, t));
+      const ex = x0 + dx * t - px;
+      const ey = y0 + dy * t - py;
+      if (ex * ex + ey * ey <= 1.0) return true;
+    }
+    return false;
+  }
+
+  private rebuildInstances(): void {
+    const laneCount = this.segmentCount;
+    const ghostCount = this.ghostSegments.length / 4;
+    const total = laneCount + ghostCount;
+    this.instanceBuf.ensureCapacity(Math.max(total, 1));
+    const buf = this.instanceBuf.float32;
+    let off = 0;
+    for (let i = 0; i < laneCount; i++) {
+      const s = i * SEGMENT_FLOATS;
+      const x0 = this.segments[s];
+      const y0 = this.segments[s + 1];
+      const x1 = this.segments[s + 2];
+      const y1 = this.segments[s + 3];
+      buf[off++] = x0;
+      buf[off++] = y0;
+      buf[off++] = x1;
+      buf[off++] = y1;
+      buf[off++] = this.segments[s + 4];
+      buf[off++] = this.segments[s + 5];
+      buf[off++] =
+        this.highlightTiles.length > 0 && this.touchesHighlight(x0, y0, x1, y1)
+          ? KIND_HIGHLIGHT
+          : KIND_LANE;
+      buf[off++] = 0;
+    }
+    for (let i = 0; i < ghostCount; i++) {
+      const g = i * 4;
+      buf[off++] = this.ghostSegments[g];
+      buf[off++] = this.ghostSegments[g + 1];
+      buf[off++] = this.ghostSegments[g + 2];
+      buf[off++] = this.ghostSegments[g + 3];
+      buf[off++] = 1;
+      buf[off++] = 1;
+      buf[off++] = KIND_GHOST;
+      buf[off++] = 0;
+    }
+    this.instanceCount = total;
+    if (total > 0) {
+      const gl = this.gl;
+      gl.bindBuffer(gl.ARRAY_BUFFER, this.instanceBuf.buffer);
+      gl.bufferSubData(gl.ARRAY_BUFFER, 0, buf, 0, total * FLOATS_PER_INSTANCE);
+    }
+    this.instancesDirty = false;
+  }
+
+  /** Draw the lanes. Must be called with alpha blending enabled. */
   draw(cameraMatrix: Float32Array, zoom: number): void {
     const gl = this.gl;
     const rs = this.settings.railroad;
 
-    // Flush queued ghost texel writes even when faded out, so the op queue
-    // can't grow unboundedly while the player previews at low zoom.
-    this.flushGhostOps();
+    if (this.instancesDirty) this.rebuildInstances();
+    if (this.instanceCount === 0) return;
 
     // Fade out as zoom drops below railMinZoom; fully invisible at railMinZoom - railFadeRange
     const fadeRange = Math.max(rs.railFadeRange, 0);
@@ -351,33 +341,17 @@ export class RailroadPass {
         : Math.min(1, Math.max(0, (zoom - fadeStart) / fadeRange));
     if (fade <= 0) return;
 
-    // Flush railroad state → GPU
-    if (this.railroadDirty && this.liveRailroadRef !== null) {
-      gl.activeTexture(gl.TEXTURE0);
-      gl.bindTexture(gl.TEXTURE_2D, this.railroadTex);
-      gl.texSubImage2D(
-        gl.TEXTURE_2D,
-        0,
-        0,
-        0,
-        this.mapW,
-        this.mapH,
-        gl.RED_INTEGER,
-        gl.UNSIGNED_BYTE,
-        this.liveRailroadRef,
-      );
-      this.railroadDirty = false;
-    }
+    // Lane width: a fraction of a tile close up, never thinner than ~2 px.
+    const halfWidth = Math.max(0.2 * rs.railThickness, 1.0 / zoom);
 
     gl.useProgram(this.program);
     gl.uniformMatrix3fv(this.uCamera, false, cameraMatrix);
     gl.uniform2f(this.uMapSize, this.mapW, this.mapH);
     gl.uniform1f(this.uZoom, zoom);
     gl.uniform1f(this.uTime, (performance.now() - this.startTime) / 1000);
-    gl.uniform1f(this.uRailDetailZoom, rs.railDetailZoom);
+    gl.uniform1f(this.uHalfWidth, halfWidth);
     gl.uniform1f(this.uRailAlpha, rs.railAlpha);
     gl.uniform1f(this.uRailFade, fade);
-    gl.uniform1f(this.uRailThickness, rs.railThickness);
     gl.uniform1f(this.uGhostOwnerID, this.ghostOwnerID);
     gl.uniform1f(this.uLocalPlayerID, this.localPlayerID);
     gl.uniform1f(this.uHoverOwner, this.hoverOwner);
@@ -388,96 +362,26 @@ export class RailroadPass {
       this.localRailColor[2],
     );
 
-    // Bind textures: 0=railroad, 1=tile, 2=palette, 3=terrain, 4=ghostRail,
-    // 5=effect
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, this.railroadTex);
-
     gl.activeTexture(gl.TEXTURE1);
     gl.bindTexture(gl.TEXTURE_2D, this.tileTex);
-
     gl.activeTexture(gl.TEXTURE2);
     gl.bindTexture(gl.TEXTURE_2D, this.paletteTex);
-
     gl.activeTexture(gl.TEXTURE3);
     gl.bindTexture(gl.TEXTURE_2D, this.terrainTex);
-
-    gl.activeTexture(gl.TEXTURE4);
-    gl.bindTexture(gl.TEXTURE_2D, this.ghostRailTex);
-
     gl.activeTexture(gl.TEXTURE5);
     gl.bindTexture(gl.TEXTURE_2D, this.effectTex);
 
     gl.bindVertexArray(this.vao);
-    gl.drawArrays(gl.TRIANGLES, 0, 6);
-  }
-
-  /**
-   * Apply queued ghost texel writes to the ghost texture, one texel per
-   * texSubImage2D. Ghost diffs are path-sized (at most a few thousand
-   * texels), far cheaper than the full-map upload a dense mirror needs.
-   */
-  private flushGhostOps(): void {
-    const ops = this.ghostOps;
-    if (ops.length === 0) return;
-    const gl = this.gl;
-    gl.activeTexture(gl.TEXTURE4);
-    gl.bindTexture(gl.TEXTURE_2D, this.ghostRailTex);
-    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-    const scratch = new Uint8Array(1);
-    for (let i = 0; i < ops.length; i += 2) {
-      const ref = ops[i];
-      const x = ref % this.mapW;
-      const y = (ref - x) / this.mapW;
-      scratch[0] = ops[i + 1];
-      gl.texSubImage2D(
-        gl.TEXTURE_2D,
-        0,
-        x,
-        y,
-        1,
-        1,
-        gl.RED_INTEGER,
-        gl.UNSIGNED_BYTE,
-        scratch,
-      );
-    }
-    ops.length = 0;
-  }
-
-  // ---- Rail orientation computation ----
-
-  private computePathOrientations(
-    tileRefs: number[],
-  ): Array<{ ref: number; type: number }> {
-    if (tileRefs.length === 0) return [];
-    if (tileRefs.length === 1) return [{ ref: tileRefs[0], type: VERTICAL }];
-    const w = this.mapW;
-    const result: Array<{ ref: number; type: number }> = [];
-    result.push({
-      ref: tileRefs[0],
-      type: railExtremity(tileRefs[0], tileRefs[1], w),
-    });
-    for (let i = 1; i < tileRefs.length - 1; i++) {
-      result.push({
-        ref: tileRefs[i],
-        type: railDirection(tileRefs[i - 1], tileRefs[i], tileRefs[i + 1], w),
-      });
-    }
-    const last = tileRefs.length - 1;
-    result.push({
-      ref: tileRefs[last],
-      type: railExtremity(tileRefs[last], tileRefs[last - 1], w),
-    });
-    return result;
+    gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, this.instanceCount);
+    gl.bindVertexArray(null);
   }
 
   dispose(): void {
     const gl = this.gl;
     gl.deleteProgram(this.program);
-    gl.deleteTexture(this.railroadTex);
-    gl.deleteTexture(this.ghostRailTex);
     gl.deleteTexture(this.terrainTex);
+    this.instanceBuf.dispose();
+    gl.deleteVertexArray(this.vao);
     // Don't delete tileTex, paletteTex, or effectTex — shared with other passes
   }
 }

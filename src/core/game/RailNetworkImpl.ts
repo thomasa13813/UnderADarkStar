@@ -5,6 +5,7 @@ import { GameUpdateType } from "./GameUpdates";
 import { RailNetwork } from "./RailNetwork";
 import { Railroad } from "./Railroad";
 import { RailSpatialGrid } from "./RailroadSpatialGrid";
+import { straightLane } from "./TradeLane";
 import { Cluster, TrainStation } from "./TrainStation";
 
 /**
@@ -65,8 +66,10 @@ export interface RailPathFinderService {
 class RailPathFinderServiceImpl implements RailPathFinderService {
   constructor(private game: Game) {}
 
+  // A trade lane (S7, §6.19): the straight line between the two stations,
+  // or nothing when that line is blocked.
   findTilePath(from: TileRef, to: TileRef): TileRef[] {
-    return PathFinding.Rail(this.game).findPath(from, to) ?? [];
+    return straightLane(this.game, from, to);
   }
 
   findStationsPath(from: TrainStation, to: TrainStation): TrainStation[] {
@@ -81,7 +84,10 @@ export function createRailNetwork(game: Game): RailNetwork {
 }
 
 export class RailNetworkImpl implements RailNetwork {
-  private maxConnectionDistance: number = 4;
+  // Trade lanes (S7, §6.19): a station links to every nearby station that is
+  // not already within this many hops of it — 3 webs up chains where the old 4
+  // made chains. Tom is tuning this by eye.
+  private maxConnectionDistance: number = 3;
   private stationRadius: number = 3;
   private gridCellSize: number = 4;
   private railGrid: RailSpatialGrid;
@@ -180,16 +186,25 @@ export class RailNetworkImpl implements RailNetwork {
       to.removeRailroad(rail);
       this.railGrid.unregister(rail);
 
+      // Two straight lanes to the new station (S7, §6.19); the old lane's
+      // halves only if a straight one is blocked.
+      const tilesFrom = this.pathService.findTilePath(
+        from.tile(),
+        station.tile(),
+      );
+      const tilesTo = this.pathService.findTilePath(station.tile(), to.tile());
       const newRailFrom = new Railroad(
         from,
         station,
-        rail.tiles.slice(0, closestRailIndex),
+        tilesFrom.length > 0
+          ? tilesFrom
+          : rail.tiles.slice(0, closestRailIndex),
         this.nextId++,
       );
       const newRailTo = new Railroad(
         station,
         to,
-        rail.tiles.slice(closestRailIndex),
+        tilesTo.length > 0 ? tilesTo : rail.tiles.slice(closestRailIndex),
         this.nextId++,
       );
 

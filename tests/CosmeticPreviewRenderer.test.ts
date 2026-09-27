@@ -188,7 +188,7 @@ describe("PreviewAnimationTicker", () => {
   });
 
   it("runs a 7-car train around the rail loop between the city and factory stations", () => {
-    const { path, railroadState } = getPreviewRailLoop();
+    const { path, segments } = getPreviewRailLoop();
     const w = PREVIEW_MAP_DIM;
     // The loop passes through both stations and every tile of it is a rail.
     const cityRef =
@@ -198,7 +198,17 @@ describe("PreviewAnimationTicker", () => {
     expect(path).toContain(cityRef);
     expect(path).toContain(factoryRef);
     expect(new Set(path).size).toBe(path.length);
-    for (const ref of path) expect(railroadState[ref]).toBeGreaterThan(0);
+    // Four straight trade lanes box the loop; every tile of the path lies on
+    // one of their sides.
+    expect(segments.length).toBe(4 * 6);
+    const onLoop = new Set(path);
+    const xs = [segments[0], segments[2]];
+    const ys = [segments[1], segments[9]];
+    for (const ref of path) {
+      const x = ref % w;
+      const y = (ref - x) / w;
+      expect(xs.includes(x) || ys.includes(y)).toBe(true);
+    }
 
     for (const mode of ["TRAIN", "RAILROAD"] as const) {
       const start = 1000;
@@ -214,8 +224,8 @@ describe("PreviewAnimationTicker", () => {
       const positions = new Set(snapshot.units.map((u) => u.pos));
       expect(positions.size).toBe(7);
       for (const u of snapshot.units) {
-        expect(railroadState[u.pos]).toBeGreaterThan(0);
-        expect(railroadState[u.lastPos]).toBeGreaterThan(0);
+        expect(onLoop.has(u.pos)).toBe(true);
+        expect(onLoop.has(u.lastPos)).toBe(true);
         expect(u.lastPos).not.toBe(u.pos);
       }
       // In-game speed: 2 tiles per 100ms tick.

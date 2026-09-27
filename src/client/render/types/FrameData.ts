@@ -24,7 +24,12 @@ export interface FrameData {
   readonly inSpawnPhase: boolean;
   readonly tileState: Uint16Array;
   readonly trailState: Uint16Array;
-  readonly railroadState: Uint8Array;
+  /**
+   * Trade lanes (S7): every railroad as one straight segment, packed
+   * RailroadCache.SEGMENT_FLOATS per lane; railSegmentCount are valid.
+   */
+  readonly railSegments: Float32Array;
+  readonly railSegmentCount: number;
   readonly units: ReadonlyMap<number, UnitState>;
   readonly players: ReadonlyMap<number, PlayerState>;
   readonly names: ReadonlyMap<string, NameEntry>;

@@ -1,4 +1,4 @@
-step 1 (spaceports, harbours, destroyers) built 2026-09-26, §6.17; step 2 (freighters overland) built 2026-09-26, §6.18. |# Under a Dark Star — Design Reference
+step 1 (spaceports, harbours, destroyers) built 2026-09-26, §6.17; step 2 (freighters overland) built 2026-09-26, §6.18; step 3 (straight lanes) built 2026-09-26, §6.19, awaiting Tom's verdict on the look. |# Under a Dark Star — Design Reference
 
 > **Purpose:** the single place a new session (human or Claude) reads to understand what we are
 > building, what has been decided, what is still open, and where in the codebase the work lands.
@@ -343,7 +343,8 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   to a harbour to repair. (5) Names: **freighter**, **spaceport**, **Destroyer** ("Star Destroyer" is
   a Lucasfilm trademark), display strings only (F14); icons later (M6). Stargates stay a purely
   offensive tool (C4). Built in steps (M3.6): spaceports and harbours [Built 2026-09-26, §6.17],
-  freighters overland [Built 2026-09-26, §6.18], then straight lanes, then the names. A
+  freighters overland [Built 2026-09-26, §6.18], straight lanes [Built 2026-09-26, §6.19, for Tom to
+  judge the look], then the names. A
   freighter on a land leg cannot be captured — a destroyer's reach ends at the water's edge.
 - **S8 — Audio.** No audio work for now. **Before any public release:** the game must have sound
   effects — the repo carries 34 effect files that `Sounds.ts` plays, so silence in play is a bug to
@@ -1424,6 +1425,56 @@ to it), so inland trade is slow but safe, as the trade-off intends.
   landlocked nation's inland port is placed by harbour reach but its partners are not weighed;
   fine for now. Freighters draw the naval sprite on land until the names and icons (steps 4, M6).
 
+### 6.19 As built — straight trade lanes (2026-09-26)
+
+Step 3 of the space economy (S7). Tom wants to see the look before committing to it and may drop
+it if it is not an improvement; two calls made for him to judge: lanes are true **8-connected
+straight lines** (diagonals, not staircases), and a station that snaps onto a lane gets **two
+straight lanes** to it rather than the old lane's kinked halves.
+
+- **Geometry.** `straightLane(game, from, to)` (`src/core/game/TradeLane.ts`): the Bresenham line
+  between the two station tiles, inclusive, or nothing. Blocked by an impassable tile, by any tile
+  of the Dark Star's disc, or by a water tile that is not shoreline water (the narrow-strait rule
+  the rail pathfinder always applied: a strait a tile or two wide is bridged, open space is not).
+  Water counts `WATER_COST` (6) toward the length budget (`railroadMaxSize`), land 1 — the old
+  pathfinder's water penalty, now a budget rather than a steer. No bent fallback.
+  `RailNetworkImpl`'s path service returns it in place of the rail A\* (`PathFinding.Rail` and
+  `AStar.Rail` are now unused); the ghost preview and the real connection share it. Snapping
+  (`connectToExistingRails`) asks for two straight lanes, from → station and station → to, and
+  keeps the old halves only where a straight one is blocked. A train in transit on a lane that is
+  split this way is dropped, as the engine already drops a train whose lane was rerouted under it
+  (`TrainExecution.resolveSplitRailroad`) — rare, and worth a look in play.
+- **Linking, tuned by eye.** [2026-09-26, after Tom's first look] The lanes looked right but the
+  network grew as chains: a new station links only to stations not already within
+  `maxConnectionDistance` hops of it through lanes laid so far, and at the engine's 4 the first
+  lane made the rest of its network reachable. Tried at **2** (a station skips only
+  stations one or two hops away, so chains web up densely — train income two to three times the
+  old in the 20-minute nation economy snapshot, a balance note for M4 since trains pay per stop):
+  too dense for Tom's eye. Now **3** (`RailNetworkImpl`): shortcuts only to stations four or
+  more hops off. Tom will settle between 2 and 3 after seeing it.
+- **Trains** ride the same tile lists at two tiles a tick, so along a diagonal they cover √2 more
+  ground per tick than along an axis; left as is for the first look.
+- **Client.** `RailroadPass` now draws **one instanced quad per lane** (`trade-lane.vert.glsl` /
+  `trade-lane.frag.glsl`): a straight segment with round caps, anti-aliased in screen space,
+  coloured by the owner of the tile under each fragment as the tile rails were (palette, the local
+  player's rail colour, the railroad cosmetic effect), a dark rim for legibility, the bridge tint
+  where it crosses water, growing in from both ends while under construction, a ghost lane at half
+  strength while placing, and green where a new station would snap on. Width is a fifth of a tile
+  close up and never under ~2 px. `RailroadCache.packSegments` packs every railroad as
+  `SEGMENT_FLOATS` (x0, y0, x1, y1, head, tail); `FrameData.railSegments` / `railSegmentCount`
+  replace `railroadState` through `uploadRailSegments` (Upload → MapRenderer → Renderer). The
+  per-tile orientation texture and its sprites are gone; the cache still tracks tiles for the
+  construction dust and the overlap lookup. The cosmetics preview's rail loop is four lanes.
+- **Tests.** `tests/TradeLanes.test.ts` (7): the line is straight (every tile within half a tile
+  of the ideal segment, 8-connected, both ends, the reverse reversed); a two-tile strait is
+  crossed and a wider river blocks; water costs six of the budget; void blocks; a factory and a
+  city are joined by the straight lane the preview showed; a station two tiles off a lane snaps
+  on with two straight lanes; no lane crosses the disc. The rail network, train, trade and preview
+  suites pass unchanged in substance (the cosmetics preview test reads the loop's lanes; the nation
+  economy snapshot moved with the new geometry).
+- **Seen in the browser.** `lanes.mjs` (run-openfront): a factory and two cities on Event
+  Horizon; screenshots of the lanes close, mid and far, the ghost lane, and trains riding them.
+
 ## 7. Constraints (non-negotiable engineering rules)
 
 - `src/core/` must stay **deterministic** (seeded PRNG, no wall-clock, careful with floats) and
@@ -1732,3 +1783,8 @@ to the invader (H9), gold donations from the throne (H9), hydrogen-bomb removal 
   (`freighterLandTicksPerTile` 2); a freighter on land cannot be captured; a captured one sails
   to the captor's nearest port with a harbour on its body of space; coastal trade unchanged tick
   for tick. 6 tests.
+- **2026-09-26** — **M3.6 step 3 built: straight trade lanes** (§6.19), for Tom to judge the look.
+  `straightLane` replaces the rail A\* (Bresenham line; blocked by void, the disc or open water;
+  water costs six of the budget; no fallback); snapping makes two straight lanes; the client draws
+  each lane as one anti-aliased segment (`RailroadPass` rewritten on `FrameData.railSegments`).
+  7 tests.

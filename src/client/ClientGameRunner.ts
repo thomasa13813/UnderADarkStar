@@ -656,7 +656,7 @@ function mountWebGLFrameLoop(
     // Structures, railroads and relations normally skip GPU upload unless
     // marked dirty, now force
     view.updateStructures(frameData.units as Map<number, UnitState>);
-    view.uploadRailroadState(frameData.railroadState);
+    view.uploadRailSegments(frameData.railSegments, frameData.railSegmentCount);
     view.updateRelations(frameData.relationMatrix, frameData.relationSize);
 
     builder.update(gameView);

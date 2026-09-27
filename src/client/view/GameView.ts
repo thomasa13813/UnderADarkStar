@@ -214,7 +214,8 @@ export class GameView implements GameMap {
       tileState: this._map.tileStateBuffer(),
       trailState: this.trailManager.getTrailState(),
       spiralRibbons: this.spiralTrails.getRibbons(),
-      railroadState: this.railroadCache.railroadState,
+      railSegments: new Float32Array(64 * RailroadCache.SEGMENT_FLOATS),
+      railSegmentCount: 0,
       units: this._unitStates,
       players: this._playerStates,
       names: this._names,
@@ -645,6 +646,14 @@ export class GameView implements GameMap {
     f.tick = gu.tick;
     f.inSpawnPhase = !this.spawnPhaseOver;
     f.railroadDirty = this.railroadCache.railroadDirty;
+    if (f.railroadDirty) {
+      const need =
+        this.railroadCache.railroadCount * RailroadCache.SEGMENT_FLOATS;
+      if (f.railSegments.length < need) {
+        f.railSegments = new Float32Array(need * 2);
+      }
+      f.railSegmentCount = this.railroadCache.packSegments(f.railSegments);
+    }
     f.trailDirtyRowMin = this.trailManager.dirtyRowMin;
     f.trailDirtyRowMax = this.trailManager.dirtyRowMax;
 

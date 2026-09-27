@@ -8,8 +8,6 @@
  * consume in a match.
  */
 
-import { computeRailTiles } from "../frame/RailroadCache";
-
 /** Dimensions of resources/maps/australia/map4x.bin (checked at load). */
 export const PREVIEW_MAP_W = 1000;
 export const PREVIEW_MAP_H = 750;
@@ -65,8 +63,9 @@ export const PREVIEW_RAIL_STATIONS = {
 export interface PreviewRailLoop {
   /** Ordered, closed path of tile refs the train follows. */
   path: number[];
-  /** Per-tile rail orientation (0 = none, RailType + 1) for RailroadPass. */
-  railroadState: Uint8Array;
+  /** The loop's four sides as trade lanes for RailroadPass (packed, see
+   *  RailroadCache.SEGMENT_FLOATS). */
+  segments: Float32Array;
 }
 
 let railLoop: PreviewRailLoop | undefined;
@@ -87,15 +86,12 @@ export function getPreviewRailLoop(): PreviewRailLoop {
   for (let y = top; y < bottom; y++) path.push(y * w + right); // southbound
   for (let x = right; x > left; x--) path.push(bottom * w + x); // westbound
   for (let y = bottom; y > top; y--) path.push(y * w + left); // northbound
-  // Orientation needs a neighbor on both sides; wrap the loop so the corners
-  // resolve instead of being treated as line ends.
-  const n = path.length;
-  const tiles = computeRailTiles([path[n - 1], ...path, path[0]], w).slice(
-    1,
-    n + 1,
-  );
-  const railroadState = new Uint8Array(w * PREVIEW_MAP_H);
-  for (const rt of tiles) railroadState[rt.ref] = rt.type + 1;
-  railLoop = { path, railroadState };
+  const segments = new Float32Array([
+    ...[left, top, right, top, 1, 1],
+    ...[right, top, right, bottom, 1, 1],
+    ...[right, bottom, left, bottom, 1, 1],
+    ...[left, bottom, left, top, 1, 1],
+  ]);
+  railLoop = { path, segments };
   return railLoop;
 }

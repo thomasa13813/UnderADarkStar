@@ -900,8 +900,8 @@ export class GPURenderer {
     );
   }
 
-  uploadRailroadState(data: Uint8Array): void {
-    this.railroadPass.uploadRailroadState(data);
+  uploadRailSegments(segments: Float32Array, count: number): void {
+    this.railroadPass.uploadRailSegments(segments, count);
   }
 
   updateUnits(units: Map<number, UnitState>, gameTick: number): void {

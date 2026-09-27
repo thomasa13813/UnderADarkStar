@@ -530,7 +530,7 @@ export class CosmeticPreviewRenderer {
     );
     pass.setLocalPlayer(PREVIEW_OWNER_ID);
     pass.setLocalRailColor(...LOCAL_RAIL_COLOR);
-    pass.uploadRailroadState(getPreviewRailLoop().railroadState);
+    pass.uploadRailSegments(getPreviewRailLoop().segments, 4);
     return pass;
   }
 

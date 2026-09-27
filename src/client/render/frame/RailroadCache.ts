@@ -176,6 +176,42 @@ export class RailroadCache {
     return tiles;
   }
 
+  /** Floats per packed lane: x0, y0, x1, y1, headFrac, tailFrac. */
+  static readonly SEGMENT_FLOATS = 6;
+
+  /** How many lanes packSegments will write. */
+  get railroadCount(): number {
+    return this.anims.size;
+  }
+
+  /**
+   * Pack every railroad as one straight segment for RailroadPass (trade
+   * lanes, S7): its first and last tile, and the fraction revealed from each
+   * end while it is under construction (1, 1 when complete). Returns the
+   * number written; `out` holds at most out.length / SEGMENT_FLOATS.
+   */
+  packSegments(out: Float32Array): number {
+    const w = this.mapW;
+    const F = RailroadCache.SEGMENT_FLOATS;
+    let i = 0;
+    for (const anim of this.anims.values()) {
+      const n = anim.tiles.length;
+      if (n === 0) continue;
+      const off = i * F;
+      if (off + F > out.length) break;
+      const a = anim.tiles[0]!.ref;
+      const b = anim.tiles[n - 1]!.ref;
+      out[off] = a % w;
+      out[off + 1] = (a - (a % w)) / w;
+      out[off + 2] = b % w;
+      out[off + 3] = (b - (b % w)) / w;
+      out[off + 4] = anim.complete ? 1 : anim.headIndex / n;
+      out[off + 5] = anim.complete ? 1 : (n - anim.tailIndex) / n;
+      i++;
+    }
+    return i;
+  }
+
   /** Read-only view of current railroads: id → raw tile refs. */
   getRailroads(): ReadonlyMap<number, number[]> {
     const result = new Map<number, number[]>();
