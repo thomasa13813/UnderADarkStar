@@ -1631,8 +1631,10 @@ these before any public release.
 
 ## 9. Roadmap [Proposed]
 
-Renumbered 2026-09-24 after Tom's design review. M1–M2 are built; M3 onwards is the order to work in.
-Each milestone ships in feature branches Tom playtests one at a time.
+Renumbered 2026-09-24 after Tom's design review. M1–M4 are built (M4 as a first pass). **From here the
+road to release is `docs/DarkStar-Roadmap.md`** (2026-09-27, phases P0–P8: private-lobby succession,
+the strip-down and rebrand, deep-space visuals, the map pool, audio, identity and the minimal backend,
+public thrones, the store, release); M5–M9 below are kept as the earlier sketch it replaces.
 
 | Milestone | Goal                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Status                                                                                                                                                                                                                                                                              |
 | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -1925,3 +1927,7 @@ to the invader (H9), gold donations from the throne (H9), hydrogen-bomb removal 
   **nations never nuke the Dark Star**. Measured 3 of 6 AI-only overthrows (from 0 of 6) at refill
   10, 20 and 40 minutes alike; `HegemonSim` gained gold columns and a last-stand line, and its
   shorthands no longer override `--set`. Awaiting Tom's playtest from the throne.
+- **2026-09-27** — **The road to release written** (`docs/DarkStar-Roadmap.md`) from Tom's seven
+  non-gameplay points, checked against the repo: identity is the hinge for the persistent throne and
+  the store, anti-abuse and the AGPL obligations are work items, matchmaking is smaller than feared
+  and multiplayer has no human Hegemon yet (P0). Phases P0–P8 supersede §9's M5–M9.
