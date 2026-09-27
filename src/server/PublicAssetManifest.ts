@@ -8,7 +8,6 @@ import {
 } from "../core/AssetUrls";
 
 const HASHED_PUBLIC_ASSET_GLOBS = [
-  "changelog.md",
   "manifest.json",
   "atlases/**/*",
   "cosmetics/**/*",
@@ -245,14 +244,13 @@ export function getResourcesDir(rootDir: string = process.cwd()): string {
 }
 
 // Everything under resources/public/ is served verbatim at the site root, with
-// stable URLs: the policy pages, robots.txt, the press kit (whose image URLs
-// outlets hotlink), and Apple Pay's domain-verification file.
+// stable URLs (robots.txt today; policy pages and a press kit later).
 export function getPublicDir(resourcesDir: string): string {
   return path.join(resourcesDir, "public");
 }
 
-export function getProprietaryDir(rootDir: string = process.cwd()): string {
-  return path.join(rootDir, "proprietary");
+export function getBrandingDir(rootDir: string = process.cwd()): string {
+  return path.join(rootDir, "branding");
 }
 
 // Scans directories with synchronous fs.existsSync — assumes a small number of sourceDirs.

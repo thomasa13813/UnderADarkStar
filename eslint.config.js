@@ -35,6 +35,7 @@ export default [
             "scripts/sync-assets.mjs",
             "scripts/generateSpriteAtlases.ts",
             "scripts/generateGalaxyMap.ts",
+            "scripts/generateStarfield.ts",
             "tests/matchmaking/*.mjs",
           ],
         },

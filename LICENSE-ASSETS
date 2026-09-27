@@ -10,37 +10,40 @@ Assets in the `/resources` directory are licensed under Creative Commons BY-SA 4
 - Font files
 - Level/map data files
 
-Attribution required: "OpenFront" or "OpenFront Inc."
+Most of these assets were created by OpenFront and are used here under that
+licence; the rest were added or modified by January Games and are released
+under the same licence, as its share-alike term requires.
+
+Attribution required: "OpenFront" or "OpenFront Inc." for the inherited assets,
+and "January Games" for the additions. CREDITS.md records which is which where
+it matters, along with the third-party map data, icons and fonts that carry
+their own terms.
 
 To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/
 or send a letter to Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.
 
-## Proprietary Assets (/proprietary) - All Rights Reserved
+## Branding Assets (/branding) - All Rights Reserved
 
-Assets in the `/proprietary` directory are:
-- Copyright © 2024-2026 OpenFront Inc. and Contributors
+Assets in the `/branding` directory (the "Under a Dark Star" name, wordmark,
+logo, favicon and other artwork placed there) are:
+- Copyright © 2026 January Games
 - All Rights Reserved
-- NOT licensed for use, modification, or redistribution outside of OpenFront
-- May only be used as part of the complete OpenFront software package
+- NOT licensed for use, modification, or redistribution outside of this software
+- To be replaced with your own branding in any modified version you distribute
 
-See `/proprietary/LICENSE` for full terms.
+See `/branding/LICENSE` for full terms.
 
-## External/Proprietary Assets (Not in Repository)
+## OpenFront's Proprietary Assets (not in this repository)
 
-The following assets are NOT included in this repository and are NOT covered by any open source license:
-- Assets hosted on our CDN/servers
-- Assets stored in our database
-- Premium skins, models, and textures accessed via API
-- Sound effects and music accessed via API
-- Any assets not explicitly included in this repository
-
-These external assets are proprietary property of OpenFront Inc.
+OpenFront's own logos, wordmark font, favicon, menu and gameplay music and
+game-start alert were published by OpenFront under an All Rights Reserved
+licence in a `/proprietary` directory. They are not included in this repository
+and must not be added back. Likewise, assets that OpenFront serves from its own
+CDN, API or database (premium skins, patterns and the like) are OpenFront's
+property and are not part of this project.
 
 ## Important Legal Notice
 
-- The CC BY-SA 4.0 license applies ONLY to assets in the `/resources` directory
-- Assets in `/proprietary` are restricted use - see their specific LICENSE
-- External assets not in this repository remain fully proprietary
-- Accessing, downloading, extracting, or using proprietary assets without permission is prohibited
-
-For source code licensing, see LICENSE and LICENSING.md files.
+The open source license (AGPL) applies ONLY to code. The CC BY-SA license
+applies ONLY to assets included in this repository under `/resources`. The
+contents of `/branding` remain proprietary to January Games.

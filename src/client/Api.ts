@@ -1,7 +1,4 @@
-import newsItemsFallback from "resources/news.json";
-import streamsFallback from "resources/streams.json";
 import { z } from "zod";
-import type { NewsItem, StreamsFeed } from "../core/ApiSchemas";
 import {
   ClaimAllRewardsResponse,
   ClaimAllRewardsResponseSchema,
@@ -9,7 +6,6 @@ import {
   ClaimRewardResponseSchema,
   GetMyTribeNamesResponse,
   GetMyTribeNamesResponseSchema,
-  NewsItemSchema,
   PaymentsCheckoutResponse,
   PaymentsCheckoutResponseSchema,
   PaymentsHandoff,
@@ -36,7 +32,6 @@ import {
   RankedLeaderboardResponseSchema,
   SteamFinalizeResponseSchema,
   SteamOrderResolution,
-  StreamsFeedSchema,
   TribeLeaderboardResponse,
   TribeLeaderboardResponseSchema,
   TribeStatsResponse,
@@ -527,7 +522,7 @@ export async function updateUsername(
 }
 
 // GET /creators/code/:code — public lookup for a creator by their code
-// (Creator Code programme), e.g. to preview/prefill an openfront.io/c/CODE
+// (Creator Code programme), e.g. to preview/prefill a /c/CODE
 // share link before binding. No auth. 404 means the code doesn't resolve to
 // any (active) creator; folds into null along with every other failure —
 // callers can't act on the difference.
@@ -2207,32 +2202,11 @@ export async function fetchTribeLeaderboard(): Promise<
   return { ...first, tribes: [...first.tribes, ...second.tribes] };
 }
 
-export async function getNews(): Promise<NewsItem[]> {
-  try {
-    const res = await fetch(`${getApiBase()}/news.json`, {
-      headers: { Accept: "application/json" },
-    });
-    if (res.status !== 200) {
-      console.warn("getNews: unexpected status", res.status);
-      return newsItemsFallback as NewsItem[];
-    }
-    const json = await res.json();
-    const parsed = z.array(NewsItemSchema).safeParse(json);
-    if (!parsed.success) {
-      console.warn("getNews: Zod validation failed", parsed.error);
-      return newsItemsFallback as NewsItem[];
-    }
-    return parsed.data;
-  } catch (err) {
-    console.warn("getNews: request failed, using fallback", err);
-    return newsItemsFallback as NewsItem[];
-  }
-}
-
 // Fetch an API-served JSON config (news.json-style: served file + bundled fallback).
 // Any error, non-200, or invalid payload falls back, parsed through the same schema so
-// the fallback is validated too. The timeout guards recurring callers (StreamsFeed polls
-// every 60s) from a fetch that never settles.
+// the fallback is validated too. The timeout guards recurring callers from a fetch that
+// never settles.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function getServedConfig<T>(
   name: string,
   schema: z.ZodType<T>,
@@ -2257,13 +2231,4 @@ async function getServedConfig<T>(
     console.warn(`${name}: request failed, using fallback`, err);
     return schema.parse(fallback);
   }
-}
-
-// The single verified-live feed behind both homepage streaming features (API-hosted JSON
-// + bundled fallback). Every entry has already been confirmed live server-side, so
-// callers render what this returns without probing Twitch or YouTube themselves.
-//
-// Fails closed: any error, non-200, or legacy payload lands on the bundled empty feed.
-export async function getStreams(): Promise<StreamsFeed> {
-  return getServedConfig("streams.json", StreamsFeedSchema, streamsFallback);
 }

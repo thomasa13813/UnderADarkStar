@@ -7,7 +7,6 @@ import {
   GameID,
   GameRecord,
   GameStartInfo,
-  GroupTokenEvent,
   LobbyInfoEvent,
   PlayerCosmeticRefs,
   ServerMessage,
@@ -34,7 +33,6 @@ import {
   UserSettings,
 } from "../core/game/UserSettings";
 import { WorkerClient } from "../core/worker/WorkerClient";
-import { isDesktopShell } from "./DesktopShell";
 import { showInGameAlert } from "./InGameModal";
 import {
   AutoUpgradeEvent,
@@ -50,7 +48,6 @@ import {
   ToggleRenderDebugGuiEvent,
 } from "./InputHandler";
 import { pagePin } from "./PagePin";
-import { groupTokenOf, loggableStartMessage } from "./PresenceGroup";
 import { versionedPathForMismatchedGame } from "./ServerList";
 import { terrainMapFileLoader } from "./TerrainMapFileLoader";
 import { GoToPlayerEvent } from "./TransformHandler";
@@ -213,10 +210,6 @@ export function joinLobby(
   const onmessage = (message: ServerMessage) => {
     // Before the per-type handling below: the token rides two different
     // messages and the listener does not care which one delivered it.
-    const groupToken = groupTokenOf(message);
-    if (groupToken !== undefined) {
-      eventBus.emit(new GroupTokenEvent(groupToken));
-    }
     if (message.type === "lobby_info") {
       // Server tells us our assigned clientID
       clientID = message.myClientID;
@@ -264,11 +257,7 @@ export function joinLobby(
       // the whole message verbatim and players paste it into bug reports;
       // the token is the one field in it that must not travel that way.
       console.log(
-        `lobby: game started: ${JSON.stringify(
-          loggableStartMessage(message),
-          replacer,
-          2,
-        )}`,
+        `lobby: game started: ${JSON.stringify(message, replacer, 2)}`,
       );
       // Server tells us our assigned clientID (also sent on start for late joins)
       clientID = message.myClientID;
@@ -350,7 +339,6 @@ export function joinLobby(
             composed: true,
           }),
         );
-        document.dispatchEvent(new CustomEvent("matchmaking-requeue"));
         window.dispatchEvent(
           new CustomEvent("show-message", {
             detail: {
@@ -364,18 +352,13 @@ export function joinLobby(
         console.info(
           `version mismatch: bundle ${ClientEnv.gitCommit()}, server ${message.gitCommit}`,
         );
-        // The game's server runs a different build than this bundle. On the
-        // desktop the shell updates its local overlay itself, so just say
-        // what's happening and let its update bar take it from there.
-        //
-        // On the web, in order: this host's own `/v/<commit>/` page, which
+        // The game's server runs a different build than this bundle. In
+        // order: this host's own `/v/<commit>/` page, which
         // keeps the loaded document and the Turnstile token; else the
         // game's host, whose shell serves the matching bundle (and map);
         // else this tab is simply stale (left open across a deploy), so
         // reload. See docs/MultiServer.md (OPE-471).
-        if (isDesktopShell()) {
-          void showInGameAlert(translateText("update_available.desktop"));
-        } else {
+        {
           const versioned = versionedPathForMismatchedGame(
             lobbyConfig.gameID,
             message.gitCommit,

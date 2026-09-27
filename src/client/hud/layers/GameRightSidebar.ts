@@ -9,8 +9,6 @@ import "../../components/DarkStarPanel";
 import "../../components/DoomsdayClockPanel";
 import "../../components/OvertimePanel";
 import { Controller } from "../../Controller";
-import { crazyGamesSDK } from "../../CrazyGamesSDK";
-import { isDesktopShell } from "../../DesktopShell";
 import { showInGameAlert, showInGameConfirm } from "../../InGameModal";
 import { TogglePauseIntentEvent } from "../../InputHandler";
 import { PauseGameIntentEvent, SendWinnerEvent } from "../../Transport";
@@ -65,11 +63,7 @@ export class GameRightSidebar extends LitElement implements Controller {
     return this.timer * 2 + (this.game?.inSpawnPhase() ? 1 : 0);
   }
 
-  // CrazyGames provides its own fullscreen control in the game frame, and the
-  // desktop shell owns its window mode from the settings Display tab, so hide
-  // ours on both.
-  private readonly hideFullscreenButton =
-    crazyGamesSDK.isOnCrazyGames() || isDesktopShell();
+  private readonly hideFullscreenButton = false;
   private hasWinner = false;
   private isLobbyCreator = false;
   private isPrivateLobby = false;
@@ -247,11 +241,6 @@ export class GameRightSidebar extends LitElement implements Controller {
 
   private onPauseButtonClick() {
     this.isPaused = !this.isPaused;
-    if (this.isPaused) {
-      crazyGamesSDK.gameplayStop();
-    } else {
-      crazyGamesSDK.gameplayStart();
-    }
     this.eventBus.emit(new PauseGameIntentEvent(this.isPaused));
   }
 
@@ -291,8 +280,6 @@ export class GameRightSidebar extends LitElement implements Controller {
       );
       if (!isConfirmed) return;
     }
-    await crazyGamesSDK.requestMidgameAd();
-    await crazyGamesSDK.gameplayStop();
     // redirect to the home page
     window.location.href = homeHref();
   }

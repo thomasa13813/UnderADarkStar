@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ClientEnv } from "../src/client/ClientEnv";
-import { shouldBlockMultiplayerAction } from "../src/client/GameModeSelector";
 import {
   attemptInFlight,
   backendUnreachableConfirmed,
@@ -40,9 +39,7 @@ import "../src/client/GameModeSelector";
 
 /**
  * OPE-439. The server-list heartbeat already knows whether the API answers;
- * this is the half that turns that into something the player can see, on the
- * WEB as well as on desktop -- which is what separates it from the desktop
- * update/session gates the sibling files cover.
+ * this is the half that turns that into something the player can see.
  *
  * Everything here runs against the real ServerList module, driven by a
  * stubbed fetch. A mocked backendReachable() would prove the call sites
@@ -53,7 +50,6 @@ import "../src/client/GameModeSelector";
 let selector: HTMLElement & { updateComplete: Promise<unknown> };
 let joinOpen: ReturnType<typeof vi.fn>;
 let hostOpen: ReturnType<typeof vi.fn>;
-let wiggle: ReturnType<typeof vi.fn>;
 let joinLobby: ReturnType<typeof vi.fn>;
 let messages: string[];
 let fetchMock: ReturnType<typeof vi.fn>;
@@ -141,9 +137,8 @@ async function confirmOutage(): Promise<void> {
 
 beforeEach(() => {
   // connectedCallback reads ClientEnv.gameCreationRate(), which throws
-  // without the config the server injects into index.html. No serverHost and
-  // no openfrontDesktop: this is the web build, where the update and session
-  // gates do not exist and reachability is the only one that can fire.
+  // without the config the server injects into index.html. No serverHost:
+  // reachability is the only gate that can fire.
   window.BOOTSTRAP_CONFIG = {
     gameEnv: "dev",
     numWorkers: 1,
@@ -165,15 +160,10 @@ beforeEach(() => {
 
   joinOpen = vi.fn();
   hostOpen = vi.fn();
-  wiggle = vi.fn();
   joinLobby = vi.fn();
   stub("join-lobby-modal", { open: joinOpen });
   stub("host-lobby-modal", { open: hostOpen });
   stub("single-player-modal", { open: vi.fn() });
-  // Present on the web too -- index.html mounts it on every build and it
-  // simply renders nothing there -- which is exactly why the web message
-  // cannot key on whether this element exists.
-  stub("desktop-status-bar", { wiggle });
   (window as { showPage?: (id: string) => void }).showPage = vi.fn();
   document.addEventListener("join-lobby", joinLobby as EventListener);
 
@@ -267,7 +257,7 @@ describe("the multiplayer entry points while the backend is unreachable", () => 
     selector = await mountSelector();
     await announce(false, true);
 
-    expect(lobbyCardButton()?.getAttribute("aria-disabled")).toBe("false");
+    expect(lobbyCardButton()?.classList.contains("opacity-50")).toBe(false);
   });
 
   it("says nothing when a card click goes through during an outage", async () => {
@@ -288,8 +278,8 @@ describe("the multiplayer entry points while the backend is unreachable", () => 
 
     clickEveryButton();
 
-    // Refusing silently would look like a broken button, and unlike the
-    // desktop gates there is nothing else on screen naming the reason.
+    // Refusing silently would look like a broken button, and there is
+    // nothing else on screen naming the reason.
     expect(messages).toContain("common.backend_unreachable");
   });
 
@@ -322,8 +312,7 @@ describe("the multiplayer entry points while the backend is unreachable", () => 
     clickEveryButton();
 
     // Bot games run entirely in-client: an unreachable backend is no reason
-    // to refuse one, and refusing would break the desktop build's core
-    // offline promise.
+    // to refuse one.
     expect(soloOpen).toHaveBeenCalled();
   });
 
@@ -370,8 +359,8 @@ describe("the multiplayer entry points while the backend is unreachable", () => 
  * no toast, so on the web the refused click IS the retry.
  *
  * Driven through the real ServerList module: the point is that the click
- * reaches the same probe the desktop button does, throttled by the same
- * policy (manualRetryAvailable) and the same clock.
+ * reaches the heartbeat's own probe, throttled by the same policy
+ * (manualRetryAvailable) and the same clock.
  */
 describe("a refused multiplayer click on the web", () => {
   /** Past the shared manual-retry cooldown, so a probe is available again. */
@@ -482,26 +471,5 @@ describe("a refused multiplayer click on the web", () => {
 
     expect(joinLobby).toHaveBeenCalled();
     expect(fetchMock.mock.calls.length).toBe(before);
-  });
-});
-
-/**
- * `multiplayerAllowedForSession` refuses every `signed-out` state regardless
- * of `reason`, so "needs-account" gates multiplayer for free and needed no
- * production change here. This pins that: if the rule is ever narrowed to an
- * allowlist of reasons, this is what would catch a player with no account yet
- * slipping through.
- */
-describe("shouldBlockMultiplayerAction with a needs-account session", () => {
-  it("blocks multiplayer when no account exists yet, online or offline", () => {
-    for (const backendOutage of [false, true]) {
-      expect(
-        shouldBlockMultiplayerAction(
-          null,
-          { status: "signed-out", reason: "needs-account" },
-          backendOutage,
-        ),
-      ).toBe(true);
-    }
   });
 });

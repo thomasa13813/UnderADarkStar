@@ -23,16 +23,6 @@ const checkClanTagOwnership = vi.fn(
 vi.mock("../src/client/ClanApi", () => ({
   checkClanTagOwnership: (tag: string) => checkClanTagOwnership(tag),
 }));
-vi.mock("../src/client/CrazyGamesSDK", () => ({
-  crazyGamesSDK: {
-    isOnCrazyGames: () => false,
-    getUsername: async () => null,
-    addAuthListener: () => {},
-  },
-}));
-vi.mock("../src/client/SteamSDK", () => ({
-  steamSDK: { isOnSteam: () => false, getUser: async () => null },
-}));
 const { showInGameAlert, showInGameConfirm } = vi.hoisted(() => ({
   showInGameAlert: vi.fn(async (_message: string) => Promise.resolve(true)),
   showInGameConfirm: vi.fn(async (_message: string, _options?: unknown) =>
@@ -524,48 +514,6 @@ describe("UsernameInput clan tag picker", () => {
     await el.updateComplete;
 
     expect(el.getClanTag()).toBe("OF");
-  });
-
-  it("opens the clan modal on its browse tab from Browse clans", async () => {
-    // Registered, not just created: the component waits on whenDefined, the
-    // same way the existing join-modal path does.
-    const opened: unknown[] = [];
-    if (!customElements.get("clan-modal")) {
-      customElements.define(
-        "clan-modal",
-        class extends HTMLElement {
-          open(args: unknown) {
-            opened.push(args);
-          }
-        },
-      );
-    }
-    const modal = document.createElement("clan-modal") as HTMLElement & {
-      open: (args: unknown) => void;
-    };
-    // The registered class pushes to whichever `opened` array the current run
-    // closed over, so re-point it for this instance.
-    modal.open = (args) => opened.push(args);
-    document.body.appendChild(modal);
-    const pages: string[] = [];
-    (window as unknown as { showPage?: (p: string) => void }).showPage = (p) =>
-      pages.push(p);
-
-    const el = await mount();
-    await signIn(el, premiumUser());
-    q(el, "#clan-tag-button")!.click();
-    await el.updateComplete;
-    const browse = [...el.querySelectorAll("#clan-tag-menu button")].find((b) =>
-      b.textContent?.includes("username.clan_browse"),
-    ) as HTMLElement;
-    browse.click();
-    await customElements.whenDefined("clan-modal").catch(() => undefined);
-    await new Promise((r) => setTimeout(r, 0));
-
-    expect(pages).toContain("page-clan");
-    // Without the tab the modal lands on its default my-clans view, which is
-    // not what the action is labelled.
-    expect(opened).toEqual([{ tab: "browse" }]);
   });
 
   it("closes on Escape while the trigger still holds focus", async () => {

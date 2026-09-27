@@ -1,4 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { UsernameInput } from "../../src/client/UsernameInput";
+import type { UserMeResponse } from "../../src/core/ApiSchemas";
 
 const { showInGameConfirm } = vi.hoisted(() => ({
   showInGameConfirm: vi.fn(async () => false),
@@ -8,19 +10,6 @@ vi.mock("../../src/client/Utils", () => ({
   translateText: (key: string) => key,
   showToast: vi.fn(),
 }));
-vi.mock("../../src/client/CrazyGamesSDK", () => ({
-  crazyGamesSDK: {
-    isOnCrazyGames: () => false,
-    getUsername: vi.fn(async () => null),
-    addAuthListener: vi.fn(),
-  },
-}));
-vi.mock("../../src/client/SteamSDK", () => ({
-  steamSDK: { isOnSteam: () => false, getPersonaName: vi.fn(async () => null) },
-}));
-
-import { UsernameInput } from "../../src/client/UsernameInput";
-import type { UserMeResponse } from "../../src/core/ApiSchemas";
 
 // A subscriber whose bare name isn't usable yet: entitled, but never set (or
 // server-renamed to TEMPORARY####).

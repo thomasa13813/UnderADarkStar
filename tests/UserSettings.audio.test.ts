@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import {
   AudioCategory,
   USER_SETTINGS_CHANGED_EVENT,
@@ -15,18 +15,6 @@ function resetUserSettingsState() {
   };
   statics.cache.clear();
   statics.playerId = null;
-}
-
-/** The shell sets this global; isDesktopShell() keys off it. */
-function pretendDesktopShell() {
-  (
-    globalThis as unknown as { window: Record<string, unknown> }
-  ).window.openfrontDesktop = {};
-}
-
-function pretendWeb() {
-  delete (globalThis as unknown as { window: Record<string, unknown> }).window
-    .openfrontDesktop;
 }
 
 const INHERITS_EFFECTS: AudioCategory[] = [
@@ -160,10 +148,7 @@ describe("legacy volume accessors", () => {
 describe("master volume default", () => {
   beforeEach(() => {
     resetUserSettingsState();
-    pretendWeb();
   });
-
-  afterEach(pretendWeb);
 
   it("starts web silent when the player has never chosen any audio value", () => {
     // Parity with main, where both old sliders defaulted to 0, and ordinary
@@ -176,11 +161,6 @@ describe("master volume default", () => {
     expect(s.audioVolume("alerts")).toBeCloseTo(0.8);
     expect(s.audioVolume("ambience")).toBeCloseTo(0.4);
     expect(s.audioVolume("interface")).toBeCloseTo(0.5);
-  });
-
-  it("starts the desktop shell audible, at the default master level", () => {
-    pretendDesktopShell();
-    expect(new UserSettings().audioVolume("master")).toBeCloseTo(0.9);
   });
 
   it("keeps a returning web player audible when only a legacy key is stored", () => {
@@ -275,9 +255,7 @@ describe("master volume default", () => {
     localStorage.setItem("settings.audio.master", "0.3");
     expect(new UserSettings().audioVolume("master")).toBeCloseTo(0.3);
 
-    pretendDesktopShell();
     resetUserSettingsState();
-    pretendDesktopShell();
     localStorage.setItem("settings.audio.master", "0.3");
     expect(new UserSettings().audioVolume("master")).toBeCloseTo(0.3);
   });
@@ -286,10 +264,7 @@ describe("master volume default", () => {
 describe("resetAudio", () => {
   beforeEach(() => {
     resetUserSettingsState();
-    pretendWeb();
   });
-
-  afterEach(pretendWeb);
 
   it("clears every audio key, including the legacy pair", () => {
     const s = new UserSettings();
@@ -339,14 +314,6 @@ describe("resetAudio", () => {
     expect(after.audioVolume("interface")).toBeCloseTo(0.5);
     expect(after.muteOnBlur()).toBe(false);
     expect(after.alertsWhenUnfocused()).toBe(true);
-  });
-
-  it("returns a desktop player to an audible master", () => {
-    pretendDesktopShell();
-    const s = new UserSettings();
-    s.setAudioVolume("master", 0.2);
-    s.resetAudio();
-    expect(new UserSettings().audioVolume("master")).toBeCloseTo(0.9);
   });
 
   it("is safe to call twice, and on empty storage", () => {
@@ -413,10 +380,7 @@ describe("resetAudio", () => {
 describe("one-time audio reset", () => {
   beforeEach(() => {
     resetUserSettingsState();
-    pretendWeb();
   });
-
-  afterEach(pretendWeb);
 
   it("clears the state that had a web player hearing cues they never chose", () => {
     // The reported case: the old build's music slider was dragged once and
@@ -456,13 +420,6 @@ describe("one-time audio reset", () => {
     expect(new UserSettings().resetAudioOnce()).toBe(true);
     expect(localStorage.getItem("settings.audio.resetVersion")).toBe("1");
     expect(new UserSettings().resetAudioOnce()).toBe(false);
-  });
-
-  it("runs on the desktop shell as well, landing on the desktop default", () => {
-    pretendDesktopShell();
-    localStorage.setItem("settings.audio.master", "1");
-    expect(new UserSettings().resetAudioOnce()).toBe(true);
-    expect(new UserSettings().audioVolume("master")).toBeCloseTo(0.9);
   });
 
   it.each([

@@ -4,18 +4,6 @@ import { repeat } from "lit/directives/repeat.js";
 import { UserMeResponse } from "../../core/ApiSchemas";
 import { GameMapType } from "../../core/game/Game";
 import { PublicGameInfo, PublicGames } from "../../core/Schemas";
-import { getDesktopSessionState } from "../Auth";
-import { crazyGamesSDK } from "../CrazyGamesSDK";
-import {
-  getDesktopUpdateState,
-  isDesktopShell,
-  type DesktopSessionState,
-  type DesktopUpdateState,
-} from "../DesktopShell";
-import {
-  reportMultiplayerRefusal,
-  shouldBlockSocketSourcedAction,
-} from "../GameModeSelector";
 import { JoinLobbyModal } from "../JoinLobbyModal";
 import { PublicLobbySocket } from "../LobbySocket";
 import { JoinLobbyEvent } from "../Main";
@@ -117,11 +105,9 @@ export class DetailedGameViewModal extends BaseModal {
   @state() private profiles: Record<string, LobbyFilters> = {};
   @state() private selectedProfile = "";
   @state() private profileName = "";
-  @state() private desktopUpdateState: DesktopUpdateState | null = null;
   @state() private viewerTrusted: boolean = false;
   @state() private viewerSignedIn: boolean = false;
   @state() private showTrustRequired: boolean = false;
-  @state() private desktopSessionState: DesktopSessionState | null = null;
   // No backend-reachability state, deliberately. Every lobby this browser
   // shows arrived over a live game-server socket, and by the reachability
   // rule (GameModeSelector, top of file) the server-list API's health may not
@@ -181,57 +167,19 @@ export class DetailedGameViewModal extends BaseModal {
 
   connectedCallback() {
     super.connectedCallback();
-    document.addEventListener(
-      "desktop-update-state",
-      this.onDesktopUpdateState,
-    );
     document.addEventListener("userMeResponse", this.onUserMe);
-    if (isDesktopShell()) {
-      // Seed BOTH from their current values -- this modal mounts well after
-      // the update bridge's synchronous replay has already been dispatched
-      // and lost, so without the seed its join() gate sees null (OPE-396).
-      this.desktopUpdateState = getDesktopUpdateState();
-      this.desktopSessionState = getDesktopSessionState();
-    }
-    document.addEventListener(
-      "desktop-session-state",
-      this.onDesktopSessionState,
-    );
   }
 
   disconnectedCallback() {
-    document.removeEventListener(
-      "desktop-update-state",
-      this.onDesktopUpdateState,
-    );
     document.removeEventListener("userMeResponse", this.onUserMe);
-    document.removeEventListener(
-      "desktop-session-state",
-      this.onDesktopSessionState,
-    );
     this.onClose();
     super.disconnectedCallback();
   }
-
-  private onDesktopUpdateState = (e: Event) => {
-    this.desktopUpdateState = (e as CustomEvent<DesktopUpdateState>).detail;
-  };
 
   private onUserMe = (e: Event) => {
     const me = (e as CustomEvent<UserMeResponse | false>).detail;
     this.viewerSignedIn = viewerIsSignedIn(me);
     this.viewerTrusted = viewerIsTrusted(me);
-    // A CrazyGames sign-in surfaces as a userMeResponse without a linked
-    // identity, so re-read the SDK profile alongside it.
-    if (crazyGamesSDK.isOnCrazyGames()) {
-      void crazyGamesSDK.getUserProfile().then((user) => {
-        if (user !== null) this.viewerSignedIn = true;
-      });
-    }
-  };
-
-  private onDesktopSessionState = (e: Event) => {
-    this.desktopSessionState = (e as CustomEvent<DesktopSessionState>).detail;
   };
 
   // ---- Slot animation ----
@@ -457,16 +405,6 @@ export class DetailedGameViewModal extends BaseModal {
       timeDisplay: this.timeDisplay(lobby),
       timeDisplayUppercase: lobby.startsAt === undefined,
       heightClass: "h-full",
-      // Gated, not disabled: `disabled` also sets pointer-events-none and would
-      // swallow the click that's supposed to make the update bar wiggle. join()
-      // does the actual refusing.
-      //
-      // Socket-sourced: the desktop update and session states dim a card, a
-      // list-API outage never does. Same predicate join() refuses on.
-      blocked: shouldBlockSocketSourcedAction(
-        this.desktopUpdateState,
-        this.desktopSessionState,
-      ),
       viewerTrusted: this.viewerTrusted,
       onClick: () => this.join(lobby),
     });
@@ -784,40 +722,10 @@ export class DetailedGameViewModal extends BaseModal {
     return usernameInput ? usernameInput.canPlay() : true;
   }
 
-  /**
-   * Refuses the action and draws attention to the update bar. Returns true
-   * when the caller should stop.
-   *
-   * Mirrors GameModeSelector's blockedFromLobbyJoin() (deliberately not
-   * shared: it touches this component's own state fields) -- see that file for
-   * why this nudges the bar instead of relying on `disabled`, which would
-   * swallow the click.
-   *
-   * Every lobby here came over a live game-server socket, so reachability is
-   * not an input and there is no reachability reason to report: `false` to the
-   * refusal report leaves the desktop wiggle as the only feedback, which is
-   * all the update and session states need.
-   */
-  private blockedFromLobbyJoin(): boolean {
-    if (
-      !shouldBlockSocketSourcedAction(
-        this.desktopUpdateState,
-        this.desktopSessionState,
-      )
-    )
-      return false;
-    reportMultiplayerRefusal(false);
-    return true;
-  }
-
   private join(lobby: PublicGameInfo) {
     if (!this.canPlay()) return;
-    // Checked -- and the bar nudged -- before close(): a blocked attempt must
-    // leave the modal open and tell the player why, not vanish silently. This
-    // sits above the hosted/public branch below so both paths are covered.
-    if (this.blockedFromLobbyJoin()) return;
-    // Also before close(): the popup explains how to become trusted, so it
-    // must stay on screen with the browser rather than vanish with it.
+    // Before close(): the popup explains how to become trusted, so it must
+    // stay on screen with the browser rather than vanish with it.
     if (!canJoinTrustedLobby(lobby, this.viewerTrusted)) {
       this.showTrustRequired = true;
       return;

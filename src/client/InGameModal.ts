@@ -1,6 +1,5 @@
 import "./components/ConfirmDialog";
 import { ConfirmDialog } from "./components/ConfirmDialog";
-import { crazyGamesSDK } from "./CrazyGamesSDK";
 import { translateText } from "./Utils";
 
 /**
@@ -17,13 +16,11 @@ function showDialog(props: Partial<ConfirmDialog>): Promise<boolean> {
   const dialog = document.createElement("confirm-dialog") as ConfirmDialog;
   Object.assign(dialog, props);
 
-  crazyGamesSDK.gameplayStop();
   document.body.appendChild(dialog);
 
   return new Promise<boolean>((resolve) => {
     const done = (result: boolean) => {
       dialog.remove();
-      crazyGamesSDK.gameplayStart();
       resolve(result);
     };
     dialog.addEventListener("confirm", () => done(true));

@@ -129,7 +129,6 @@ beforeEach(() => {
   vi.stubGlobal("fetch", fetchMock);
   vi.spyOn(console, "warn").mockImplementation(() => {});
   stubLocation("openfront.io");
-  delete (window as any).openfrontDesktop;
   setBootstrap();
 });
 
@@ -139,7 +138,6 @@ afterEach(() => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
   delete (window as any).BOOTSTRAP_CONFIG;
-  delete (window as any).openfrontDesktop;
   ClientEnv.reset();
   resetServerList();
 });
@@ -152,13 +150,6 @@ describe("which list a page asks for", () => {
     setBootstrap({ siteHost: undefined });
     stubLocation("my-branch.openfront.dev");
     expect(serverListSite()).toBe("my-branch.openfront.dev");
-  });
-
-  it("the desktop shell asks for its injected serverHost, whatever the document host", () => {
-    (window as any).openfrontDesktop = {};
-    setBootstrap({ serverHost: "nightly.openfront.dev", siteHost: undefined });
-    stubLocation("openfront");
-    expect(serverListSite()).toBe("nightly.openfront.dev");
   });
 
   it("builds the API url from the audience and the site", () => {
@@ -1203,24 +1194,6 @@ describe("picking between open, draining and fenced", () => {
     expect(loc.href).toBe("https://replay.openfront.io/dAbCd12345");
   });
 
-  // The desktop shell updates itself (download, stage, its own reload
-  // button): a web-style update prompt there would re-run the same overlay.
-  // It also injects a serverHost of its own, so it is answered by the
-  // page-server rule first — "fallback", the shell's own values, never
-  // "outdated". The isDesktopShell() exemption still covers a shell that
-  // injects no host at all.
-  it("leaves the desktop shell to its updater", async () => {
-    (window as any).openfrontDesktop = {};
-    setBootstrap({ gitCommit: OLD, serverHost: "openfront.io" });
-    const loc = stubLocation("openfront");
-    fetchMock.mockImplementation(async () =>
-      jsonResponse(listOf({ c: server(OLD, "fenced") })),
-    );
-    expect(await ensureServerList()).toBe("fallback");
-    expect(loc.href).toBe("https://openfront/");
-    expect(ClientEnv.serverWsBase()).toBe("wss://openfront.io");
-  });
-
   // OPE-430. Live on main.openfront.dev: the page was still rendered by a
   // game server (the static Worker is not routed yet), a deploy failed to
   // register the new build in the API's registry, so the list carried no
@@ -1786,18 +1759,11 @@ describe("reloadWouldRescue", () => {
     expect(reloadWouldRescue("fallback")).toBe(false);
   });
 
-  it("keeps the exemptions of the shells that must never reload", async () => {
-    // A pinned page is behind on purpose, and the desktop shell's updater
-    // owns its version: a dead socket is no reason to tell either to
-    // reload.
+  it("keeps the exemption of a pinned page, which must never reload", async () => {
+    // A pinned page is behind on purpose: a dead socket is no reason to tell
+    // it to reload.
     setBootstrap({ gitCommit: OLD });
     stubLocation("openfront.io", `/v/${OLD}/game/dAbCd12345`);
-    await ensureServerList();
-    expect(reloadWouldRescue("fallback")).toBe(false);
-
-    (window as any).openfrontDesktop = {};
-    setBootstrap({ gitCommit: OLD, serverHost: "openfront.io" });
-    stubLocation("openfront");
     await ensureServerList();
     expect(reloadWouldRescue("fallback")).toBe(false);
   });
@@ -1852,14 +1818,6 @@ describe("redirectToGameVersion", () => {
 
   it("stays put with no list loaded", async () => {
     const loc = stubLocation("openfront.io", "/game/cAbCd12345");
-    expect(redirectToGameVersion("cAbCd12345")).toBe(false);
-    expect(loc.href).toBe("https://openfront.io/game/cAbCd12345");
-  });
-
-  it("never navigates the desktop shell", async () => {
-    const loc = stubLocation("openfront.io", "/game/cAbCd12345");
-    await withList();
-    (window as any).openfrontDesktop = {};
     expect(redirectToGameVersion("cAbCd12345")).toBe(false);
     expect(loc.href).toBe("https://openfront.io/game/cAbCd12345");
   });
@@ -1931,14 +1889,9 @@ describe("versionedPathForMismatchedGame", () => {
     );
   });
 
-  it("answers nothing on the shells with no /v/<commit>/ routes", async () => {
+  it("answers nothing on the replay shell, which has no /v/<commit>/ routes", async () => {
     stubLocation("replay.openfront.io", "/cAbCd12345");
     await withList();
-    expect(versionedPathForMismatchedGame("cAbCd12345", OLD)).toBeNull();
-
-    stubLocation("openfront.io", "/game/cAbCd12345");
-    await withList();
-    (window as any).openfrontDesktop = {};
     expect(versionedPathForMismatchedGame("cAbCd12345", OLD)).toBeNull();
   });
 });

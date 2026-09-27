@@ -1,6 +1,5 @@
 import { html, LitElement } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
-import { crazyGamesSDK } from "src/client/CrazyGamesSDK";
 import { PauseGameIntentEvent } from "src/client/Transport";
 import { assetUrl } from "../../../core/AssetUrls";
 import { EventBus } from "../../../core/EventBus";
@@ -105,14 +104,6 @@ export class SettingsModal extends LitElement implements Controller {
   }
 
   private pauseGame(pause: boolean) {
-    // CrazyGames: report gameplay as stopped whenever the settings menu is open,
-    // and resumed when it closes — unless the game was already paused when opened.
-    if (pause) {
-      crazyGamesSDK.gameplayStop();
-    } else if (!this.wasPausedWhenOpened) {
-      crazyGamesSDK.gameplayStart();
-    }
-
     // Only pause the simulation itself when we own the pause (singleplayer or
     // lobby creator).
     if (this.shouldPause && !this.wasPausedWhenOpened) {

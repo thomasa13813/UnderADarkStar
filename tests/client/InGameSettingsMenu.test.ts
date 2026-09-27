@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import en from "../../resources/lang/en.json";
-import { crazyGamesSDK } from "../../src/client/CrazyGamesSDK";
 import {
   SettingsModal,
   ShowSettingsModalEvent,
@@ -24,8 +23,6 @@ describe("in-game menu opens the shared settings modal", () => {
   let menu: TestMenu;
   let settings: TestSettings;
   let pauses: boolean[];
-  let gameplayStop: ReturnType<typeof vi.spyOn>;
-  let gameplayStart: ReturnType<typeof vi.spyOn>;
 
   async function settle() {
     await menu.updateComplete;
@@ -35,13 +32,6 @@ describe("in-game menu opens the shared settings modal", () => {
   beforeEach(async () => {
     document.body.innerHTML = "";
     localStorage.clear();
-    gameplayStop = vi
-      .spyOn(crazyGamesSDK, "gameplayStop")
-      .mockImplementation(async () => {});
-    gameplayStart = vi
-      .spyOn(crazyGamesSDK, "gameplayStart")
-      .mockImplementation(async () => {});
-
     menu = document.createElement("settings-modal") as TestMenu;
     document.body.appendChild(menu);
     // Mirrors index.html: the in-game instance is mounted next to the HUD, and
@@ -136,8 +126,6 @@ describe("in-game menu opens the shared settings modal", () => {
     await settle();
 
     expect(pauses).toEqual([true, false]);
-    expect(gameplayStop).toHaveBeenCalledTimes(1);
-    expect(gameplayStart).toHaveBeenCalledTimes(1);
   });
 
   it("returns to the menu when the settings modal is dismissed with Escape", async () => {

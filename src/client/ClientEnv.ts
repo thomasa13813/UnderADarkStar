@@ -338,13 +338,13 @@ export class ClientEnv {
   // desktop shell opening account settings in a browser, say.
   //
   // NOT serverHttpBase(): that is a game server, and once the API's list has
-  // picked one it is a deployment host (falk2-b.openfront.io) with no site
+  // picked one it is a deployment host (falk2-b.example.com) with no site
   // on it. This reads only the page's own injected values, which name sites:
   // the apex a web page was rendered behind (siteHost) first, because a
   // server-rendered page carries serverHost too and there it is one
-  // deployment (blue.openfront.io), not the site; else the shell's
-  // serverHost, which IS the site on desktop (openfront.io,
-  // nightly.openfront.dev, main.openfront.dev) and injects no siteHost.
+  // deployment (blue.example.com), not the site; else the shell's
+  // serverHost, which IS the site on desktop (example.com,
+  // nightly.example.dev, main.example.dev) and injects no siteHost.
   // Undefined when neither was injected; callers fall back themselves.
   static siteOrigin(): string | undefined {
     const v = ClientEnv.get();
@@ -433,11 +433,11 @@ function shareBootstrap(): { siteOrigin?: string; jwtAudience: string } {
  * from /cluster.json) changes this function and both bases follow.
  *
  * When an explicit `serverHost` is configured, target it over TLS. Only the
- * desktop app sets this: it loads the renderer from `app://openfront`, where
- * `window.location.host` is just "openfront" (not a real server), and the
+ * desktop app sets this: it loads the renderer from `app://<app>`, where
+ * `window.location.host` is just the app name (not a real server), and the
  * game-server host is NOT derivable from the API audience — it is the bare
- * audience host in prod (`openfront.io`) but a branch-variable subdomain on
- * dev/staging (default `main.openfront.dev`, or `<branch>.openfront.dev`). So
+ * audience host in prod (`example.com`) but a branch-variable subdomain on
+ * dev/staging (default `main.example.dev`, or `<branch>.example.dev`). So
  * the host is injected explicitly rather than derived.
  *
  * When no `serverHost` is configured — the normal web build — the game server
@@ -528,13 +528,13 @@ function isWebScheme(locationProtocol: string): boolean {
  * at is the page the recipient should get.
  *
  * The desktop shell is the exception, and the reason this exists. It serves the
- * renderer from its own privileged scheme — `app://openfront/index.html` — so a
+ * renderer from its own privileged scheme — `app://<app>/index.html` — so a
  * link built from `window.location` reads
- * `app://openfront/index.html#modal=profile&publicID=…`, which resolves to
+ * `app://<app>/index.html#modal=profile&publicID=…`, which resolves to
  * nothing anywhere except inside that one Electron app. It is not even a link
  * the desktop client itself can take back: the friends box only unwraps http(s)
  * URLs. So the shell's links go to siteOrigin() — the website it was downloaded
- * from (openfront.io in prod, a branch subdomain on staging) — with the same
+ * from (example.com in prod, a branch subdomain on staging) — with the same
  * audience fallback desktopWebAccountSettingsUrl in Auth.ts already used for
  * this question, localhost dev port included, for a shell that injects neither
  * host.
@@ -543,7 +543,7 @@ function isWebScheme(locationProtocol: string): boolean {
  * the `app:` scheme is itself what makes a link unshareable, and because a
  * server-rendered web page is a site in its own right: whatever host the copier
  * is reading right now is a host their recipient can open. (A desktop build
- * pointed at a local dev server with OPENFRONT_DEV_URL is on http and gets the
+ * pointed at a local dev server with a dev-URL override is on http and gets the
  * web answer for exactly that reason.)
  */
 export function deriveShareOrigin(

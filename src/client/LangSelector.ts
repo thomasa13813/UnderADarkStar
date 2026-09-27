@@ -1,7 +1,6 @@
 import { LitElement, html } from "lit";
 import { customElement, state } from "lit/decorators.js";
 import { assetUrl } from "../core/AssetUrls";
-import { desktopSteamLocale } from "./DesktopShell";
 import "./LanguageModal";
 import { LanguageModal } from "./LanguageModal";
 import { formatDebugTranslation } from "./Utils";
@@ -111,12 +110,7 @@ export class LangSelector extends LitElement {
    * good, because a saved choice outranks both of these.
    */
   private defaultLocale(): string {
-    const osLocale = navigator.language;
-    const steamLocale = desktopSteamLocale();
-    if (steamLocale === null) return osLocale;
-    return this.getClosestSupportedLang(steamLocale) === "en"
-      ? osLocale
-      : steamLocale;
+    return navigator.language;
   }
 
   private async initializeLanguage() {
@@ -249,10 +243,6 @@ export class LangSelector extends LitElement {
       "map-picker",
       "join-lobby-modal",
       "emoji-table",
-      "player-stats",
-      "team-stats",
-      "leaderboard-player-list",
-      "leaderboard-clan-table",
       "build-menu",
       "win-modal",
       "game-starting-modal",
@@ -267,29 +257,8 @@ export class LangSelector extends LitElement {
       "user-setting",
       "o-modal",
       "o-button",
-      "inventory-modal",
-      "store-modal",
-      "cosmetic-card",
-      "cosmetic-info",
-      "cosmetic-preview",
       "difficulty-info",
-      "inventory-loadout-bar",
-      "purchase-button",
-      "custom-currency-card",
       "fluent-slider",
-      "news-modal",
-      "account-modal",
-      "game-stats-modal",
-      "player-profile-modal",
-      "game-info-view",
-      "ranking-controls",
-      "leaderboard-modal",
-      "effects-grid",
-      "token-login",
-      "tribes-panel",
-      "steam-wishlist",
-      "steam-wishlist-button",
-      "streaming-now",
       "tutorial-panel",
     ];
 

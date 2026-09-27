@@ -60,16 +60,11 @@ export interface SteamMicroTxnBridge {
   consumePending(): Promise<MicroTxnAuthorization[]>;
 }
 
-// window.openfrontDesktop is declared `unknown` by DesktopShell.ts (kept loose
-// there on purpose), so narrow it locally -- same convention SteamSDK.ts
-// follows, and for the same reason (a second `declare global` with a different
-// type triggers TS2717).
+// Upstream read this off the Steam desktop shell's window bridge. There is no
+// shell any more (roadmap P1 step D), so the Steam rail is never selected;
+// the code path is kept until P7 rebuilds payments.
 function steamBridge(): { microTxn?: SteamMicroTxnBridge } | undefined {
-  if (typeof window === "undefined") return undefined;
-  const desktop = window.openfrontDesktop as
-    | { steam?: { microTxn?: SteamMicroTxnBridge } }
-    | undefined;
-  return desktop?.steam;
+  return undefined;
 }
 
 /**

@@ -1,70 +1,56 @@
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="proprietary/images/OpenFrontLogoDark.svg">
-    <source media="(prefers-color-scheme: light)" srcset="proprietary/images/OpenFrontLogo.svg">
-    <img src="proprietary/images/OpenFrontLogo.svg" alt="OpenFrontIO Logo" width="300">
-  </picture>
-</p>
+# Under a Dark Star
 
-[OpenFront.io](https://openfront.io/) is an online real-time strategy game focused on territorial control and alliance building. Players compete to expand their territory, build structures, and form strategic alliances in various maps based on real-world geography.
+A multiplayer sci-fi strategy game by January Games. One player starts each
+round as the **Hegemon**: extremely strong, but unable to expand. Everyone else
+grows across the galaxy and tries to overthrow them. The round ends when the
+Hegemon falls (the player who lands the killing blow wins) or when the timer
+runs out (the Hegemon wins). The winner is the next round's Hegemon.
 
-This is a fork/rewrite of WarFront.io. Credit to https://github.com/WarFrontIO.
+Under a Dark Star is a fork of [OpenFront.io](https://github.com/openfrontio/OpenFrontIO),
+© OpenFront and Contributors, which is itself a fork/rewrite of
+[WarFront.io](https://github.com/WarFrontIO). The design and the road to
+release are in [docs/DarkStar-Design.md](docs/DarkStar-Design.md) and
+[docs/DarkStar-Roadmap.md](docs/DarkStar-Roadmap.md).
 
-![CI](https://github.com/openfrontio/OpenFrontIO/actions/workflows/ci.yml/badge.svg)
-[![Crowdin](https://badges.crowdin.net/openfront-mls/localized.svg)](https://crowdin.com/project/openfront-mls)
-[![CLA assistant](https://cla-assistant.io/readme/badge/openfrontio/OpenFrontIO)](https://cla-assistant.io/openfrontio/OpenFrontIO)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![Assets: CC BY-SA 4.0](https://img.shields.io/badge/Assets-CC%20BY--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-sa/4.0/)
 
 ## License
 
-OpenFront source code is licensed under the **GNU Affero General Public License v3.0**
+The source code is licensed under the **GNU Affero General Public License
+v3.0**, with OpenFront's additional attribution terms (see [LICENSE](LICENSE)):
+modified versions must keep "© OpenFront and Contributors" reasonably visible
+and must not be presented as OpenFront. This fork keeps that notice in the
+home-page footer and on the game-start screen, and offers its source through
+the footer's "Source" link.
 
-Current copyright notices appear in:
+- Assets in `resources/` are CC BY-SA 4.0: see [LICENSE-ASSETS](LICENSE-ASSETS).
+- The "Under a Dark Star" name and marks in `branding/` belong to January
+  Games and are not open: see [branding/LICENSE](branding/LICENSE).
+- Licence history and the fork's obligations: [LICENSING.md](LICENSING.md).
+- Third-party data, icons and fonts: [CREDITS.md](CREDITS.md).
 
-- Footer: "© OpenFront and Contributors"
-- Loading screen: "© OpenFront and Contributors"
-
-Modified versions must preserve these notices in reasonably visible locations.
-
-See the [LICENSE](LICENSE) for complete requirements.
-
-For asset licensing, see [LICENSE-ASSETS](LICENSE-ASSETS).  
-For license history, see [LICENSING.md](LICENSING.md).
-
-## 🌟 Features
-
-- **Real-time Strategy Gameplay**: Expand your territory and engage in strategic battles
-- **Alliance System**: Form alliances with other players for mutual defense
-- **Multiple Maps**: Play across various geographical regions including Europe, Asia, Africa, and more
-- **Resource Management**: Balance your expansion with defensive capabilities
-- **Cross-platform**: Play in any modern web browser
-
-## 📋 Prerequisites
+## Prerequisites
 
 - [npm](https://www.npmjs.com/) (v10.9.2 or higher)
-- A modern web browser (Chrome, Firefox, Edge, etc.)
+- A modern browser (Chrome, Firefox, Edge, etc.)
 
-## 🚀 Installation
+## Installation
 
-1. **Clone the repository**
+```bash
+git clone https://github.com/thomasa13813/UnderADarkStar.git
+cd UnderADarkStar
+npm run inst
+```
 
-   ```bash
-   git clone https://github.com/openfrontio/OpenFrontIO.git
-   cd OpenFrontIO
-   ```
+Do NOT use `npm install` nor `npm i` but instead use `npm run inst`. It runs the
+safer `npm ci --ignore-scripts` to install dependencies exactly according to the
+versions in `package-lock.json` and doesn't run scripts, which prevents being
+hit by a supply chain attack.
 
-2. **Install dependencies**
+## Running the game
 
-   ```bash
-   npm run inst
-   ```
-
-   Do NOT use `npm install` nor `npm i` but instead use our `npm run inst`. It runs the safer `npm ci --ignore-scripts` to install dependencies exactly according to the versions in `package-lock.json` and doesn't run scripts. This can prevent being hit by a supply chain attack.
-
-## 🎮 Running the Game
-
-### Development Mode
+### Development mode
 
 Run both the client and server in development mode with live reloading:
 
@@ -74,78 +60,42 @@ npm run dev
 
 This will:
 
-- Start the webpack dev server for the client
+- Start the Vite dev server for the client
 - Launch the game server with development settings
-- Open the game in your default browser (to disable this behavior, set `SKIP_BROWSER_OPEN=true` in your environment)
+- Open the game in your default browser (to disable this behavior, set
+  `SKIP_BROWSER_OPEN=true` in your environment)
 
-### Client Only
-
-To run just the client with hot reloading:
+### Client only
 
 ```bash
 npm run start:client
 ```
 
-### Server Only
-
-To run just the server with development settings:
+### Server only
 
 ```bash
 npm run start:server-dev
 ```
 
-### Connecting to staging or production backends
+## Development tools
 
-Sometimes it's useful to connect to production servers when replaying a game, testing user profiles, purchases, or login flow.
+- **Format code:** `npm run format`
+- **Lint (Oxlint and ESLint):** `npm run lint`, or `npm run lint:fix`
+- **Tests (Vitest):** `npm test`, or a single file with
+  `npx vitest tests/YourTest.test.ts --run`
+- **Production build:** `npm run build-prod`
 
-> To replay a production game, make sure you're on the same commit that the game you want to replay was executed on, you can find the `gitCommit` value via `https://api.openfront.io/game/[gameId]`.
-> Unfinished games cannot be replayed on localhost.
+## Project structure
 
-To connect to staging api servers:
-
-```bash
-npm run dev:staging
-```
-
-To connect to production api servers:
-
-```bash
-npm run dev:prod
-```
-
-## 🛠️ Development Tools
-
-- **Format code**:
-
-  ```bash
-  npm run format
-  ```
-
-- **Lint code with Oxlint and ESLint**:
-
-  ```bash
-  npm run lint
-  ```
-
-- **Lint and fix code with Oxlint and ESLint**:
-
-  ```bash
-  npm run lint:fix
-  ```
-
-- **Testing**
-  ```bash
-  npm test
-  ```
-
-## 🏗️ Project Structure
-
-- `/src/client` - Frontend game client
+- `/src/client` - Frontend game client (WebGL2 renderer, Lit UI)
 - `/src/core` - Deterministic game simulation
-- `/src/server` - Backend game server
-- `/resources` - Static assets (images, maps, etc.)
+- `/src/server` - Game server (lobbies, intent relay)
+- `/resources` - Open static assets (images, maps, sounds, translations)
+- `/branding` - January Games' own marks; overrides `resources/` at build time
 - `/zbin` - Compact binary wire format for zod schemas (self-contained, zod-only)
+- `/docs` - Design document, roadmap and architecture notes
 
-## 🤝 Contributing
+## Contributing
 
-Contributions and translations are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow, the approved-issue process, project governance, and translation info.
+See [CONTRIBUTING.md](CONTRIBUTING.md). Code contributions are licensed under
+AGPL v3 and assets under CC BY-SA 4.0.

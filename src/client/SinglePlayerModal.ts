@@ -25,7 +25,6 @@ import { MEDAL_ORDER, medalIcon } from "./components/map/Medals";
 import "./components/ToggleInputCard";
 import { modalHeader } from "./components/ui/ModalHeader";
 import { getPlayerCosmetics, prewarmCosmetics } from "./Cosmetics";
-import { crazyGamesSDK } from "./CrazyGamesSDK";
 import { GameStartingModal } from "./GameStartingModal";
 import { showInGameAlert } from "./InGameModal";
 import { JoinLobbyEvent } from "./Main";
@@ -60,16 +59,6 @@ import { terrainMapFileLoader } from "./TerrainMapFileLoader";
  * rare rather than routine.
  */
 export const START_PREPARE_DEADLINE_MS = 15_000;
-
-/**
- * Ceiling on the CrazyGames midgame ad, deliberately far above
- * START_PREPARE_DEADLINE_MS: an ad creative routinely runs 15-30s and it has
- * to gate the start, because dispatching behind one puts gameplay — spawn
- * selection included — under a still-visible overlay. This exists only for an
- * SDK that never calls adFinished or adError at all. Off CrazyGames,
- * requestMidgameAd() resolves immediately and none of this is reached.
- */
-export const MIDGAME_AD_DEADLINE_MS = 60_000;
 
 /**
  * `work`, or `onDeadline()` if it has not settled within `ms`. The timer is
@@ -284,21 +273,6 @@ export class SinglePlayerModal extends BaseModal {
     this.applyAchievements(event.detail);
   };
 
-  private renderNotLoggedInBanner(): TemplateResult {
-    if (crazyGamesSDK.isOnCrazyGames()) {
-      return html``;
-    }
-    return html`<button
-      class="px-3 py-2 text-xs font-bold uppercase tracking-wider transition-colors duration-200 rounded-lg bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 whitespace-nowrap shrink-0 cursor-pointer hover:bg-yellow-500/30"
-      @click=${() => {
-        this.close();
-        window.showPage?.("page-account");
-      }}
-    >
-      ${translateText("single_modal.sign_in_for_achievements")}
-    </button>`;
-  }
-
   private applyAchievements(userMe: UserMeResponse | false) {
     if (!userMe) {
       this.mapWins = new Map();
@@ -351,7 +325,7 @@ export class SinglePlayerModal extends BaseModal {
               >
             </button>
             ${this.showAchievements ? this.renderMedalOverview() : null}`
-        : this.renderNotLoggedInBanner(),
+        : undefined,
     });
   }
 
@@ -991,8 +965,6 @@ export class SinglePlayerModal extends BaseModal {
    * START_PREPARE_DEADLINE_MS cuts it short rather than pinning Start at
    * "Starting…" for the rest of the session, which would take startTutorial()
    * down with it on the re-entrancy guard.
-   *
-   * The midgame ad is deliberately not part of this — see awaitMidgameAd.
    */
   private async resolveNameAndCosmetics(
     usernameInput: UsernameInput | null,
@@ -1030,32 +1002,6 @@ export class SinglePlayerModal extends BaseModal {
     );
 
     return prepared;
-  }
-
-  /**
-   * The CrazyGames midgame ad, on a bound of its own.
-   *
-   * Separate from resolveNameAndCosmetics because an ad is not the same kind
-   * of wait. It is the player watching something, legitimately for longer than
-   * START_PREPARE_DEADLINE_MS — racing it there cut real creatives short and
-   * dropped the player into spawn selection underneath a live overlay. So the
-   * ad gates the start, the button staying busy while it plays is correct
-   * rather than a hang, and MIDGAME_AD_DEADLINE_MS is sized only to catch an
-   * SDK that has stopped answering (requestMidgameAd resolves solely from its
-   * adFinished/adError callbacks).
-   *
-   * Only ever called for a start that is still live — an ad shown for a game
-   * that will not start is worse than no ad. Off CrazyGames this resolves
-   * immediately.
-   */
-  private awaitMidgameAd(): Promise<void> {
-    return withDeadline(
-      crazyGamesSDK.requestMidgameAd(),
-      MIDGAME_AD_DEADLINE_MS,
-      () => {
-        console.warn("Midgame ad never signalled completion; starting anyway");
-      },
-    );
   }
 
   private async startGame() {
@@ -1119,24 +1065,14 @@ export class SinglePlayerModal extends BaseModal {
       // reopened and started again. The live attempt owns the start; this one
       // would otherwise race it into join-lobby with stale settings.
       //
-      // A start has exactly two side effects that leave this component, and
-      // BOTH must sit behind this check. Anything added here that escapes the
-      // component needs the same gate:
-      //   1. awaitMidgameAd() — shows the player a real ad, so an abandoned
-      //      attempt reaching it advertises a game that never starts, and a
-      //      reopened modal can put a second request in flight beside it.
-      //   2. the join-lobby dispatch — and everything downstream of it,
-      //      including Main's gameplayStart() and incrementGamesPlayed().
+      // The join-lobby dispatch — and everything downstream of it, including
+      // incrementGamesPlayed() — must sit behind this check. Anything added
+      // here that escapes the component needs the same gate.
       // resolveNameAndCosmetics() above is deliberately NOT gated: its only
       // writes are validating stored cosmetic selections against the catalog
       // and profile, which happens on any cosmetics resolution (menu
       // background, store, inventory) rather than as a consequence of this
       // start.
-      if (attempt !== this.startAttempt) return;
-
-      await this.awaitMidgameAd();
-
-      // The ad is long enough that the modal can be closed while it runs.
       if (attempt !== this.startAttempt) return;
 
       this.dispatchEvent(

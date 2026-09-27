@@ -86,34 +86,103 @@ Playwire in `index.html`); links to OpenFront's Discord, wiki, YouTube, Steam, G
 canonical tags, `resources/manifest.json` (PWA), `package.json` name `openfront-client`; server
 strings (`GamePreviewBuilder`, `GameApiCors`, logger/metrics service names).
 
-**Work.**
+**Work, in steps Tom can playtest between.** Each step leaves the game playable (solo, create,
+join) and is a commit of its own.
 
-- **Remove `proprietary/`** from the build (`vite.config.ts`, `Dockerfile`, `tsconfig.json`,
-  `README.md`) and replace each use: a January Games / DarkStar logo and favicon, a licensed display
-  font (Overpass is already in `resources/`; or an OFL font), placeholder silence for the three
-  sounds until P4.
-- **Home screen** rebuilt: title, a space background (shared with P2's starfield), the play buttons,
-  a footer with "© OpenFront and Contributors", "Source" (the public repo) and the January Games
-  line. Remove news, changelog, promos, the Steam wishlist button, and the account/store/clan/friends
-  UI (or hide it behind a flag until P5/P7 re-enable what we rebuild).
-- **Delete or flag-off** every closed-API feature the client still shows: store, payments, Stripe,
-  subscriptions, rewards, creator codes, inventory, ranked queue, clans, friends, player profiles,
-  Steam linking. Keep the schemas we will reuse (`CosmeticSchemas`, `PatternDecoder`).
-- **Strings:** every "OpenFront" in `en.json` (keys stay; Crowdin-managed files are regenerated from
-  `en.json`, so decide in P8 whether any translation ships). `manifest.json`, `index.html` meta,
-  `package.json`, server service names.
-- **`CREDITS.md`**: OpenFront (code AGPL, `resources/` CC BY-SA 4.0), the Noun Project icons, the
-  Wikimedia flags, and later the maps, fonts and music we add.
-- **`LICENSING.md` / `LICENSE-ASSETS`**: state what January Games owns and under what terms our own
-  assets ship (recommendation: keep our art All Rights Reserved in a `branding/` directory mirroring
-  upstream's split, and everything else under the inherited licences).
+- **A. Build hygiene, ads, links and licence (built 2026-09-27, see below).** `proprietary/` out of
+  the repo and the build; a `branding/` overlay (All Rights Reserved, January Games) on the same
+  mechanism, holding a placeholder favicon; a text wordmark in the three nav bars and Overpass Bold
+  as the placeholder display face; silent placeholder tracks for the menu theme, gameplay music
+  and game-start alert; every ad, analytics and third-party script gone from `index.html`
+  (Playwire, Admiral, gtag, Cloudflare Insights, CrazyGames SDK) with the modules behind them
+  (`AdGatekeeper`, `Admiral`, `HomepagePromos`, `InGamePromo`, `FeaturedStream`, `StreamsFeed`,
+  `StreamingNow`, `MarketingConsentToast`, `PurchaseNudgeModal`, Steam wishlist); the footer
+  rebuilt with "Source" (this repository), "Made by January Games" and "© OpenFront and
+  Contributors"; the game-start credits link, `og:` tags, `manifest.json` and `package.json`
+  renamed; OpenFront's press kit, `ads.txt`, Apple Pay file and legal pages removed from
+  `resources/public/`; `CREDITS.md`, `LICENSE-ASSETS`, `LICENSING.md` and `README.md` rewritten.
+- **B. Remove the closed-API UI (built 2026-09-27, see below).** The pages and nav entries for store, inventory, leaderboard,
+  clans, account, profile, game history, ranked queue, matchmaking, news and changelog, rewards,
+  token login, creator codes, subscriptions, bans; the win screen's store promo; `news.json`,
+  `changelog.md`, `lemon-drizzle.md`; their tests. Keep the plumbing modules the join path still
+  calls (`Api`, `Auth`, `Cosmetics`, `ApiSchemas`, `CosmeticSchemas`, `PatternDecoder`) so P5 and
+  P7 rebuild on them rather than from nothing; note in each what is dead. Playtest: the home page
+  shows Play only; solo, create and join still work.
+- **C. Strings and server names (built 2026-09-27, see below).** Every "OpenFront" left in `en.json` (about 40, mostly desktop
+  and account copy that step D deletes anyway), `CONTRIBUTING.md`, the help page's OpenFront
+  tutorial video, `GamePreviewBuilder`, logger and OpenTelemetry service names, metric names,
+  hostname comments in `ServerEnv`/`ClientEnv`/`GameApiCors`. Playtest: quick smoke.
+- **D. The platform layer (built 2026-09-27, see below).** The Steam desktop shell (`DesktopShell`, `SteamSDK`, `SteamLink`,
+  `SteamHandoff`, `DesktopPresence`, `DesktopAchievements`, `DesktopRelease`, the `app://openfront`
+  origin, `openfrontDesktop` in `index.html`) and CrazyGames (`CrazyGamesSDK`, 24 importers) are
+  OpenFront's distribution deals; nothing of ours will ever run in them. Mechanical but wide
+  (about 50 files, 30 tests). Playtest: full round in a lobby.
+- **E. The home screen.** The space background is built (2026-09-27, below); the title
+  treatment and play buttons wait on the logo, wordmark and font.
 
-**Decide.** The logo and wordmark (Tom supplies or commissions); whether any upstream community links
-stay (none, is the recommendation); the display font.
+**Decided 2026-09-27.** Tom supplies the logo and wordmark when ready (text wordmark until then);
+the font is revisited later (Overpass stays); no upstream community links; step D is in P1.
 
-**Done when** a `grep -ri openfront` over `src/`, `resources/` and `index.html` finds only the
-attribution line and the licence files, the container builds without `proprietary/`, and the home
-page is ours.
+**As built, step A (2026-09-27).** The `proprietary/` overlay became `branding/`: `vite.config.ts`
+serves it in dev and merges it into the hashed asset manifest in production, `Dockerfile` copies
+it, `tsconfig.json` includes it, and `PublicAssetManifest.getBrandingDir` names it. Only
+`images/Favicon.svg` has to exist there; everything else falls through to `resources/`. The three
+music/alert files are silent MPEG frames written by hand (no encoder on the build machine) at the
+old paths, so `MenuMusic`, `SoundManager` and their tests are untouched; P4 replaces the files.
+The font is loaded through `assetUrl` in `Main.ts` (a CSS `url()` would miss the CDN hash);
+`--font-display` in `styles.css` names it. OpenFront's Terms of Service and Privacy Policy were
+removed rather than kept under our name; P8 now lists writing our own. Leftover after A: `grep -ri
+openfront` over `src/`, `resources/` (minus `lang/`) and `index.html` finds 53 files, 352 of the
+hits in `resources/changelog.md` (step B) and most of the rest in the desktop shell (step D).
+
+**As built, step B (2026-09-27).** 101 client modules and 70 test files deleted: the store,
+inventory, leaderboard, clan, account, profile, game-history, ranked/matchmaking, news, rewards,
+token-login, creator-code, subscription and ban modals with their panels, the cosmetic card /
+preview chain and the WebGL cosmetic preview renderer, `LinkResult`/`LoginResult`, `Markdown`,
+`PlayerName` (the profile-link component), `news.json`, `changelog.md`, `lemon-drizzle.md`. The
+graph was computed from imports (scratch script; anything reachable only through a deleted root
+went too). Kept on purpose: `Api`, `Auth`, `Cosmetics`, `ApiSchemas`, `CosmeticSchemas`,
+`PatternDecoder`, `BootInterrupts`, `PlayerName.ts` (the name resolver) and `UsernameInput`
+(1,200 lines of clan-tag and verified-name logic that only activates with an account; P5 decides
+its fate). Edits: `Main.ts` lost the modal router entries, the boot-interrupt sequence (lapse
+notice, rewards, claim prompt), creator codes, `#purchase-completed`/`#token-login`/`#affiliate`
+hashes and the matchmaking requeue; the nav bars keep Play plus the help and settings icons; the
+solo modal's "sign in for achievements" banner is gone; the win screen keeps exit and keep/spectate
+only; `UsernameInput` lost "Browse clans" and the join-modal link. 688 orphaned `en.json` keys
+pruned (tests/TranslationSystem enforces that). Suite: 444 files pass; the two `update.sh` files
+fail on Windows regardless.
+
+**As built, step E part 1 (2026-09-27): the space background.** `scripts/generateStarfield.ts`
+(no dependencies; seeded PRNG, value-noise nebulae, a tilted galactic band, tiered and tinted
+stars, two small spirals, ordered dithering, a hand-rolled PNG writer) writes
+`resources/images/background.png` at 640×360; the page scales it with
+`image-rendering: pixelated`, so the file is 11 KB and the pixels stay crisp. `npx tsx
+scripts/generateStarfield.ts [seed] [w] [h]` regenerates it; the Earth map with the hex grid is
+gone. P2 reuses the generator for the in-map starfield.
+
+**As built, step D (2026-09-27).** 19 modules and 31 test files deleted: the Steam desktop shell
+(`DesktopShell`, `SteamSDK`, `SteamLink`/`SteamLinkModal`, `SteamHandoff`/`SteamHandoffModal`,
+`DesktopPresence`, `PresenceGroup`, `DesktopAchievements`, `AchievementSignal`,
+`DesktopSessionRecovery`, `DesktopDisplay`, `DesktopStatusBar`, the server's `DesktopRelease` and
+`RenderDesktopDescriptor` with the `/desktop/*.json` routes), CrazyGames (`CrazyGamesSDK`,
+`CrazyGamesAccountButton`), `ClientPlatform` (the join now always says `web`) and the friends invite
+button. What their callers kept: `Auth.ts` is down to the JWT refresh, logout and play-token paths
+(the Discord/Google/Steam/magic-link logins went with the account UI); `GameModeSelector` and the
+lobby browser gate on backend reachability only; the settings modal lost its Display tab and the
+Steam lobby-link toggle; the win screen no longer syncs achievements; the CORS allowlist no longer
+admits `app://openfront`; nginx and Vite lost the `/link` alias. `ClientPlatformSchema` keeps its
+`steam`/`crazygames` members because zbin ordinals are append-only. 88 more `en.json` keys pruned.
+
+**As built, step C (2026-09-27).** Service names are `darkstar` (logger, OpenTelemetry resource,
+metric names `darkstar.*`), the lobby preview title is "Under a Dark Star game", the nginx upstream
+is `game_workers`, `package.json` lost the `dev:staging`/`dev:prod` scripts that pointed at
+OpenFront's API, `CONTRIBUTING.md` is ours, the help page's OpenFront tutorial video is gone (P8:
+record our own), and every hostname in a comment is an `example.com`/`example.dev` placeholder.
+What `grep -ri openfront` still finds under `src/`, `resources/` and `index.html`: the attribution
+line, and six comments that credit upstream code (`RailroadCache`, `TrailManager`, the railroad
+shader) or cite upstream issues (`DisableSafariPinchZoom`). Those stay on purpose. Outside that
+scope: `docs/` (engine docs), the GitHub workflows (upstream's CI, to be replaced in P8) and the 40
+Crowdin language files (P8 decides). `LICENSING.md` and `CREDITS.md` name OpenFront as they must.
 
 ## P2. Map visuals: deep space (M)
 
@@ -335,6 +404,9 @@ choice); MoR vs Stripe direct; the first catalogue and prices.
 - **Hosting:** the game server and API on a VPS behind Cloudflare, assets on a CDN bucket
   (`CDN_BASE` is already wired), TLS, backups, a status page; capacity: one worker per core, the
   throne count sized to it.
+- **Legal pages:** our own Terms of Service and Privacy Policy (OpenFront's were removed in P1
+  step A, with the footer links), linked from the footer again; a contact address for support and
+  account deletion.
 - **Launch checklist:** P1's grep is clean; `CREDITS.md` complete; the tutorial rewritten for the
   Hegemon rules (the current one teaches OpenFront); the singleplayer modal explains the throne;
   the win screens; a bug-report path (email or Discord of our own); moderation tooling from P5
@@ -348,17 +420,17 @@ source is.
 
 ## Sequence and sizes
 
-| Phase | Name                                  | Size | Depends on            |
-| ----- | ------------------------------------- | ---- | --------------------- |
-| P0    | Close the loop for private play       | M    | — (built 2026-09-27)  |
-| P1    | Strip and rebrand                     | M    | —                     |
-| P2    | Deep-space map visuals                | M    | P1 (background art)   |
-| P3    | The map pool                          | L    | P2 (palette)          |
-| P4    | Audio                                 | M    | P1                    |
-| P5    | Identity and the minimal backend      | L    | P1                    |
-| P6    | Matchmaking and the persistent throne | L    | P0, P5                |
-| P7    | Store and payments                    | L    | P5, P1 (schemas kept) |
-| P8    | Public release                        | M    | all; P7 optional      |
+| Phase | Name                                  | Size | Depends on                                        |
+| ----- | ------------------------------------- | ---- | ------------------------------------------------- |
+| P0    | Close the loop for private play       | M    | — (built 2026-09-27)                              |
+| P1    | Strip and rebrand                     | M    | — (A–D, E1 built 2026-09-27; E waits on the logo) |
+| P2    | Deep-space map visuals                | M    | P1 (background art)                               |
+| P3    | The map pool                          | L    | P2 (palette)                                      |
+| P4    | Audio                                 | M    | P1                                                |
+| P5    | Identity and the minimal backend      | L    | P1                                                |
+| P6    | Matchmaking and the persistent throne | L    | P0, P5                                            |
+| P7    | Store and payments                    | L    | P5, P1 (schemas kept)                             |
+| P8    | Public release                        | M    | all; P7 optional                                  |
 
 P0 and P1 are independent and can go first in either order; P2–P4 are independent of each other and of
 P5–P6, so they can be interleaved with the backend work as Tom's attention allows. The critical path

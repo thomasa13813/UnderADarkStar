@@ -26,7 +26,7 @@
     "src/**/*",
     "zbin/**/*",
     "resources/**/*",
-    "proprietary/**/*",
+    "branding/**/*",
     "generated/**/*",
     "tests/**/*",
     "src/scripts",

@@ -35,9 +35,7 @@ import "./components/GameConfigSettings";
 import "./components/InputCard";
 import "./components/LobbyPlayerView";
 import "./components/ToggleInputCard";
-import { inviteFriendsButton } from "./components/ui/InviteFriendsButton";
 import { modalHeader } from "./components/ui/ModalHeader";
-import { crazyGamesSDK } from "./CrazyGamesSDK";
 import { JoinLobbyEvent } from "./Main";
 import { terrainMapFileLoader } from "./TerrainMapFileLoader";
 import {
@@ -183,12 +181,6 @@ export class HostLobbyModal extends BaseModal {
   }
 
   private async buildLobbyUrl(): Promise<string> {
-    if (crazyGamesSDK.isOnCrazyGames()) {
-      const link = crazyGamesSDK.createInviteLink(this.lobbyId);
-      if (link !== null) {
-        return link;
-      }
-    }
     // window.location.origin is deliberate here, NOT ClientEnv.shareOrigin():
     // this URL only ever reaches history.replaceState (updateLobbyHistory), and
     // replaceState to a different origin throws a SecurityError. The link the
@@ -203,16 +195,10 @@ export class HostLobbyModal extends BaseModal {
   }
 
   private updateHistory(url: string): void {
-    if (crazyGamesSDK.isOnCrazyGames()) {
-      return;
-    }
     history.replaceState(null, "", url);
   }
 
   private updateLobbyHistory(lobbyUrl: string): void {
-    if (crazyGamesSDK.isOnCrazyGames()) {
-      return;
-    }
     const lobbyIdHidden = !this.userSettings.lobbyIdVisibility();
     history.replaceState(null, "", lobbyIdHidden ? "/streamer-mode" : lobbyUrl);
   }
@@ -258,15 +244,7 @@ export class HostLobbyModal extends BaseModal {
           .lobbySuffix=${this.lobbyUrlSuffix}
           include-lobby-query
         ></copy-button>`;
-        // Not until there is a lobby to invite anyone into. createLobby()
-        // assigns lobbyId asynchronously and the modal renders before it
-        // lands, so without this the button is live during that window with
-        // no shadow lobby behind it — the invite would silently no-op. The
-        // join modal gets this free from its own !currentLobbyId early return.
-        const invite = this.lobbyId ? inviteFriendsButton() : undefined;
-        return invite
-          ? html`<div class="flex items-center gap-2">${copy}${invite}</div>`
-          : copy;
+        return copy;
       })(),
     });
   }
@@ -749,7 +727,6 @@ export class HostLobbyModal extends BaseModal {
         if (!isValidGameID(this.lobbyId)) {
           throw new Error(`Invalid lobby ID format: ${this.lobbyId}`);
         }
-        crazyGamesSDK.showInviteButton(this.lobbyId);
 
         // Now that we have the id, build and copy the share link. If lobby
         // creation fails, the catch below clears the clipboard.
@@ -788,7 +765,6 @@ export class HostLobbyModal extends BaseModal {
     }
     this.lobbyId = lobbyId;
     this.hydrateFromLobby = true;
-    crazyGamesSDK.showInviteButton(this.lobbyId);
 
     const url = await this.constructUrl();
     this.updateLobbyHistory(url);
@@ -846,7 +822,6 @@ export class HostLobbyModal extends BaseModal {
       this.leaveLobby();
       this.updateHistory("/"); // Reset URL to base
     }
-    crazyGamesSDK.hideInviteButton();
 
     // Clean up timers and resources
     if (this.botsUpdateTimer !== null) {

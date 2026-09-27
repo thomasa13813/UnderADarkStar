@@ -9,16 +9,6 @@ vi.mock("../../src/client/Api", () => ({
 vi.mock("../../src/client/ClanApi", () => ({
   checkClanTagOwnership: vi.fn(async (tag: string) => ({ tag, error: null })),
 }));
-vi.mock("../../src/client/CrazyGamesSDK", () => ({
-  crazyGamesSDK: {
-    isOnCrazyGames: () => false,
-    getUsername: async () => null,
-    addAuthListener: () => {},
-  },
-}));
-vi.mock("../../src/client/SteamSDK", () => ({
-  steamSDK: { isOnSteam: () => false, getUser: async () => null },
-}));
 vi.mock("../../src/client/InGameModal", () => ({
   showInGameConfirm: vi.fn(async () => false),
   showInGameAlert: vi.fn(async () => true),

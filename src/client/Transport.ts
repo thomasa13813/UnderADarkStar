@@ -43,8 +43,6 @@ import {
 } from "../core/ZbinWire";
 import { getPlayToken } from "./Auth";
 import { LobbyConfig } from "./ClientGameRunner";
-import { clientPlatform } from "./ClientPlatform";
-import { isDesktopShell } from "./DesktopShell";
 import { showInGameConfirm } from "./InGameModal";
 import { LocalServer } from "./LocalServer";
 import { homeHref, translateText } from "./Utils";
@@ -583,9 +581,8 @@ export class Transport {
     // this bundle routed with a stale worker count. One full navigation to
     // the game's own host re-fetches shell + cluster map and re-resolves;
     // the sessionStorage latch stops a loop if the fresh map still
-    // misroutes (a real bug), falling through to the dialog instead. Not on
-    // desktop: its shell owns navigation and updates its map at boot.
-    if (reason === CloseReason.WrongWorker && !isDesktopShell()) {
+    // misroutes (a real bug), falling through to the dialog instead.
+    if (reason === CloseReason.WrongWorker) {
       const gameID = this.lobbyConfig.gameID;
       const latch = `wrong-worker-redirect:${gameID}`;
       if (sessionStorage.getItem(latch) === null) {
@@ -697,7 +694,7 @@ export class Transport {
       token: await getPlayToken(),
       spectator: this.lobbyConfig.spectator,
       gitCommit: ClientEnv.gitCommit(),
-      platform: clientPlatform(),
+      platform: "web",
     } satisfies ClientJoinMessage);
   }
 

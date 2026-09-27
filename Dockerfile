@@ -17,7 +17,7 @@ COPY eslint.config.js ./
 COPY index.html ./
 COPY client-api.json ./
 COPY resources ./resources
-COPY proprietary ./proprietary
+COPY branding ./branding
 COPY src ./src
 COPY zbin ./zbin
 # build-prod runs scripts/buildAssetHashes.ts after vite, to emit

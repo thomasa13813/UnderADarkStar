@@ -5,13 +5,6 @@ vi.mock("../../src/client/Cosmetics", () => ({
   getPlayerCosmetics: vi.fn(async () => ({})),
 }));
 
-vi.mock("../../src/client/CrazyGamesSDK", () => ({
-  crazyGamesSDK: {
-    isOnCrazyGames: vi.fn(() => false),
-    requestMidgameAd: vi.fn(async () => {}),
-  },
-}));
-
 vi.mock("../../src/client/TerrainMapFileLoader", () => ({
   terrainMapFileLoader: { getMapData: vi.fn() },
 }));

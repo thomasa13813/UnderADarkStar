@@ -3,17 +3,17 @@ import http from "http";
 import type { AddressInfo } from "net";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import {
-  DESKTOP_APP_ORIGIN,
   applyGameApiCorsHeaders,
   gameApiCors,
 } from "../../src/server/GameApiCors";
 import { stripWorkerPrefix } from "../../src/server/WorkerPathPrefix";
 
-// The game server's /api routes are same-origin for the web client, but the
-// desktop app loads its renderer from app://openfront and so reaches them
-// cross-origin. A POST carrying Authorization + Content-Type is not a simple
-// request, so the browser preflights it: without these headers the desktop
-// cannot create a lobby, join by id, or poll for a game at all.
+// The game server's /api routes are cross-origin for a page served by the
+// site host (the apex in front of the fleet). A POST carrying Authorization +
+// Content-Type is not a simple request, so the browser preflights it: without
+// these headers such a page cannot create a lobby, join by id, or poll for a
+// game at all.
+const SITE_ORIGIN = "https://openfront.io";
 function collect() {
   const headers = new Map<string, string>();
   return {
@@ -25,15 +25,22 @@ function collect() {
 }
 
 describe("applyGameApiCorsHeaders", () => {
-  test("allows the desktop app origin", () => {
+  beforeEach(() => {
+    vi.stubEnv("SITE_HOST", "openfront.io");
+  });
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  test("allows the site origin", () => {
     const { headers, setHeader } = collect();
-    applyGameApiCorsHeaders(DESKTOP_APP_ORIGIN, setHeader);
-    expect(headers.get("Access-Control-Allow-Origin")).toBe("app://openfront");
+    applyGameApiCorsHeaders(SITE_ORIGIN, setHeader);
+    expect(headers.get("Access-Control-Allow-Origin")).toBe(SITE_ORIGIN);
   });
 
   test("advertises the methods and headers the game API actually uses", () => {
     const { headers, setHeader } = collect();
-    applyGameApiCorsHeaders(DESKTOP_APP_ORIGIN, setHeader);
+    applyGameApiCorsHeaders(SITE_ORIGIN, setHeader);
     // GET (game/:id, exists), POST (create_game, listing), OPTIONS (preflight).
     const methods = headers.get("Access-Control-Allow-Methods") ?? "";
     expect(methods).toContain("GET");
@@ -53,7 +60,7 @@ describe("applyGameApiCorsHeaders", () => {
     // Allowing credentials here would expose session cookies to any origin we
     // ever add to the allowlist, for no benefit.
     const { headers, setHeader } = collect();
-    applyGameApiCorsHeaders(DESKTOP_APP_ORIGIN, setHeader);
+    applyGameApiCorsHeaders(SITE_ORIGIN, setHeader);
     expect(headers.has("Access-Control-Allow-Credentials")).toBe(false);
   });
 
@@ -204,6 +211,12 @@ describe("applyGameApiCorsHeaders", () => {
 });
 
 describe("gameApiCors middleware, mounted on a real Express app", () => {
+  beforeEach(() => {
+    vi.stubEnv("SITE_HOST", "openfront.io");
+  });
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
   // Driven over real HTTP rather than fake req/res: the things worth checking
   // here — that Express actually emits the headers, that a preflight really is
   // terminated before the route runs, that an error response still carries the
@@ -250,32 +263,28 @@ describe("gameApiCors middleware, mounted on a real Express app", () => {
     const res = await fetch(`${base}/api/create_game`, {
       method: "OPTIONS",
       headers: {
-        Origin: DESKTOP_APP_ORIGIN,
+        Origin: SITE_ORIGIN,
         "Access-Control-Request-Method": "POST",
         "Access-Control-Request-Headers": "authorization,content-type",
       },
     });
 
     expect(res.status).toBe(204);
-    expect(res.headers.get("access-control-allow-origin")).toBe(
-      "app://openfront",
-    );
+    expect(res.headers.get("access-control-allow-origin")).toBe(SITE_ORIGIN);
     expect(
       res.headers.get("access-control-allow-headers")?.toLowerCase(),
     ).toContain("authorization");
     expect(routeHits).toEqual([]);
   });
 
-  test("grants a real request from the desktop app", async () => {
+  test("grants a real request from the site origin", async () => {
     const res = await fetch(`${base}/api/create_game`, {
       method: "POST",
-      headers: { Origin: DESKTOP_APP_ORIGIN },
+      headers: { Origin: SITE_ORIGIN },
     });
 
     expect(res.status).toBe(200);
-    expect(res.headers.get("access-control-allow-origin")).toBe(
-      "app://openfront",
-    );
+    expect(res.headers.get("access-control-allow-origin")).toBe(SITE_ORIGIN);
     expect(routeHits).toEqual(["create_game"]);
   });
 
@@ -283,45 +292,39 @@ describe("gameApiCors middleware, mounted on a real Express app", () => {
     // The shape the client actually sends: ClientEnv.workerPath() puts the
     // worker in the path, and nginx routes on it.
     const res = await fetch(`${base}/w0/api/game/abcdefgh/exists`, {
-      headers: { Origin: DESKTOP_APP_ORIGIN },
+      headers: { Origin: SITE_ORIGIN },
     });
 
     expect(res.status).toBe(200);
-    expect(res.headers.get("access-control-allow-origin")).toBe(
-      "app://openfront",
-    );
+    expect(res.headers.get("access-control-allow-origin")).toBe(SITE_ORIGIN);
     expect(routeHits).toEqual(["exists"]);
   });
 
   test("grants a worker-mismatch 404 so the client can read it", async () => {
     // A client that computes the wrong worker for a game id (e.g. its injected
     // numWorkers disagrees with the server's) gets this 404. Without the grant
-    // the desktop sees an opaque CORS failure instead, which hides the actual
+    // the page sees an opaque CORS failure instead, which hides the actual
     // fault — the same reasoning that puts CORS ahead of the rate limiter.
     const res = await fetch(`${base}/w7/api/game/abcdefgh/exists`, {
-      headers: { Origin: DESKTOP_APP_ORIGIN },
+      headers: { Origin: SITE_ORIGIN },
     });
 
     expect(res.status).toBe(404);
-    expect(res.headers.get("access-control-allow-origin")).toBe(
-      "app://openfront",
-    );
+    expect(res.headers.get("access-control-allow-origin")).toBe(SITE_ORIGIN);
     expect(routeHits).toEqual([]);
   });
 
   test("an error response still carries the grant", async () => {
-    // Otherwise the desktop client sees an opaque CORS failure and can never
+    // Otherwise the client sees an opaque CORS failure and can never
     // report the real status. This is why the middleware is mounted ahead of
     // the rate limiter in Worker.ts.
     const res = await fetch(`${base}/api/boom`, {
       method: "POST",
-      headers: { Origin: DESKTOP_APP_ORIGIN },
+      headers: { Origin: SITE_ORIGIN },
     });
 
     expect(res.status).toBe(400);
-    expect(res.headers.get("access-control-allow-origin")).toBe(
-      "app://openfront",
-    );
+    expect(res.headers.get("access-control-allow-origin")).toBe(SITE_ORIGIN);
   });
 
   test("runs the route for an unknown origin but grants it nothing", async () => {

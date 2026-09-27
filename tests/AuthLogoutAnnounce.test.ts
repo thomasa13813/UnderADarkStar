@@ -3,19 +3,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("../src/core/game/UserSettings", () => ({
   UserSettings: { setPlayerId: vi.fn() },
 }));
-vi.mock("../src/client/SteamSDK", () => ({
-  steamSDK: {
-    isOnSteam: () => false,
-    getTicket: async () => ({ ok: false, reason: "unavailable" }),
-  },
-}));
-vi.mock("../src/client/CrazyGamesSDK", () => ({
-  crazyGamesSDK: {
-    isOnCrazyGames: () => false,
-    getUserToken: async () => null,
-  },
-}));
-
 const { clearLocalSession, userAuth } = await import("../src/client/Auth");
 const { ClientEnv } = await import("../src/client/ClientEnv");
 

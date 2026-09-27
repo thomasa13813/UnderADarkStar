@@ -3,7 +3,6 @@ import { UserMeResponse } from "../../core/ApiSchemas";
 import { GameMapType } from "../../core/game/Game";
 import { PublicGameInfo } from "../../core/Schemas";
 import { responseHasLinkedIdentity } from "../AccountIdentity";
-import { crazyGamesSDK } from "../CrazyGamesSDK";
 import { terrainMapFileLoader } from "../TerrainMapFileLoader";
 import { getMapName, getModifierLabels, translateText } from "../Utils";
 import "./ConfirmDialog";
@@ -46,13 +45,9 @@ export function trustRequiredDialog(
   signedIn: boolean,
   onClose: () => void,
 ): TemplateResult {
-  const body = crazyGamesSDK.isOnCrazyGames()
-    ? signedIn
-      ? "public_lobby.trust_required_body_crazygames"
-      : "public_lobby.trust_required_body_signed_out_crazygames"
-    : signedIn
-      ? "public_lobby.trust_required_body"
-      : "public_lobby.trust_required_body_signed_out";
+  const body = signedIn
+    ? "public_lobby.trust_required_body"
+    : "public_lobby.trust_required_body_signed_out";
   return html`<confirm-dialog
     .heading=${translateText("public_lobby.trust_required_title")}
     .message=${translateText(body)}
@@ -110,12 +105,6 @@ export interface LobbyCardOptions {
   timeDisplayUppercase?: boolean;
   onClick: () => void;
   disabled?: boolean;
-  /**
-   * Gated rather than disabled: the card dims and reports `aria-disabled` but
-   * stays clickable, so `onClick` still runs and can refuse the action itself.
-   * `disabled` would swallow the click (it also sets pointer-events-none).
-   */
-  blocked?: boolean;
   /** Only matters for a trusted-only lobby, which shows an open or closed lock. */
   viewerTrusted?: boolean;
   /** Card height; defaults to the homepage's fill-the-grid-cell sizing. */
@@ -151,7 +140,6 @@ export function lobbyCard({
   timeDisplayUppercase = false,
   onClick,
   disabled = false,
-  blocked = false,
   viewerTrusted = false,
   heightClass = "h-44 sm:h-full",
 }: LobbyCardOptions): TemplateResult {
@@ -180,9 +168,7 @@ export function lobbyCard({
 
   const state = disabled
     ? "opacity-50 cursor-not-allowed pointer-events-none"
-    : blocked
-      ? "opacity-50 cursor-not-allowed"
-      : "";
+    : "";
   // Cover images sit at 1.05 to hide their edges, so they zoom from there.
   const image = fitsByContain(mapType)
     ? "object-contain group-hover:scale-105"
@@ -192,7 +178,6 @@ export function lobbyCard({
     <button
       @click=${onClick}
       ?disabled=${disabled}
-      aria-disabled=${blocked}
       class="group @container relative block w-full ${heightClass} overflow-hidden rounded-2xl bg-surface text-left uppercase text-white transition-shadow duration-200 hover:shadow-[var(--shadow-lobby-card-hover)] ${state}"
     >
       <img

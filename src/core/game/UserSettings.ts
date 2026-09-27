@@ -10,9 +10,6 @@ import {
   DEFAULT_STATS_COLUMNS,
   StatsTableKind,
 } from "../../client/StatsConstants";
-// DesktopShell.ts imports nothing, so this cannot introduce an import cycle
-// (verified with madge: 58 cycles before and after, none involving it).
-import { isDesktopShell } from "../../client/DesktopShell";
 import { Cosmetics } from "../CosmeticSchemas";
 import { PlayerPattern } from "../Schemas";
 
@@ -398,23 +395,6 @@ export class UserSettings {
 
   lobbyIdVisibility() {
     return this.getBool("settings.lobbyIdVisibility", true);
-  }
-
-  steamBuildSeen() {
-    return this.getBool("settings.steamBuildSeen", false);
-  }
-
-  markSteamBuildSeen() {
-    this.setBool("settings.steamBuildSeen", true);
-  }
-
-  steamLobbyLinks(): "ask" | "steam" | "browser" {
-    const value = this.getString("settings.steamLobbyLinks", "ask");
-    return value === "steam" || value === "browser" ? value : "ask";
-  }
-
-  setSteamLobbyLinks(value: "steam" | "browser") {
-    this.setString("settings.steamLobbyLinks", value);
   }
 
   leftClickOpensMenu() {
@@ -843,7 +823,6 @@ export class UserSettings {
    * cannot drift apart the next time the default moves.
    */
   private defaultMasterVolume(): number {
-    if (isDesktopShell()) return AUDIO_DEFAULTS.master;
     const chosenBefore = AUDIO_VOLUME_KEYS.some(
       (key) => this.getCached(key) !== null,
     );

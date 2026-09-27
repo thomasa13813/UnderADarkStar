@@ -20,10 +20,6 @@ vi.mock("../../../../src/client/Api", () => ({
   getUserMe: vi.fn(async () => null),
 }));
 
-vi.mock("../../../../src/client/AchievementSignal", () => ({
-  syncAchievements: vi.fn(async () => {}),
-}));
-
 vi.mock("../../../../src/client/Cosmetics", async (importOriginal) => ({
   ...(await importOriginal<
     typeof import("../../../../src/client/Cosmetics")
@@ -31,17 +27,6 @@ vi.mock("../../../../src/client/Cosmetics", async (importOriginal) => ({
   fetchCosmetics: vi.fn(async () => null),
   resolveCosmetics: vi.fn(() => []),
 }));
-
-vi.mock("../../../../src/client/CrazyGamesSDK", () => ({
-  crazyGamesSDK: {
-    happytime: vi.fn(),
-    requestAd: vi.fn(),
-    gameplayStop: vi.fn(),
-  },
-}));
-
-import { syncAchievements } from "../../../../src/client/AchievementSignal";
-import { crazyGamesSDK } from "../../../../src/client/CrazyGamesSDK";
 
 type Winner = ["team", string] | ["player", string] | undefined;
 
@@ -112,7 +97,7 @@ describe("WinModal tick win handling", () => {
     vi.unstubAllGlobals();
   });
 
-  it("emits the winner and celebrates when my team wins", async () => {
+  it("emits the winner when my team wins", async () => {
     const events = setup(
       makeGame({ winner: ["team", "Blue"], myTeam: "Blue" }),
     );
@@ -120,17 +105,15 @@ describe("WinModal tick win handling", () => {
 
     expect(events).toHaveLength(1);
     expect(events[0].winner).toEqual(["team", "Blue"]);
-    expect(crazyGamesSDK.happytime).toHaveBeenCalled();
     await vi.waitFor(() => expect(modal!.isVisible).toBe(true));
   });
 
-  it("emits the winner without celebrating when another team wins", async () => {
+  it("emits the winner when another team wins", async () => {
     const events = setup(makeGame({ winner: ["team", "Red"], myTeam: "Blue" }));
     modal!.tick();
 
     expect(events).toHaveLength(1);
     expect(events[0].winner).toEqual(["team", "Red"]);
-    expect(crazyGamesSDK.happytime).not.toHaveBeenCalled();
     await vi.waitFor(() => expect(modal!.isVisible).toBe(true));
   });
 
@@ -151,11 +134,10 @@ describe("WinModal tick win handling", () => {
 
     expect(events).toHaveLength(1);
     expect(events[0].winner).toEqual(["player", "winner-client"]);
-    expect(crazyGamesSDK.happytime).not.toHaveBeenCalled();
     await vi.waitFor(() => expect(modal!.isVisible).toBe(true));
   });
 
-  it("celebrates when the winning client is me", async () => {
+  it("emits the winner when the winning client is me", async () => {
     setup(
       makeGame({
         winner: ["player", "my-client"],
@@ -170,7 +152,6 @@ describe("WinModal tick win handling", () => {
     );
     modal!.tick();
 
-    expect(crazyGamesSDK.happytime).toHaveBeenCalled();
     await vi.waitFor(() => expect(modal!.isVisible).toBe(true));
   });
 
@@ -184,7 +165,6 @@ describe("WinModal tick win handling", () => {
   });
 
   it("shows the buttons as soon as show() runs, before the cosmetics fetch settles", async () => {
-    // A visible modal activates steam-wishlist, which observes its own size;
     // jsdom has no ResizeObserver.
     vi.stubGlobal(
       "ResizeObserver",
@@ -217,89 +197,5 @@ describe("WinModal tick win handling", () => {
 
     expect(events).toHaveLength(0);
     expect(modal!.isVisible).toBe(false);
-  });
-
-  it("syncs achievements with the game's id from gameID(), not the config", () => {
-    // Pins the id source: config().gameConfig() is present on this fake game
-    // but deliberately carries no gameID field, so a regression that reads
-    // the id from there instead of gameID() would pass `undefined` here and
-    // fail this assertion.
-    setup(
-      makeGame({
-        winner: ["team", "Blue"],
-        myTeam: "Blue",
-        gameID: "game-xyz-789",
-      }),
-    );
-    modal!.tick();
-
-    expect(syncAchievements).toHaveBeenCalledWith({ gameId: "game-xyz-789" });
-  });
-
-  it("syncs achievements even when the match is cancelled", () => {
-    setup(makeGame({ winner: undefined, gameID: "game-cancelled-1" }));
-    modal!.tick();
-
-    expect(syncAchievements).toHaveBeenCalledWith({
-      gameId: "game-cancelled-1",
-    });
-  });
-
-  // Only games the server archives are ingested, so no achievement row for a
-  // singleplayer game or a replay can ever exist. Polling for one spends the
-  // poll's whole schedule -- a /users/@me per attempt -- on a certain miss.
-  it("does not sync achievements for a singleplayer game", () => {
-    setup(
-      makeGame({
-        winner: ["team", "Blue"],
-        myTeam: "Blue",
-        gameType: GameType.Singleplayer,
-      }),
-    );
-    modal!.tick();
-
-    expect(syncAchievements).not.toHaveBeenCalled();
-  });
-
-  it("syncs once per game end, not once per Win update in the tick", () => {
-    // The sync is about the game being over, which happens once however many
-    // Win updates the tick happens to carry.
-    setup(
-      makeGame({
-        winner: ["team", "Blue"],
-        myTeam: "Blue",
-        winUpdateCount: 3,
-      }),
-    );
-    modal!.tick();
-
-    expect(syncAchievements).toHaveBeenCalledTimes(1);
-  });
-
-  it("does not sync achievements on a tick with no Win update", () => {
-    setup(
-      makeGame({
-        winner: ["team", "Blue"],
-        myTeam: "Blue",
-        winUpdateCount: 0,
-      }),
-    );
-    modal!.tick();
-
-    expect(syncAchievements).not.toHaveBeenCalled();
-  });
-
-  it("does not sync achievements while watching a replay", () => {
-    setup(
-      makeGame({
-        winner: ["team", "Blue"],
-        myTeam: "Blue",
-        gameType: GameType.Public,
-        isReplay: true,
-      }),
-    );
-    modal!.tick();
-
-    expect(syncAchievements).not.toHaveBeenCalled();
   });
 });

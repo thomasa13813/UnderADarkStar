@@ -1678,13 +1678,16 @@ these before any public release.
   screen); do **not** use "OpenFront" as the primary title or imply endorsement. (The rename to
   "Under a Dark Star" is therefore required, not just branding.)
 - **`resources/`: CC BY-SA 4.0** — attribute OpenFront; derivative assets are share-alike.
-- **`proprietary/`: All Rights Reserved** — OpenFront logos, `OpenFront.ttf`, favicon, menu/gameplay
-  music, game-start alert. **Must be replaced or removed before public release.** The `Dockerfile` and
-  build currently copy them in.
-- **Strip before release:** ads/analytics (`HomepagePromos.ts`, `Admiral.ts`, `AdGatekeeper.ts`,
-  `InGamePromo.ts`, gtag/Playwire in `index.html`), store/payments/cosmetics/clans UI that depends on
-  the API, OpenFront Discord/wiki/YouTube/Steam links (`Footer.ts`, `WinModal.ts`, `Utils.ts`),
-  `index.html` canonical/OpenGraph tags, PWA manifest, `package.json` name.
+- **`proprietary/`: removed (2026-09-27, roadmap P1 step A).** OpenFront's logos, `OpenFront.ttf`,
+  favicon and music are out of the repository and the build. Our own marks live in **`branding/`**
+  (© January Games, All Rights Reserved, `branding/LICENSE`), which overrides `resources/` through
+  the same build mechanism; a modified version must replace it.
+- **Stripped (P1 step A):** ads/analytics, the CrazyGames SDK, the Steam wishlist, OpenFront's
+  Discord/wiki/reddit links, OpenFront's legal pages and press kit, `index.html` canonical/OpenGraph
+  tags, PWA manifest and `package.json` name. The footer carries "Source", "Made by January Games"
+  and "© OpenFront and Contributors". The closed-API UI (step B), the strings and server names (C) and the
+  Steam/CrazyGames platform layer (D) went the same day — see `docs/DarkStar-Roadmap.md` P1 for
+  what each removed and what stays on purpose.
 
 ## 9. Roadmap [Proposed]
 
@@ -2000,3 +2003,23 @@ to the invader (H9), gold donations from the throne (H9), hydrogen-bomb removal 
   (a "holds the throne" line over the roster with the crown hint), and a **random map stays
   "Random" for host and guests alike** until the server picks it at prestart (`randomMap` on the
   wire). §6.22 amended; 4 more tests.
+- **2026-09-27** — **P1 step A built: strip and rebrand, first pass.** `proprietary/` deleted and
+  replaced by a `branding/` overlay (placeholder favicon; text wordmark and Overpass Bold as the
+  placeholder display face until Tom's logo and font); silent placeholder music and alert; every
+  ad, analytics and third-party script and module removed; footer rebuilt with Source, January
+  Games and the OpenFront attribution; OpenFront's legal pages, press kit, `ads.txt` and Apple Pay
+  file removed; `CREDITS.md`, `LICENSE-ASSETS`, `LICENSING.md`, `README.md` rewritten. §8 amended.
+  Steps B–E and the P1 decisions are in the roadmap.
+- **2026-09-27** — **P1 step B built: the closed-API UI removed** (store, inventory, leaderboard,
+  clans, account, profile, history, ranked, news, rewards, creator codes, subscriptions, bans and
+  the cosmetic card chain; 101 modules, 70 tests, 688 strings). Tom's answers: placeholder wordmark
+  and Overpass stay until his logo and font, no upstream links, step D joins P1. **Step E part 1:**
+  the Earth-and-hex-grid background replaced by a generated pixel starfield
+  (`scripts/generateStarfield.ts`). Next: C (strings) and D (Steam/CrazyGames layer).
+- **2026-09-27** — **P1 steps C and D built.** The Steam desktop shell and CrazyGames layer are
+  gone (19 modules, 31 tests); `Auth.ts` is down to the JWT paths; multiplayer gates on backend
+  reachability only; service names, metric names and the nginx upstream are ours; hostnames in
+  comments are placeholders; the OpenFront tutorial video is out of the help page. The only
+  "OpenFront" left in the shipped code is the attribution line and six comments crediting upstream
+  code and issues. P1 is complete except the home-screen title treatment (E), which waits on Tom's
+  logo and font.

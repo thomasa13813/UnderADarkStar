@@ -14,12 +14,10 @@ import {
 import { getUserMe, invalidateUserMe } from "./Api";
 import { checkClanTagOwnership } from "./ClanApi";
 import { verifiedBadge } from "./components/ui/VerifiedBadge";
-import { crazyGamesSDK } from "./CrazyGamesSDK";
 import { showInGameAlert, showInGameConfirm } from "./InGameModal";
 import {
   accountNameHeld,
   accountVerifiedName,
-  clampUsername,
   genAnonUsername,
   LAPSE_NOTICE_KEY,
   lapseNoticeMarker,
@@ -30,7 +28,6 @@ import {
   type ClaimGrace,
   type ResolvedPlayerName,
 } from "./PlayerName";
-import { steamSDK } from "./SteamSDK";
 
 interface LangSelectorLike {
   currentLang?: string;
@@ -147,11 +144,10 @@ export class UsernameInput extends LitElement {
   // never receives.
   private claimGraceTimer: ReturnType<typeof setTimeout> | null = null;
 
-  // Clans aren't supported on CrazyGames — hide the tag input and never submit one.
-  private readonly onCrazyGames = crazyGamesSDK.isOnCrazyGames();
-  // Steam identity is fixed for the session (no login/logout events like
-  // CrazyGames), so it's only used to seed the name once in connectedCallback.
-  private readonly onSteam = steamSDK.isOnSteam();
+  // Platform flags from upstream's CrazyGames and Steam builds; both are
+  // always false here and the branches they guard are kept for P5.
+  private readonly onCrazyGames = false;
+  private readonly onSteam = false;
 
   @property({ type: String }) validationError: string = "";
   // Ownership-check feedback (i18n key) shown inline beneath the tag input. Only
@@ -293,20 +289,6 @@ export class UsernameInput extends LitElement {
     this.validateAndStore();
     this.startClanCheck();
   }
-
-  // "Browse clans" has to name the tab explicitly: showPage alone opens the
-  // modal on its default my-clans tab, which is not what the label promises.
-  private openClanBrowser = () => {
-    this.clanMenuOpen = false;
-    window.showPage?.("page-clan");
-    void customElements.whenDefined("clan-modal").then(() => {
-      document
-        .querySelector<
-          HTMLElement & { open: (args: { tab: string }) => void }
-        >("clan-modal")
-        ?.open({ tab: "browse" });
-    });
-  };
 
   // The bare name this player may play verified under, or null when
   // ineligible. The rule itself lives in PlayerName so the join path and the
@@ -610,75 +592,7 @@ export class UsernameInput extends LitElement {
     // fills in a fresh anon username AND persists it immediately. Checking
     // localStorage afterwards would therefore never see it as empty.
     //
-    // Reseedable, not one-shot: the old gate was "nothing stored at all", so a
-    // single launch before the persona landed (or before this fix, when a
-    // decorated persona was rejected outright) left a generated Anon… name in
-    // localStorage that nothing would ever replace. A name we generated is
-    // ours to overwrite; a name the player typed never is.
-    const reseedable = this.onSteam && this.storedNameIsGenerated();
     this.loadStoredUsername();
-    // On CrazyGames the account username is applied here but never persisted
-    // (see loadStoredUsername / validateAndStore), so logging out — which
-    // reloads the whole page — falls back to a fresh guest username instead of
-    // keeping the account name. addAuthListener only fires on login; CrazyGames
-    // refreshes the page on logout, so there is no logout event to handle.
-    crazyGamesSDK.getUsername().then((username) => {
-      if (username) {
-        this.baseUsername = clampUsername(username);
-        this.usernameIsGenerated = false;
-        this.validateAndStore();
-      }
-    });
-    crazyGamesSDK.addAuthListener((user) => {
-      if (user) {
-        this.baseUsername = clampUsername(user.username);
-        this.usernameIsGenerated = false;
-        this.validateAndStore();
-      }
-    });
-    // Seed the in-game name from the Steam persona whenever the name in hand
-    // is one we generated. Unlike CrazyGames, Steam persists normally (see
-    // validateAndStore's onCrazyGames guard), and there's no logout event to
-    // handle since the Steam identity is fixed for the session.
-    if (reseedable) {
-      // The anon name loadStoredUsername() just generated. Only overwrite it if
-      // the player hasn't typed their own name while getUser() was in flight,
-      // so a late Steam result never clobbers a name they entered.
-      const generated = this.baseUsername;
-      // Store the seeding promise so the join path can await it (see
-      // whenSeeded). The chain never rejects — on any failure we keep the
-      // generated name — so awaiting it can only delay, never block, a join.
-      this.steamSeedReady = steamSDK
-        .getUser()
-        .then((user) => {
-          // Both halves matter. The text check catches the player typing
-          // while getUser() was in flight; the ownership flag catches them
-          // typing and then restoring the same text, which leaves the name
-          // looking untouched but makes it theirs (see handleUsernameChange).
-          if (this.baseUsername !== generated) return;
-          if (!this.usernameIsGenerated) return;
-          this.persona = user?.name ?? null;
-          // storedName is deliberately null: whatever is stored is a name we
-          // generated, which this is entitled to replace. So this is branch 3
-          // then 4 — the sanitised persona, or the same generated name back
-          // when none of it survives. Either way the player can start a game.
-          const seeded = resolvePlayerName({
-            verifiedName: null,
-            verifiedOptIn: false,
-            storedName: null,
-            persona: this.persona,
-            generatedName: generated,
-          });
-          this.baseUsername = seeded.name;
-          // Still ours if nothing of the persona survived, so a later launch
-          // (or a renamed Steam account) gets another go at it.
-          this.usernameIsGenerated = seeded.source === "generated";
-          this.validateAndStore();
-        })
-        .catch(() => {
-          // Swallow: keep the generated name so the player can always play.
-        });
-    }
   }
 
   disconnectedCallback() {
@@ -962,13 +876,6 @@ export class UsernameInput extends LitElement {
                 ${translateText("username.clan_clear")}
               </button>`
             : null}
-          <button
-            type="button"
-            class="ml-auto rounded-lg px-2 py-1 text-sm text-malibu-blue hover:bg-malibu-blue/15 transition-colors cursor-pointer"
-            @click=${this.openClanBrowser}
-          >
-            ${translateText("username.clan_browse")}
-          </button>
         </div>
       </div>
     `;
@@ -1095,32 +1002,11 @@ export class UsernameInput extends LitElement {
     const className =
       "self-start px-3 py-2 text-sm font-medium border border-red-500/50 rounded-lg bg-red-900/90 text-red-200 backdrop-blur-md shadow-lg lg:whitespace-nowrap";
 
-    if (this.clanTagOwnershipError !== "username.tag_not_member") {
-      return html`<div id="clan-tag-validation-error" class=${className}>
-        ${content}
-      </div>`;
-    }
-
-    const tag = this.clanTag;
-    return html`<button
-      id="clan-tag-validation-error"
-      type="button"
-      class="${className} underline decoration-red-200/50 underline-offset-2 hover:bg-red-800/90 focus:outline-none focus:ring-2 focus:ring-red-200/70"
-      @click=${() => this.openClanJoinModal(tag)}
-    >
+    // Upstream linked a "not a member" error to the clan modal; clans are
+    // gone (roadmap P1 step B), so every ownership error is a plain notice.
+    return html`<div id="clan-tag-validation-error" class=${className}>
       ${content}
-    </button>`;
-  }
-
-  private openClanJoinModal(tag: string) {
-    window.showPage?.("page-clan");
-    void customElements.whenDefined("clan-modal").then(() => {
-      document
-        .querySelector<
-          HTMLElement & { open: (args: { tag: string }) => void }
-        >("clan-modal")
-        ?.open({ tag });
-    });
+    </div>`;
   }
 
   private handleClanTagChange(e: Event) {

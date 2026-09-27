@@ -65,7 +65,7 @@ import { afterAll, afterEach, beforeEach, vi } from "vitest";
  *
  * After the file: everything still in document.body, which is how those
  * beforeAll fixtures get their disconnectedCallback (ten client files mount
- * that way, e.g. tests/client/GameStatsModal.test.ts).
+ * that way).
  *
  * HOOK ORDER (verified empirically)
  *

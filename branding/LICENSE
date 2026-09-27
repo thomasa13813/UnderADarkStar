@@ -1,0 +1,26 @@
+Copyright (c) 2026 January Games
+All Rights Reserved.
+
+BRANDING ASSET LICENSE
+
+The assets in this directory (the "Under a Dark Star" name, wordmark, logo,
+favicon and any other artwork placed here) are the property of January Games
+and are NOT covered by the AGPL-3.0 licence that applies to the code in this
+repository, nor by the CC BY-SA 4.0 licence that applies to `resources/`.
+
+PERMITTED USE:
+- You may use these assets to build, run and test this software.
+- You may view and study these assets for personal, educational purposes.
+
+RESTRICTIONS. You may NOT:
+- Use these assets in any other project or work.
+- Modify or create derivative works of these assets for redistribution.
+- Redistribute, sublicense, sell or transfer these assets separately from
+  this software.
+- Use the "Under a Dark Star" name or marks to identify a modified version
+  of this software, or to imply endorsement by January Games.
+
+If you distribute a modified version of this software, replace the contents
+of this directory with your own branding. The build works without it: every
+file here overrides a same-named file in `resources/`, and nothing in the
+code requires a file that exists only here except `images/Favicon.svg`.

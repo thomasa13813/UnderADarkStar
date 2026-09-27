@@ -1,5 +1,11 @@
 import { render } from "lit";
 import { describe, expect, it, vi } from "vitest";
+import {
+  lobbyCard,
+  trustRequiredDialog,
+  viewerIsSignedIn,
+  viewerIsTrusted,
+} from "../../src/client/components/LobbyCard";
 import type { UserMeResponse } from "../../src/core/ApiSchemas";
 import { GameMapType, GameMode } from "../../src/core/game/Game";
 import type { GameConfig, PublicGameInfo } from "../../src/core/Schemas";
@@ -17,18 +23,6 @@ vi.mock("../../src/client/Utils", () => ({
   getMapName: vi.fn((m: string | undefined) => m ?? null),
   getModifierLabels: vi.fn(() => []),
 }));
-
-const isOnCrazyGames = vi.fn(() => false);
-vi.mock("../../src/client/CrazyGamesSDK", () => ({
-  crazyGamesSDK: { isOnCrazyGames: () => isOnCrazyGames() },
-}));
-
-import {
-  lobbyCard,
-  trustRequiredDialog,
-  viewerIsSignedIn,
-  viewerIsTrusted,
-} from "../../src/client/components/LobbyCard";
 
 function lobby(trusted?: boolean): PublicGameInfo {
   return {
@@ -128,18 +122,6 @@ describe("trustRequiredDialog", () => {
 
   it("tells a signed-out viewer to sign in first", () => {
     expect(message(false)).toBe("public_lobby.trust_required_body_signed_out");
-  });
-
-  it("never suggests a purchase on CrazyGames, where there is no IAP", () => {
-    isOnCrazyGames.mockReturnValue(true);
-    try {
-      expect(message(true)).toBe("public_lobby.trust_required_body_crazygames");
-      expect(message(false)).toBe(
-        "public_lobby.trust_required_body_signed_out_crazygames",
-      );
-    } finally {
-      isOnCrazyGames.mockReturnValue(false);
-    }
   });
 });
 

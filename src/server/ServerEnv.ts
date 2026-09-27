@@ -175,7 +175,7 @@ export class ServerEnv {
     return v && v.length > 0 ? v : undefined;
   }
   // The PAGE host that pairs with a game host under GAME_DOMAIN:
-  // `blue.server.openfront.dev` -> `blue.openfront.dev`. Undefined when
+  // `blue.server.example.dev` -> `blue.example.dev`. Undefined when
   // GAME_DOMAIN is unset (page and game host are one name) or the host is
   // not under it. A player who loads a colour's page directly, bypassing the
   // apex, arrives from exactly this origin, so CORS must know it.
@@ -190,7 +190,7 @@ export class ServerEnv {
     return `${label}.${domain}`;
   }
   // The GAME host: the name this deployment is reachable on directly
-  // (`blue.openfront.io`, or `main.server.openfront.dev` with GAME_DOMAIN),
+  // (`blue.example.com`, or `main.server.example.dev` with GAME_DOMAIN),
   // bypassing the load balancer and the static Worker. Injected into
   // index.html as `serverHost` so a tab keeps talking to the deployment that
   // served it — including reconnects mid-game — after the load balancer flips
@@ -200,7 +200,7 @@ export class ServerEnv {
   //
   // GAME_HOST, when deploy.sh wrote one, is authoritative: it is the name the
   // cluster map actually carries for this deployment, and for a
-  // machine-scoped entry (`blue.staging2.server.openfront.dev`, the machine
+  // machine-scoped entry (`blue.staging2.server.example.dev`, the machine
   // in the hostname so one colour can span boxes) it is not derivable from
   // SUBDOMAIN and GAME_DOMAIN alone. The derivation below is the standalone
   // shape and stays for env files written by hand.
@@ -251,7 +251,7 @@ export class ServerEnv {
   }
 
   // The page host: SITE_HOST. Behind a load balancer that is the apex
-  // (`openfront.io` for blue/green); with GAME_DOMAIN it is
+  // (`example.com` for blue/green); with GAME_DOMAIN it is
   // `<subdomain>.<DOMAIN>`, the name the static Worker serves the page on.
   // Unset only for old-style standalone deploys (beta, staging branches) and
   // local dev, where the page host and the game host coincide and publicHost

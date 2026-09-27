@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Placeholder favicon: a dark star. Replaced when the final logo lands. -->
+  <circle cx="32" cy="32" r="30" fill="#0a1628"/>
+  <circle cx="32" cy="32" r="30" fill="none" stroke="#3fa9f5" stroke-width="2"/>
+  <path d="M32 8 L36.5 26 L54 26 L40 36.5 L45 54 L32 43.5 L19 54 L24 36.5 L10 26 L27.5 26 Z" fill="#0a1628" stroke="#ffd700" stroke-width="2.5" stroke-linejoin="round"/>
+  <circle cx="32" cy="34" r="5" fill="#ffd700"/>
+</svg>

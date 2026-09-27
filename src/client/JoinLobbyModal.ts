@@ -29,7 +29,6 @@ import {
   HumansVsNations,
 } from "../core/game/Game";
 import { getApiBase } from "./Api";
-import { crazyGamesSDK } from "./CrazyGamesSDK";
 import { PublicLobbySocket } from "./LobbySocket";
 import { JoinLobbyEvent } from "./Main";
 import { ensureServerList, redirectToGameVersion } from "./ServerList";
@@ -41,7 +40,6 @@ import { BaseModal } from "./components/BaseModal";
 import "./components/CopyButton";
 import "./components/LobbyConfigItem";
 import "./components/LobbyPlayerView";
-import { inviteFriendsButton } from "./components/ui/InviteFriendsButton";
 import { DEFAULT_TITLE_CLASS, modalHeader } from "./components/ui/ModalHeader";
 import { nationsConfigToSlider } from "./utilities/GameConfigHelpers";
 
@@ -135,13 +133,6 @@ export class JoinLobbyModal extends BaseModal {
     // yet counts as "off" too — the URL-join and accepted-invite paths render
     // this header before the first lobby_info, and that window must not show
     // a button the config may be about to forbid.
-    const isPublicFfa =
-      this.gameConfig?.gameType === GameType.Public &&
-      this.gameConfig.gameMode !== GameMode.Team;
-    const invite =
-      this.gameConfig === null || isPublicFfa
-        ? undefined
-        : inviteFriendsButton();
     return modalHeader({
       // titleContent (not title) so the bell can sit at the right edge of the
       // title row via ml-auto, next to the copy/invite cluster.
@@ -154,10 +145,7 @@ export class JoinLobbyModal extends BaseModal {
       // Only pair them behind a wrapper when both are present, so a browser --
       // which never gets the invite button -- renders exactly the markup it
       // rendered before this change.
-      rightContent:
-        copy && invite
-          ? html`<div class="flex items-center gap-2">${copy}${invite}</div>`
-          : (copy ?? invite),
+      rightContent: copy,
     });
   }
 
@@ -789,9 +777,7 @@ export class JoinLobbyModal extends BaseModal {
   }
 
   private updateHistory(url: string): void {
-    if (!crazyGamesSDK.isOnCrazyGames()) {
-      history.replaceState(null, "", url);
-    }
+    history.replaceState(null, "", url);
   }
 
   // --- Game config rendering ---

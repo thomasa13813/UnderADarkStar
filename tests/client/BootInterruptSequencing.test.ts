@@ -8,13 +8,21 @@ import {
   it,
   vi,
 } from "vitest";
+import {
+  lapseShownAfterDispatch,
+  nextBootInterrupt,
+  runBootInterrupt,
+  type BootInterruptPorts,
+} from "../../src/client/BootInterrupts";
+import { LAPSE_NOTICE_KEY } from "../../src/client/PlayerName";
+import { UsernameInput } from "../../src/client/UsernameInput";
+import type { UserMeResponse } from "../../src/core/ApiSchemas";
 
 // Drives Main's boot sequence against a REAL <username-input>, because the
 // thing under test is an interaction between the two: whether the lapse notice
 // actually spoke. A stubbed component would answer whatever the stub was told
 // to, which is exactly the assumption that was wrong.
-const { onCrazyGames, showInGameAlert, translations } = vi.hoisted(() => ({
-  onCrazyGames: { value: false },
+const { showInGameAlert, translations } = vi.hoisted(() => ({
   showInGameAlert: vi.fn(async (_message: string) => true),
   // Stands in for <lang-selector>: when false, translateText echoes the key
   // back, which is what it really does before the language files land.
@@ -29,26 +37,6 @@ vi.mock("../../src/client/Utils", () => ({
     translations.loaded ? `t(${key})${vars ? JSON.stringify(vars) : ""}` : key,
   showToast: vi.fn(),
 }));
-vi.mock("../../src/client/CrazyGamesSDK", () => ({
-  crazyGamesSDK: {
-    isOnCrazyGames: () => onCrazyGames.value,
-    getUsername: vi.fn(async () => null),
-    addAuthListener: vi.fn(),
-  },
-}));
-vi.mock("../../src/client/SteamSDK", () => ({
-  steamSDK: { isOnSteam: () => false, getUser: vi.fn(async () => null) },
-}));
-
-import {
-  lapseShownAfterDispatch,
-  nextBootInterrupt,
-  runBootInterrupt,
-  type BootInterruptPorts,
-} from "../../src/client/BootInterrupts";
-import { LAPSE_NOTICE_KEY } from "../../src/client/PlayerName";
-import { UsernameInput } from "../../src/client/UsernameInput";
-import type { UserMeResponse } from "../../src/core/ApiSchemas";
 
 // Lapsed, still inside the grace window, and holding unclaimed rewards — the
 // pair that collides.

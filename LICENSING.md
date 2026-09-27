@@ -1,8 +1,33 @@
-# License for OpenFront.io Project
+# Licensing
 
 ## Overview
 
-This document provides comprehensive licensing information for the OpenFront.io project, including its evolution from MIT to GPL to AGPL licensing, asset licensing terms, and proprietary content notices.
+Under a Dark Star is a fork of the OpenFront.io project by January Games. This
+document records what is licensed how, and the history OpenFront's own
+LICENSING.md documented, because the terms attached to a given file depend on
+when it entered the tree.
+
+In short:
+
+- **Code** (everything outside `resources/` and `branding/`): GNU AGPL-3.0,
+  with OpenFront's additional §7 attribution terms (see `LICENSE`). Our
+  modifications are AGPL-3.0 too, and the complete source of the version we
+  host is published at <https://github.com/thomasa13813/UnderADarkStar>.
+- **Open assets** (`resources/`): Creative Commons BY-SA 4.0 (see
+  `LICENSE-ASSETS`).
+- **Branding** (`branding/`): © January Games, All Rights Reserved (see
+  `branding/LICENSE`).
+
+## Obligations we carry as a fork
+
+- Keep "© OpenFront and Contributors" reasonably visible. It is in the footer
+  of the home page and on the game-start screen. Do not remove it.
+- Do not present the game as OpenFront or imply OpenFront's endorsement. The
+  game is titled "Under a Dark Star"; "OpenFront" appears only in attribution.
+- Offer the source of the server we host to its players (AGPL §13). The
+  footer's "Source" link is that offer and must point at the deployed code.
+- Ship anything derived from `resources/` under CC BY-SA 4.0 with attribution.
+- Never re-add OpenFront's proprietary assets (see below).
 
 ## Timeline
 
@@ -64,6 +89,25 @@ This document provides comprehensive licensing information for the OpenFront.io 
   - Copyright notice preservation requirement in visible locations
   - Prohibition of misrepresentation for modified versions
 
+### Phase 6: The Under a Dark Star fork
+
+- **Date:** 2026 (fork of OpenFront.io by January Games)
+- **Licenses:**
+  - **Code:** AGPL v3.0 with OpenFront's §7 terms (unchanged)
+  - **Open Assets (/resources):** Creative Commons BY-SA 4.0 (unchanged)
+  - **Branding (/branding):** © January Games, All Rights Reserved
+- **Changes:**
+  - Renamed the game to "Under a Dark Star" as the §7 terms require of a
+    modified version
+  - Removed OpenFront's `/proprietary` directory (logos, wordmark font,
+    favicon, music) from the repository and the build
+  - Removed the advertising, analytics and third-party platform integrations,
+    and the features that depend on OpenFront's closed API
+  - Added `/branding` for January Games' own marks, on the same override
+    mechanism `/proprietary` used
+  - Attribution to OpenFront kept in the footer, the game-start screen and
+    `CREDITS.md`
+
 ## Important Notes
 
 ### For Code:
@@ -77,43 +121,34 @@ This document provides comprehensive licensing information for the OpenFront.io 
 
 - The AGPL's network copyleft provisions are stronger than GPL v3
 - When combining code, the most restrictive compatible license applies to the combined work
-- Consult legal counsel for specific compliance questions
+- This document is not legal advice; consult legal counsel for specific compliance questions
 
 # Asset Licensing
 
 ## Repository Assets
 
-All assets included in this repository (graphics, sounds, music, models) are licensed under Creative Commons BY-SA 4.0.
+All assets in `/resources` (graphics, sounds, music, models, fonts, map data)
+are licensed under Creative Commons BY-SA 4.0. Third-party data with its own
+terms is listed in `CREDITS.md`.
 
-## External/Proprietary Assets
+## Branding Assets
 
-**The following assets are NOT included in the open source license:**
+Everything in `/branding` is © January Games, All Rights Reserved. It exists
+so the AGPL code can be reused without the "Under a Dark Star" identity, and a
+modified version must replace it. See `/branding/LICENSE`.
 
-- Assets hosted on our CDN/servers
-- Assets stored in our database
-- Premium skins, models, and textures
-- Sound effects and music accessed via API
-- Any assets not explicitly included in this repository
-- Any asset in the proprietary/ folder
+## OpenFront's External and Proprietary Assets
 
-These external assets are:
+The following are NOT included in this repository and are NOT covered by any
+licence here:
 
-- Copyright © 2024-2026 OpenFront Inc.
-- All Rights Reserved
-- NOT licensed for use, modification, or redistribution
-- Proprietary and may not be extracted, copied, or used outside of the official OpenFront.io service
+- Assets in OpenFront's `/proprietary` folder (logos, `OpenFront.ttf`, favicon,
+  menu theme, gameplay music, game-start alert)
+- Assets hosted on OpenFront's CDN, servers or database
+- Premium skins, patterns, models and textures served by OpenFront's API
 
-## Important Legal Notice
-
-Accessing, downloading, extracting, or using proprietary assets from our servers/database without explicit written permission is prohibited and may violate copyright law.
-
-The open source license (AGPL) applies ONLY to code. The CC BY-SA license applies ONLY to assets included in this repository. All other assets remain proprietary.
-
-## Contributing
-
-See CONTRIBUTING.md for current licensing requirements. All code contributions are licensed under AGPL v3 and assets under CC BY-SA 4.0.
-
-For questions, contact OpenFront Inc.
+These are Copyright © 2024-2026 OpenFront Inc., All Rights Reserved. They must
+not be added to this project.
 
 ## Historical MIT License
 
