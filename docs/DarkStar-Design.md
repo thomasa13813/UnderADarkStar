@@ -1,4 +1,4 @@
-step 1 (spaceports, harbours, destroyers) built 2026-09-26, §6.17; step 2 (freighters overland) built 2026-09-26, §6.18; step 3 (straight lanes) built 2026-09-26, §6.19, awaiting Tom's verdict on the look. |# Under a Dark Star — Design Reference
+step 1 (spaceports, harbours, destroyers) built 2026-09-26, §6.17; step 2 (freighters overland) built 2026-09-26, §6.18; step 3 (straight lanes) built 2026-09-26, §6.19, kept at hop threshold 3; step 4 (names) built 2026-09-26, §6.20. **Built.** |# Under a Dark Star — Design Reference
 
 > **Purpose:** the single place a new session (human or Claude) reads to understand what we are
 > building, what has been decided, what is still open, and where in the codebase the work lands.
@@ -343,8 +343,8 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   to a harbour to repair. (5) Names: **freighter**, **spaceport**, **Destroyer** ("Star Destroyer" is
   a Lucasfilm trademark), display strings only (F14); icons later (M6). Stargates stay a purely
   offensive tool (C4). Built in steps (M3.6): spaceports and harbours [Built 2026-09-26, §6.17],
-  freighters overland [Built 2026-09-26, §6.18], straight lanes [Built 2026-09-26, §6.19, for Tom to
-  judge the look], then the names. A
+  freighters overland [Built 2026-09-26, §6.18], straight lanes [Built 2026-09-26, §6.19; Tom kept them, hop
+  threshold 3], the names [Built 2026-09-26, §6.20]. A
   freighter on a land leg cannot be captured — a destroyer's reach ends at the water's edge.
 - **S8 — Audio.** No audio work for now. **Before any public release:** the game must have sound
   effects — the repo carries 34 effect files that `Sounds.ts` plays, so silence in play is a bug to
@@ -1475,6 +1475,27 @@ straight lanes** to it rather than the old lane's kinked halves.
 - **Seen in the browser.** `lanes.mjs` (run-openfront): a factory and two cities on Event
   Horizon; screenshots of the lanes close, mid and far, the ghost lane, and trains riding them.
 
+### 6.20 As built — the names (2026-09-26)
+
+Step 4 of the space economy (S7), the last. Tom kept the straight lanes (hop threshold settled at
+3 after trying 2 and 4) and committed steps 1–3.
+
+- **Display strings only**, through the existing `translateText` keys in `resources/lang/en.json`:
+  no key renamed, no enum value touched (`UnitType.Port`, `Warship`, `TradeShip` and the
+  wire stay as they are, per §5.4). 54 values changed: **Spaceport** for the port (unit type,
+  build menu, lobby toggle, stats, keybinds), **Destroyer** for the warship (unit type, build
+  menu, chat, cosmetics, keybinds, selection help, stats), **freighter** for the trade ship
+  (events, help, stats tables), **trade lane** for the railroad (factory descriptions, cosmetics,
+  the graphics settings' draw-distance and thickness). Trains keep their name (F14 still open on
+  the rest). The tutorial's port and warship steps now say a spaceport goes anywhere in the
+  territory and a destroyer is launched into deep space near it; the no-coast step explains that
+  spaceports work inland but their freighters crawl until they reach deep space.
+- **Not renamed.** The "Warship Warship" map title (a map, not the unit); Nation chat lines
+  ("Please let me get a coastline"); the debug effect editor's labels. Icons stay naval until
+  M6.
+- **Tests.** `EnJsonSorted` (keys untouched), the client and tutorial suites unchanged: nothing
+  pins the display strings.
+
 ## 7. Constraints (non-negotiable engineering rules)
 
 - `src/core/` must stay **deterministic** (seeded PRNG, no wall-clock, careful with floats) and
@@ -1788,3 +1809,8 @@ to the invader (H9), gold donations from the throne (H9), hydrogen-bomb removal 
   water costs six of the budget; no fallback); snapping makes two straight lanes; the client draws
   each lane as one anti-aliased segment (`RailroadPass` rewritten on `FrameData.railSegments`).
   7 tests.
+- **2026-09-26** — Tom kept the **straight lanes**; the linking hop threshold went 4 → 2 (too
+  dense) → **3**. Steps 1–3 committed by Tom (`PortEconomyChanges1`, `OverlandFreighters`, the
+  lanes). **M3.6 step 4 built: the names** (§6.20) — Spaceport, Destroyer, freighter, trade lane
+  as display strings only, 54 values in `en.json`, tutorial steps reworded for inland spaceports.
+  M3.6 complete; M4 balance next, with the train-income note from §6.19.
