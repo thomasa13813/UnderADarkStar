@@ -52,8 +52,8 @@ function mockRes() {
   return res;
 }
 
-const TEAM = { gameMap: "World", gameMode: "Team" };
-const FFA = { gameMap: "World", gameMode: "Free For All" };
+const TEAM = { gameMap: "Event Horizon", gameMode: "Team" };
+const FFA = { gameMap: "Event Horizon", gameMode: "Free For All" };
 
 beforeEach(() => {
   vi.spyOn(ServerEnv, "generateGameIdForWorker").mockReturnValue("aaaaaaaa");

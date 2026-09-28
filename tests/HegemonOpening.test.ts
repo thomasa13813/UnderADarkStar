@@ -325,14 +325,14 @@ describe("The map's own Dark Star", () => {
   test("the manifest's Dark Star reaches the loaded map, halved on a compact map", async () => {
     const override = { center: [901, 900], radius: 163, moat: 19 };
     const normal = await loadTerrainMap(
-      GameMapType.Halkidiki,
+      GameMapType.Passage,
       GameMapSize.Normal,
       loaderWith(override),
       false,
     );
     expect(normal.hegemon).toEqual(override);
     const compact = await loadTerrainMap(
-      GameMapType.Halkidiki,
+      GameMapType.Passage,
       GameMapSize.Compact,
       loaderWith(override),
       false,
@@ -343,7 +343,7 @@ describe("The map's own Dark Star", () => {
       moat: 9,
     });
     const none = await loadTerrainMap(
-      GameMapType.Hawaii,
+      GameMapType.Sierpinski,
       GameMapSize.Normal,
       loaderWith(undefined),
       false,
@@ -354,7 +354,7 @@ describe("The map's own Dark Star", () => {
   test("a malformed manifest entry is refused", async () => {
     await expect(
       loadTerrainMap(
-        GameMapType.HongKong,
+        GameMapType.ChoppingBlock,
         GameMapSize.Normal,
         loaderWith({ center: [1], radius: 5 }),
         false,

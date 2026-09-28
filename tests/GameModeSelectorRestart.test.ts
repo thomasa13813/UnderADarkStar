@@ -233,7 +233,7 @@ describe("GameModeSelector lobby feed lifecycle", () => {
             numClients: 1,
             publicGameType: "ffa",
             gameConfig: {
-              gameMap: "World",
+              gameMap: "Event Horizon",
               gameMode: "Free For All",
               maxPlayers: 8,
             },

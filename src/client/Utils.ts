@@ -20,27 +20,10 @@ import { Platform } from "./Platform";
 
 export function normaliseMapKey(mapName: string): string {
   // Asset dirs / translation keys are the map id lowercased. For most maps
-  // stripping spaces from the display name gives the same string, but not for
-  // the tourney maps (e.g. "Tourney 2 Teams" lives in maps/tourney1/).
+  // stripping spaces from the display name gives the same string, but not
+  // for every map (e.g. "Traders Dream" lives in maps/tradersdream/).
   const id = maps.find((m) => m.type === mapName)?.id;
   return (id ?? mapName).toLowerCase().replace(/[\s.]+/g, "");
-}
-
-/**
- * The map key desktop rich presence carries.
- *
- * Steam's localization file composes `#Map_<key>` and resolves it in the
- * *viewing* user's language, so presence has to send the normalised id -- the
- * same key `map.<id>` uses in our own translations, which keeps the two from
- * drifting apart -- rather than the display name, which would compose a token
- * that does not exist. Steam hides the entire status line when a token fails
- * to resolve, so getting this wrong is a total failure rather than a partial
- * one. Absent stays absent.
- */
-export function presenceMapKey(
-  gameMap: string | undefined,
-): string | undefined {
-  return gameMap === undefined ? undefined : normaliseMapKey(gameMap);
 }
 
 export function getMapName(mapName: string | undefined): string | null {

@@ -294,16 +294,16 @@ describe("GameServer - Clan Overflow Spectator Conversion", () => {
   });
 
   test("Clan overflow accounts for default map nation count in variable team sizing", () => {
-    // World map has 72 default nations.
-    // Case A: 10 players in clan CLAN (total = 10 + 72 = 82):
-    // maxTeamSize = ceil(82 / 2) = 41.
+    // Event Horizon has default nations of its own.
+    // Case A: 10 players in clan CLAN plus the nations, 2 teams: maxTeamSize
+    // is well above 10.
     // All 10 clan members should remain active players.
     const game = makeGame({
       config: {
         gameMode: GameMode.Team,
         playerTeams: 2,
         nations: "default",
-        gameMap: GameMapType.World,
+        gameMap: GameMapType.EventHorizon,
       },
     });
     const clients = Array.from({ length: 10 }, (_, i) =>
@@ -316,16 +316,16 @@ describe("GameServer - Clan Overflow Spectator Conversion", () => {
       expect(c.spectator).toBe(false);
     }
 
-    // Case B: Map with 0 default nations (e.g. BaikalNukeWars) and 2 teams:
-    // 5 clan members and 3 opposing players on BaikalNukeWars with 2 teams ->
+    // Case B: nations disabled (0 nations) and 2 teams:
+    // 5 clan members and 3 opposing players with 2 teams ->
     // total = 8. maxTeamSize = ceil(8 / 2) = 4.
     // First 4 fit, 5th is converted to spectator!
     const zeroNationsGame = makeGame({
       config: {
         gameMode: GameMode.Team,
         playerTeams: 2,
-        nations: "default",
-        gameMap: GameMapType.BaikalNukeWars,
+        nations: "disabled",
+        gameMap: GameMapType.Duel,
       },
     });
     const clanClients = Array.from({ length: 5 }, (_, i) =>
@@ -387,15 +387,15 @@ describe("GameServer - Clan Overflow Spectator Conversion", () => {
   });
 
   test("Small roster Quads dynamically caps team size below 4", () => {
-    // 9 players on BaikalNukeWars (0 nations) with Quads:
+    // 9 players with nations disabled and Quads:
     // Math.ceil(9 / 4) = 3 teams. maxTeamSize = Math.ceil(9 / 3) = 3 (< 4).
     // Clan of 4 gets 1 member benched to spectator.
     const game = makeGame({
       config: {
         gameMode: GameMode.Team,
         playerTeams: Quads,
-        nations: "default",
-        gameMap: GameMapType.BaikalNukeWars,
+        nations: "disabled",
+        gameMap: GameMapType.Duel,
       },
     });
     const clanClients = Array.from({ length: 4 }, (_, i) =>

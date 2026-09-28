@@ -83,7 +83,7 @@ type StartPreparation = {
 };
 
 const DEFAULT_OPTIONS = {
-  selectedMap: GameMapType.World,
+  selectedMap: GameMapType.EventHorizon,
   selectedDifficulty: Difficulty.Easy,
   bots: 400,
   infiniteGold: false,

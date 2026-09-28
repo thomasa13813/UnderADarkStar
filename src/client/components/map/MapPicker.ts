@@ -5,34 +5,24 @@ import { assetUrl } from "../../../core/AssetUrls";
 import {
   Difficulty,
   GameMapType,
-  MapCategory,
-  mapCategoryOrder,
   MapInfo,
   maps,
 } from "../../../core/game/Game";
 import { translateText } from "../../Utils";
 import "./MapDisplay";
-import { getFavoriteMaps, starIcon, toggleFavoriteMap } from "./MapFavorites";
+import { getFavoriteMaps, toggleFavoriteMap } from "./MapFavorites";
 const randomMap = assetUrl("images/RandomMap.webp");
 
-type MapTab = "featured" | "all" | "favorites";
-
-// Featured grid order: ranked maps first (1 = first), unranked alphabetical.
-const featuredMaps: MapInfo[] = maps
-  .filter((m) => m.categories.includes("featured"))
-  .sort(
-    (a, b) =>
-      (a.featuredRank ?? Number.MAX_SAFE_INTEGER) -
-      (b.featuredRank ?? Number.MAX_SAFE_INTEGER),
-  );
-
-function mapsInCategory(category: MapCategory): MapInfo[] {
-  return maps.filter((m) => m.categories.includes(category));
-}
-
+/**
+ * The map picker: every map in one grid, alphabetical by its translated name,
+ * with the favourites star and a search box. Upstream grouped maps into
+ * featured, regional and arcade categories; the pool is small and space-only
+ * now (roadmap P3), so the categories went with the Earth maps.
+ */
 @customElement("map-picker")
 export class MapPicker extends LitElement {
-  @property({ type: String }) selectedMap: GameMapType = GameMapType.World;
+  @property({ type: String }) selectedMap: GameMapType =
+    GameMapType.EventHorizon;
   @property({ type: Boolean }) useRandomMap = false;
   @property({ type: Boolean }) showMedals = false;
   @property({ type: Boolean }) randomMapDivider = false;
@@ -41,8 +31,6 @@ export class MapPicker extends LitElement {
     new Map();
   @property({ attribute: false }) onSelectMap?: (map: GameMapType) => void;
   @property({ attribute: false }) onSelectRandom?: () => void;
-  @state() private activeTab: MapTab = "featured";
-  @state() private expandedCategories: Set<string> = new Set();
   @state() private favorites: GameMapType[] = getFavoriteMaps();
 
   createRenderRoot() {
@@ -61,36 +49,26 @@ export class MapPicker extends LitElement {
     this.onSelectRandom?.();
   };
 
-  private toggleCategory(categoryKey: string) {
-    const expanded = new Set(this.expandedCategories);
-    if (expanded.has(categoryKey)) {
-      expanded.delete(categoryKey);
-    } else {
-      expanded.add(categoryKey);
-    }
-    this.expandedCategories = expanded;
-  }
-
-  private get allCategories(): MapCategory[] {
-    return mapCategoryOrder.filter((categoryKey) => categoryKey !== "featured");
-  }
-
-  private toggleExpandAll() {
-    this.expandedCategories =
-      this.expandedCategories.size > 0
-        ? new Set()
-        : new Set(this.allCategories);
-  }
-
   private preventImageDrag(event: DragEvent) {
     event.preventDefault();
+  }
+
+  private mapName(map: MapInfo): string {
+    return translateText(map.translationKey);
+  }
+
+  /** Every map, alphabetical by the name the player sees. */
+  private get sortedMaps(): MapInfo[] {
+    return [...maps].sort((a, b) =>
+      this.mapName(a).localeCompare(this.mapName(b)),
+    );
   }
 
   private get filteredMaps(): MapInfo[] {
     if (!this.searchQuery.trim()) return [];
     const query = this.searchQuery.trim().toLowerCase();
-    return maps.filter((m) => {
-      const name = translateText(m.translationKey).toLowerCase();
+    return this.sortedMaps.filter((m) => {
+      const name = this.mapName(m).toLowerCase();
       const id = m.id.toLowerCase();
       return name.includes(query) || id.includes(query);
     });
@@ -113,15 +91,14 @@ export class MapPicker extends LitElement {
           .wins=${this.getWins(map.type)}
           .favorite=${this.favorites.includes(map.type)}
           .onToggleFavorite=${() => this.handleToggleFavorite(map.type)}
-          .translation=${translateText(map.translationKey)}
+          .translation=${this.mapName(map)}
         ></map-display>
       </div>
     `;
   }
 
   private renderMapGrid(mapList: MapInfo[]) {
-    // Keyed by map so cards keep their identity when the list shifts
-    // (e.g. the selected map gets prepended to the featured grid) —
+    // Keyed by map so cards keep their identity when the list shifts —
     // positional reuse would leave stale thumbnails behind.
     return html`<div
       class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
@@ -142,126 +119,11 @@ export class MapPicker extends LitElement {
     </h4>`;
   }
 
-  private renderCategoryBar(categoryKey: MapCategory, mapList: MapInfo[]) {
-    const expanded = this.expandedCategories.has(categoryKey);
+  private renderAllMaps() {
     return html`<div class="w-full">
-      <button
-        type="button"
-        aria-expanded=${expanded}
-        @click=${() => this.toggleCategory(categoryKey)}
-        class="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl border transition-all duration-200 active:scale-[0.99] ${expanded
-          ? "bg-malibu-blue/20 border-malibu-blue/50"
-          : "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20"}"
-      >
-        <span
-          class="flex items-center gap-3 text-sm font-bold text-white uppercase tracking-wider"
-        >
-          <svg
-            class="w-3.5 h-3.5 shrink-0 transition-transform duration-200 ${expanded
-              ? "rotate-90"
-              : ""}"
-            viewBox="0 0 12 12"
-            fill="currentColor"
-            aria-hidden="true"
-          >
-            <path d="M4 2l5 4-5 4z" />
-          </svg>
-          ${translateText(`map_categories.${categoryKey}`)}
-        </span>
-        <span class="text-xs font-bold text-white/40">${mapList.length}</span>
-      </button>
-      ${expanded
-        ? html`<div class="mt-4">${this.renderMapGrid(mapList)}</div>`
-        : null}
+      ${this.renderSectionHeading(translateText("map.all"))}
+      ${this.renderMapGrid(this.sortedMaps)}
     </div>`;
-  }
-
-  private renderFeaturedTab() {
-    let featuredMapList = featuredMaps;
-    const selected = maps.find((m) => m.type === this.selectedMap);
-    if (
-      !this.useRandomMap &&
-      selected !== undefined &&
-      !featuredMaps.includes(selected)
-    ) {
-      featuredMapList = [selected, ...featuredMaps];
-    }
-    return html`<div class="w-full">
-      ${this.renderSectionHeading(translateText("map_categories.featured"))}
-      ${this.renderMapGrid(featuredMapList)}
-    </div>`;
-  }
-
-  private renderAllTab() {
-    return html`<div class="space-y-3">
-      ${this.allCategories.map((categoryKey) =>
-        this.renderCategoryBar(categoryKey, mapsInCategory(categoryKey)),
-      )}
-    </div>`;
-  }
-
-  private renderExpandToggle() {
-    const anyExpanded = this.expandedCategories.size > 0;
-    return html`<div
-      class="shrink-0 rounded-xl border border-white/10 bg-black/20 p-1"
-    >
-      <button
-        type="button"
-        aria-expanded=${anyExpanded}
-        title=${anyExpanded
-          ? translateText("common.collapse_all")
-          : translateText("common.expand_all")}
-        @click=${() => this.toggleExpandAll()}
-        class="h-full flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wider text-white/60 hover:text-white transition-all active:scale-95"
-      >
-        <svg
-          class="w-3 h-3 shrink-0 transition-transform duration-200 ${anyExpanded
-            ? "rotate-180"
-            : ""}"
-          viewBox="0 0 12 12"
-          fill="currentColor"
-          aria-hidden="true"
-        >
-          <path d="M2 4l4 5 4-5z" />
-        </svg>
-        <span class="hidden sm:inline">
-          ${anyExpanded
-            ? translateText("common.collapse_all")
-            : translateText("common.expand_all")}
-        </span>
-      </button>
-    </div>`;
-  }
-
-  private renderFavoritesTab() {
-    if (this.favorites.length === 0) {
-      return html`<div
-        class="w-full flex flex-col items-center justify-center gap-3 py-12 px-4 text-center rounded-xl border border-dashed border-white/10 bg-black/20"
-      >
-        <div class="text-white/30">${starIcon(false, "w-8 h-8")}</div>
-        <p class="text-sm text-white/50 leading-relaxed max-w-xs">
-          ${translateText("map_component.favorites_empty")}
-        </p>
-      </div>`;
-    }
-    const favoriteMaps = this.favorites
-      .map((favorite) => maps.find((m) => m.type === favorite))
-      .filter((m) => m !== undefined);
-    return html`<div class="w-full">
-      ${this.renderSectionHeading(translateText("map_categories.favorites"))}
-      ${this.renderMapGrid(favoriteMaps)}
-    </div>`;
-  }
-
-  private renderActiveTab() {
-    switch (this.activeTab) {
-      case "all":
-        return this.renderAllTab();
-      case "favorites":
-        return this.renderFavoritesTab();
-      default:
-        return this.renderFeaturedTab();
-    }
   }
 
   private renderSearchResults() {
@@ -294,46 +156,11 @@ export class MapPicker extends LitElement {
     </div>`;
   }
 
-  private renderTabButton(tab: MapTab, label: string) {
-    const isActive = this.activeTab === tab;
-    return html`<button
-      type="button"
-      role="tab"
-      aria-selected=${isActive}
-      class="px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all active:scale-95 ${isActive
-        ? "bg-malibu-blue/20 text-white shadow-[var(--shadow-malibu-blue-soft)]"
-        : "text-white/60 hover:text-white"}"
-      @click=${() => (this.activeTab = tab)}
-    >
-      ${label}
-    </button>`;
-  }
-
   render() {
     const isSearching = this.searchQuery.trim().length > 0;
     return html`
       <div class="space-y-8">
-        <div class="w-full flex items-center gap-2">
-          ${isSearching
-            ? null
-            : html`<div
-                  role="tablist"
-                  aria-label="${translateText("map.map")}"
-                  class="flex-1 grid grid-cols-3 gap-2 rounded-xl border border-white/10 bg-black/20 p-1"
-                >
-                  ${this.renderTabButton(
-                    "featured",
-                    translateText("map.featured"),
-                  )}
-                  ${this.renderTabButton("all", translateText("map.all"))}
-                  ${this.renderTabButton(
-                    "favorites",
-                    translateText("map.favorites"),
-                  )}
-                </div>
-                ${this.activeTab === "all" ? this.renderExpandToggle() : null}`}
-        </div>
-        ${isSearching ? this.renderSearchResults() : this.renderActiveTab()}
+        ${isSearching ? this.renderSearchResults() : this.renderAllMaps()}
         <div
           class="w-full ${this.randomMapDivider
             ? "pt-4 border-t border-white/5"

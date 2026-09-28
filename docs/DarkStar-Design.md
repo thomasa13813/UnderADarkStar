@@ -2023,3 +2023,9 @@ to the invader (H9), gold donations from the throne (H9), hydrogen-bomb removal 
   "OpenFront" left in the shipped code is the attribution line and six comments crediting upstream
   code and issues. P1 is complete except the home-screen title treatment (E), which waits on Tom's
   logo and font.
+- **2026-09-27** — **P3 step 1: the map cull.** 112 inherited maps removed; 14 remain (Event Horizon,
+  Milky Way, Sol, Traders Dream, Passage, Branching Paths, Chopping Block, More Than Luck,
+  Sierpinski, Warship Warship, Duel, Standoff, Corners, Royale — the last four are the renamed
+  tourney maps). The picker is a single alphabetical grid. Tom's decisions: keep Milky Way and Sol,
+  his own maps ship CC BY-SA, about 20 maps at launch. Next: the authoring kit and the first batch
+  of new maps.

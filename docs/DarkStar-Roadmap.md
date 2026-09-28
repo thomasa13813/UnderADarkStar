@@ -247,11 +247,29 @@ Only Event Horizon is ours; Milky Way and Sol are upstream (CC BY-SA); everythin
 - The map picker and lobby map lists (`MapPicker`, `MapPlaylist` frequencies) rebuilt around the new
   categories.
 
-**Decide.** How many maps at launch; whether Milky Way and Sol stay (they are CC BY-SA and space
-themed, so they may); whether every map's Dark Star is central (H1) or `info.json` may place it.
+**Decided 2026-09-27.** Milky Way and Sol stay (CC BY-SA, already credited; no new obligation).
+Tom is happy for his own maps to ship CC BY-SA under `resources/` like the rest. Target pool: about
+20 maps at launch; the picker is alphabetical with no categories. Open: whether every map's Dark
+Star is central (H1) or `info.json` may place it.
 
-**Done when** the picker shows only our maps, each has a thumbnail and nations, and the sim runs on
-every one.
+**As built, step 1 (2026-09-27): the cull.** 112 inherited maps removed (sources under
+`map-generator/assets/maps/`, outputs under `resources/maps/`, 224 directories). Fourteen remain:
+Event Horizon, Milky Way, Sol, Traders Dream, Passage, Branching Paths, Chopping Block, More Than
+Luck, Sierpinski, Warship Warship, and the four tourney maps renamed **Duel** (2 teams),
+**Standoff** (3), **Corners** (4) and **Royale** (8) — new folders, ids and translation keys, so the
+old `Tourney1`–`Tourney4` enum members are gone. The generator regenerated `Maps.gen.ts` and the
+outputs; the stale `map.*` strings were pruned by hand (the generator only adds). `MapPicker` is one
+alphabetical grid (by translated name) with search, the favourites star and the Random card; the
+featured/all/favourites tabs and the category bars are gone, though `info.json` still needs a
+category because the generator validates it. Every default that said World now says Event Horizon
+(host and solo modals, the server's default config); the playlist's ranked lists point at Duel and
+Standoff; the Four Islands special case is gone. `CREDITS.md` keeps only the Milky Way data source.
+Tests that named an Earth map were repointed and the wire-transcript snapshot refreshed. Test
+fixtures under `tests/testdata/maps/` (world, plains, …) are unaffected: they are copies, not
+resources.
+
+**Done when** the pool reaches launch size, each map has a thumbnail and nations, and the sim runs
+on every one.
 
 ## P4. Audio (M)
 

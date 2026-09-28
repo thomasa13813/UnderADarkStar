@@ -25,7 +25,7 @@ import { GameConfig, PublicGameInfo } from "../../src/core/Schemas";
 
 function config(overrides: Partial<GameConfig> = {}): GameConfig {
   return {
-    gameMap: GameMapType.World,
+    gameMap: GameMapType.EventHorizon,
     gameType: GameType.Public,
     gameMode: GameMode.FFA,
     difficulty: "Medium",

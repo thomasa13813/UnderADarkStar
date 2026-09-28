@@ -15,16 +15,16 @@ describe("FetchGameMapLoader", () => {
     const loader = new FetchGameMapLoader(
       (path) => `/_assets/maps/${path}.hashed`,
     );
-    const mapData = loader.getMapData(GameMapType.BritanniaClassic);
+    const mapData = loader.getMapData(GameMapType.MilkyWay);
 
     expect(mapData.webpPath).toBe(
-      "/_assets/maps/britanniaclassic/thumbnail.webp.hashed",
+      "/_assets/maps/milkyway/thumbnail.webp.hashed",
     );
 
     await mapData.manifest();
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "/_assets/maps/britanniaclassic/manifest.json.hashed",
+      "/_assets/maps/milkyway/manifest.json.hashed",
     );
   });
 });

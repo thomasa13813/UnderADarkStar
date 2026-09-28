@@ -46,7 +46,7 @@ describe("a random map", () => {
 
   it("is picked by the server at prestart and told to the clients", () => {
     const game = makeGame({
-      config: { gameMap: GameMapType.World, randomMap: true },
+      config: { gameMap: GameMapType.EventHorizon, randomMap: true },
     });
     const client = makeClient();
     game.joinClient(client);
@@ -63,10 +63,10 @@ describe("a random map", () => {
 
   it("leaves a chosen map alone", () => {
     const game = makeGame({
-      config: { gameMap: GameMapType.World, randomMap: false },
+      config: { gameMap: GameMapType.EventHorizon, randomMap: false },
     });
     game.joinClient(makeClient());
     game.prestart();
-    expect(game.gameConfig.gameMap).toBe(GameMapType.World);
+    expect(game.gameConfig.gameMap).toBe(GameMapType.EventHorizon);
   });
 });

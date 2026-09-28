@@ -48,7 +48,10 @@ describe("TribeSpawner", () => {
   });
 
   test("positioned tribes spawn before random tribes", async () => {
-    const game = await setup("plains", { bots: 3, gameMap: GameMapType.Asia });
+    const game = await setup("plains", {
+      bots: 3,
+      gameMap: GameMapType.MilkyWay,
+    });
     const tile = findLandTile(game);
     const x = game.x(tile);
     const y = game.y(tile);
@@ -75,7 +78,7 @@ describe("TribeSpawner", () => {
   test("compact-map coordinates are halved", async () => {
     const game = await setup("plains", {
       bots: 1,
-      gameMap: GameMapType.Asia,
+      gameMap: GameMapType.MilkyWay,
       gameMapSize: GameMapSize.Compact,
     });
     const tile = findLandTile(game);
@@ -98,7 +101,7 @@ describe("TribeSpawner", () => {
   test("returns undefined for coordinates on water", async () => {
     const game = await setup("ocean_and_land", {
       bots: 1,
-      gameMap: GameMapType.Asia,
+      gameMap: GameMapType.MilkyWay,
     });
     const tile = findWaterTile(game);
     const x = game.x(tile);
@@ -123,7 +126,7 @@ describe("TribeSpawner", () => {
   test("falls back to random names when positioned spawn fails", async () => {
     const game = await setup("half_land_half_ocean", {
       bots: 2,
-      gameMap: GameMapType.Asia,
+      gameMap: GameMapType.MilkyWay,
     });
 
     mockResolveTribeNameData.mockReturnValue({
@@ -154,7 +157,7 @@ describe("TribeSpawner", () => {
   test("failed positioned tribe is NOT spawned randomly", async () => {
     const game = await setup("half_land_half_ocean", {
       bots: 3,
-      gameMap: GameMapType.Asia,
+      gameMap: GameMapType.MilkyWay,
     });
 
     mockResolveTribeNameData.mockReturnValue({
@@ -179,7 +182,7 @@ describe("TribeSpawner", () => {
   test("random tribe selection avoids duplicates", async () => {
     const game = await setup("plains", {
       bots: 3,
-      gameMap: GameMapType.Asia,
+      gameMap: GameMapType.MilkyWay,
     });
 
     mockResolveTribeNameData.mockReturnValue({
@@ -201,7 +204,7 @@ describe("TribeSpawner", () => {
   test("no positioned tribes uses all random names", async () => {
     const game = await setup("plains", {
       bots: 2,
-      gameMap: GameMapType.Asia,
+      gameMap: GameMapType.MilkyWay,
     });
 
     mockResolveTribeNameData.mockReturnValue({
@@ -219,7 +222,10 @@ describe("TribeSpawner", () => {
   });
 
   test("purchased names each go to exactly one tribe", async () => {
-    const game = await setup("plains", { bots: 5, gameMap: GameMapType.Asia });
+    const game = await setup("plains", {
+      bots: 5,
+      gameMap: GameMapType.MilkyWay,
+    });
 
     mockResolveTribeNameData.mockReturnValue({
       prefixes: ["Alpha"],
@@ -239,7 +245,10 @@ describe("TribeSpawner", () => {
   });
 
   test("purchased names beyond the open slots are dropped from the tail", async () => {
-    const game = await setup("plains", { bots: 2, gameMap: GameMapType.Asia });
+    const game = await setup("plains", {
+      bots: 2,
+      gameMap: GameMapType.MilkyWay,
+    });
 
     mockResolveTribeNameData.mockReturnValue({
       prefixes: ["Alpha"],
@@ -262,7 +271,10 @@ describe("TribeSpawner", () => {
   });
 
   test("positioned map tribes keep their slots ahead of purchased names", async () => {
-    const game = await setup("plains", { bots: 2, gameMap: GameMapType.Asia });
+    const game = await setup("plains", {
+      bots: 2,
+      gameMap: GameMapType.MilkyWay,
+    });
     const tile = findLandTile(game);
 
     mockResolveTribeNameData.mockReturnValue({
@@ -285,7 +297,10 @@ describe("TribeSpawner", () => {
   });
 
   test("purchased assignment is identical for the same game id", async () => {
-    const game = await setup("plains", { bots: 6, gameMap: GameMapType.Asia });
+    const game = await setup("plains", {
+      bots: 6,
+      gameMap: GameMapType.MilkyWay,
+    });
 
     mockResolveTribeNameData.mockReturnValue({
       prefixes: ["Alpha", "Beta", "Gamma"],
@@ -309,7 +324,10 @@ describe("TribeSpawner", () => {
   });
 
   test("no purchased names leaves the organic sequence unchanged", async () => {
-    const game = await setup("plains", { bots: 4, gameMap: GameMapType.Asia });
+    const game = await setup("plains", {
+      bots: 4,
+      gameMap: GameMapType.MilkyWay,
+    });
 
     mockResolveTribeNameData.mockReturnValue({
       prefixes: ["Alpha", "Beta", "Gamma"],
@@ -338,7 +356,7 @@ describe("TribeSpawner", () => {
   test("all players spawn on valid land tiles", async () => {
     const game = await setup("plains", {
       bots: 0,
-      gameMap: GameMapType.Asia,
+      gameMap: GameMapType.MilkyWay,
     });
 
     mockResolveTribeNameData.mockReturnValue({
@@ -363,7 +381,10 @@ describe("TribeSpawner", () => {
   });
 
   test("constructor ignores out-of-bounds nation cells without throwing", async () => {
-    const game = await setup("plains", { bots: 1, gameMap: GameMapType.Asia });
+    const game = await setup("plains", {
+      bots: 1,
+      gameMap: GameMapType.MilkyWay,
+    });
 
     mockResolveTribeNameData.mockReturnValue({
       prefixes: ["Test"],
@@ -381,7 +402,10 @@ describe("TribeSpawner", () => {
   });
 
   test("valid nation cell prevents positioned tribe from occupying that tile", async () => {
-    const game = await setup("plains", { bots: 1, gameMap: GameMapType.Asia });
+    const game = await setup("plains", {
+      bots: 1,
+      gameMap: GameMapType.MilkyWay,
+    });
     const tile = findLandTile(game);
     expect(game.hasOwner(tile)).toBe(false);
     const x = game.x(tile);

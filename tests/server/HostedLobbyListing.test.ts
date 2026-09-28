@@ -882,9 +882,9 @@ describe("WorkerLobbyService hosted lobbies", () => {
       ],
     });
 
-    emitBroadcast(games(GameMapType.World), 1000);
-    emitBroadcast(games(GameMapType.World), 2000); // unchanged -> counts delta
-    emitBroadcast(games(GameMapType.Europe), 3000); // host changed map -> fresh full
+    emitBroadcast(games(GameMapType.EventHorizon), 1000);
+    emitBroadcast(games(GameMapType.EventHorizon), 2000); // unchanged -> counts delta
+    emitBroadcast(games(GameMapType.TradersDream), 3000); // host changed map -> fresh full
 
     const types = sentPayloads(ws).map((p) => p.type);
     expect(types).toEqual(["full", "counts", "full"]);

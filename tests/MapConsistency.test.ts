@@ -25,17 +25,11 @@ const allMapKeys = Object.keys(GameMapType) as GameMapName[];
 
 // Maps excluded from the frequency requirement (not part of regular playlists).
 const FREQUENCY_EXEMPTIONS: Set<GameMapName> = new Set([
-  "GiantWorldMap",
-  "Oceania",
-  "BaikalNukeWars",
-  "Tourney1",
-  "Tourney2",
-  "Tourney3",
-  "Tourney4",
-  "EuropeClassic",
-  "BritanniaClassic",
   "ChoppingBlock",
-  "Luna",
+  "Duel",
+  "Standoff",
+  "Corners",
+  "Royale",
 ]);
 
 // Keys in the en.json "map" section that are UI strings, not map names.

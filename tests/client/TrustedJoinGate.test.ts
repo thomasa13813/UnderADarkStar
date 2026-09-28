@@ -32,7 +32,7 @@ function lobby(trusted: boolean): PublicGameInfo {
     numClients: 3,
     publicGameType: "ffa",
     gameConfig: {
-      gameMap: GameMapType.World,
+      gameMap: GameMapType.EventHorizon,
       gameMode: GameMode.FFA,
       maxPlayers: 8,
       trusted,

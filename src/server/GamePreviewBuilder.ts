@@ -192,7 +192,7 @@ export async function buildPreview(
   const duration = publicInfo?.info?.duration;
 
   // Asset dirs are the map id lowercased; display names usually normalize to
-  // the same string, but not always (e.g. "Tourney 2 Teams" → maps/tourney1/).
+  // the same string, but not always (e.g. "Milky Way" → maps/milkyway/).
   const mapId = map ? (maps.find((m) => m.type === map)?.id ?? map) : null;
   const normalizedMap = mapId
     ? mapId.toLowerCase().replace(/[\s.()]+/g, "")

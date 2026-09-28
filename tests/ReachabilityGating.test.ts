@@ -71,7 +71,7 @@ function publicLobby(gameID: string): PublicGameInfo {
     numClients: 3,
     publicGameType: "ffa",
     gameConfig: {
-      gameMap: GameMapType.World,
+      gameMap: GameMapType.EventHorizon,
       gameMode: GameMode.FFA,
       maxPlayers: 8,
     } as unknown as GameConfig,
