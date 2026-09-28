@@ -104,6 +104,11 @@ export const GraphicsOverridesSchema = z
         plainsColor: z.string(),
         highlandColor: z.string(),
         mountainColor: z.string(),
+        // Draw the starfield under the map with translucent water (deep
+        // space). false: opaque water in oceanColor.
+        spaceBackground: z.boolean(),
+        // 0–1 opacity of water tiles over the starfield.
+        oceanAlpha: z.number().min(0).max(1),
       })
       .partial(),
     lighting: z

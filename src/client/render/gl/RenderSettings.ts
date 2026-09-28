@@ -90,6 +90,14 @@ export interface RenderSettings {
     plainsColor: string;
     highlandColor: string;
     mountainColor: string;
+    /**
+     * Draw the starfield (resources/images/background.png) under the map and
+     * make water translucent (`oceanAlpha`) so deep space shows through. Off:
+     * water is opaque `oceanColor`, the classic look.
+     */
+    spaceBackground: boolean;
+    /** Opacity (0–1) of water tiles over the starfield when spaceBackground is on. */
+    oceanAlpha: number;
   };
   falloutBloom: {
     broilSpeedCold: number;

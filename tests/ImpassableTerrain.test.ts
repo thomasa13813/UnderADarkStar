@@ -1,4 +1,8 @@
-import { encodeTerrainTile } from "../src/client/render/gl/utils/ColorUtils";
+import renderDefaults from "../src/client/render/gl/render-settings.json";
+import {
+  encodeTerrainTile,
+  hexToRgb,
+} from "../src/client/render/gl/utils/ColorUtils";
 import { AttackExecution } from "../src/core/execution/AttackExecution";
 import { NationAllianceBehavior } from "../src/core/execution/nation/NationAllianceBehavior";
 import { NationEmojiBehavior } from "../src/core/execution/nation/NationEmojiBehavior";
@@ -377,11 +381,12 @@ describe("Impassable Terrain", () => {
   test("encodeTerrainTile renders impassable as the map background colour", () => {
     const out = new Uint8Array(4);
     encodeTerrainTile(IMPASSABLE, out, 0);
-    // Must match the clear colour in Renderer.ts drawBaseLayer():
-    // gl.clearColor(60/255, 60/255, 60/255) → rgb(60, 60, 60).
-    expect(out[0]).toBe(60);
-    expect(out[1]).toBe(60);
-    expect(out[2]).toBe(60);
+    // Must match the clear colour in Renderer.ts drawBaseLayer(), which is
+    // terrain.backgroundColor from render-settings.json.
+    const [r, g, b] = hexToRgb(renderDefaults.terrain.backgroundColor)!;
+    expect(out[0]).toBe(r);
+    expect(out[1]).toBe(g);
+    expect(out[2]).toBe(b);
     expect(out[3]).toBe(255);
   });
 

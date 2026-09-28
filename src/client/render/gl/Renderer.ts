@@ -57,6 +57,7 @@ import { SmallPlayerGlowPass } from "./passes/SmallPlayerGlowPass";
 import type { SpawnCenter } from "./passes/SpawnOverlayPass";
 import { SpawnOverlayPass } from "./passes/SpawnOverlayPass";
 import { SpiralRibbonPass } from "./passes/SpiralRibbonPass";
+import { StarfieldPass } from "./passes/StarfieldPass";
 import { StructureLevelPass } from "./passes/StructureLevelPass";
 import { StructurePass } from "./passes/StructurePass";
 import { TerrainPass } from "./passes/TerrainPass";
@@ -71,6 +72,7 @@ import {
   getPaletteSize,
   hexToRgb,
   MAX_TRAIL_COLORS,
+  type TerrainColorOverrides,
 } from "./utils/ColorUtils";
 import { renderDpr } from "./utils/Dpr";
 import {
@@ -118,6 +120,7 @@ export class GPURenderer {
 
   // Passes
   private terrainPass: TerrainPass;
+  private starfieldPass: StarfieldPass;
   private territoryPass: TerritoryPass;
   private trailPass: TrailPass;
   private spiralRibbonPass: SpiralRibbonPass;
@@ -272,18 +275,10 @@ export class GPURenderer {
       terrainBytes,
       mapW,
       mapH,
-      {
-        backgroundColor:
-          hexToRgb(this.settings.terrain.backgroundColor) ?? undefined,
-        oceanColor: hexToRgb(this.settings.terrain.oceanColor) ?? undefined,
-        sandColor: hexToRgb(this.settings.terrain.sandColor) ?? undefined,
-        plainsColor: hexToRgb(this.settings.terrain.plainsColor) ?? undefined,
-        highlandColor:
-          hexToRgb(this.settings.terrain.highlandColor) ?? undefined,
-        mountainColor:
-          hexToRgb(this.settings.terrain.mountainColor) ?? undefined,
-      },
+      this.terrainColorOverrides(),
     );
+    // Deep-space background under the (translucent) water.
+    this.starfieldPass = new StarfieldPass(gl, this.settings, mapW, mapH);
 
     // --- Terrain bytes R8UI texture (shared by map-layer passes) ---
     this.terrainBytesTex = createTexture2D(gl, {
@@ -1017,15 +1012,25 @@ export class GPURenderer {
    * settings change needs this explicit rebuild.
    */
   rebuildTerrain(): void {
-    this.terrainPass.setTerrainColors({
-      backgroundColor:
-        hexToRgb(this.settings.terrain.backgroundColor) ?? undefined,
-      oceanColor: hexToRgb(this.settings.terrain.oceanColor) ?? undefined,
-      sandColor: hexToRgb(this.settings.terrain.sandColor) ?? undefined,
-      plainsColor: hexToRgb(this.settings.terrain.plainsColor) ?? undefined,
-      highlandColor: hexToRgb(this.settings.terrain.highlandColor) ?? undefined,
-      mountainColor: hexToRgb(this.settings.terrain.mountainColor) ?? undefined,
-    });
+    this.terrainPass.setTerrainColors(this.terrainColorOverrides());
+  }
+
+  /** The baked terrain palette from the live `settings.terrain`. */
+  private terrainColorOverrides(): TerrainColorOverrides {
+    const t = this.settings.terrain;
+    return {
+      backgroundColor: hexToRgb(t.backgroundColor) ?? undefined,
+      oceanColor: hexToRgb(t.oceanColor) ?? undefined,
+      sandColor: hexToRgb(t.sandColor) ?? undefined,
+      plainsColor: hexToRgb(t.plainsColor) ?? undefined,
+      highlandColor: hexToRgb(t.highlandColor) ?? undefined,
+      mountainColor: hexToRgb(t.mountainColor) ?? undefined,
+      // Water only goes translucent when there is a starfield to show
+      // through it; otherwise it would reveal the flat clear colour.
+      waterAlpha: t.spaceBackground
+        ? Math.round(Math.max(0, Math.min(1, t.oceanAlpha)) * 255)
+        : 255,
+    };
   }
 
   applyConquestEvents(events: ConquestFx[]): void {
@@ -1363,9 +1368,12 @@ export class GPURenderer {
     gl.clearColor(bgR / 255, bgG / 255, bgB / 255, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.disable(gl.BLEND);
-    if (pe.terrain) this.terrainPass.draw(cam);
+    if (this.settings.terrain.spaceBackground) this.starfieldPass.draw(cam);
+    // Terrain blends: water tiles are translucent over the starfield (alpha
+    // 255 everywhere when the space background is off, so this is a no-op).
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    if (pe.terrain) this.terrainPass.draw(cam);
     // Map layers sit between terrain and territory.
     for (const layerPass of this.mapLayerPasses.values()) {
       layerPass.draw(cam);
@@ -1501,6 +1509,7 @@ export class GPURenderer {
       this.terrainBytesTex = null;
     }
     this.terrainPass.dispose();
+    this.starfieldPass.dispose();
     this.territoryPass.dispose();
     this.trailPass.dispose();
     this.spiralRibbonPass.dispose();

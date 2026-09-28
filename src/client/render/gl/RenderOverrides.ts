@@ -167,6 +167,12 @@ export function applyGraphicsOverrides(
   if (overrides.terrain?.mountainColor !== undefined) {
     settings.terrain.mountainColor = overrides.terrain.mountainColor;
   }
+  if (overrides.terrain?.spaceBackground !== undefined) {
+    settings.terrain.spaceBackground = overrides.terrain.spaceBackground;
+  }
+  if (overrides.terrain?.oceanAlpha !== undefined) {
+    settings.terrain.oceanAlpha = overrides.terrain.oceanAlpha;
+  }
   if (overrides.lighting?.ambient !== undefined) {
     settings.lighting.ambient = overrides.lighting.ambient;
     // The composite only darkens the scene (and reveals the structure/unit

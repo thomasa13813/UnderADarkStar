@@ -158,6 +158,12 @@ const LAYER_ALPHA_MIN = 0;
 const LAYER_ALPHA_MAX = 1;
 const LAYER_ALPHA_STEP = 0.01;
 
+// Water ("deep space") opacity over the starfield, shown as a percentage:
+// 0% = stars only, 100% = opaque ocean colour.
+const OCEAN_ALPHA_MIN = 0;
+const OCEAN_ALPHA_MAX = 100;
+const OCEAN_ALPHA_STEP = 5;
+
 // Small-player glow strength is shown as a percentage: 0% = off, 100% = the
 // glow's full brightness.
 const GLOW_STRENGTH_MIN = 0;
@@ -741,6 +747,20 @@ export class GraphicsAdvancedSettings extends LitElement {
     );
   }
 
+  private currentSpaceBackground(): boolean {
+    return (
+      this.userSettings.graphicsOverrides().terrain?.spaceBackground ??
+      renderDefaults.terrain.spaceBackground
+    );
+  }
+
+  private currentOceanAlpha(): number {
+    return (
+      this.userSettings.graphicsOverrides().terrain?.oceanAlpha ??
+      renderDefaults.terrain.oceanAlpha
+    );
+  }
+
   private currentSandColor(): string {
     return (
       this.userSettings.graphicsOverrides().terrain?.sandColor ??
@@ -795,6 +815,16 @@ export class GraphicsAdvancedSettings extends LitElement {
     const hex = GraphicsAdvancedSettings.normalizeHex(event);
     if (hex === null) return;
     this.patchTerrain({ oceanColor: hex });
+  }
+
+  private onToggleSpaceBackground() {
+    this.patchTerrain({ spaceBackground: !this.currentSpaceBackground() });
+  }
+
+  private onOceanAlphaChange(event: Event) {
+    const value = sliderValue(event);
+    if (value === null) return;
+    this.patchTerrain({ oceanAlpha: value / 100 });
   }
 
   private onSandColorChange(event: Event) {
@@ -1323,6 +1353,27 @@ export class GraphicsAdvancedSettings extends LitElement {
         .value=${this.currentBackgroundColor()}
         @change=${this.onBackgroundColorChange}
       ></setting-color>
+
+      <setting-toggle
+        label=${translateText("graphics_setting.space_background_label")}
+        description=${translateText("graphics_setting.space_background_desc")}
+        id="space-background-toggle"
+        .checked=${this.currentSpaceBackground()}
+        @change=${this.onToggleSpaceBackground}
+      ></setting-toggle>
+
+      ${this.currentSpaceBackground()
+        ? html`<setting-slider
+            label=${translateText("graphics_setting.ocean_alpha_label")}
+            description=${translateText("graphics_setting.ocean_alpha_desc")}
+            id="ocean-alpha-slider"
+            min=${OCEAN_ALPHA_MIN}
+            max=${OCEAN_ALPHA_MAX}
+            step=${OCEAN_ALPHA_STEP}
+            .value=${Math.round(this.currentOceanAlpha() * 100)}
+            @change=${this.onOceanAlphaChange}
+          ></setting-slider>`
+        : nothing}
 
       <setting-color
         label=${translateText("graphics_setting.ocean_color_label")}

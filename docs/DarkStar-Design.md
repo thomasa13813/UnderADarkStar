@@ -2029,3 +2029,8 @@ to the invader (H9), gold donations from the throne (H9), hydrogen-bomb removal 
   tourney maps). The picker is a single alphabetical grid. Tom's decisions: keep Milky Way and Sol,
   his own maps ship CC BY-SA, about 20 maps at launch. Next: the authoring kit and the first batch
   of new maps.
+- **2026-09-28** — **P2 decided and built: deep space over a starfield.** Tom chose translucent
+  grey space over the home page's starfield rather than plain black. Water tiles bake translucent
+  over a map-resolution render of the starfield (`StarfieldPass`; Roadmap P2 "as built"); the
+  graphics settings keep a "Starfield background" toggle and a "Deep space opacity" slider as
+  player preferences. Void and the outside of the map are now near-black.

@@ -9,7 +9,13 @@
  * seed always yields the same sky; change SEED (or pass one as the first
  * argument) for a different one.
  *
- *   npx tsx scripts/generateStarfield.ts [seed] [width] [height]
+ *   npx tsx scripts/generateStarfield.ts [seed] [width] [height] [file]
+ *
+ * `file` defaults to background.png (the home page). The in-map starfield
+ * (StarfieldPass, drawn under translucent deep space) is a second, larger
+ * render of the same generator so its grain is about one map tile per pixel:
+ *
+ *   npx tsx scripts/generateStarfield.ts 11 2048 2048 starfield-map.png
  *
  * No dependencies: the PNG encoder below is the minimal RGBA writer (zlib
  * from Node, CRC32 by hand). Roadmap P1 step E / P2 share this generator.
@@ -22,6 +28,7 @@ import { deflateSync } from "node:zlib";
 const SEED = Number(process.argv[2] ?? 11);
 const W = Number(process.argv[3] ?? 640);
 const H = Number(process.argv[4] ?? 360);
+const FILE = process.argv[5] ?? "background.png";
 
 // ---------------------------------------------------------------- PRNG ----
 function mulberry32(seed: number): () => number {
@@ -271,7 +278,7 @@ const outPath = join(
   "..",
   "resources",
   "images",
-  "background.png",
+  FILE,
 );
 mkdirSync(dirname(outPath), { recursive: true });
 writeFileSync(outPath, png);

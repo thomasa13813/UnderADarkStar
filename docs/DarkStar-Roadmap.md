@@ -198,9 +198,10 @@ shore water from ocean and encodes land elevation, which galaxy maps do not need
 
 **Work.**
 
-- **A background pass** drawn first: a static starfield texture (tiled or map-sized, generated once
-  from the map seed so every client agrees, or a shipped image), with optional slow parallax on
-  zoom. Then `TerrainPass` with water alpha 0 and blending on, so space shows through.
+- ~~**A background pass** drawn first: a static starfield texture (tiled or map-sized, generated
+  once from the map seed so every client agrees, or a shipped image), with optional slow parallax
+  on zoom. Then `TerrainPass` with water alpha 0 and blending on, so space shows through.~~ Built
+  2026-09-28 (as-built note below); no parallax.
 - **Land as one colour** per map or per palette (the design doc's §5.3 gap: per-map palette in
   `info.json`); mountains and highlands collapse to the same colour unless a map opts in. Shores keep a
   faint rim so coastlines read.
@@ -209,11 +210,28 @@ shore water from ocean and encodes land elevation, which galaxy maps do not need
 - Territory, borders, fog, night mode, the cosmetic preview renderer and the minimap all assume opaque
   terrain; check each. Screenshots at three zooms on Event Horizon and Milky Way.
 
-**Decide.** Starfield generated or painted; whether nebulae tint the space behind particular regions
-(a per-map background image would make that easy); land colour per map or global.
+**Decide.** ~~Starfield generated or painted~~ (generated, one shipped image, decided 2026-09-28);
+whether nebulae tint the space behind particular regions (a per-map background image would make
+that easy); land colour per map or global.
 
 **Done when** Event Horizon plays with transparent space and the HUD, minimap and previews still
 read.
+
+**As built, first bullet (2026-09-28).** Tom compared plain black space with translucent grey
+over the home page's starfield and chose the starfield. `StarfieldPass` draws
+`resources/images/starfield-map.png` (the home page's sky rendered at 2048×2048 by
+`scripts/generateStarfield.ts 11 2048 2048 starfield-map.png`, so its grain is about a tile per
+pixel) over the map quad before the terrain, cover-fitted with the aspect kept; nothing draws
+until the image loads. `encodeTerrainTile` takes a `waterAlpha`: deep space is `oceanColor` (now
+a grey, `#8b929e`) at `terrain.oceanAlpha` (0.45) and shoreline water 30% of the way back to
+opaque so coastlines read; land and void stay opaque, and void plus the area outside the map are
+`backgroundColor`, now near-black (`#0b0b12`). `TerrainPass` now draws with blending on. Two
+graphics overrides/UI controls under Terrain, kept as player preferences: "Starfield background"
+(`terrain.spaceBackground`; off bakes the water opaque) and "Deep space opacity"
+(`terrain.oceanAlpha`). Not done: the moat and disc look, land as one colour, and the
+opaque-terrain audit (territory, borders, night mode and the previews looked right on Event
+Horizon at three zooms; there is no minimap in this fork, so that item is moot). Screenshot
+driver: `.claude/skills/run-openfront/space-shots.mjs`.
 
 ## P3. The map pool (L)
 

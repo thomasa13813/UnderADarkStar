@@ -145,7 +145,11 @@ export class TerrainPass {
     }
   }
 
-  /** Render the terrain. Call with depth test disabled, no blending. */
+  /**
+   * Render the terrain. Call with depth test disabled and alpha blending on:
+   * water tiles may be translucent (TerrainColorOverrides.waterAlpha) so the
+   * starfield drawn before this pass shows through.
+   */
   draw(cameraMatrix: Float32Array): void {
     const gl = this.gl;
     gl.useProgram(this.program);

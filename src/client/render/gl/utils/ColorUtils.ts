@@ -97,7 +97,17 @@ export interface TerrainColorOverrides {
   plainsColor?: readonly [number, number, number];
   highlandColor?: readonly [number, number, number];
   mountainColor?: readonly [number, number, number];
+  /**
+   * Alpha (0–255) of water tiles. Below 255 the water is translucent and the
+   * starfield drawn beneath the map (StarfieldPass) shows through; shoreline
+   * water is kept a step more opaque so coastlines still read. Defaults to
+   * 255 (opaque, the classic look).
+   */
+  waterAlpha?: number;
 }
+
+/** Shoreline water covers this share of the remaining transparency. */
+const SHORE_ALPHA_BOOST = 0.3;
 
 export function encodeTerrainTile(
   tb: number,
@@ -111,12 +121,14 @@ export function encodeTerrainTile(
   const plainsColor = colors?.plainsColor;
   const highlandColor = colors?.highlandColor;
   const mountainColor = colors?.mountainColor;
+  const waterAlpha = Math.max(0, Math.min(255, colors?.waterAlpha ?? 255));
 
   const isLand = (tb & 0x80) !== 0;
   const isShoreline = (tb & 0x40) !== 0;
   const magnitude = tb & 0x1f;
 
   let r: number, g: number, b: number;
+  let a = 255;
 
   const terrainColors = {
     ocean: oceanColor ?? DEEP_WATER_BASE,
@@ -166,6 +178,7 @@ export function encodeTerrainTile(
     r = Math.round(0.7 * base[0] + 76.5);
     g = Math.round(0.7 * base[1] + 76.5);
     b = Math.round(0.7 * base[2] + 76.5);
+    a = Math.round(waterAlpha + SHORE_ALPHA_BOOST * (255 - waterAlpha));
   } else {
     // Deep water — darkens with depth (magnitude). The base color sets the
     // shallowest (brightest) shade; the per-depth gradient is preserved by
@@ -175,12 +188,13 @@ export function encodeTerrainTile(
     r = Math.max(0, base[0] - m);
     g = Math.max(0, base[1] - m);
     b = Math.max(0, base[2] - m);
+    a = Math.round(waterAlpha);
   }
 
   out[offset] = r;
   out[offset + 1] = g;
   out[offset + 2] = b;
-  out[offset + 3] = 255;
+  out[offset + 3] = a;
 }
 
 export function buildTerrainRGBA(
