@@ -186,8 +186,8 @@ Crowdin language files (P8 decides). `LICENSING.md` and `CREDITS.md` name OpenFr
 
 ## P2. Map visuals: deep space (M)
 
-**Goal.** Tom's point 4: deep space is transparent over a starfield, land is a flat colour, the whole
-game reads as a galaxy.
+**Goal.** Tom's point 4: deep space is transparent over a starfield and the whole game reads as a
+galaxy. (Land as a flat colour was part of the goal until 2026-09-28; see the struck bullet below.)
 
 **Exists.** Terrain colour is baked on the CPU (`ColorUtils.encodeTerrainTile`, alpha fixed at 255),
 drawn by `TerrainPass` over a solid clear colour (`Renderer.drawBaseLayer`, `alpha: false` on the
@@ -202,9 +202,13 @@ shore water from ocean and encodes land elevation, which galaxy maps do not need
   once from the map seed so every client agrees, or a shipped image), with optional slow parallax
   on zoom. Then `TerrainPass` with water alpha 0 and blending on, so space shows through.~~ Built
   2026-09-28 (as-built note below); no parallax.
-- **Land as one colour** per map or per palette (the design doc's §5.3 gap: per-map palette in
-  `info.json`); mountains and highlands collapse to the same colour unless a map opts in. Shores keep a
-  faint rim so coastlines read.
+- ~~**Land as one colour** per map or per palette (the design doc's §5.3 gap: per-map palette in
+  `info.json`); mountains and highlands collapse to the same colour unless a map opts in. Shores keep
+  a faint rim so coastlines read.~~ **Dropped 2026-09-28 (Tom):** elevation is gameplay (highland
+  and mountain tiles cost more troops to take and slow an attack, `terrainAttackBase` in
+  `Config.ts`), the current plains/highland/mountain colours convey it intuitively, and the change
+  was judged more trouble than it is worth. A more space-flavoured land palette may be considered
+  later; it would be a palette swap in `render-settings.json`, not a map change.
 - **The moat and disc**: the Dark Star gets its own look (a black disc with an accretion rim, the moat
   as a darker ring), driven by `DarkStar` geometry the client already has.
 - Territory, borders, fog, night mode, the cosmetic preview renderer and the minimap all assume opaque
@@ -212,7 +216,7 @@ shore water from ocean and encodes land elevation, which galaxy maps do not need
 
 **Decide.** ~~Starfield generated or painted~~ (generated, one shipped image, decided 2026-09-28);
 whether nebulae tint the space behind particular regions (a per-map background image would make
-that easy); land colour per map or global.
+that easy); ~~land colour per map or global~~ (moot, the land-colour bullet is dropped).
 
 **Done when** Event Horizon plays with transparent space and the HUD, minimap and previews still
 read.
@@ -228,8 +232,8 @@ opaque so coastlines read; land and void stay opaque, and void plus the area out
 `backgroundColor`, now near-black (`#0b0b12`). `TerrainPass` now draws with blending on. Two
 graphics overrides/UI controls under Terrain, kept as player preferences: "Starfield background"
 (`terrain.spaceBackground`; off bakes the water opaque) and "Deep space opacity"
-(`terrain.oceanAlpha`). Not done: the moat and disc look, land as one colour, and the
-opaque-terrain audit (territory, borders, night mode and the previews looked right on Event
+(`terrain.oceanAlpha`). Not done: the moat and disc look (Tom: the moat looks fine as it is, so
+low priority) and the opaque-terrain audit (territory, borders, night mode and the previews looked right on Event
 Horizon at three zooms; there is no minimap in this fork, so that item is moot). Screenshot
 driver: `.claude/skills/run-openfront/space-shots.mjs`.
 

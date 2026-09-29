@@ -2033,4 +2033,8 @@ to the invader (H9), gold donations from the throne (H9), hydrogen-bomb removal 
   grey space over the home page's starfield rather than plain black. Water tiles bake translucent
   over a map-resolution render of the starfield (`StarfieldPass`; Roadmap P2 "as built"); the
   graphics settings keep a "Starfield background" toggle and a "Deep space opacity" slider as
-  player preferences. Void and the outside of the map are now near-black.
+  player preferences. Void and the outside of the map are now near-black. **Land stays as it is:**
+  the P2 "land as one colour" goal is dropped (Tom, same day) because elevation is gameplay (attack
+  cost and speed) and the plains/highland/mountain colours convey it intuitively; a more
+  space-flavoured land palette is a possible later palette swap, not a design goal. The moat's
+  current look is fine, so the moat-and-disc styling is low priority.
