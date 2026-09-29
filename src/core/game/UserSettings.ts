@@ -25,6 +25,8 @@ export function getDefaultKeybinds(isMac: boolean): Record<string, string> {
     buildSamLauncher: "Digit6",
     // DarkStar: shares the SAM's key; SAMs are disabled under a Dark Star.
     buildStargate: "Digit6",
+    // DarkStar: shares the silo's key; silos are disabled under a Dark Star.
+    buildShieldArray: "Digit5",
     buildWarship: "Digit7",
     buildAtomBomb: "Digit8",
     buildHydrogenBomb: "Digit9",

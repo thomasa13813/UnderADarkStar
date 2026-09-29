@@ -24,6 +24,7 @@ import {
   GameMapType,
   GameMode,
   GameType,
+  MissileLaunchers,
   Player,
   PlayerInfo,
   PlayerType,
@@ -400,7 +401,7 @@ async function main(): Promise<void> {
     if (elapsed % 10 === 0) {
       for (const p of game.players()) {
         if (p === hegemon) continue;
-        for (const silo of p.units(UnitType.MissileSilo)) {
+        for (const silo of p.units(MissileLaunchers.types)) {
           const flag = silo.punitiveFlag();
           if (flag === undefined) continue;
           const key = `${silo.id()}:${flag.expiresTick}`;

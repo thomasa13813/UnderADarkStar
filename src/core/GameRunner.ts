@@ -14,6 +14,7 @@ import {
   GameType,
   GameUpdates,
   NameViewData,
+  Nukes,
   Player,
   PlayerActions,
   PlayerBorderTiles,
@@ -252,10 +253,27 @@ export class GameRunner {
     if (tile !== null && player.isHegemon() && this.game.hasOwner(tile)) {
       const host = this.game.owner(tile) as Player;
       if (!host.isHegemon()) {
-        return host.buildableUnits(tile, units, player);
+        return this.throneBuildables(player, host, tile, units);
       }
     }
     return player.buildableUnits(tile, units);
+  }
+
+  // The throne's build list on a challenger's tile: the host's structures as
+  // gifts (H18), but the missiles are the throne's own, flown from the Dark
+  // Star (H2, revised 2026-09-28) — the host could never aim at its own land.
+  private throneBuildables(
+    throne: Player,
+    host: Player,
+    tile: TileRef,
+    units?: readonly PlayerBuildableUnitType[],
+  ): BuildableUnit[] {
+    const list = host.buildableUnits(tile, units, throne);
+    const own = throne.buildableUnits(
+      tile,
+      list.filter((b) => Nukes.has(b.type)).map((b) => b.type),
+    );
+    return list.map((b) => own.find((o) => o.type === b.type) ?? b);
   }
 
   public playerActions(
@@ -288,7 +306,12 @@ export class GameRunner {
       // A gift (H18): on a challenger's tile the Hegemon's build list is the
       // host's — what the host could build there, with the throne paying.
       if (player.isHegemon() && !other.isHegemon() && units !== null) {
-        actions.buildableUnits = other.buildableUnits(tile, units, player);
+        actions.buildableUnits = this.throneBuildables(
+          player,
+          other,
+          tile,
+          units,
+        );
         actions.giftHost = other.id();
       }
       actions.interaction = {

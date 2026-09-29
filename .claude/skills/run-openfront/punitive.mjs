@@ -1,6 +1,6 @@
 // Punitive strikes (H19) in the real client: play a challenger on Event
-// Horizon against the AI Hegemon, build a silo, fire a Nuclear Warhead at
-// the Dark Star, and watch the badge on the silo. NOTE: the AI throne spares
+// Horizon against the AI Hegemon, build a stargate, fire a Nuclear Warhead at
+// the Dark Star, and watch the badge on the gate. NOTE: the AI throne spares
 // a player under punitiveAIMinLandPermille of the map, which a fresh human
 // always is, so the strike never comes — the wait after the badge times out.
 // punitive-throne.mjs covers the strike itself, from the throne's side.
@@ -68,7 +68,7 @@ const evalStateOnce = () =>
     const g = document.querySelector("build-menu").game;
     const me = g.myPlayer();
     const silos = g
-      .units("Missile Silo")
+      .units("Stargate")
       .filter((u) => u.owner().id() === me.id())
       .map((u) => ({
         id: u.id(),
@@ -79,7 +79,7 @@ const evalStateOnce = () =>
         owner: u.owner().name(),
       }));
     const allFlagged = g
-      .units("Missile Silo")
+      .units("Stargate")
       .filter((u) => (u.state.punitiveWarhead ?? null) !== null).length;
     return {
       ticks: g.ticks(),
@@ -142,7 +142,7 @@ async function placeAt(type, x, y) {
   });
 }
 
-await placeAt("Missile Silo", home.x, home.y);
+await placeAt("Stargate", home.x, home.y);
 let s = await evalState();
 log("after silo", s);
 if (s.silos.length === 0) {

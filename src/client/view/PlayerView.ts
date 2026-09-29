@@ -9,6 +9,7 @@ import {
   Cell,
   EmojiMessage,
   Gold,
+  MissileLaunchers,
   NameViewData,
   PlayerActions,
   PlayerBorderTiles,
@@ -488,15 +489,16 @@ export class PlayerView {
   }
 
   /** Missiles launchable right now: each silo holds `level` tubes, minus
-   *  those still reloading. Caps how many nukes a bulk purchase can fire. */
+   *  those still reloading; a stargate one shot whatever its level (C4).
+   *  Caps how many nukes a bulk purchase can fire. The throne, firing from
+   *  the Dark Star, has no such cap. */
   readyMissileCount(): number {
-    return this.units(UnitType.MissileSilo).reduce(
-      (acc, silo) =>
-        silo.isUnderConstruction()
-          ? acc
-          : acc + Math.max(0, silo.level() - silo.missileTimerQueue().length),
-      0,
-    );
+    if (this.isHegemon()) return Number.MAX_SAFE_INTEGER;
+    return this.units(...MissileLaunchers.types).reduce((acc, silo) => {
+      if (silo.isUnderConstruction()) return acc;
+      const tubes = silo.type() === UnitType.Stargate ? 1 : silo.level();
+      return acc + Math.max(0, tubes - silo.missileTimerQueue().length);
+    }, 0);
   }
 
   nameLocation(): NameViewData | undefined {

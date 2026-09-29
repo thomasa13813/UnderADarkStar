@@ -540,7 +540,7 @@ export class SinglePlayerModal extends BaseModal {
                 titleKey: "game_settings.disable_units",
                 disabledUnits: this.disabledUnits,
                 hiddenUnits: this.hegemon
-                  ? [UnitType.MIRV, UnitType.SAMLauncher]
+                  ? [UnitType.MIRV, UnitType.SAMLauncher, UnitType.MissileSilo]
                   : [],
               },
             }}

@@ -5,6 +5,7 @@ import {
   BuildableUnit,
   BuildMenus,
   Gold,
+  MissileLaunchers,
   PlayerBuildableUnitType,
   Structures,
   UnitType,
@@ -26,6 +27,7 @@ import {
   missileSiloIcon,
   portIcon,
   samLauncherIcon,
+  shieldArrayIcon,
   stargateIcon,
   warshipIcon,
 } from "../HotbarIcons";
@@ -46,6 +48,7 @@ export class UnitDisplay extends LitElement implements Controller {
   private _defensePost = 0;
   private _samLauncher = 0;
   private _stargate = 0;
+  private _shieldArray = 0;
   private allDisabled = false;
   private _hoveredUnit: PlayerBuildableUnitType | null = null;
   private tutorialHighlight: PlayerBuildableUnitType | null = null;
@@ -96,11 +99,15 @@ export class UnitDisplay extends LitElement implements Controller {
     if (this.game?.config().isUnitDisabled(item)) return false;
     const player = this.game?.myPlayer();
     // The throne needs no port for its destroyers, placed on any moat tile
-    // (H10), and places structures only as gifts on a challenger's land (H18);
-    // it has no silo, so never a warhead (H2).
+    // (H10), places structures only as gifts on a challenger's land (H18),
+    // and fires its warheads from the Dark Star itself (H2, revised
+    // 2026-09-28) — never a MIRV (S6).
     if (player?.isHegemon()) {
       return (
-        (item === UnitType.Warship || Structures.has(item)) &&
+        (item === UnitType.Warship ||
+          item === UnitType.AtomBomb ||
+          item === UnitType.HydrogenBomb ||
+          Structures.has(item)) &&
         this.cost(item) <= (player.gold() ?? 0n)
       );
     }
@@ -108,9 +115,10 @@ export class UnitDisplay extends LitElement implements Controller {
       case UnitType.AtomBomb:
       case UnitType.HydrogenBomb:
       case UnitType.MIRV:
+        // A launcher: a silo, or under a Dark Star a stargate (C4).
         return (
           this.cost(item) <= (player?.gold() ?? 0n) &&
-          (player?.units(UnitType.MissileSilo).length ?? 0) > 0
+          (player?.units(...MissileLaunchers.types).length ?? 0) > 0
         );
       case UnitType.Warship:
         return (
@@ -134,6 +142,7 @@ export class UnitDisplay extends LitElement implements Controller {
     this._defensePost = player.totalUnitLevels(UnitType.DefensePost);
     this._samLauncher = player.totalUnitLevels(UnitType.SAMLauncher);
     this._stargate = player.totalUnitLevels(UnitType.Stargate);
+    this._shieldArray = player.totalUnitLevels(UnitType.ShieldArray);
     this._factories = player.totalUnitLevels(UnitType.Factory);
     this._warships = player.totalUnitLevels(UnitType.Warship);
     this.requestUpdate();
@@ -190,6 +199,18 @@ export class UnitDisplay extends LitElement implements Controller {
             UnitType.MissileSilo,
             "missile_silo",
             this.keybinds["buildMissileSilo"]?.key ?? "5",
+          )}
+          ${this.renderUnitItem(
+            shieldArrayIcon,
+            this._shieldArray,
+            UnitType.ShieldArray,
+            "shield_array",
+            // DarkStar (C5): the array takes the silo's slot and key, since
+            // silos are off under a Dark Star. In a vanilla game the silo
+            // keeps the key and the array is click-only.
+            this.game.config().isUnitDisabled(UnitType.MissileSilo)
+              ? (this.keybinds["buildShieldArray"]?.key ?? "5")
+              : "",
           )}
           ${this.renderUnitItem(
             samLauncherIcon,
@@ -324,6 +345,8 @@ export class UnitDisplay extends LitElement implements Controller {
                   new ToggleStructureEvent([
                     UnitType.MissileSilo,
                     UnitType.SAMLauncher,
+                    UnitType.Stargate,
+                    UnitType.ShieldArray,
                   ]),
                 );
                 break;

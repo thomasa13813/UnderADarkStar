@@ -18,8 +18,10 @@ import { TestConfig } from "./util/TestConfig";
 import { executeTicks } from "./util/utils";
 
 // Punitive strikes (docs/DarkStar-Design.md H19): a missile launch flags the
-// silo; the Hegemon may answer with a strike levied from every challenger,
-// capped to a radius around the silo, halting and popping when it is full.
+// launcher — under a Dark Star a stargate (C4, 2026-09-28; silos are off);
+// the Hegemon may answer with a strike levied from every challenger, capped
+// to a radius around the gate, halting and popping when it is full. The
+// helpers keep the "silo" name: a gate is the silo's heir here.
 
 let game: Game;
 let hegemon: Player;
@@ -146,7 +148,7 @@ async function start(
 }
 
 function buildSilo(player: Player, tile: TileRef): Unit {
-  return player.buildUnit(UnitType.MissileSilo, tile, {});
+  return player.buildUnit(UnitType.Stargate, tile, {});
 }
 
 describe("The flag (H19)", () => {
@@ -305,8 +307,12 @@ describe("The levy and the strike (H19)", () => {
     expect(game.owner(tile)).toBe(hegemon);
     executeTicks(game, 2);
     expect(silo.owner()).toBe(hegemon);
-    expect(hegemon.units(UnitType.MissileSilo)).toHaveLength(1);
-    expect(hegemon.canBuild(UnitType.AtomBomb, inland(west, -1))).toBe(false);
+    expect(hegemon.units(UnitType.Stargate)).toHaveLength(1);
+    // The throne never fires a captured gate: its own missiles fly from the
+    // Dark Star's centre (H2, revised 2026-09-28).
+    expect(hegemon.canBuild(UnitType.AtomBomb, inland(west, -1))).toBe(
+      centre(),
+    );
 
     const cfg = game.config().hegemonConfig();
     let bubblePeak = 0;
@@ -334,7 +340,7 @@ describe("The levy and the strike (H19)", () => {
     // PlayerExecution clears the silo off the unowned land.
     executeTicks(game, 3);
     expect(silo.isActive()).toBe(false);
-    expect(east.units(UnitType.MissileSilo)).toHaveLength(0);
+    expect(east.units(UnitType.Stargate)).toHaveLength(0);
     expect(east.numTilesOwned()).toBeLessThan(eastTiles - 100);
     expect(east.numTilesOwned()).toBeGreaterThan(eastTiles - bubblePeak - 50);
     expect(game.owner(tile).isPlayer()).toBe(false);

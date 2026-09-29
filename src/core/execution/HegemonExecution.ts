@@ -2,6 +2,7 @@ import {
   Execution,
   Game,
   GameType,
+  MissileLaunchers,
   Player,
   PlayerType,
   PunitiveFlag,
@@ -108,7 +109,7 @@ export class HegemonExecution implements Execution {
     this.challengerGold = total;
   }
 
-  // H19: an AI Hegemon answers every flagged silo it may — the levy costs
+  // H19: an AI Hegemon answers every flagged launcher it may — the levy costs
   // the throne nothing — except on a challenger too small to be worth the
   // galaxy's troops. Of a player's flags, the severer first, then the
   // freshest.
@@ -122,7 +123,7 @@ export class HegemonExecution implements Execution {
       if (p.numTilesOwned() - p.domainTilesHeld() < minLand) continue;
       let best: Unit | null = null;
       let bestFlag: PunitiveFlag | null = null;
-      for (const silo of p.units(UnitType.MissileSilo)) {
+      for (const silo of p.units(MissileLaunchers.types)) {
         const flag = silo.punitiveFlag();
         if (flag === undefined) continue;
         if (

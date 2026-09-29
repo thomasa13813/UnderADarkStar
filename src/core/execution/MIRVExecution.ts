@@ -2,6 +2,7 @@ import {
   Execution,
   Game,
   MessageType,
+  MissileLaunchers,
   Player,
   TerraNullius,
   Unit,
@@ -133,7 +134,7 @@ export class MirvExecution implements Execution {
 
       // after sending a nuke set the missilesilo on cooldown
       const silo = this.player
-        .units(UnitType.MissileSilo)
+        .units(MissileLaunchers.types)
         .find((silo) => silo.tile() === spawn);
       if (silo) {
         silo.launch();

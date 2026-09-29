@@ -21,6 +21,7 @@ import {
   UT_MISSILE_SILO,
   UT_PORT,
   UT_SAM_LAUNCHER,
+  UT_SHIELD_ARRAY,
   UT_STARGATE,
 } from "../../types";
 import { DynamicInstanceBuffer } from "../DynamicBuffer";
@@ -53,6 +54,7 @@ const STRUCTURE_ORDER = [
   UT_SAM_LAUNCHER,
   UT_MISSILE_SILO,
   UT_STARGATE,
+  UT_SHIELD_ARRAY,
 ] as const;
 
 /** Max characters per level label (handles up to "99"). */

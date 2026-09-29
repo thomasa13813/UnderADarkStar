@@ -182,6 +182,9 @@ export class ConstructionExecution implements Execution {
       case UnitType.Factory:
         this.mg.addExecution(new FactoryExecution(this.structure!));
         break;
+      case UnitType.ShieldArray:
+        // Passive (C5): its perimeter is read by Player.nukeSpawn.
+        break;
       default:
         console.warn(
           `unit type ${this.constructionType} cannot be constructed`,
@@ -199,6 +202,7 @@ export class ConstructionExecution implements Execution {
       case UnitType.City:
       case UnitType.Factory:
       case UnitType.Stargate:
+      case UnitType.ShieldArray:
         return true;
       default:
         return false;

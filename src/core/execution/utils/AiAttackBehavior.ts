@@ -565,7 +565,14 @@ export class AiAttackBehavior {
   }
 
   private isBorderingNukedTerritory(): boolean {
-    if (this.game.config().isUnitDisabled(UnitType.MissileSilo)) {
+    // No launcher, no nuked land: a silo, or under a Dark Star a stargate
+    // (C4, 2026-09-28).
+    const config = this.game.config();
+    if (
+      config.isUnitDisabled(UnitType.MissileSilo) &&
+      (this.game.darkStar() === null ||
+        config.isUnitDisabled(UnitType.Stargate))
+    ) {
       return false;
     }
 

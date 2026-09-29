@@ -1,5 +1,5 @@
 // Punitive strikes (H19) from the throne: play the human Hegemon on Event
-// Horizon, wait for a nation's missile launch, look at the badge on its silo,
+// Horizon, wait for a nation's missile launch, look at the badge on its gate,
 // open the radial there, order the Punish slot, and watch the strike.
 //   node .claude/skills/run-openfront/punitive-throne.mjs [--out DIR] [--wait SECONDS]
 import fs from "fs";
@@ -73,7 +73,7 @@ const evalStateOnce = () =>
     const g = document.querySelector("build-menu").game;
     const me = g.myPlayer();
     const flagged = g
-      .units("Missile Silo")
+      .units("Stargate")
       .filter((u) => (u.state.punitiveWarhead ?? null) !== null)
       .map((u) => ({
         id: u.id(),

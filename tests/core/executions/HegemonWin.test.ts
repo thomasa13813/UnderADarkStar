@@ -145,7 +145,7 @@ describe("Hegemon win rules", () => {
     ).length;
 
     rival.conquer(game.ref(1, 1));
-    rival.buildUnit(UnitType.MissileSilo, game.ref(1, 1), {});
+    rival.buildUnit(UnitType.Stargate, game.ref(1, 1), {});
     game.addExecution(
       new NukeExecution(UnitType.AtomBomb, rival, target, game.ref(1, 1)),
     );

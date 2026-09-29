@@ -1,6 +1,8 @@
 /**
  * SAMRadiusPass — renders rotating dashed circles around SAM launchers
- * when the player is in build mode (ghost preview active).
+ * when the player is in build mode (ghost preview active). Under a Dark Star
+ * the same rings mark shield arrays (C5): a fixed perimeter no challenger's
+ * missile may target.
  *
  * Allied SAM ranges are merged via circle union: overlapping circles from
  * the same alliance group show as a single combined shape rather than
@@ -14,7 +16,11 @@
  */
 
 import type { UnitState } from "../../types";
-import { UT_SAM_LAUNCHER } from "../../types";
+import {
+  SHIELD_ARRAY_RADIUS,
+  UT_SAM_LAUNCHER,
+  UT_SHIELD_ARRAY,
+} from "../../types";
 import { DynamicInstanceBuffer } from "../DynamicBuffer";
 import type { RenderSettings } from "../RenderSettings";
 import { createProgram } from "../utils/GlUtils";
@@ -373,13 +379,29 @@ export class SAMRadiusPass {
     this.hasUpgradingSAM = this.dirtyGroups.size > 0;
 
     for (const u of structures.values()) {
-      if (u.unitType !== UT_SAM_LAUNCHER || !u.isActive) continue;
+      if (!u.isActive) continue;
       const isFriendly =
         u.ownerID === this.localPlayerID || this.allies.has(u.ownerID);
       const bg = this.getSAMBaseGroup(u, isFriendly);
       const color = this.getSAMColor(u.ownerID, isFriendly);
       const x = u.pos % w;
       const y = (u.pos - x) / w;
+      if (u.unitType === UT_SHIELD_ARRAY) {
+        // One level, one radius: a plain spinning ring, no upgrade preview.
+        circles.push({
+          x,
+          y,
+          radius: SHIELD_ARRAY_RADIUS,
+          r: color[0],
+          g: color[1],
+          b: color[2],
+          alpha: 1.0,
+          group: bg * 2,
+          spin: 1.0,
+        });
+        continue;
+      }
+      if (u.unitType !== UT_SAM_LAUNCHER) continue;
       this.pushSAMCircles(
         circles,
         u,

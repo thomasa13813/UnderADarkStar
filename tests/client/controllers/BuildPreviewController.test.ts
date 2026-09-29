@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
 import {
+  isGiftUnit,
   samThreatensNukePreview,
   shouldPreserveGhostAfterBuild,
 } from "../../../src/client/controllers/BuildPreviewController";
@@ -70,5 +71,19 @@ describe("samThreatensNukePreview (nuke trajectory threat set, #4226)", () => {
     expect(
       samThreatensNukePreview(7, teammates, new Set([7]), new Set([7])),
     ).toBe(false);
+  });
+});
+
+describe("isGiftUnit (the throne's ghost on a challenger's tile, H18 / H2)", () => {
+  test("structures are gifts through the host", () => {
+    expect(isGiftUnit(UnitType.City)).toBe(true);
+    expect(isGiftUnit(UnitType.Stargate)).toBe(true);
+    expect(isGiftUnit(UnitType.ShieldArray)).toBe(true);
+  });
+
+  test("warheads are the throne's own build order, never a gift", () => {
+    expect(isGiftUnit(UnitType.AtomBomb)).toBe(false);
+    expect(isGiftUnit(UnitType.HydrogenBomb)).toBe(false);
+    expect(isGiftUnit(UnitType.Warship)).toBe(false);
   });
 });

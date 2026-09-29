@@ -14,6 +14,7 @@ import {
 import { findClosestBy, replacer } from "../core/Util";
 import {
   BuildableUnit,
+  MissileLaunchers,
   PlayerType,
   Structures,
   UnitType,
@@ -1254,7 +1255,7 @@ export class ClientGameRunner {
     const ticks = this.gameView.ticks();
     let best: UnitView | null = null;
     let bestD2 = reach * reach;
-    for (const silo of this.gameView.units(UnitType.MissileSilo)) {
+    for (const silo of this.gameView.units(...MissileLaunchers.types)) {
       const s = silo.state;
       if (
         !s.isActive ||

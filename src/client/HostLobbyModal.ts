@@ -610,7 +610,11 @@ export class HostLobbyModal extends BaseModal {
                 // Off under a Dark Star (S6, H19), as in the singleplayer modal.
                 hiddenUnits:
                   this.gameMode === GameMode.FFA
-                    ? [UnitType.MIRV, UnitType.SAMLauncher]
+                    ? [
+                        UnitType.MIRV,
+                        UnitType.SAMLauncher,
+                        UnitType.MissileSilo,
+                      ]
                     : [],
               },
             }}

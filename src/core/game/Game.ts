@@ -217,6 +217,9 @@ export enum UnitType {
   Projectile = "Projectile",
   // DarkStar: the challenger structure that fires gate shots (C4). Appended.
   Stargate = "Stargate",
+  // DarkStar: the structure whose perimeter no challenger's missile may
+  // target (C5). Appended.
+  ShieldArray = "Shield Array",
 }
 
 export enum TrainType {
@@ -246,6 +249,14 @@ export const Structures = unitTypeGroup([
   UnitType.MissileSilo,
   UnitType.Port,
   UnitType.Factory,
+  UnitType.Stargate,
+  UnitType.ShieldArray,
+] as const);
+
+// DarkStar: the structures a missile launches from — the nearest ready one
+// that has the target in reach (a silo has no range, a gate its own).
+export const MissileLaunchers = unitTypeGroup([
+  UnitType.MissileSilo,
   UnitType.Stargate,
 ] as const);
 
@@ -336,6 +347,8 @@ export interface UnitParamsMap {
   };
 
   [UnitType.Stargate]: Record<string, never>;
+
+  [UnitType.ShieldArray]: Record<string, never>;
 }
 
 // Type helper to get params type for a specific unit type
@@ -623,8 +636,8 @@ export interface Unit {
   reloadMissile(): void;
   isInCooldown(): boolean;
   missileTimerQueue(): number[];
-  // Punitive strikes (H19), silos only: the flag a launch left, until it
-  // expires or a strike on the owner clears it.
+  // Punitive strikes (H19), missile launchers (stargates) only: the flag a
+  // launch left, until it expires or a strike on the owner clears it.
   punitiveFlag(): PunitiveFlag | undefined;
   flagForPunishment(warhead: Warhead): void;
   clearPunitiveFlag(): void;

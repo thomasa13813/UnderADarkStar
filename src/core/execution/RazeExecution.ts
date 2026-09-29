@@ -6,6 +6,7 @@ import {
   Game,
   HegemonStrike,
   MessageType,
+  MissileLaunchers,
   Player,
   PunitiveFlag,
   PunitiveStrikeOption,
@@ -128,14 +129,15 @@ export class RazeExecution implements Execution, StrikeInFlight, HegemonStrike {
   // silo within this many tiles is the one meant.
   static readonly CLICK_RADIUS = 12;
 
-  // The flagged silo a click on this tile means: the nearest one within
-  // CLICK_RADIUS whose owner is a challenger not already under a strike.
+  // The flagged launcher (a stargate under a Dark Star, a silo elsewhere) a
+  // click on this tile means: the nearest one within CLICK_RADIUS whose
+  // owner is a challenger not already under a strike.
   static flaggedSiloNear(mg: Game, tile: TileRef): Unit | null {
     if (mg.hegemon() === null || !mg.isValidRef(tile)) return null;
     const r2 = RazeExecution.CLICK_RADIUS * RazeExecution.CLICK_RADIUS;
     let best: Unit | null = null;
     let bestD2 = Infinity;
-    for (const silo of mg.units(UnitType.MissileSilo)) {
+    for (const silo of mg.units(MissileLaunchers.types)) {
       if (!silo.isActive() || silo.owner().isHegemon()) continue;
       if (silo.punitiveFlag() === undefined) continue;
       const d2 = mg.euclideanDistSquared(silo.tile(), tile);
@@ -244,7 +246,7 @@ export class RazeExecution implements Execution, StrikeInFlight, HegemonStrike {
       };
       this.troops = this.levy(owner, flag.warhead);
       // Answered: the player's other flags are spent with this one.
-      for (const silo of owner.units(UnitType.MissileSilo)) {
+      for (const silo of owner.units(MissileLaunchers.types)) {
         silo.clearPunitiveFlag();
       }
     } else {

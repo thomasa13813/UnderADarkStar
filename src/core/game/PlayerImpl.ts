@@ -26,6 +26,7 @@ import {
   GateShotOption,
   Gold,
   MAX_UPGRADE_AMOUNT,
+  MissileLaunchers,
   MutableAlliance,
   Player,
   PlayerBuildable,
@@ -1544,14 +1545,9 @@ export class PlayerImpl implements Player {
     if (this.isHegemon() && Structures.has(unitType)) {
       return false;
     }
-    // Nor does it fire nukes: a silo its strike captured is not its to use
-    // (H19).
-    if (
-      this.isHegemon() &&
-      (unitType === UnitType.AtomBomb ||
-        unitType === UnitType.HydrogenBomb ||
-        unitType === UnitType.MIRV)
-    ) {
+    // Its missiles fly from the Dark Star itself (H2, revised 2026-09-28),
+    // never from a gate its strike captured; MIRVs stay off (S6).
+    if (this.isHegemon() && unitType === UnitType.MIRV) {
       return false;
     }
     const cost = knownCost ?? this.mg.unitInfo(unitType).cost(this.mg, this);
@@ -1730,6 +1726,7 @@ export class PlayerImpl implements Player {
       case UnitType.City:
       case UnitType.Factory:
       case UnitType.Stargate:
+      case UnitType.ShieldArray:
         return this.landBasedStructureSpawn(targetTile, validTiles);
       default:
         assertNever(unitType);
@@ -1776,16 +1773,61 @@ export class PlayerImpl implements Player {
       }
     }
 
-    // only get missilesilos that are not on cooldown and not under construction
-    const readySilos = this.units(UnitType.MissileSilo).filter(
-      (silo) =>
-        silo.isActive() && !silo.isInCooldown() && !silo.isUnderConstruction(),
-    );
-    readySilos.sort(
+    // The throne's missiles fly from the Dark Star's centre, like its strikes
+    // (H2, revised 2026-09-28): no launcher, no reload, the gold is the cost.
+    // They pass through shield arrays.
+    if (this.isHegemon()) {
+      const geometry = mg.darkStar();
+      if (geometry === null) return false;
+      return mg.ref(geometry.cx, geometry.cy);
+    }
+
+    // A shield array's perimeter cannot be aimed at (C5).
+    if (this.missileShieldAt(tile) !== null) {
+      return false;
+    }
+
+    // The nearest ready launcher: a silo (no range) or a stargate with the
+    // tile in range (C4, 2026-09-28) — the gate's one charge, reloading on
+    // its own clock (StargateExecution), so a shot and a missile compete.
+    const ready = this.units(MissileLaunchers.types).filter((launcher) => {
+      if (!launcher.isActive() || launcher.isUnderConstruction()) return false;
+      if (launcher.type() === UnitType.Stargate) {
+        if (launcher.missileTimerQueue().length > 0) return false;
+        const range = config.stargateRange(launcher.level());
+        return mg.euclideanDistSquared(launcher.tile(), tile) <= range * range;
+      }
+      return !launcher.isInCooldown();
+    });
+    ready.sort(
       (a, b) =>
         mg.manhattanDist(a.tile(), tile) - mg.manhattanDist(b.tile(), tile),
     );
-    return readySilos[0]?.tile() ?? false;
+    return ready[0]?.tile() ?? false;
+  }
+
+  // The shield array (C5) that keeps this player's missiles off the tile:
+  // anyone else's, built and standing, with the tile inside its radius. The
+  // throne's missiles ignore shields (nukeSpawn never asks for it).
+  missileShieldAt(tile: TileRef): Unit | null {
+    const mg = this.mg;
+    const radius = mg.config().shieldArrayRadius();
+    const hits = mg.nearbyUnits(
+      tile,
+      radius,
+      UnitType.ShieldArray,
+      ({ unit }) =>
+        unit.owner() !== this && unit.isActive() && !unit.isUnderConstruction(),
+    );
+    let best: Unit | null = null;
+    let bestDist = Infinity;
+    for (const { unit, distSquared } of hits) {
+      if (distSquared < bestDist) {
+        best = unit;
+        bestDist = distSquared;
+      }
+    }
+    return best;
   }
 
   // The gate that would fire at the tile (C4): the nearest built one with

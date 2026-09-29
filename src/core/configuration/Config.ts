@@ -295,6 +295,19 @@ const STARGATE_DEFAULTS = {
   constructionSeconds: 10,
 };
 
+// Shield arrays (C5 in docs/DarkStar-Design.md, decided 2026-09-28): a
+// challenger structure whose perimeter no challenger's missile may target.
+// It intercepts nothing — the tiles inside simply cannot be aimed at. The
+// throne's strikes and missiles pass through it.
+const SHIELD_ARRAY_DEFAULTS = {
+  // The protected radius in tiles: half the range of the level-1 SAM it
+  // replaces (70), and never more (decided 2026-09-28). A single level, so
+  // upgrades buy nothing.
+  radius: 35,
+  costGold: 1_000_000,
+  constructionSeconds: 10,
+};
+
 const HEGEMON_DEFAULTS = {
   enabled: false,
   defaultRoundMinutes: 20, // R5, used when maxTimerValue is unset
@@ -503,6 +516,12 @@ export class Config {
   stargateCooldown(): number {
     return this.stargateConfig().cooldownSeconds * 10;
   }
+  shieldArrayConfig(): typeof SHIELD_ARRAY_DEFAULTS {
+    return SHIELD_ARRAY_DEFAULTS;
+  }
+  shieldArrayRadius(): number {
+    return this.shieldArrayConfig().radius;
+  }
   setHegemonMapLandTiles(landTiles: number): void {
     this._hegemonMapLandTiles = landTiles;
   }
@@ -618,6 +637,11 @@ export class Config {
     // the Hegemon's punishment (H19), not a net of interceptors that spares
     // most players the decision.
     if (unitType === UnitType.SAMLauncher && this.hegemonConfig().enabled) {
+      return true;
+    }
+    // Nor missile silos (S6, decided 2026-09-28): under a Dark Star a missile
+    // launches from a stargate, and reaches only as far as the gate does.
+    if (unitType === UnitType.MissileSilo && this.hegemonConfig().enabled) {
       return true;
     }
     return this._gameConfig.disabledUnits?.includes(unitType) ?? false;
@@ -835,6 +859,17 @@ export class Config {
             : c.constructionSeconds * 10,
           upgradable: true,
           maxLevel: c.maxLevel,
+        };
+        break;
+      }
+      case UnitType.ShieldArray: {
+        const c = this.shieldArrayConfig();
+        info = {
+          cost: this.costWrapper(() => c.costGold, UnitType.ShieldArray),
+          constructionDuration: this.instantBuild()
+            ? 0
+            : c.constructionSeconds * 10,
+          // One level only: the perimeter never grows.
         };
         break;
       }

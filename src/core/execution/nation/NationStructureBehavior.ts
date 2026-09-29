@@ -460,7 +460,7 @@ export class NationStructureBehavior {
   // Spreads placements after the save-up target is first reached:
   // 15s ON / 15s OFF, alternating, to allow NationNukeBehavior to spend the gold.
   private isInPostSaveUpBlockedPhase(): boolean {
-    if (this.game.config().isUnitDisabled(UnitType.MissileSilo)) {
+    if (!this.missileLaunchersEnabled()) {
       return false;
     }
     const saveUpTarget = this.getSaveUpTarget();
@@ -490,7 +490,7 @@ export class NationStructureBehavior {
     this._sharedWaterComponents = this.game.sharedWaterComponents(this.player);
     const hasCoastalTiles = this._sharedWaterComponents !== null;
 
-    const missileSilosEnabled = !config.isUnitDisabled(UnitType.MissileSilo);
+    const missileSilosEnabled = this.missileLaunchersEnabled();
 
     // High-starting-gold Hard/Impossible nations build a SAM first so their
     // next structures get SAM coverage and aren't clustered under the same nuke target.
@@ -594,6 +594,18 @@ export class NationStructureBehavior {
     }
 
     return false;
+  }
+
+  // Whether the nation has anything to launch a missile from: a silo, or
+  // under a Dark Star a stargate (C4, 2026-09-28), which it builds anyway.
+  private missileLaunchersEnabled(): boolean {
+    const config = this.game.config();
+    if (!config.isUnitDisabled(UnitType.MissileSilo)) return true;
+    return (
+      this.hegemonBehavior !== null &&
+      this.game.darkStar() !== null &&
+      !config.isUnitDisabled(UnitType.Stargate)
+    );
   }
 
   private hasHighStartingGold(): boolean {
@@ -742,7 +754,7 @@ export class NationStructureBehavior {
     const config = this.game.config();
 
     // Just save up for SAMs if missile silos are disabled
-    if (config.isUnitDisabled(UnitType.MissileSilo)) {
+    if (!this.missileLaunchersEnabled()) {
       return this.cost(UnitType.SAMLauncher);
     }
 

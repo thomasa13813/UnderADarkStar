@@ -38,6 +38,7 @@ const atomBombIcon = assetUrl("images/NukeIconWhite.svg");
 const portIcon = assetUrl("images/PortIcon.svg");
 const samlauncherIcon = assetUrl("images/SamLauncherIconWhite.svg");
 const shieldIcon = assetUrl("images/ShieldIconWhite.svg");
+const shieldArrayIcon = assetUrl("images/ShieldArrayIconWhite.svg");
 
 export interface BuildItemDisplay {
   unitType: PlayerBuildableUnitType;
@@ -125,6 +126,14 @@ export const buildTable: BuildItemDisplay[][] = [
       icon: stargateIcon,
       description: "build_menu.desc.stargate",
       key: "unit_type.stargate",
+      countable: true,
+    },
+    {
+      // DarkStar: the shield array (C5). On the hotbar in the silo's slot.
+      unitType: UnitType.ShieldArray,
+      icon: shieldArrayIcon,
+      description: "build_menu.desc.shield_array",
+      key: "unit_type.shield_array",
       countable: true,
     },
   ],

@@ -16,7 +16,7 @@ import type { Config } from "../../../../core/configuration/Config";
 import { UnitType } from "../../../../core/game/Game";
 import { maxHealthWithVeterancy } from "../../../../core/game/Veterancy";
 import type { RendererConfig, UnitState } from "../../types";
-import { UT_MISSILE_SILO, UT_SAM_LAUNCHER } from "../../types";
+import { UT_MISSILE_SILO, UT_SAM_LAUNCHER, UT_STARGATE } from "../../types";
 import type { RenderSettings } from "../RenderSettings";
 import { createProgram } from "../utils/GlUtils";
 
@@ -315,10 +315,11 @@ export class BarPass {
       return Math.min(1, Math.max(0, elapsed / duration));
     }
 
-    // Missile readiness (Silo / SAM)
+    // Missile readiness (Silo / SAM / Stargate reload)
     if (
       unit.unitType === UT_MISSILE_SILO ||
-      unit.unitType === UT_SAM_LAUNCHER
+      unit.unitType === UT_SAM_LAUNCHER ||
+      unit.unitType === UT_STARGATE
     ) {
       const readiness = this.missileReadiness(unit, gameTick);
       if (readiness < 1) return readiness;
@@ -328,7 +329,8 @@ export class BarPass {
   }
 
   private missileReadiness(unit: UnitState, gameTick: number): number {
-    const maxMissiles = unit.level;
+    // A gate holds one shot whatever its level (C4).
+    const maxMissiles = unit.unitType === UT_STARGATE ? 1 : unit.level;
     const reloading = unit.missileTimerQueue.length;
     if (reloading === 0) return 1;
 
@@ -337,7 +339,9 @@ export class BarPass {
     const cooldown =
       unit.unitType === UT_SAM_LAUNCHER
         ? this.config.SAMCooldown()
-        : this.config.SiloCooldown();
+        : unit.unitType === UT_STARGATE
+          ? this.config.stargateCooldown()
+          : this.config.SiloCooldown();
 
     let readiness = ready / maxMissiles;
     for (const timer of unit.missileTimerQueue) {

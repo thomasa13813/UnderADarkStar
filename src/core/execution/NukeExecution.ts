@@ -4,6 +4,7 @@ import {
   Game,
   isUnit,
   MessageType,
+  MissileLaunchers,
   Player,
   Structures,
   TerraNullius,
@@ -193,9 +194,11 @@ export class NukeExecution implements Execution {
       // The launch tile can be overridden by the caller (e.g. MIRV warheads
       // launch from the MIRV separation point, not a silo).
       this.src ??= spawn;
+      // The launcher: a silo, or under a Dark Star a stargate (C4). The
+      // throne has neither — its missiles fly from the Dark Star itself.
       const silo = this.player
-        .units(UnitType.MissileSilo)
-        .find((silo) => silo.tile() === spawn);
+        .units(MissileLaunchers.types)
+        .find((launcher) => launcher.tile() === spawn);
       // Stacked purchases launch several nukes across ticks; delay each missile
       // so launches from the same silo trail each other instead of overlapping,
       // need to check the entire queue because even if nukes have waitticks,
@@ -244,12 +247,13 @@ export class NukeExecution implements Execution {
         this.mg.stats().bombLaunch(this.player, target, this.nukeType);
       }
 
-      // after sending a nuke set the missilesilo on cooldown
+      // after sending a nuke set the launcher on cooldown (a gate's one
+      // charge reloads on StargateExecution's clock)
       if (silo) {
         silo.launch();
-        // Under a Dark Star the launch exposes the silo to a punitive strike
-        // (H19) — unless the throne is already striking this player, who may
-        // then fire freely.
+        // Under a Dark Star the launch exposes the launcher to a punitive
+        // strike (H19) — unless the throne is already striking this player,
+        // who may then fire freely.
         if (
           this.mg.hegemon() !== null &&
           !this.player.isHegemon() &&

@@ -289,7 +289,9 @@ export class UnitView {
 
   // How "ready" this unit is from 0 to 1.
   missileReadinesss(): number {
-    const maxMissiles = this.state.level;
+    // A gate holds one shot whatever its level (C4).
+    const maxMissiles =
+      this.state.unitType === UnitType.Stargate ? 1 : this.state.level;
     const missilesReloading = this.state.missileTimerQueue.length;
 
     if (missilesReloading === 0) {
@@ -309,7 +311,9 @@ export class UnitView {
     const cooldownDuration =
       this.state.unitType === UnitType.SAMLauncher
         ? this.gameView.config().SAMCooldown()
-        : this.gameView.config().SiloCooldown();
+        : this.state.unitType === UnitType.Stargate
+          ? this.gameView.config().stargateCooldown()
+          : this.gameView.config().SiloCooldown();
 
     for (const cooldown of this.state.missileTimerQueue) {
       const cooldownProgress = this.gameView.ticks() - cooldown;

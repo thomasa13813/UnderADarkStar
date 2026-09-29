@@ -119,7 +119,7 @@ describe("Nothing is built on the Dark Star (H2)", () => {
     expect(game.owner(tile)).toBe(east);
     expect(east.canBuild(UnitType.City, tile)).toBe(tile);
     expect(east.canBuild(UnitType.DefensePost, tile)).toBe(tile);
-    expect(east.canBuild(UnitType.MissileSilo, tile)).toBe(tile);
+    expect(east.canBuild(UnitType.Stargate, tile)).toBe(tile);
   });
 });
 

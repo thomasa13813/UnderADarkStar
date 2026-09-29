@@ -71,6 +71,7 @@ const UNIT_NAME_KEYS: Partial<Record<UnitType, string>> = {
   [UnitType.Port]: "port",
   [UnitType.SAMLauncher]: "sam_launcher",
   [UnitType.Stargate]: "stargate",
+  [UnitType.ShieldArray]: "shield_array",
 };
 
 @customElement("events-display")

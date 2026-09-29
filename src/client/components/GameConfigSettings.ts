@@ -119,6 +119,8 @@ const unitOptions: { type: UnitType; translationKey: string }[] = [
   { type: UnitType.HydrogenBomb, translationKey: "unit_type.hydrogen_bomb" },
   { type: UnitType.MIRV, translationKey: "unit_type.mirv" },
   { type: UnitType.Factory, translationKey: "unit_type.factory" },
+  { type: UnitType.Stargate, translationKey: "unit_type.stargate" },
+  { type: UnitType.ShieldArray, translationKey: "unit_type.shield_array" },
 ];
 
 const MAP_ICON = svg`<path

@@ -3,6 +3,7 @@ import {
   Game,
   GameMode,
   Gold,
+  MissileLaunchers,
   Player,
   PlayerType,
   Relation,
@@ -56,11 +57,14 @@ export class NationNukeBehavior {
   ) {}
 
   maybeSendNuke() {
-    const silos = this.player.units(UnitType.MissileSilo);
+    // A silo, or under a Dark Star a stargate (C4): canBuild below picks the
+    // launcher and, for a gate, keeps the target within its range.
+    const silos = this.player.units(MissileLaunchers.types);
     const config = this.game.config();
     if (
       silos.length === 0 ||
-      config.isUnitDisabled(UnitType.MissileSilo) ||
+      (config.isUnitDisabled(UnitType.MissileSilo) &&
+        config.isUnitDisabled(UnitType.Stargate)) ||
       (config.isUnitDisabled(UnitType.AtomBomb) &&
         config.isUnitDisabled(UnitType.HydrogenBomb))
     ) {
@@ -679,7 +683,12 @@ export class NationNukeBehavior {
           case UnitType.DefensePost:
             return 5_000 * level;
           case UnitType.MissileSilo:
+          case UnitType.Stargate:
             return 50_000 * level;
+          // A shield array (C5) cannot be aimed at, so it is only ever hit
+          // by a blast aimed just outside its perimeter.
+          case UnitType.ShieldArray:
+            return 30_000;
           case UnitType.Port:
             return 15_000 * level;
           case UnitType.Factory:

@@ -33,6 +33,8 @@ export const UT_SAM_LAUNCHER = "SAM Launcher" as const;
 export const UT_MISSILE_SILO = "Missile Silo" as const;
 /** DarkStar: the challenger structure that fires gate shots. */
 export const UT_STARGATE = "Stargate" as const;
+/** DarkStar: the structure whose perimeter no challenger's missile may target. */
+export const UT_SHIELD_ARRAY = "Shield Array" as const;
 
 // ---------------------------------------------------------------------------
 // Derived sets
@@ -46,7 +48,12 @@ export const STRUCTURE_TYPES: ReadonlySet<string> = new Set([
   UT_SAM_LAUNCHER,
   UT_MISSILE_SILO,
   UT_STARGATE,
+  UT_SHIELD_ARRAY,
 ]);
+
+/** The shield array's protected radius in tiles (DarkStar C5), matching
+ *  Config.shieldArrayRadius(): half the level-1 SAM range it replaces. */
+export const SHIELD_ARRAY_RADIUS = 35;
 
 export const NUKE_TYPES: ReadonlySet<string> = new Set([
   UT_ATOM_BOMB,
@@ -107,4 +114,5 @@ export const ALL_UNIT_TYPES = [
   UT_TRAIN,
   UT_PROJECTILE,
   UT_STARGATE,
+  UT_SHIELD_ARRAY,
 ] as const;

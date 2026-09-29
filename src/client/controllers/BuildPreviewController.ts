@@ -15,7 +15,9 @@ import {
 import {
   BuildableUnit,
   bulkCost,
+  MissileLaunchers,
   PlayerBuildableUnitType,
+  Structures,
   UnitType,
 } from "../../core/game/Game";
 import { TileRef } from "../../core/game/GameMap";
@@ -40,6 +42,15 @@ import { UIState } from "../UIState";
 import { GameView, PlayerView } from "../view";
 
 /** True for nuke types (AtomBomb, HydrogenBomb): ghost is preserved after placement so user can place multiple or keep selection (Enter/key confirm). */
+/**
+ * What the throne places on a challenger's land as a gift (H18): structures
+ * only. Its warheads are its own (H2, revised 2026-09-28) and take the
+ * ordinary build path, flown from the Dark Star.
+ */
+export function isGiftUnit(unitType: UnitType): boolean {
+  return Structures.has(unitType);
+}
+
 export function shouldPreserveGhostAfterBuild(unitType: UnitType): boolean {
   return unitType === UnitType.AtomBomb || unitType === UnitType.HydrogenBomb;
 }
@@ -344,34 +355,48 @@ export class BuildPreviewController implements Controller {
     }
 
     // Mirror PlayerImpl.nukeSpawn (the source NukeExecution actually fires
-    // from): only silos that are active, not reloading, and not under
-    // construction are eligible, and the nearest (Manhattan distance) is
-    // chosen. Keeping these in sync prevents the preview arc from
-    // originating from a silo the game wouldn't use.
-    const silos = myPlayer
-      .units(UnitType.MissileSilo)
-      .filter(
-        (u) => u.isActive() && !u.isInCooldown() && !u.isUnderConstruction(),
-      );
-    if (silos.length === 0) {
-      this.clearNukeTrajectory();
-      return;
-    }
-
+    // from): the throne's missiles fly from the Dark Star's centre (H2);
+    // anyone else's from the nearest (Manhattan distance) launcher that is
+    // active, loaded and built — a silo, or a stargate with the target in
+    // its range (C4). Keeping these in sync prevents the preview arc from
+    // originating from a launcher the game wouldn't use.
     const dstX = this.game.x(tileRef);
     const dstY = this.game.y(tileRef);
-    silos.sort(
-      (a, b) =>
-        Math.abs(this.game.x(a.tile()) - dstX) +
-        Math.abs(this.game.y(a.tile()) - dstY) -
-        (Math.abs(this.game.x(b.tile()) - dstX) +
-          Math.abs(this.game.y(b.tile()) - dstY)),
-    );
-
-    const bestSilo = silos[0];
+    let srcX: number;
+    let srcY: number;
+    const geometry = this.game.darkStar();
+    if (myPlayer.isHegemon() && geometry !== null) {
+      srcX = geometry.cx;
+      srcY = geometry.cy;
+    } else {
+      const config = this.game.config();
+      const silos = myPlayer.units(...MissileLaunchers.types).filter((u) => {
+        if (!u.isActive() || u.isUnderConstruction()) return false;
+        if (u.type() === UnitType.Stargate) {
+          if (u.missileTimerQueue().length > 0) return false;
+          const range = config.stargateRange(u.level());
+          const dx = this.game.x(u.tile()) - dstX;
+          const dy = this.game.y(u.tile()) - dstY;
+          return dx * dx + dy * dy <= range * range;
+        }
+        return !u.isInCooldown();
+      });
+      if (silos.length === 0) {
+        this.clearNukeTrajectory();
+        return;
+      }
+      silos.sort(
+        (a, b) =>
+          Math.abs(this.game.x(a.tile()) - dstX) +
+          Math.abs(this.game.y(a.tile()) - dstY) -
+          (Math.abs(this.game.x(b.tile()) - dstX) +
+            Math.abs(this.game.y(b.tile()) - dstY)),
+      );
+      const bestSilo = silos[0];
+      srcX = this.game.x(bestSilo.tile());
+      srcY = this.game.y(bestSilo.tile());
+    }
     const directionUp = this.uiState.rocketDirectionUp;
-    const srcX = this.game.x(bestSilo.tile());
-    const srcY = this.game.y(bestSilo.tile());
 
     // Non-friendly SAMs threaten the trajectory; own + teammate + allied SAMs
     // don't — except allies this strike would betray: the alliance breaks at
@@ -472,6 +497,9 @@ export class BuildPreviewController implements Controller {
         rangeRadius = this.game.config().stargateRange(level);
         break;
       }
+      case UnitType.ShieldArray:
+        rangeRadius = this.game.config().shieldArrayRadius();
+        break;
     }
     let radiusTileX = this.game.x(tileRef);
     let radiusTileY = this.game.y(tileRef);
@@ -510,8 +538,10 @@ export class BuildPreviewController implements Controller {
       canAfford,
       ghostRailPaths: u.ghostRailPaths,
       overlappingRailroads: u.overlappingRailroads,
-      // A gift wears the host's colours (H18).
-      ownerID: (this.giftHostAt(tileRef) ?? myPlayer).smallID(),
+      // A gift wears the host's colours (H18); the throne's own warhead its own.
+      ownerID:
+        (isGiftUnit(u.type) ? this.giftHostAt(tileRef) : null)?.smallID() ??
+        myPlayer.smallID(),
       upgradeTargetTile,
       rangeRadius,
       rangeWarning: targetingAlly,
@@ -543,10 +573,13 @@ export class BuildPreviewController implements Controller {
       return;
     }
     const tile = this.transformHandler.screenToWorldCoordinates(e.x, e.y);
-    // A gift (H18): the throne placing on a challenger's land sends a gift
-    // order; the sim decides between placing and upgrading, and the tile's
-    // owner at that moment is the host.
-    const giftHost = this.giftHostAt(this.game.ref(tile.x, tile.y));
+    // A gift (H18): the throne placing a structure on a challenger's land
+    // sends a gift order; the sim decides between placing and upgrading, and
+    // the tile's owner at that moment is the host. Its warheads are its own
+    // (H2, revised 2026-09-28) and go down the ordinary build path below.
+    const giftHost = isGiftUnit(this.ghostUnit.buildableUnit.type)
+      ? this.giftHostAt(this.game.ref(tile.x, tile.y))
+      : null;
     if (giftHost !== null) {
       this.eventBus.emit(
         new GiftUnitIntentEvent(
