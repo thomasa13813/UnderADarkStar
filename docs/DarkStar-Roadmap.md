@@ -367,6 +367,11 @@ appears on their profile page.
 **Goal.** Tom's point 1: public "throne" lobbies where the winner of a round takes the seat for the
 next one.
 
+**Design decided 2026-09-29: `docs/DarkStar-Lobbies.md`** (decisions L1–L15, the throne state
+machine, IPC and schema additions, implementation steps T1–T6). It supersedes the outline below
+where they differ: no login is required to hold a seat, the pool starts at **15** named thrones of
+fixed type, the winner may step down after picking, no reign cap, and a restart opens every seat.
+
 **Exists.** `MasterLobbyService` schedules public lobbies per type (`ffa`, `team`, `special`; up to 6
 queued per type, a new one every 2 minutes in prod), picks maps from a weighted playlist, and
 assigns games to workers by hash. The successor flow and archive from P0. Nothing persists between
@@ -479,7 +484,8 @@ to a public throne is P1 → P5 → P6 → P8.
 ## Open questions for Tom
 
 1. Login: email magic link, Discord, or both? Guests in public rounds?
-2. Throne count at launch and whether a reign is capped.
+2. ~~Throne count at launch and whether a reign is capped.~~ Answered 2026-09-29: 15 thrones, no
+   cap, no login needed (`docs/DarkStar-Lobbies.md` L1, L3, L11).
 3. Monetise at launch, or free launch and P7 later?
 4. Hosting preference (a VPS like upstream's Hetzner box, or a PaaS), and who holds the accounts.
 5. Which upstream maps survive (Milky Way and Sol are eligible).

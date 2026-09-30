@@ -497,7 +497,9 @@ persistence was OpenFront's closed-source API, which we do not have.
 - **Public lobbies (later).** Needs our own results store (replace/shim `src/server/Archive.ts`), a
   promotion hook off `archiveGame()` (inject through `GameServerDeps`), propagation across worker
   processes (`IPCBridgeSchema.ts`, `MasterLobbyService.ts`), and a product answer to "which public
-  game's winner is _the_ Hegemon?".
+  game's winner is _the_ Hegemon?". [Decided 2026-09-29] The answer is **thrones**: a fixed pool
+  of 15 named persistent public lobbies, each with its own seat that the round's winner inherits.
+  Full design, decisions L1–L15 and the implementation plan: **`docs/DarkStar-Lobbies.md`**.
 
 ### 5.3 Maps
 
@@ -2185,6 +2187,13 @@ to the invader (H9), gold donations from the throne (H9), hydrogen-bomb removal 
   side of the array is still hit). The Hegemon's missiles are kept out like anyone else's (H2, C5
   revised; strikes still pass through). The price rises to 5M (Tom's baseline; F21). A blast kept
   wholly off an ally angers nobody; nations value sheltered structures at nothing.
+- **2026-09-29** — **Public lobbies and thrones designed (`docs/DarkStar-Lobbies.md`).** Tom's
+  decisions for the public matchmaking system: a fixed pool of 15 named thrones of fixed type
+  (FFA / team / special, all with a Hegemon); no account needed to hold a seat; the winner gets a
+  30-second window to pick the map (and whitelisted modifiers on a special throne) and to keep or
+  step down from the throne; open seats are first come, first served, the AI otherwise; two humans
+  to fire with a hold below that; no reign cap; a restart opens every seat; team thrones give the
+  seat to the slayer, not the team. §5.2 points at the new document; roadmap P6 now defers to it.
 - **2026-09-28** — **Missiles on gates, shield arrays, the throne's warheads (§6.23).** Tom's
   decisions: the missile silo goes (S6, hard-off like the SAM); a warhead launches from the nearest
   ready stargate with the target in range and spends its charge (C4); a new **Shield Array** (C5:
