@@ -1,13 +1,71 @@
 import { GameView } from "../../client/view";
 import { NukeMagnitude } from "../configuration/Config";
-import { Game, Player, Structures } from "../game/Game";
+import { Game, Player, Structures, UnitType } from "../game/Game";
 import { euclDistFN, GameMap, TileRef } from "../game/GameMap";
 import { ReadonlyTileSet } from "../game/TileSet";
+
+// A shield array's perimeter (DarkStar C5): the array's tile and the squared
+// radius it protects.
+export interface ShieldZone {
+  x: number;
+  y: number;
+  r2: number;
+}
+
+// The shield arrays (DarkStar C5, revised 2026-09-29) whose perimeter keeps
+// a missile fired by `attackerSmallId` from harming anything inside: anyone
+// else's, built and standing, and near enough to `tile` for a blast of
+// `outer` to reach them. The array's owner is not kept out of its own zone;
+// the Hegemon owns no array, so every array shields against the throne's
+// missiles too. Gate shots and punitive strikes never ask.
+export function missileShieldsNear(
+  game: Game | GameView,
+  attackerSmallId: number,
+  tile: TileRef,
+  outer: number,
+): ShieldZone[] {
+  const radius = game.config().shieldArrayRadius();
+  return game
+    .nearbyUnits(
+      tile,
+      outer + radius,
+      UnitType.ShieldArray,
+      ({ unit }) =>
+        unit.owner().smallID() !== attackerSmallId &&
+        unit.isActive() &&
+        !unit.isUnderConstruction(),
+    )
+    .map(({ unit }) => ({
+      x: game.x(unit.tile()),
+      y: game.y(unit.tile()),
+      r2: radius * radius,
+    }));
+}
+
+// Whether the tile lies inside any of the zones (the rim counts as inside,
+// as the unit grid's range test does).
+export function inMissileShield(
+  gm: GameMap,
+  zones: readonly ShieldZone[],
+  tile: TileRef,
+): boolean {
+  if (zones.length === 0) return false;
+  const x = gm.x(tile);
+  const y = gm.y(tile);
+  for (const zone of zones) {
+    const dx = x - zone.x;
+    const dy = y - zone.y;
+    if (dx * dx + dy * dy <= zone.r2) return true;
+  }
+  return false;
+}
 
 export interface NukeBlastParams {
   gm: GameMap;
   targetTile: TileRef;
   magnitude: NukeMagnitude;
+  // Tiles a shield array keeps the blast off (DarkStar C5); none by default.
+  shields?: readonly ShieldZone[];
 }
 
 /**
@@ -18,14 +76,14 @@ export interface NukeBlastParams {
 export function computeNukeBlastCounts(
   params: NukeBlastParams,
 ): Map<number, number> {
-  const { gm, targetTile, magnitude } = params;
+  const { gm, targetTile, magnitude, shields = [] } = params;
 
   const inner2 = magnitude.inner * magnitude.inner;
   const counts = new Map<number, number>();
 
   gm.circleSearch(targetTile, magnitude.outer, (tile: TileRef, d2: number) => {
     const ownerSmallId = gm.ownerID(tile);
-    if (ownerSmallId > 0) {
+    if (ownerSmallId > 0 && !inMissileShield(gm, shields, tile)) {
       const weight = d2 <= inner2 ? 1 : 0.5;
       const prev = counts.get(ownerSmallId) ?? 0;
       counts.set(ownerSmallId, prev + weight);
@@ -42,6 +100,9 @@ export interface NukeAllianceCheckParams {
   magnitude: NukeMagnitude;
   allySmallIds?: Set<number>;
   threshold: number;
+  // Tiles and structures a shield array keeps the blast off (DarkStar C5):
+  // an ally sheltered inside one is not betrayed. None by default.
+  shields?: readonly ShieldZone[];
 }
 
 // Checks if nuking this tile would break an alliance.
@@ -51,7 +112,14 @@ export interface NukeAllianceCheckParams {
 export function wouldNukeBreakAlliance(
   params: NukeAllianceCheckParams,
 ): boolean {
-  const { game, targetTile, magnitude, allySmallIds, threshold } = params;
+  const {
+    game,
+    targetTile,
+    magnitude,
+    allySmallIds,
+    threshold,
+    shields = [],
+  } = params;
 
   if (!allySmallIds || allySmallIds.size === 0) {
     return false;
@@ -63,7 +131,9 @@ export function wouldNukeBreakAlliance(
     magnitude.outer,
     Structures.types,
     (unit) =>
-      unit.owner().isPlayer() && allySmallIds.has(unit.owner().smallID()),
+      unit.owner().isPlayer() &&
+      allySmallIds.has(unit.owner().smallID()) &&
+      !inMissileShield(game, shields, unit.tile()),
   );
   if (wouldDestroyAlliedStructure) return true;
 
@@ -77,7 +147,11 @@ export function wouldNukeBreakAlliance(
     magnitude.outer,
     (tile: TileRef, d2: number) => {
       const ownerSmallId = game.ownerID(tile);
-      if (ownerSmallId > 0 && allySmallIds.has(ownerSmallId)) {
+      if (
+        ownerSmallId > 0 &&
+        allySmallIds.has(ownerSmallId) &&
+        !inMissileShield(game, shields, tile)
+      ) {
         const weight = d2 <= inner2 ? 1 : 0.5;
         const newCount = (allyTileCounts.get(ownerSmallId) ?? 0) + weight;
         allyTileCounts.set(ownerSmallId, newCount);
@@ -100,7 +174,7 @@ export function wouldNukeBreakAlliance(
 export function listNukeBreakAlliance(
   params: NukeAllianceCheckParams,
 ): Set<number> {
-  const { game, targetTile, magnitude, threshold } = params;
+  const { game, targetTile, magnitude, threshold, shields = [] } = params;
 
   // Collect all players that should have alliance broken:
   // either exceeds tile threshold OR has a structure in blast radius
@@ -111,6 +185,7 @@ export function listNukeBreakAlliance(
     gm: game,
     targetTile,
     magnitude,
+    shields,
   });
   for (const [playerSmallId, totalWeight] of blastCounts) {
     if (totalWeight > threshold) {
@@ -121,9 +196,10 @@ export function listNukeBreakAlliance(
   // Also check if any allied structures would be destroyed
   game
     .nearbyUnits(targetTile, magnitude.outer, Structures.types)
-    .forEach(({ unit }) =>
-      playersToBreakAllianceWith.add(unit.owner().smallID()),
-    );
+    .forEach(({ unit }) => {
+      if (inMissileShield(game, shields, unit.tile())) return;
+      playersToBreakAllianceWith.add(unit.owner().smallID());
+    });
 
   return playersToBreakAllianceWith;
 }

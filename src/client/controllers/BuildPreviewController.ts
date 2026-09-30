@@ -10,6 +10,7 @@
 import { EventBus } from "../../core/EventBus";
 import {
   listNukeBreakAlliance,
+  missileShieldsNear,
   wouldNukeBreakAlliance,
 } from "../../core/execution/Util";
 import {
@@ -409,13 +410,21 @@ export class BuildPreviewController implements Controller {
     }
     const allyIds = new Set<number>();
     for (const a of myPlayer.allies()) allyIds.add(a.smallID());
+    const magnitude = this.game.config().nukeMagnitudes(type);
     const betrayedIds: ReadonlySet<number> =
       allyIds.size > 0
         ? listNukeBreakAlliance({
             game: this.game,
             targetTile: tileRef,
-            magnitude: this.game.config().nukeMagnitudes(type),
+            magnitude,
             threshold: this.game.config().nukeAllianceBreakThreshold(),
+            // An ally sheltered by a shield array (C5) is not betrayed.
+            shields: missileShieldsNear(
+              this.game,
+              myPlayer.smallID(),
+              tileRef,
+              magnitude.outer,
+            ),
           })
         : new Set();
     const sams: SAMInfo[] = [];
@@ -672,14 +681,22 @@ export class BuildPreviewController implements Controller {
     }
     if (freshAllies.size === 0) return false;
 
+    const magnitude = this.game.config().nukeMagnitudes(unitType);
+    const me = this.game.myPlayer();
     const broken =
-      unitType === UnitType.MIRV
+      unitType === UnitType.MIRV || me === null
         ? [this.game.ownerID(tile)]
         : listNukeBreakAlliance({
             game: this.game,
             targetTile: tile,
-            magnitude: this.game.config().nukeMagnitudes(unitType),
+            magnitude,
             threshold: this.game.config().nukeAllianceBreakThreshold(),
+            shields: missileShieldsNear(
+              this.game,
+              me.smallID(),
+              tile,
+              magnitude.outer,
+            ),
           });
 
     let blocked = false;

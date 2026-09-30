@@ -295,16 +295,19 @@ const STARGATE_DEFAULTS = {
   constructionSeconds: 10,
 };
 
-// Shield arrays (C5 in docs/DarkStar-Design.md, decided 2026-09-28): a
-// challenger structure whose perimeter no challenger's missile may target.
-// It intercepts nothing — the tiles inside simply cannot be aimed at. The
-// throne's strikes and missiles pass through it.
+// Shield arrays (C5 in docs/DarkStar-Design.md, decided 2026-09-28, revised
+// 2026-09-29): a challenger structure whose perimeter no missile can harm the
+// inside of. It intercepts nothing and refuses no launch — a warhead lands as
+// usual and the blast is simply kept off the tiles inside. The throne's
+// missiles are kept out like anyone else's; only its strikes pass through.
 const SHIELD_ARRAY_DEFAULTS = {
   // The protected radius in tiles: half the range of the level-1 SAM it
   // replaces (70), and never more (decided 2026-09-28). A single level, so
   // upgrades buy nothing.
   radius: 35,
-  costGold: 1_000_000,
+  // Tom's baseline for a zone nothing short of conquest can clear
+  // (2026-09-29); F21 keeps it open to tuning.
+  costGold: 5_000_000,
   constructionSeconds: 10,
 };
 

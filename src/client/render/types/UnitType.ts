@@ -52,7 +52,8 @@ export const STRUCTURE_TYPES: ReadonlySet<string> = new Set([
 ]);
 
 /** The shield array's protected radius in tiles (DarkStar C5), matching
- *  Config.shieldArrayRadius(): half the level-1 SAM range it replaces. */
+ *  Config.shieldArrayRadius(): half the level-1 SAM range it replaces. A
+ *  blast is kept off the tiles inside; it refuses no launch. */
 export const SHIELD_ARRAY_RADIUS = 35;
 
 export const NUKE_TYPES: ReadonlySet<string> = new Set([

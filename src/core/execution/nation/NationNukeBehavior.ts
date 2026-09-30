@@ -18,7 +18,7 @@ import { PseudoRandom } from "../../PseudoRandom";
 import { assertNever, boundingBoxTiles } from "../../Util";
 import { NukeExecution } from "../NukeExecution";
 import { UpgradeStructureExecution } from "../UpgradeStructureExecution";
-import { closestTwoTiles } from "../Util";
+import { closestTwoTiles, inMissileShield, missileShieldsNear } from "../Util";
 import { AiAttackBehavior } from "../utils/AiAttackBehavior";
 import { EMOJI_NUKE, NationEmojiBehavior } from "./NationEmojiBehavior";
 import { randTerritoryTileArray } from "./NationUtils";
@@ -673,8 +673,17 @@ export class NationNukeBehavior {
   ): number {
     const magnitude = this.game.config().nukeMagnitudes(nukeType);
     const dist = euclDistFN(tile, magnitude.outer, false);
+    // A structure inside another player's shield array (C5) survives the
+    // blast, so it is worth nothing here.
+    const shields = missileShieldsNear(
+      this.game,
+      this.player.smallID(),
+      tile,
+      magnitude.outer,
+    );
     let tileValue = targets
       .filter((unit) => dist(this.game, unit.tile()))
+      .filter((unit) => !inMissileShield(this.game, shields, unit.tile()))
       .map((unit): number => {
         const level = unit.level();
         switch (unit.type()) {
@@ -685,8 +694,8 @@ export class NationNukeBehavior {
           case UnitType.MissileSilo:
           case UnitType.Stargate:
             return 50_000 * level;
-          // A shield array (C5) cannot be aimed at, so it is only ever hit
-          // by a blast aimed just outside its perimeter.
+          // A shield array (C5) shelters itself, so it is only ever hit
+          // when it stands inside the blast but outside every other array.
           case UnitType.ShieldArray:
             return 30_000;
           case UnitType.Port:

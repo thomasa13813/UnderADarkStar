@@ -1775,17 +1775,14 @@ export class PlayerImpl implements Player {
 
     // The throne's missiles fly from the Dark Star's centre, like its strikes
     // (H2, revised 2026-09-28): no launcher, no reload, the gold is the cost.
-    // They pass through shield arrays.
     if (this.isHegemon()) {
       const geometry = mg.darkStar();
       if (geometry === null) return false;
       return mg.ref(geometry.cx, geometry.cy);
     }
 
-    // A shield array's perimeter cannot be aimed at (C5).
-    if (this.missileShieldAt(tile) !== null) {
-      return false;
-    }
+    // A shield array (C5) never refuses a launch: it keeps the blast off the
+    // tiles inside its perimeter when the warhead lands (NukeExecution).
 
     // The nearest ready launcher: a silo (no range) or a stargate with the
     // tile in range (C4, 2026-09-28) — the gate's one charge, reloading on
@@ -1804,30 +1801,6 @@ export class PlayerImpl implements Player {
         mg.manhattanDist(a.tile(), tile) - mg.manhattanDist(b.tile(), tile),
     );
     return ready[0]?.tile() ?? false;
-  }
-
-  // The shield array (C5) that keeps this player's missiles off the tile:
-  // anyone else's, built and standing, with the tile inside its radius. The
-  // throne's missiles ignore shields (nukeSpawn never asks for it).
-  missileShieldAt(tile: TileRef): Unit | null {
-    const mg = this.mg;
-    const radius = mg.config().shieldArrayRadius();
-    const hits = mg.nearbyUnits(
-      tile,
-      radius,
-      UnitType.ShieldArray,
-      ({ unit }) =>
-        unit.owner() !== this && unit.isActive() && !unit.isUnderConstruction(),
-    );
-    let best: Unit | null = null;
-    let bestDist = Infinity;
-    for (const { unit, distSquared } of hits) {
-      if (distSquared < bestDist) {
-        best = unit;
-        bestDist = distSquared;
-      }
-    }
-    return best;
   }
 
   // The gate that would fire at the tile (C4): the nearest built one with

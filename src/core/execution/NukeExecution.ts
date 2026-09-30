@@ -18,7 +18,12 @@ import { ParabolaUniversalPathFinder } from "../pathfinding/PathFinder.Parabola"
 import { PathStatus } from "../pathfinding/types";
 import { PseudoRandom } from "../PseudoRandom";
 import { NukeType } from "../StatsSchemas";
-import { listNukeBreakAlliance } from "./Util";
+import {
+  inMissileShield,
+  listNukeBreakAlliance,
+  missileShieldsNear,
+  ShieldZone,
+} from "./Util";
 
 const SPRITE_RADIUS = 16;
 
@@ -148,6 +153,7 @@ export class NukeExecution implements Execution {
       targetTile: this.dst,
       magnitude,
       threshold: this.mg.config().nukeAllianceBreakThreshold(),
+      shields: this.shields(magnitude.outer),
     });
 
     // Automatically reject incoming alliance requests.
@@ -383,6 +389,14 @@ export class NukeExecution implements Execution {
     );
   }
 
+  // The shield arrays (DarkStar C5) this warhead cannot harm the inside of:
+  // any other player's, built and standing when asked. Read at launch for
+  // the alliance check and again at impact, so an array raised or lost in
+  // flight counts as it stands when the blast lands.
+  private shields(outer: number): ShieldZone[] {
+    return missileShieldsNear(this.mg, this.player.smallID(), this.dst, outer);
+  }
+
   private detonate() {
     if (this.nuke === null) {
       throw new Error("Not initialized");
@@ -393,12 +407,17 @@ export class NukeExecution implements Execution {
 
     const magnitude = config.nukeMagnitudes(this.nuke.type());
     const toDestroy = this.tilesToDestroy();
+    // The blast keeps its full circle; a shield array (C5) only punches a
+    // hole in it. The far side of the array is still hit.
+    const shields = this.shields(magnitude.outer);
 
     // Retrieve all impacted players and the number of tiles
     const tilesPerPlayers = new Map<Player, number>();
     for (const tile of toDestroy) {
       // The Dark Star cannot be nuked (H7), whoever holds the tile.
       if (mg.isInDarkStar(tile)) continue;
+      // Inside a shield array's perimeter nothing is touched (C5).
+      if (inMissileShield(mg, shields, tile)) continue;
       const owner = mg.owner(tile);
       if (owner.isPlayer()) {
         owner.relinquish(tile);
@@ -477,6 +496,9 @@ export class NukeExecution implements Execution {
         continue;
       }
       if (mg.euclideanDistSquared(dst, unit.tile()) < outer2) {
+        // A structure inside a shield array's perimeter stands (C5); the
+        // array itself sits inside its own.
+        if (inMissileShield(mg, shields, unit.tile())) continue;
         // treatAFKFriendly matches warship targeting: a disconnected
         // teammate's or ally's units are still not kills.
         const friendly = this.player.isFriendly(unit.owner(), true);

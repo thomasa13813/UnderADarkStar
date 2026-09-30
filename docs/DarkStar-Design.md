@@ -89,7 +89,8 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   [Revised 2026-09-28; built the same day, §6.23] **Missiles are the exception.** The throne may buy
   a Nuclear or Antimatter Warhead at any player's price (S6) and it flies from the **Dark Star's
   centre**, as its strikes do: no launcher, no reload, gold is the only limit. A gate its strike
-  captured is never fired (H19), MIRVs stay off, and its warheads ignore shield arrays (C5).
+  captured is never fired (H19), MIRVs stay off. [Revised 2026-09-29] Its warheads are **kept out
+  of shield arrays like anyone else's** (C5); only its strikes pass through.
 - **H3 — Strength scales with the map, not the player count** — for the troop ceiling. Gold scales
   with the round's economy (H4).
 - **H4 — Strength target.** [Revised 2026-09-24] The Hegemon is a **large pool that refills slowly**,
@@ -330,14 +331,21 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   warheads too, and a gate that has just fired one cannot shoot troops until it reloads. Nations
   fire the same way. Rationale (Tom): missiles were too oppressive once SAMs went, and a gate was
   too easy to ignore; tying the two makes both matter.
-- **C5 — Shield arrays.** [Decided 2026-09-28; built the same day, §6.23] A challenger **structure**
-  (1M gold, 10 s build, **one level, no upgrades**) that projects a perimeter of `shieldArrayRadius`
-  (35 tiles: half a level-1 SAM's 70, and never more): **no other player's missile can be aimed at
-  a tile inside it** — the launch is refused, nothing is shot down. The **Hegemon's missiles and
-  strikes** (H2, H8, H19) **pass through it**. An array under construction protects nothing; a
-  captured array shields its new owner; the owner's own missiles are not kept out. Gate shots are
-  troops, not missiles, and land inside. Nations do not build arrays yet (F21). Icon: a crenelated
-  generator under a dashed dome (the silhouette of the Echo Base shield generator, not its name).
+- **C5 — Shield arrays.** [Decided 2026-09-28; built the same day, §6.23; revised 2026-09-29,
+  §6.24] A challenger **structure** (**5M gold**, 10 s build, **one level, no upgrades**) that
+  projects a perimeter of `shieldArrayRadius` (35 tiles: half a level-1 SAM's 70, and never more):
+  **no missile can harm anything inside it**. A warhead may be aimed anywhere, the array included;
+  when it lands, the blast clears its circle as usual **except the tiles inside the perimeter** —
+  no land lost, no troops killed, no structure destroyed there, no crater — so an Antimatter
+  Warhead on an array wipes the ring from 35 to 100 and leaves the inside untouched, and a Nuclear
+  Warhead (30) on the array itself does nothing at all. Nothing is refused and nothing is shot
+  down. **The Hegemon's missiles are kept out like anyone else's** (revised from "pass through",
+  Tom 2026-09-29); its **strikes** (H8, H19) still pass through. An array under construction
+  protects nothing; a captured array shields its new owner; the owner's own missiles are not kept
+  out. Gate shots are troops, not missiles, and land inside. The array shelters itself, so short
+  of the throne's strike only conquest removes one — hence the price (Tom's baseline; F21). Nations
+  do not build arrays yet (F21). Icon: a crenelated generator under a dashed dome (the silhouette
+  of the Echo Base shield generator, not its name).
 
 ### 3.4 Setting and delivery
 
@@ -420,7 +428,7 @@ destroyers and the challenger table). The playtest checks left over from them ar
 | F18 | **Exclaves from gate landings (§6.10, §6.11).** A landlocked beachhead pocket stands until its landing tile is retaken. Measured: World ends with 4–23 such pockets, Milky Way 1–3, Event Horizon 0–1. Whether a cap or decay is needed — likely moot once the geography maps go (F17); decide after Tom has seen the pockets on a galaxy map.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | F19 | **Playtest checks outstanding.** On Event Horizon: the disc and moat by eye (radius 162, moat 18 — the computed default written into `info.json`); 24 nations as a count; the 15 s opening cap; Tribes not flying. From the throne: should a human Hegemon get the AI's landing wave, or is active defence the point (a passive throne kept 5% of the domain on World seed a); the 5 s stall threshold (H13). The HUD merge: [Closed 2026-09-25 — **dropped**] built as columns in the player table with the panel cut to a strip, played, and discarded: seen missing, the panel's fields (the throne's troop bar, domain held, the invasion status, the bubble, the challenger board with its strike status) justify a panel of their own. The panel stays as built (§6.3, §6.6); its only change is that the challenger board starts **collapsed**, with the throne's show/hide toggle to unfold it. Clean-up later if it earns it.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | F20 | **Punitive strike numbers (H19). [Open 2026-09-26]** The levy shares (10% / 25%, raised from 5% / 15% after the first look), the flag window (30 s), the halt (5 s), the radius (34, a quarter more area than the first 30) and the AI's land-share threshold are starting points. Because the levy taxes every challenger's troops, it moves the invasion curve, so H19 is built **before** the F1 sweep and its numbers ride with it. To judge in `HegemonSim` and in play: how often nations nuke on a galaxy map (and so how often the galaxy is levied); whether a 15% levy in a radius-30 pocket is so dense that the halt is never disturbed; whether the pocket should follow the warhead that was fired (Antimatter's 100) rather than one radius for both.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| F21 | **Missiles on gates, shields and the throne's warheads (C4, C5, H2). [Open 2026-09-28]** The shield radius (35) is the cap Tom set, not a tuned number; the throne's missiles have no reload — gold-limited only — and may want a cadence once the shadow tax is tuned (F1); nations do not build shield arrays and the AI Hegemon fires no missiles; a shield refusing gate shots was considered and left as no (gates are meant to matter more, not less). To judge in play: whether a level-1 gate's 180 leaves a warhead any target worth 1M, and whether one 1M array around a capital blunts missiles too far.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| F21 | **Missiles on gates, shields and the throne's warheads (C4, C5, H2). [Open 2026-09-28]** The shield radius (35) is the cap Tom set, not a tuned number; the throne's missiles have no reload — gold-limited only — and may want a cadence once the shadow tax is tuned (F1); nations do not build shield arrays and the AI Hegemon fires no missiles; a shield refusing gate shots was considered and left as no (gates are meant to matter more, not less). [2026-09-29] The array now shelters its zone from every missile, the throne's included, and costs 5M — Tom's baseline, not a tuned number. To judge in play: whether a level-1 gate's 180 leaves a warhead any target worth 1M, whether a 5M array around a capital is worth it or unanswerable (the throne's strike and conquest are the only answers), and whether a hole in the blast reads clearly on screen.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 
 ## 5. Engine foundation — what we reuse
 
@@ -1707,7 +1715,8 @@ missileLaunchersEnabled`) count a gate as a launcher; `NationNukeBehavior.maybeS
   in `Config.ts` (radius 35, 1M, 10 s, no `upgradable`); a passive structure (`ConstructionExecution`
   builds it, no execution). `PlayerImpl.missileShieldAt(tile)` finds another player's built array
   covering the tile through the unit grid; `nukeSpawn` refuses when one exists, **unless the player
-  is the Hegemon**. Strikes never ask.
+  is the Hegemon**. Strikes never ask. [Superseded 2026-09-29, §6.24: the launch gate is gone; the
+  shield is applied to the blast instead.]
 - **The throne's missiles.** `canBuildUnitType` no longer refuses the Hegemon a warhead (still the
   MIRV); `nukeSpawn` returns the Dark Star's centre for the Hegemon before any shield or launcher
   check, so a captured gate's charge is never spent and no flag is raised (`NukeExecution` already
@@ -1737,6 +1746,54 @@ build_shield_array*`; the warhead help text and the gate's description say where
   build gates where they built silos.
 - **Seen, left for later (F21).** Nations build no shield arrays; the AI Hegemon fires no missiles;
   the tutorial's silo steps are skipped (silos off) rather than rewritten (P8).
+
+### 6.24 As built — shield arrays shelter the blast, not the launch (2026-09-29)
+
+Tom's revision: rather than refusing a launch, an array should keep a missile's damage off the
+zone it protects — the blast clears its circle as usual, the inside excepted — and the throne's
+missiles should be kept out like anyone else's; the price rises to 5M. Rules in C5 (revised) and
+H2 (revised); the price stays open in F21.
+
+- **The engine already had the shape.** `NukeExecution.detonate` skipped Dark Star tiles (H7) in
+  its destroy loop; the shield is the same `continue`. The blast set (`tilesToDestroy`) is
+  unchanged — a full circle, computed as before — so the far side of an array is still hit; the
+  skip happens per tile at impact. Because troop deaths are counted from the tiles actually taken,
+  sheltered tiles cost no troops without further code; the water conversion and the crater
+  (`queueNukeImpact`) are skipped with the tile, so the client's nukeable layer shows the hole.
+  The structure sweep at the end of `detonate` skips sheltered units the same way — the array
+  sits inside its own zone and survives its own blast. MIRV warheads run the same execution.
+- **`missileShieldsNear(game, attackerSmallId, tile, outer)`** (`execution/Util.ts`) gathers once,
+  through the unit grid, every other player's built array within `outer + radius` of the impact as
+  a `ShieldZone` (centre and squared radius); `inMissileShield(gm, zones, tile)` is the per-tile
+  test (the rim counts as inside, like the grid's own range test). Read at launch for the alliance
+  check and again at impact, so an array raised or lost in flight counts as it stands when the
+  blast lands. It takes `Game | GameView`, so the client's preview uses it too. `PlayerImpl.
+missileShieldAt` and the gate in `nukeSpawn` are gone: a warhead may be aimed anywhere.
+- **The throne.** `nukeSpawn` still returns the Dark Star's centre for the Hegemon; nothing else
+  is special. The throne owns no array, so every array shelters against its warheads.
+- **Alliances.** `listNukeBreakAlliance`, `wouldNukeBreakAlliance` and `computeNukeBlastCounts`
+  take optional `shields`: sheltered tiles and structures count for nobody, so a blast kept wholly
+  off an ally angers no one. `NukeExecution.maybeBreakAlliances` passes them; the client's SAM
+  preview and the fresh-ally safety check (`BuildPreviewController`) pass the same, so what the
+  preview flags is what the sim will do.
+- **Nations.** `NationNukeBehavior.nukeTileScore` values a structure inside another player's array
+  at nothing, so a nation does not spend a warhead on a sheltered city. Nations still build no
+  arrays (F21).
+- **Cost.** `SHIELD_ARRAY_DEFAULTS.costGold` 1M → 5M.
+- **Client.** Nothing structural: the ring and ghost preview are unchanged and the crater follows
+  the sim. The explosion sprite still draws a full circle over the hole (cosmetic; F21 asks whether
+  it reads). Strings reworded: `build_menu.desc.shield_array`, `help_modal.build_shield_array_desc`,
+  and the two warhead help texts.
+- **Tests.** `tests/ShieldArray.test.ts` (15, rewritten) runs under a `BlastConfig` with the game's
+  real radii (TestConfig shrinks every blast to one tile) and a 60×120 western block so a circle
+  has land outside the zone: cost 5M, one level, the radius cap, no throne or Dark Star array; a
+  launch aimed inside is allowed; a hydrogen bomb on an array clears outside the rim and nothing
+  inside, every tile within the inner radius but outside the zone gone; an atom bomb on the array
+  does nothing (tiles, troops, array, a sheltered city); a sheltered city stands while an exposed
+  one falls; the owner's own missile is not kept out; the throne's is; strikes pass; a captured
+  array (the ground conquered under it) shelters its captor against its old owner; gate shots land;
+  the alliance list ignores a sheltered player and not an exposed one; an array under construction
+  protects nothing and a finished one shelters from the tick it stands.
 
 ## 7. Constraints (non-negotiable engineering rules)
 
@@ -1813,7 +1870,7 @@ to the invader (H9), gold donations from the throne (H9), hydrogen-bomb removal 
 | **Freighter**                 | The engine's trade ship; travels overland to and from a harbour at half speed (S7).                                                                                                                |
 | **Trade lane**                | A railroad drawn and ridden as a straight line between two stations (S7).                                                                                                                          |
 | **Stargate**                  | A challenger structure that fires a troop-carrying projectile at any tile in range; it lands as a beachhead (C4).                                                                                  |
-| **Shield Array**              | A challenger structure whose 35-tile perimeter no other player's missile may target; the throne's fire passes through (C5).                                                                        |
+| **Shield Array**              | A challenger structure whose 35-tile perimeter no missile can harm the inside of, the throne's included; the blast clears the rest of its circle; strikes pass through (C5).                       |
 | **Projectile**                | The shared flight — a unit on a nuke-style arc with a motion plan — used by strikes, gate shots and the opening.                                                                                   |
 | **Tyranny**                   | The cost penalty on striking a small player; at the floor they cannot be struck at all.                                                                                                            |
 | **Bubble**                    | The land a strike holds while it lasts; fought over by the struck player, pops to neutral.                                                                                                         |
@@ -2122,6 +2179,12 @@ to the invader (H9), gold donations from the throne (H9), hydrogen-bomb removal 
   cost and speed) and the plains/highland/mountain colours convey it intuitively; a more
   space-flavoured land palette is a possible later palette swap, not a design goal. The moat's
   current look is fine, so the moat-and-disc styling is low priority.
+- **2026-09-29** — **Shield arrays shelter the blast, not the launch (§6.24).** Tom's revision:
+  an array no longer refuses a launch; a warhead lands anywhere and the blast clears its circle as
+  usual except the tiles inside the perimeter (no land, troops, structures or crater there; the far
+  side of the array is still hit). The Hegemon's missiles are kept out like anyone else's (H2, C5
+  revised; strikes still pass through). The price rises to 5M (Tom's baseline; F21). A blast kept
+  wholly off an ally angers nobody; nations value sheltered structures at nothing.
 - **2026-09-28** — **Missiles on gates, shield arrays, the throne's warheads (§6.23).** Tom's
   decisions: the missile silo goes (S6, hard-off like the SAM); a warhead launches from the nearest
   ready stargate with the target in range and spends its charge (C4); a new **Shield Array** (C5:
