@@ -91,6 +91,13 @@ const MAX_STARGATES = 3;
 const FIRST_STARGATE_RATIO = 0.4;
 
 /**
+ * Highest level a nation upgrades a gate to for the sake of reaching the moat.
+ * Gates have no level cap (2026-09-30); this is the old cap of 5, kept as the
+ * nation's own limit so a gap too wide for it still means a new, nearer gate.
+ */
+const THRONE_GATE_MAX_LEVEL = 5;
+
+/**
  * Weight of the pull towards a gate's aim (the moat, or the nearest enemy
  * beyond our land) when placing it: one tile nearer the aim is worth this
  * many points against the interior and spacing terms.
@@ -1026,22 +1033,21 @@ export class NationStructureBehavior {
 
   /**
    * Hegemon mode: while the nation wants the throne and no gate of its
-   * reaches the moat, upgrade the gate that falls least short if its levels
-   * left would close the gap, else build a first gate (the value function
-   * pulls it towards the Dark Star). Cap and gold as for any structure.
+   * reaches the moat, upgrade the gate that falls least short if upgrades up
+   * to THRONE_GATE_MAX_LEVEL would close the gap, else build a first gate (the
+   * value function pulls it towards the Dark Star). Cap and gold as for any
+   * structure.
    */
   private maybeGateForThrone(): boolean {
     const hegemon = this.hegemonBehavior;
     if (hegemon === null || !hegemon.wantsThrone()) return false;
     const reaches = hegemon.gateReaches();
     if (reaches.some((r) => r.shortfall <= 0)) return false;
-    const config = this.game.config();
-    const perLevel = config.stargateConfig().rangePerLevel;
-    const maxLevel = config.stargateConfig().maxLevel;
+    const perLevel = this.game.config().stargateConfig().rangePerLevel;
     const closable = reaches
       .filter(
         (r) =>
-          r.shortfall <= perLevel * (maxLevel - r.gate.level()) &&
+          r.shortfall <= perLevel * (THRONE_GATE_MAX_LEVEL - r.gate.level()) &&
           this.player.canUpgradeUnit(r.gate),
       )
       .sort((a, b) => a.shortfall - b.shortfall);

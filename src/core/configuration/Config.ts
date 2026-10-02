@@ -281,17 +281,19 @@ const OVERTIME_DEFAULTS = {
 // fires troops as a projectile at any tile in range. Numbers are F15's
 // starting points (decided 2026-09-24), tunable here.
 const STARGATE_DEFAULTS = {
-  // Range in tiles at level 1, what each upgrade adds, and the last level an
-  // upgrade may reach (range 180 / 255 / 330 / 405 / 480; raised 2026-09-26
-  // from 120 +60, which underperformed in play). On World, nations spawn a
-  // median 75 tiles apart and ~280 from the moat.
+  // Range in tiles at level 1 and what each upgrade adds (range 180 / 255 /
+  // 330 / ...; raised 2026-09-26 from 120 +60, which underperformed in play).
+  // No level cap (2026-09-30, was 5): like a city, a gate upgrades for as
+  // long as the gold lasts. On World, nations spawn a median 75 tiles apart
+  // and ~280 from the moat.
   rangeBase: 180,
   rangePerLevel: 75,
-  maxLevel: 5,
   // A gate holds one shot; this is the reload after firing, whatever the
   // level (upgrades buy range, not throughput; a silo reloads in 9 s).
-  cooldownSeconds: 60,
-  costGold: 1_000_000,
+  // 5 s since 2026-09-30, was 60.
+  cooldownSeconds: 5,
+  // Flat, for a new gate and for each upgrade (2026-09-30, was 1M).
+  costGold: 500_000,
   constructionSeconds: 10,
 };
 
@@ -305,9 +307,9 @@ const SHIELD_ARRAY_DEFAULTS = {
   // replaces (70), and never more (decided 2026-09-28). A single level, so
   // upgrades buy nothing.
   radius: 35,
-  // Tom's baseline for a zone nothing short of conquest can clear
-  // (2026-09-29); F21 keeps it open to tuning.
-  costGold: 5_000_000,
+  // Lowered 2026-09-30 from the 5M baseline for a zone nothing short of
+  // conquest can clear; F21 keeps it open to tuning.
+  costGold: 2_000_000,
   constructionSeconds: 10,
 };
 
@@ -514,7 +516,7 @@ export class Config {
   }
   stargateRange(level: number): number {
     const c = this.stargateConfig();
-    return c.rangeBase + c.rangePerLevel * (Math.min(level, c.maxLevel) - 1);
+    return c.rangeBase + c.rangePerLevel * (level - 1);
   }
   stargateCooldown(): number {
     return this.stargateConfig().cooldownSeconds * 10;
@@ -861,7 +863,6 @@ export class Config {
             ? 0
             : c.constructionSeconds * 10,
           upgradable: true,
-          maxLevel: c.maxLevel,
         };
         break;
       }

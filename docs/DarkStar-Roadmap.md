@@ -290,6 +290,9 @@ Tests that named an Earth map were repointed and the wire-transcript snapshot re
 fixtures under `tests/testdata/maps/` (world, plains, …) are unaffected: they are copies, not
 resources.
 
+**Decided 2026-10-01.** The launch needs at least six new maps of Tom's (the earlier target was
+about 20 in total).
+
 **Done when** the pool reaches launch size, each map has a thumbnail and nations, and the sim runs
 on every one.
 
@@ -325,6 +328,9 @@ lists each one with its licence.
 **Goal.** Replace the closed API with the smallest service that lets players be recognised across
 rounds, keeps bots out of public lobbies, and records who won each game. Tom's point 7, first half.
 
+**Design drafted 2026-10-01: `docs/DarkStar-Accounts.md`** (decisions A1–A20, the API surface, the
+database, implementation steps B1–B7). It supersedes the outline below where they differ.
+
 **Exists.** The server verifies an EdDSA JWT from `api.<DOMAIN>/.well-known/jwks.json` at websocket
 connect and maps `clientID` to `persistentID` (`jwt.ts`); the client keeps a 15-minute token from a
 30-day refresh cookie (`Auth.ts`); in dev a raw persistent ID is accepted. Server-side calls that
@@ -359,8 +365,23 @@ assets to R2.
 the least friction and needs only an email sender; Discord fits the audience); whether guests may
 play public rounds at all.
 
-**Done when** a player logs in, joins a public lobby on a deployed server, plays, and their game
-appears on their profile page.
+**Decided 2026-10-01.** Accounts are in the launch scope (Tom declined an accountless launch): the
+server holds an authoritative account record and a **leaderboard database**. The first things
+tracked are performance only: reigns as Hegemon and the longest consecutive streak. Profiles and
+anything richer can wait. **Login:** Discord and Google at launch, built so an email login can be
+added later (an account may carry several linked identities). **Guests** may play public rounds and
+hold a throne (L3 stands); a guest's reign is simply not recorded. **Every public throne round
+counts**, including the two-human minimum of L9; no higher bar for the leaderboard. **The board:**
+reigns (every round won is one reign, by overthrow or by holding to the timer) and longest reign
+(most consecutive wins), with thrones taken and rounds held kept as the split. **Names:** an
+account name carries a four-digit tag and a signed-in player may play under any name; a guest is
+given `Anon` plus five digits and cannot choose. Known and accepted: the server does not run the simulation, so the winner it
+records is the majority vote of the clients in the game (`GameServer.handleWinner`, one vote per
+IP), and a two-person round can be farmed. The hardening, if it is ever needed, is to replay the
+archived turns on the server for rounds that count.
+
+**Done when** a player logs in, joins a public lobby on a deployed server, plays, and their reign
+appears on the leaderboard.
 
 ## P6. Matchmaking and the persistent Hegemon (L)
 
@@ -435,6 +456,8 @@ cosmetic assets present.
 **Decide.** Whether to monetise at all at launch (a free launch with cosmetics later is a legitimate
 choice); MoR vs Stripe direct; the first catalogue and prices.
 
+**Decided 2026-10-01.** Free launch; the store and cosmetics come some time after it.
+
 **Done when** a test purchase grants a pattern that shows in a live game and survives logout.
 
 ## P8. Public release (M)
@@ -481,13 +504,22 @@ P0 and P1 are independent and can go first in either order; P2–P4 are independ
 P5–P6, so they can be interleaved with the backend work as Tom's attention allows. The critical path
 to a public throne is P1 → P5 → P6 → P8.
 
+**The step-by-step order from 2026-10-01 to the minimum public release is
+`docs/DarkStar-Launch.md`** (stages 0–8). It interleaves the remaining phases: thrones T1–T3
+before the accounts core, the first deployment before the leaderboard, and the friends playtest as
+the final go/no-go gate.
+
 ## Open questions for Tom
 
-1. Login: email magic link, Discord, or both? Guests in public rounds?
+1. ~~Login: email magic link, Discord, or both? Guests in public rounds?~~ Answered 2026-10-01:
+   Discord and Google, email later; guests play and may hold a throne, unrecorded (P5).
 2. ~~Throne count at launch and whether a reign is capped.~~ Answered 2026-09-29: 15 thrones, no
    cap, no login needed (`docs/DarkStar-Lobbies.md` L1, L3, L11).
-3. Monetise at launch, or free launch and P7 later?
+3. ~~Monetise at launch, or free launch and P7 later?~~ Answered 2026-10-01: free launch, P7
+   later; accounts and a reign leaderboard are in the launch scope (P5).
 4. Hosting preference (a VPS like upstream's Hetzner box, or a PaaS), and who holds the accounts.
+   Answered 2026-10-01: one VPS behind Cloudflare's free plan through a named tunnel, for now
+   (`docs/DarkStar-Launch.md` stage 0). The provider and the domain are still to choose.
 5. Which upstream maps survive (Milky Way and Sol are eligible).
 6. The logo, wordmark and font; the soundtrack budget.
 7. Whether translations ship at launch (recommendation: English only).

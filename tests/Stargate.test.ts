@@ -139,31 +139,38 @@ function flyUntilLanded(player: Player): void {
 describe("Building a stargate", () => {
   beforeEach(() => start());
 
-  test("a challenger builds one on its land, with the silo's cost curve and a level; the Hegemon cannot", () => {
+  test("a challenger builds one on its land, at a flat 500k and with a level; the Hegemon cannot", () => {
     const tile = tileOf(east, 5);
     expect(east.canBuild(UnitType.Stargate, tile)).not.toBe(false);
     const gold = east.gold();
     const gate = buildGate(east, tile);
     expect(gate.level()).toBe(1);
     expect(gate.isUnderConstruction()).toBe(false);
-    expect(east.gold()).toBe(gold - 1_000_000n);
+    expect(east.gold()).toBe(gold - 500_000n);
+    // A second gate costs the same: no curve.
+    const info = game.config().unitInfo(UnitType.Stargate);
+    expect(info.cost(game, east)).toBe(500_000n);
     // The throne never expands: no gate for it.
     expect(hegemon.canBuild(UnitType.Stargate, domainShore(east))).toBe(false);
   });
 
-  test("upgrades buy range, up to level 5", () => {
+  test("upgrades buy range at the same flat price, with no level cap", () => {
     const gate = buildGate(east, tileOf(east, 5));
     const config = game.config();
     expect(config.stargateRange(1)).toBe(180);
     expect(config.stargateRange(2)).toBe(255);
     expect(config.stargateRange(5)).toBe(480);
-    for (let level = 1; level < 5; level++) {
+    expect(config.unitInfo(UnitType.Stargate).maxLevel).toBeUndefined();
+    // Past the old cap of 5, each level still adds 75 for 500k.
+    for (let level = 1; level < 8; level++) {
       expect(east.canUpgradeUnit(gate)).toBe(true);
+      const gold = east.gold();
       east.upgradeUnit(gate);
       expect(gate.level()).toBe(level + 1);
+      expect(east.gold()).toBe(gold - 500_000n);
     }
-    expect(east.canUpgradeUnit(gate)).toBe(false);
-    expect(config.stargateRange(gate.level())).toBe(480);
+    expect(config.stargateRange(gate.level())).toBe(180 + 75 * 7);
+    expect(east.canUpgradeUnit(gate)).toBe(true);
   });
 });
 
@@ -195,8 +202,10 @@ describe("Aiming a gate shot", () => {
     expect(shot(east)).toBeDefined();
     expect(east.troops()).toBe(troops - 10_000);
     expect(gate.missileTimerQueue()).toHaveLength(1);
+    // The reload is 5 s (50 ticks); one tick of it has passed.
+    expect(game.config().stargateCooldown()).toBe(50);
     expect(east.stargateFor(tileOf(east, 33))?.readyInTicks).toBeGreaterThan(
-      500,
+      40,
     );
     // Reloading: refused, nothing taken.
     const after = east.troops();

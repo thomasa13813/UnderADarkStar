@@ -157,19 +157,19 @@ function tilesAround(player: Player, site: TileRef) {
 describe("Building a shield array", () => {
   beforeEach(() => start());
 
-  test("costs 5M, stands anywhere in the territory, and is not upgradable", () => {
+  test("costs 2M, stands anywhere in the territory, and is not upgradable", () => {
     const tile = tileOf(east, 20);
     const gold = east.gold();
     const array = build(east, UnitType.ShieldArray, tile);
     // Two ticks of income accrue while it is placed.
-    expect(gold - east.gold()).toBeGreaterThan(4_990_000n);
-    expect(gold - east.gold()).toBeLessThanOrEqual(5_000_000n);
+    expect(gold - east.gold()).toBeGreaterThan(1_990_000n);
+    expect(gold - east.gold()).toBeLessThanOrEqual(2_000_000n);
     expect(array.level()).toBe(1);
     expect(east.canUpgradeUnit(array)).toBe(false);
     const row = east
       .buildableUnits(tile)
       .find((b) => b.type === UnitType.ShieldArray);
-    expect(row?.cost).toBe(5_000_000n);
+    expect(row?.cost).toBe(2_000_000n);
     expect(row?.canUpgrade).toBe(false);
     expect(game.config().unitInfo(UnitType.ShieldArray).upgradable).toBeFalsy();
   });

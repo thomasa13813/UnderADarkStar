@@ -205,12 +205,16 @@ describe("A stargate launches missiles (C4)", () => {
     expect(gate.punitiveFlag()?.warhead).toBe(UnitType.AtomBomb);
   });
 
-  test("a target beyond even a level-5 gate has no launcher", () => {
-    buildGate(east, tileOf(east, 6));
+  test("a target beyond the gate's range has no launcher until upgrades reach it", () => {
+    const gate = buildGate(east, tileOf(east, 6));
     const target = tileOf(west, 2);
-    // The gate is 2·33 + 8 = 74 tiles from the target: level 5 reaches 70,
-    // so the real range is needed here.
+    // The gate is 2·33 + 8 = 74 tiles from the target: level 5 reaches 70.
     expect(east.canBuild(UnitType.AtomBomb, target)).toBe(false);
+    while (gate.level() < 5) east.upgradeUnit(gate);
+    expect(east.canBuild(UnitType.AtomBomb, target)).toBe(false);
+    // No level cap: level 6 reaches 80.
+    east.upgradeUnit(gate);
+    expect(east.canBuild(UnitType.AtomBomb, target)).toBe(gate.tile());
   });
 });
 
