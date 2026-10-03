@@ -10,6 +10,7 @@ export enum GameMapType {
   EventHorizon = "Event Horizon", // map-generator/assets/maps/eventhorizon/info.json
   MilkyWay = "MilkyWay", // map-generator/assets/maps/milkyway/info.json
   MoreThanLuck = "More Than Luck", // map-generator/assets/maps/morethanluck/info.json
+  NoMoon = "No Moon", // map-generator/assets/maps/nomoon/info.json
   Passage = "Passage", // map-generator/assets/maps/passage/info.json
   Royale = "Royale", // map-generator/assets/maps/royale/info.json
   Sierpinski = "Sierpinski", // map-generator/assets/maps/sierpinski/info.json
@@ -208,6 +209,18 @@ export const maps: readonly MapInfo[] = [
     specialFrequency: -1,
     defaultNationCount: 35,
     specialTeamCount: 5,
+  },
+  {
+    id: "NoMoon",
+    type: GameMapType.NoMoon,
+    translationKey: "map.nomoon",
+    categories: ["cosmic"],
+    multiplayerFrequency: 4,
+    ffaFrequency: -1,
+    teamFrequency: -1,
+    specialFrequency: -1,
+    defaultNationCount: 19,
+    themes: ["space"],
   },
   {
     id: "Passage",

@@ -64,8 +64,9 @@ Sizes as in the roadmap: S is a session, M a few, L a week or more of sessions.
 
 ### Stage 1 — Unblock the content track (S)
 
-- [ ] **Map authoring kit** (P3): a friendly-palette PNG in, the generator's encoding and
+- [x] **Map authoring kit** (P3): a friendly-palette PNG in, the generator's encoding and
       `info.json` out, plus a one-page guide. From here Tom draws maps while engineering continues.
+      Built 2026-10-01: `npm run map`, guide in `docs/MapMaking.md`.
 
 _Done when_ Tom has turned one drawing into a playable map without help.
 
@@ -200,3 +201,5 @@ _Done when_ the checklist is clean. This build is the release candidate.
 - **2026-10-01** — Tom confirmed the hosting shape (a rented server behind Cloudflare, for now) and
   set the map target at a minimum of six new maps. Scope wording follows the accounts decisions of
   the same day (guest names assigned; the board shows reigns and longest reign).
+- **2026-10-01** — Stage 1's map kit built (`npm run map`, `docs/MapMaking.md`). The stage is done
+  when Tom has taken one drawing of his own through it.

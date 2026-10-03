@@ -32,6 +32,7 @@
     "lint:eslint:fix": "eslint --fix",
     "prepare": "husky",
     "gen-maps": "cd map-generator && go run . && npm run format",
+    "map": "tsx src/scripts/makeMap.ts",
     "gen-atlases": "tsx scripts/generateSpriteAtlases.ts",
     "inst": "npm ci --ignore-scripts"
   },

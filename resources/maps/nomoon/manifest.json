@@ -1,0 +1,125 @@
+{
+  "categories": ["cosmic"],
+  "hegemon": {
+    "center": [1440, 1440],
+    "moat": 18,
+    "radius": 163
+  },
+  "id": "NoMoon",
+  "map": {
+    "height": 1800,
+    "num_land_tiles": 531808,
+    "width": 1800
+  },
+  "map16x": {
+    "height": 450,
+    "num_land_tiles": 30658,
+    "width": 450
+  },
+  "map4x": {
+    "height": 900,
+    "num_land_tiles": 129400,
+    "width": 900
+  },
+  "multiplayer_frequency": 4,
+  "name": "No Moon",
+  "nations": [
+    {
+      "coordinates": [375, 1325],
+      "flag": "",
+      "name": "Aldebaran Union"
+    },
+    {
+      "coordinates": [855, 1300],
+      "flag": "",
+      "name": "Eltanin Syndicate"
+    },
+    {
+      "coordinates": [525, 1165],
+      "flag": "",
+      "name": "Alcyone Commonwealth"
+    },
+    {
+      "coordinates": [660, 1030],
+      "flag": "",
+      "name": "Sirius Collective"
+    },
+    {
+      "coordinates": [110, 525],
+      "flag": "",
+      "name": "Andromeda Directorate"
+    },
+    {
+      "coordinates": [60, 415],
+      "flag": "",
+      "name": "Draco Reach"
+    },
+    {
+      "coordinates": [400, 620],
+      "flag": "",
+      "name": "Bellatrix Concord"
+    },
+    {
+      "coordinates": [240, 445],
+      "flag": "",
+      "name": "Menkar Authority"
+    },
+    {
+      "coordinates": [360, 390],
+      "flag": "",
+      "name": "Kepler Dominion"
+    },
+    {
+      "coordinates": [801, 790],
+      "flag": "",
+      "name": "Zosma Order"
+    },
+    {
+      "coordinates": [624, 609],
+      "flag": "",
+      "name": "Saiph Marches"
+    },
+    {
+      "coordinates": [200, 160],
+      "flag": "",
+      "name": "Rasalhague Protectorate"
+    },
+    {
+      "coordinates": [365, 290],
+      "flag": "",
+      "name": "Lyra Combine"
+    },
+    {
+      "coordinates": [410, 175],
+      "flag": "",
+      "name": "Betelgeuse Covenant"
+    },
+    {
+      "coordinates": [635, 375],
+      "flag": "",
+      "name": "Hadar Crown"
+    },
+    {
+      "coordinates": [510, 100],
+      "flag": "",
+      "name": "Spica Trade League"
+    },
+    {
+      "coordinates": [985, 565],
+      "flag": "",
+      "name": "Rigel Mandate"
+    },
+    {
+      "coordinates": [1125, 250],
+      "flag": "",
+      "name": "Procyon Free Worlds"
+    },
+    {
+      "coordinates": [1195, 480],
+      "flag": "",
+      "name": "Cygnus Compact"
+    }
+  ],
+  "themes": ["space"],
+  "translation_key": "map.nomoon"
+}

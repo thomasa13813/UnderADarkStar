@@ -528,6 +528,17 @@ persistence was OpenFront's closed-source API, which we do not have.
   written by `scripts/generateGalaxyMap.ts` (deterministic for its seed; `--seed`, `--size`,
   `--land`) — `image.png` and `info.json` — and then `npm run gen-maps` as for any map. The Go
   toolchain lives at `<home>\go-sdk\go\bin` on Tom's machine (the official zip, no installer).
+- **No Moon** (`map-generator/assets/maps/nomoon/`, 1800×1800, ~530k land tiles, 19 nations) [Built
+  2026-10-03] is the first map made from one of Tom's Paint sketches (`MapImages/NoMoon.png`): the
+  Dark Star in the bottom-right corner, a beam of land running from it to the top left, where it
+  has cratered and cracked a moon; the moon's debris is flung out to either flank. The beam is the
+  direct road to the throne (plains core, highland rim; the fan of four rays nearest the moat is
+  highland and mountain, so the last stretch is slow), the two debris chains are the fleet and
+  stargate routes round the sides, and the cracks make the moon itself a set of shards. The drawing
+  is generated, not painted: `npx tsx src/scripts/drawings/NoMoon.ts` writes
+  `map-generator/drawings/No Moon.png` from a description of the parts, then `npm run map "No Moon"`
+  builds it as for any drawing. First `HegemonSim` look: 2 overthrows in 3 seeds (one by the
+  mid-beam nation by gate, one by the largest debris fragment by fleet), the third to the timer.
 - **Gap:** terrain colours are global, not per-map, and map thumbnails are hard-coded
   blue-sea/green-land in `map-generator/map_generator.go` (`getThumbnailColor`).
 
@@ -2230,3 +2241,14 @@ to the invader (H9), gold donations from the throne (H9), hydrogen-bomb removal 
   the same day: hosting is one rented server behind Cloudflare; at least six new maps for launch;
   guests are given `Anon` names and cannot choose one, signed-in players may play under any name;
   the board shows reigns (every win) and longest reign (consecutive wins).
+- **2026-10-01** — **Map authoring kit built (roadmap P3 step 2, launch stage 1).** `npm run map`
+  turns an MS Paint drawing in a seven-colour palette into a playable map: terrain, nation spawns
+  from red dots, the Dark Star from a yellow circle, a plain-language report. Guide:
+  `docs/MapMaking.md`; as-built note in the roadmap.
+- **2026-10-03** — **No Moon, the first sketched map (§5.3).** Tom's Paint sketch plus a sentence of
+  intent (`MapImages/NoMoon.png`: the Dark Star bottom right, a beam of land to a moon shattering at
+  the top left) was authored as a generated drawing (`src/scripts/drawings/NoMoon.ts` →
+  `map-generator/drawings/No Moon.png`) and built with the kit: 19 nations, ~530k land, the beam as
+  the direct road and the debris chains as the flank routes. Three `HegemonSim` seeds: 2 overthrows,
+  1 to the timer. The working method for further maps: Tom sketches and describes, the drawing is
+  generated from his description so it can be re-tuned by number.

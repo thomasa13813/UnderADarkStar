@@ -1,0 +1,110 @@
+{
+  "id": "NoMoon",
+  "name": "No Moon",
+  "translation_key": "map.nomoon",
+  "categories": ["cosmic"],
+  "multiplayer_frequency": 4,
+  "themes": ["space"],
+  "hegemon": {
+    "center": [1440, 1440],
+    "radius": 163,
+    "moat": 18
+  },
+  "nations": [
+    {
+      "coordinates": [375, 1325],
+      "name": "Aldebaran Union",
+      "flag": ""
+    },
+    {
+      "coordinates": [855, 1300],
+      "name": "Eltanin Syndicate",
+      "flag": ""
+    },
+    {
+      "coordinates": [525, 1165],
+      "name": "Alcyone Commonwealth",
+      "flag": ""
+    },
+    {
+      "coordinates": [660, 1030],
+      "name": "Sirius Collective",
+      "flag": ""
+    },
+    {
+      "coordinates": [110, 525],
+      "name": "Andromeda Directorate",
+      "flag": ""
+    },
+    {
+      "coordinates": [60, 415],
+      "name": "Draco Reach",
+      "flag": ""
+    },
+    {
+      "coordinates": [400, 620],
+      "name": "Bellatrix Concord",
+      "flag": ""
+    },
+    {
+      "coordinates": [240, 445],
+      "name": "Menkar Authority",
+      "flag": ""
+    },
+    {
+      "coordinates": [360, 390],
+      "name": "Kepler Dominion",
+      "flag": ""
+    },
+    {
+      "coordinates": [801, 790],
+      "name": "Zosma Order",
+      "flag": ""
+    },
+    {
+      "coordinates": [624, 609],
+      "name": "Saiph Marches",
+      "flag": ""
+    },
+    {
+      "coordinates": [200, 160],
+      "name": "Rasalhague Protectorate",
+      "flag": ""
+    },
+    {
+      "coordinates": [365, 290],
+      "name": "Lyra Combine",
+      "flag": ""
+    },
+    {
+      "coordinates": [410, 175],
+      "name": "Betelgeuse Covenant",
+      "flag": ""
+    },
+    {
+      "coordinates": [635, 375],
+      "name": "Hadar Crown",
+      "flag": ""
+    },
+    {
+      "coordinates": [510, 100],
+      "name": "Spica Trade League",
+      "flag": ""
+    },
+    {
+      "coordinates": [985, 565],
+      "name": "Rigel Mandate",
+      "flag": ""
+    },
+    {
+      "coordinates": [1125, 250],
+      "name": "Procyon Free Worlds",
+      "flag": ""
+    },
+    {
+      "coordinates": [1195, 480],
+      "name": "Cygnus Compact",
+      "flag": ""
+    }
+  ]
+}

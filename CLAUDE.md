@@ -21,6 +21,7 @@ npm run lint             # Oxlint + ESLint
 npm run lint:fix         # Oxlint + ESLint with auto-fix
 npm run format           # Prettier
 npm run build-prod       # Production build
+npm run map              # Map kit: build a map from a drawing (docs/MapMaking.md)
 ```
 
 **Run a single test file:**
@@ -69,6 +70,7 @@ The game server only serves `index.html` and the WebSocket. All other assets (JS
 | `docs/DarkStar-Lobbies.md`         | Public lobbies / thrones design (P6)   |
 | `docs/DarkStar-Accounts.md`        | Accounts / leaderboard design (P5)     |
 | `docs/DarkStar-Launch.md`          | Ordered steps to the public release    |
+| `docs/MapMaking.md`                | Drawing a map and building it          |
 | `src/core/configuration/Config.ts` | All game balance constants/formulas    |
 | `src/core/Schemas.ts`              | All intent/message types (Zod schemas) |
 | `src/core/GameRunner.ts`           | Simulation orchestrator                |

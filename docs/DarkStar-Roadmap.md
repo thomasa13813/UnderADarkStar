@@ -293,6 +293,26 @@ resources.
 **Decided 2026-10-01.** The launch needs at least six new maps of Tom's (the earlier target was
 about 20 in total).
 
+**As built, step 2 (2026-10-01): the authoring kit.** `npm run map` (`src/scripts/makeMap.ts`,
+guide in `docs/MapMaking.md`). Tom draws `map-generator/drawings/<Map Name>.png` in MS Paint from
+seven of Paint's default swatches: indigo space, black void, white plains, light grey highland,
+mid grey mountain, red nation dots, one yellow circle for the Dark Star. The file name is the
+map's name. `npm run map "<Name>"` converts it to the generator's encoding, writes `info.json`
+(the Dark Star from the circle or the engine's default, nations at the dots' centres clockwise
+from north, a sci-fi name each, `cosmic` / `space` / frequency 4), runs the Go generator on that
+one map, and reports in plain words what will be deleted or ignored; errors (a dot in space, two
+Dark Stars, a Dark Star off the edge) write nothing. `new` makes a template, `check` reports
+only, `remove` takes a map out (it also prunes the `en.json` key the generator never removes).
+Paint's smoothed edges are handled: a pixel within 40 RGB of a palette colour is that colour, the
+rest take their nearest neighbour's terrain, and high ground under three pixels thick is dropped
+(the greys between white land and black void would otherwise read as elevation). Rebuilding keeps
+hand-edited nation names (dots within 40 tiles) and any other field in `info.json`. The PNG reader
+is hand-written because `canvas` has no native build under `npm ci --ignore-scripts`. Verified on a
+1200 x 1200 drawing made with GDI+ (what Paint draws with): built, passed `MapConsistency` and the
+wire snapshot, and `HegemonSim` played a full round on it; then removed. Tests:
+`tests/MapKit.test.ts` (26). Not built: scaling a small sketch up, painting over a generated
+galaxy, relief noise within an elevation band (every plains tile is one shade).
+
 **Done when** the pool reaches launch size, each map has a thumbnail and nations, and the sim runs
 on every one.
 
