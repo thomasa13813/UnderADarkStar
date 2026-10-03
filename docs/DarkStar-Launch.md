@@ -203,3 +203,6 @@ _Done when_ the checklist is clean. This build is the release candidate.
   the same day (guest names assigned; the board shows reigns and longest reign).
 - **2026-10-01** — Stage 1's map kit built (`npm run map`, `docs/MapMaking.md`). The stage is done
   when Tom has taken one drawing of his own through it.
+- **2026-10-03** — Six new maps exist (No Moon, Nucleic Acid, Nucleus, Jovian System, Bullseye,
+  Cube), each generated from one of Tom's sketches and run three times in `HegemonSim`. Stage 5's
+  map item stays open until Tom has played each and the inherited maps have been culled.

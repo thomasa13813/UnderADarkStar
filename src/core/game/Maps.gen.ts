@@ -4,10 +4,13 @@
 
 export enum GameMapType {
   BranchingPaths = "Branching Paths", // map-generator/assets/maps/branchingpaths/info.json
+  Bullseye = "Bullseye", // map-generator/assets/maps/bullseye/info.json
   ChoppingBlock = "Chopping Block", // map-generator/assets/maps/choppingblock/info.json
   Corners = "Corners", // map-generator/assets/maps/corners/info.json
+  Cube = "Cube", // map-generator/assets/maps/cube/info.json
   Duel = "Duel", // map-generator/assets/maps/duel/info.json
   EventHorizon = "Event Horizon", // map-generator/assets/maps/eventhorizon/info.json
+  JovianSystem = "Jovian System", // map-generator/assets/maps/joviansystem/info.json
   MilkyWay = "MilkyWay", // map-generator/assets/maps/milkyway/info.json
   MoreThanLuck = "More Than Luck", // map-generator/assets/maps/morethanluck/info.json
   NoMoon = "No Moon", // map-generator/assets/maps/nomoon/info.json
@@ -143,6 +146,18 @@ export const maps: readonly MapInfo[] = [
     specialTeamCount: 3,
   },
   {
+    id: "Bullseye",
+    type: GameMapType.Bullseye,
+    translationKey: "map.bullseye",
+    categories: ["cosmic"],
+    multiplayerFrequency: 4,
+    ffaFrequency: -1,
+    teamFrequency: -1,
+    specialFrequency: -1,
+    defaultNationCount: 20,
+    themes: ["space"],
+  },
+  {
     id: "ChoppingBlock",
     type: GameMapType.ChoppingBlock,
     translationKey: "map.choppingblock",
@@ -167,6 +182,18 @@ export const maps: readonly MapInfo[] = [
     defaultNationCount: 4,
   },
   {
+    id: "Cube",
+    type: GameMapType.Cube,
+    translationKey: "map.cube",
+    categories: ["cosmic"],
+    multiplayerFrequency: 4,
+    ffaFrequency: -1,
+    teamFrequency: -1,
+    specialFrequency: -1,
+    defaultNationCount: 24,
+    themes: ["space"],
+  },
+  {
     id: "Duel",
     type: GameMapType.Duel,
     translationKey: "map.duel",
@@ -187,6 +214,18 @@ export const maps: readonly MapInfo[] = [
     teamFrequency: -1,
     specialFrequency: -1,
     defaultNationCount: 24,
+    themes: ["space"],
+  },
+  {
+    id: "JovianSystem",
+    type: GameMapType.JovianSystem,
+    translationKey: "map.joviansystem",
+    categories: ["cosmic"],
+    multiplayerFrequency: 4,
+    ffaFrequency: -1,
+    teamFrequency: -1,
+    specialFrequency: -1,
+    defaultNationCount: 21,
     themes: ["space"],
   },
   {

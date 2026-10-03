@@ -561,6 +561,35 @@ persistence was OpenFront's closed-source API, which we do not have.
   nucleus, giving six long arcs that run from near the particles out to the rim and back, each
   carrying one solid electron where its first nation sits. Void outside a 1150-tile circle frames
   the atom. `src/scripts/drawings/Nucleus.ts`.
+- **Jovian System** (`map-generator/assets/maps/joviansystem/`, 1800×1800, ~595k land tiles, 21
+  nations) [Built 2026-10-03] from Tom's sketch of Jupiter and the Galilean moons. The planet is a
+  500-tile disc of land, leaning 7°, whose five dark belts are open space, so it is six zones of
+  cloud (plains with streaks of highland and the white ovals as storms of high ground). The Great
+  Red Spot is the Dark Star, low on the planet and left of centre, so the zones round it are Tribe
+  land and the nations sit on the zones' far ends and on the moons: Io (volcanoes), Europa
+  (cracks), Ganymede (grooves) and Callisto (craters and the Valhalla rings) on the diagonals at
+  gaps of 110, 150, 200 and 240 tiles, with small irregular moons as stepping stones. The ring runs
+  from the equatorial belt out to both edges of the map as a strip of land with the four inner
+  moons on it. First `HegemonSim` look: overthrown in 3 of 3 seeds, all after 18 minutes and
+  mostly by fleet. `src/scripts/drawings/JovianSystem.ts`.
+- **Bullseye** (`map-generator/assets/maps/bullseye/`, 1800×1800, ~540k land tiles, 20 nations)
+  [Built 2026-10-03] from Tom's sketch: the Dark Star as the bull inside three concentric rings of
+  land at 320–362, 505–562 and 715–780 tiles. Each ring is cracked into arcs (6, 8 and 12) whose
+  cracks do not line up from one ring to the next, so every arc is its own piece of land; the two
+  outer rings seat one nation per arc, the inner ring is inside the 500-tile exclusion and is Tribe
+  land, the last stepping stone before the moat. Each ring faces the star with a ridge of highland
+  and mountain. Void frames the corners. First `HegemonSim` look: overthrown in 2 of 3 seeds (both
+  by gate, at 16 and 20 minutes), the third to the timer. `src/scripts/drawings/Bullseye.ts`.
+- **Cube** (`map-generator/assets/maps/cube/`, 1800×1800, ~560k land tiles, 24 nations) [Built
+  2026-10-03] from Tom's sketch: a cube drawn corner on, with the Dark Star at the near vertex
+  where the three faces meet. Solid faces would be about 1.8M tiles, three times the budget, so
+  each 760-tile face is a four-by-four grid of parallelogram cells with 67-tile lanes between them
+  (100 along the three edges that meet at the star), an archipelago in the shape of a cube. The
+  faces are told apart by their light: the top face is plains, the right face has highland rims,
+  the left face is in shadow with highland and mountain. The outer row of cells on each face seats
+  a nation, as does the third cell in on each face's diagonal (just past 500 tiles); the cells
+  nearer the star are Tribe land. First `HegemonSim` look: with the outer rows alone (21 nations)
+  the throne held in 3 of 3 seeds; with those three seated as well, overthrown in 3 of 3 (at 14½, 18 and 19 minutes; the fast one by an inner-diagonal nation, the other two from the outer rows). `src/scripts/drawings/Cube.ts`.
 - **Gap:** terrain colours are global, not per-map, and map thumbnails are hard-coded
   blue-sea/green-land in `map-generator/map_generator.go` (`getThumbnailColor`).
 
@@ -2281,3 +2310,11 @@ to the invader (H9), gold donations from the throne (H9), hydrogen-bomb removal 
   nation nearer than 500 tiles: Nucleic Acid 1 overthrow in 3 seeds, Nucleus 2 in 3. **Rule of
   thumb for every map: no nation starts within about 500 tiles of the Dark Star's centre;** land
   nearer than that is Tribe land and staging ground.
+- **2026-10-03** — **Jovian System, Bullseye and Cube (§5.3).** Three more maps from Tom's sketches
+  by the same method, bringing the new maps to six (the launch minimum). Jovian System: Jupiter's
+  zones with the Great Red Spot as the Dark Star, the Galilean moons on the diagonals, the ring as
+  a road in from the edge; overthrown in 3 of 3 AI rounds, all after 18 minutes. Bullseye: three
+  rings cracked into arcs, one nation per arc on the outer two; 2 of 3. Cube: an isometric cube
+  as a grid of island cells, since solid faces would be three times the land budget; with nations
+  on the outer rows only the throne held 3 of 3, so the third cell in on each face's diagonal
+  (just past 500 tiles) seats a nation too (24): then overthrown in 3 of 3, once inside 15 minutes by one of those three. Tom has not yet played any of the six.

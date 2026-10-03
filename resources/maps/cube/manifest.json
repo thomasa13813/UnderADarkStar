@@ -1,0 +1,150 @@
+{
+  "categories": ["cosmic"],
+  "hegemon": {
+    "center": [900, 900],
+    "moat": 18,
+    "radius": 163
+  },
+  "id": "Cube",
+  "map": {
+    "height": 1800,
+    "num_land_tiles": 558155,
+    "width": 1800
+  },
+  "map16x": {
+    "height": 450,
+    "num_land_tiles": 32362,
+    "width": 450
+  },
+  "map4x": {
+    "height": 900,
+    "num_land_tiles": 136115,
+    "width": 900
+  },
+  "multiplayer_frequency": 4,
+  "name": "Cube",
+  "nations": [
+    {
+      "coordinates": [900, 235],
+      "flag": "",
+      "name": "Sabik Collective"
+    },
+    {
+      "coordinates": [900, 400],
+      "flag": "",
+      "name": "Antares Union"
+    },
+    {
+      "coordinates": [1065, 330],
+      "flag": "",
+      "name": "Saiph Order"
+    },
+    {
+      "coordinates": [1230, 425],
+      "flag": "",
+      "name": "Altair Reach"
+    },
+    {
+      "coordinates": [1385, 515],
+      "flag": "",
+      "name": "Vega Directorate"
+    },
+    {
+      "coordinates": [1480, 670],
+      "flag": "",
+      "name": "Canopus Marches"
+    },
+    {
+      "coordinates": [1475, 850],
+      "flag": "",
+      "name": "Regulus Dominion"
+    },
+    {
+      "coordinates": [1475, 1035],
+      "flag": "",
+      "name": "Orion Trade League"
+    },
+    {
+      "coordinates": [1475, 1230],
+      "flag": "",
+      "name": "Bellatrix Mandate"
+    },
+    {
+      "coordinates": [1335, 1150],
+      "flag": "",
+      "name": "Mira Covenant"
+    },
+    {
+      "coordinates": [1310, 1320],
+      "flag": "",
+      "name": "Izar Combine"
+    },
+    {
+      "coordinates": [1145, 1415],
+      "flag": "",
+      "name": "Algol Republic"
+    },
+    {
+      "coordinates": [990, 1500],
+      "flag": "",
+      "name": "Vindemiatrix Authority"
+    },
+    {
+      "coordinates": [810, 1520],
+      "flag": "",
+      "name": "Capella Assembly"
+    },
+    {
+      "coordinates": [655, 1415],
+      "flag": "",
+      "name": "Zosma Confederation"
+    },
+    {
+      "coordinates": [490, 1325],
+      "flag": "",
+      "name": "Lyra Free Worlds"
+    },
+    {
+      "coordinates": [465, 1150],
+      "flag": "",
+      "name": "Betelgeuse Ascendancy"
+    },
+    {
+      "coordinates": [325, 1225],
+      "flag": "",
+      "name": "Andromeda Commonwealth"
+    },
+    {
+      "coordinates": [325, 1045],
+      "flag": "",
+      "name": "Sirius Concord"
+    },
+    {
+      "coordinates": [325, 845],
+      "flag": "",
+      "name": "Spica Sovereignty"
+    },
+    {
+      "coordinates": [325, 675],
+      "flag": "",
+      "name": "Draco Crown"
+    },
+    {
+      "coordinates": [410, 515],
+      "flag": "",
+      "name": "Eltanin Syndicate"
+    },
+    {
+      "coordinates": [570, 425],
+      "flag": "",
+      "name": "Cygnus Protectorate"
+    },
+    {
+      "coordinates": [735, 330],
+      "flag": "",
+      "name": "Gienah Compact"
+    }
+  ],
+  "themes": ["space"],
+  "translation_key": "map.cube"
+}

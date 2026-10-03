@@ -1,0 +1,130 @@
+{
+  "categories": ["cosmic"],
+  "hegemon": {
+    "center": [900, 900],
+    "moat": 18,
+    "radius": 163
+  },
+  "id": "Bullseye",
+  "map": {
+    "height": 1800,
+    "num_land_tiles": 539073,
+    "width": 1800
+  },
+  "map16x": {
+    "height": 450,
+    "num_land_tiles": 31164,
+    "width": 450
+  },
+  "map4x": {
+    "height": 900,
+    "num_land_tiles": 131380,
+    "width": 900
+  },
+  "multiplayer_frequency": 4,
+  "name": "Bullseye",
+  "nations": [
+    {
+      "coordinates": [915, 155],
+      "flag": "",
+      "name": "Regulus Commonwealth"
+    },
+    {
+      "coordinates": [1305, 275],
+      "flag": "",
+      "name": "Arcturus Confederation"
+    },
+    {
+      "coordinates": [1255, 500],
+      "flag": "",
+      "name": "Altair Combine"
+    },
+    {
+      "coordinates": [1415, 360],
+      "flag": "",
+      "name": "Rigel Dominion"
+    },
+    {
+      "coordinates": [1425, 815],
+      "flag": "",
+      "name": "Antares Concord"
+    },
+    {
+      "coordinates": [1640, 795],
+      "flag": "",
+      "name": "Cygnus Syndicate"
+    },
+    {
+      "coordinates": [1585, 1200],
+      "flag": "",
+      "name": "Menkar Crown"
+    },
+    {
+      "coordinates": [1295, 1255],
+      "flag": "",
+      "name": "Lyra Republic"
+    },
+    {
+      "coordinates": [1325, 1515],
+      "flag": "",
+      "name": "Capella Assembly"
+    },
+    {
+      "coordinates": [1045, 1630],
+      "flag": "",
+      "name": "Zosma Protectorate"
+    },
+    {
+      "coordinates": [895, 1435],
+      "flag": "",
+      "name": "Draco Mandate"
+    },
+    {
+      "coordinates": [490, 1525],
+      "flag": "",
+      "name": "Algol Reach"
+    },
+    {
+      "coordinates": [500, 1255],
+      "flag": "",
+      "name": "Fomalhaut Union"
+    },
+    {
+      "coordinates": [315, 1365],
+      "flag": "",
+      "name": "Polaris Trade League"
+    },
+    {
+      "coordinates": [155, 860],
+      "flag": "",
+      "name": "Gienah Ascendancy"
+    },
+    {
+      "coordinates": [370, 825],
+      "flag": "",
+      "name": "Achernar Directorate"
+    },
+    {
+      "coordinates": [180, 695],
+      "flag": "",
+      "name": "Pollux Authority"
+    },
+    {
+      "coordinates": [335, 410],
+      "flag": "",
+      "name": "Canopus Covenant"
+    },
+    {
+      "coordinates": [545, 505],
+      "flag": "",
+      "name": "Sirius Free Worlds"
+    },
+    {
+      "coordinates": [885, 365],
+      "flag": "",
+      "name": "Perseus Compact"
+    }
+  ],
+  "themes": ["space"],
+  "translation_key": "map.bullseye"
+}

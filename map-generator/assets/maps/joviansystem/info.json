@@ -1,0 +1,120 @@
+{
+  "id": "JovianSystem",
+  "name": "Jovian System",
+  "translation_key": "map.joviansystem",
+  "categories": ["cosmic"],
+  "multiplayer_frequency": 4,
+  "themes": ["space"],
+  "hegemon": {
+    "center": [693, 1071],
+    "radius": 163,
+    "moat": 18
+  },
+  "nations": [
+    {
+      "coordinates": [900, 615],
+      "name": "Rigel Mandate",
+      "flag": ""
+    },
+    {
+      "coordinates": [985, 475],
+      "name": "Spica Concord",
+      "flag": ""
+    },
+    {
+      "coordinates": [1240, 545],
+      "name": "Mizar Authority",
+      "flag": ""
+    },
+    {
+      "coordinates": [1420, 380],
+      "name": "Vindemiatrix Free Worlds",
+      "flag": ""
+    },
+    {
+      "coordinates": [1270, 690],
+      "name": "Merak Dominion",
+      "flag": ""
+    },
+    {
+      "coordinates": [1120, 805],
+      "name": "Eltanin Commonwealth",
+      "flag": ""
+    },
+    {
+      "coordinates": [1265, 860],
+      "name": "Altair Confederation",
+      "flag": ""
+    },
+    {
+      "coordinates": [1385, 900],
+      "name": "Orion Order",
+      "flag": ""
+    },
+    {
+      "coordinates": [1370, 1020],
+      "name": "Aldebaran Trade League",
+      "flag": ""
+    },
+    {
+      "coordinates": [1245, 1030],
+      "name": "Castor Sovereignty",
+      "flag": ""
+    },
+    {
+      "coordinates": [1305, 1175],
+      "name": "Cygnus Reach",
+      "flag": ""
+    },
+    {
+      "coordinates": [1185, 1195],
+      "name": "Wezen Marches",
+      "flag": ""
+    },
+    {
+      "coordinates": [1615, 1555],
+      "name": "Procyon Assembly",
+      "flag": ""
+    },
+    {
+      "coordinates": [1510, 1510],
+      "name": "Andromeda Union",
+      "flag": ""
+    },
+    {
+      "coordinates": [1125, 1325],
+      "name": "Saiph Republic",
+      "flag": ""
+    },
+    {
+      "coordinates": [425, 1540],
+      "name": "Achernar Ascendancy",
+      "flag": ""
+    },
+    {
+      "coordinates": [310, 1490],
+      "name": "Tau Ceti Covenant",
+      "flag": ""
+    },
+    {
+      "coordinates": [215, 1570],
+      "name": "Deneb Syndicate",
+      "flag": ""
+    },
+    {
+      "coordinates": [400, 400],
+      "name": "Polaris Combine",
+      "flag": ""
+    },
+    {
+      "coordinates": [520, 595],
+      "name": "Kochab Crown",
+      "flag": ""
+    },
+    {
+      "coordinates": [655, 480],
+      "name": "Sabik Protectorate",
+      "flag": ""
+    }
+  ]
+}
