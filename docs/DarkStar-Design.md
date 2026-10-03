@@ -539,6 +539,28 @@ persistence was OpenFront's closed-source API, which we do not have.
   `map-generator/drawings/No Moon.png` from a description of the parts, then `npm run map "No Moon"`
   builds it as for any drawing. First `HegemonSim` look: 2 overthrows in 3 seeds (one by the
   mid-beam nation by gate, one by the largest debris fragment by fleet), the third to the timer.
+  The drawing scripts share `src/scripts/drawings/Drawing.ts` (palette canvas, seeded noise,
+  blobs, strokes, a nation placer that works from the pieces of land, the PNG writer).
+- **Nucleic Acid** (`map-generator/assets/maps/nucleicacid/`, 1800×1800, ~440k land tiles, 18
+  nations) [Built 2026-10-03] from Tom's second sketch: a double helix of land top to bottom with
+  the Dark Star at its centre crossing. The two strands are 54-tile walls (plains with a highland
+  rim) that end on the moat from the four diagonals, so armies can march at the throne along them;
+  at the other two crossings one strand passes behind the other with a short gap, so each strand is
+  three pieces and a crossing costs a fleet hop. Each bulge holds a row of four round base-pair
+  islands that almost bridge the strands; the two rows nearest the throne get no nations (staging
+  islands for whoever takes them): with the outer island of each seated, one of those four
+  overthrew the throne in all three AI rounds, so the nation exclusion was raised from 380 to 500
+  tiles and the strands carry more nations instead. Void strips frame the helix.
+  `src/scripts/drawings/NucleicAcid.ts`.
+- **Nucleus** (`map-generator/assets/maps/nucleus/`, 1800×1800, ~470k land tiles, 12 nations)
+  [Built 2026-10-03] from Tom's third sketch: a Bohr atom. Eight round particles (highland and
+  mountain cores) ring the Dark Star at 300 tiles, hugging the moat. They are Tribe land: a first
+  build seated nations on every other particle, and a particle nation overthrew the throne in all
+  three AI rounds, twice inside 15 minutes (`NUCLEUS_SEATS` in the script turns them back on).
+  Three elliptical orbits (800×200, at 90°, 30° and 150°) are cut where they pass behind the
+  nucleus, giving six long arcs that run from near the particles out to the rim and back, each
+  carrying one solid electron where its first nation sits. Void outside a 1150-tile circle frames
+  the atom. `src/scripts/drawings/Nucleus.ts`.
 - **Gap:** terrain colours are global, not per-map, and map thumbnails are hard-coded
   blue-sea/green-land in `map-generator/map_generator.go` (`getThumbnailColor`).
 
@@ -2252,3 +2274,10 @@ to the invader (H9), gold donations from the throne (H9), hydrogen-bomb removal 
   the direct road and the debris chains as the flank routes. Three `HegemonSim` seeds: 2 overthrows,
   1 to the timer. The working method for further maps: Tom sketches and describes, the drawing is
   generated from his description so it can be re-tuned by number.
+- **2026-10-03** — **Nucleic Acid and Nucleus (§5.3).** Two more maps from Tom's sketches, on a shared
+  drawing library (`src/scripts/drawings/Drawing.ts`). Both first builds seated nations near the
+  throne (the outer middle-row base pairs at ~400 tiles; every other particle at 300 tiles) and in
+  all six AI rounds one of those nations overthrew it, twice inside 15 minutes. Rebuilt with no
+  nation nearer than 500 tiles: Nucleic Acid 1 overthrow in 3 seeds, Nucleus 2 in 3. **Rule of
+  thumb for every map: no nation starts within about 500 tiles of the Dark Star's centre;** land
+  nearer than that is Tribe land and staging ground.

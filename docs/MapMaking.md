@@ -127,3 +127,19 @@ your user folder. If it cannot find it, it says so.
 the nations and the Dark Star into `info.json` (`mapkit/Info.ts`), and runs the Go map-generator
 (`map-generator/README.md`), which produces the files the game loads. Tests are in
 `tests/MapKit.test.ts`.
+
+## Generated drawings
+
+A drawing can also be written by a script instead of painted, which suits maps built from shapes
+(a helix, an atom, a beam): change a number, run the script, build again. The scripts live in
+`src/scripts/drawings/`, one per map, on the shared tools in `src/scripts/drawings/Drawing.ts`
+(the palette canvas, seeded noise, blobs, strokes, a nation placer and the PNG writer). Each
+writes its drawing to `map-generator/drawings/<Map Name>.png`, and from there the map is built
+like any other:
+
+```
+npx tsx src/scripts/drawings/NoMoon.ts
+npm run map "No Moon"
+```
+
+The sketches the scripts were made from are kept in `MapImages/`.

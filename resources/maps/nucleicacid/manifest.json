@@ -1,0 +1,120 @@
+{
+  "categories": ["cosmic"],
+  "hegemon": {
+    "center": [900, 900],
+    "moat": 18,
+    "radius": 163
+  },
+  "id": "NucleicAcid",
+  "map": {
+    "height": 1800,
+    "num_land_tiles": 441547,
+    "width": 1800
+  },
+  "map16x": {
+    "height": 450,
+    "num_land_tiles": 25561,
+    "width": 450
+  },
+  "map4x": {
+    "height": 900,
+    "num_land_tiles": 107709,
+    "width": 900
+  },
+  "multiplayer_frequency": 4,
+  "name": "Nucleic Acid",
+  "nations": [
+    {
+      "coordinates": [955, 310],
+      "flag": "",
+      "name": "Rasalhague Collective"
+    },
+    {
+      "coordinates": [980, 65],
+      "flag": "",
+      "name": "Thuban Covenant"
+    },
+    {
+      "coordinates": [1245, 105],
+      "flag": "",
+      "name": "Procyon Combine"
+    },
+    {
+      "coordinates": [1310, 610],
+      "flag": "",
+      "name": "Alcyone Mandate"
+    },
+    {
+      "coordinates": [1310, 1190],
+      "flag": "",
+      "name": "Wezen Crown"
+    },
+    {
+      "coordinates": [1240, 1700],
+      "flag": "",
+      "name": "Vindemiatrix Syndicate"
+    },
+    {
+      "coordinates": [1135, 1720],
+      "flag": "",
+      "name": "Spica Order"
+    },
+    {
+      "coordinates": [980, 1730],
+      "flag": "",
+      "name": "Arcturus Sovereignty"
+    },
+    {
+      "coordinates": [955, 1485],
+      "flag": "",
+      "name": "Antares Trade League"
+    },
+    {
+      "coordinates": [820, 1725],
+      "flag": "",
+      "name": "Mira Confederation"
+    },
+    {
+      "coordinates": [815, 1460],
+      "flag": "",
+      "name": "Tau Ceti Commonwealth"
+    },
+    {
+      "coordinates": [660, 1735],
+      "flag": "",
+      "name": "Kochab Union"
+    },
+    {
+      "coordinates": [550, 1705],
+      "flag": "",
+      "name": "Naos Protectorate"
+    },
+    {
+      "coordinates": [545, 1290],
+      "flag": "",
+      "name": "Izar Dominion"
+    },
+    {
+      "coordinates": [560, 495],
+      "flag": "",
+      "name": "Cygnus Concord"
+    },
+    {
+      "coordinates": [545, 90],
+      "flag": "",
+      "name": "Betelgeuse Republic"
+    },
+    {
+      "coordinates": [665, 75],
+      "flag": "",
+      "name": "Lyra Marches"
+    },
+    {
+      "coordinates": [820, 335],
+      "flag": "",
+      "name": "Altair Assembly"
+    }
+  ],
+  "themes": ["space"],
+  "translation_key": "map.nucleicacid"
+}

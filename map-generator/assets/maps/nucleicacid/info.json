@@ -1,0 +1,105 @@
+{
+  "id": "NucleicAcid",
+  "name": "Nucleic Acid",
+  "translation_key": "map.nucleicacid",
+  "categories": ["cosmic"],
+  "multiplayer_frequency": 4,
+  "themes": ["space"],
+  "hegemon": {
+    "center": [900, 900],
+    "radius": 163,
+    "moat": 18
+  },
+  "nations": [
+    {
+      "coordinates": [955, 310],
+      "name": "Rasalhague Collective",
+      "flag": ""
+    },
+    {
+      "coordinates": [980, 65],
+      "name": "Thuban Covenant",
+      "flag": ""
+    },
+    {
+      "coordinates": [1245, 105],
+      "name": "Procyon Combine",
+      "flag": ""
+    },
+    {
+      "coordinates": [1310, 610],
+      "name": "Alcyone Mandate",
+      "flag": ""
+    },
+    {
+      "coordinates": [1310, 1190],
+      "name": "Wezen Crown",
+      "flag": ""
+    },
+    {
+      "coordinates": [1240, 1700],
+      "name": "Vindemiatrix Syndicate",
+      "flag": ""
+    },
+    {
+      "coordinates": [1135, 1720],
+      "name": "Spica Order",
+      "flag": ""
+    },
+    {
+      "coordinates": [980, 1730],
+      "name": "Arcturus Sovereignty",
+      "flag": ""
+    },
+    {
+      "coordinates": [955, 1485],
+      "name": "Antares Trade League",
+      "flag": ""
+    },
+    {
+      "coordinates": [820, 1725],
+      "name": "Mira Confederation",
+      "flag": ""
+    },
+    {
+      "coordinates": [815, 1460],
+      "name": "Tau Ceti Commonwealth",
+      "flag": ""
+    },
+    {
+      "coordinates": [660, 1735],
+      "name": "Kochab Union",
+      "flag": ""
+    },
+    {
+      "coordinates": [550, 1705],
+      "name": "Naos Protectorate",
+      "flag": ""
+    },
+    {
+      "coordinates": [545, 1290],
+      "name": "Izar Dominion",
+      "flag": ""
+    },
+    {
+      "coordinates": [560, 495],
+      "name": "Cygnus Concord",
+      "flag": ""
+    },
+    {
+      "coordinates": [545, 90],
+      "name": "Betelgeuse Republic",
+      "flag": ""
+    },
+    {
+      "coordinates": [665, 75],
+      "name": "Lyra Marches",
+      "flag": ""
+    },
+    {
+      "coordinates": [820, 335],
+      "name": "Altair Assembly",
+      "flag": ""
+    }
+  ]
+}

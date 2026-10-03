@@ -1,0 +1,90 @@
+{
+  "categories": ["cosmic"],
+  "hegemon": {
+    "center": [900, 900],
+    "moat": 18,
+    "radius": 163
+  },
+  "id": "Nucleus",
+  "map": {
+    "height": 1800,
+    "num_land_tiles": 467671,
+    "width": 1800
+  },
+  "map16x": {
+    "height": 450,
+    "num_land_tiles": 27262,
+    "width": 450
+  },
+  "map4x": {
+    "height": 900,
+    "num_land_tiles": 114323,
+    "width": 900
+  },
+  "multiplayer_frequency": 4,
+  "name": "Nucleus",
+  "nations": [
+    {
+      "coordinates": [1075, 450],
+      "flag": "",
+      "name": "Menkar Marches"
+    },
+    {
+      "coordinates": [1535, 465],
+      "flag": "",
+      "name": "Kepler Sovereignty"
+    },
+    {
+      "coordinates": [1375, 825],
+      "flag": "",
+      "name": "Saiph Authority"
+    },
+    {
+      "coordinates": [1375, 975],
+      "flag": "",
+      "name": "Canopus Order"
+    },
+    {
+      "coordinates": [1500, 1335],
+      "flag": "",
+      "name": "Deneb Concord"
+    },
+    {
+      "coordinates": [1075, 1350],
+      "flag": "",
+      "name": "Capella Commonwealth"
+    },
+    {
+      "coordinates": [850, 1670],
+      "flag": "",
+      "name": "Vindemiatrix Confederation"
+    },
+    {
+      "coordinates": [590, 1275],
+      "flag": "",
+      "name": "Izar Trade League"
+    },
+    {
+      "coordinates": [200, 1260],
+      "flag": "",
+      "name": "Mira Protectorate"
+    },
+    {
+      "coordinates": [200, 530],
+      "flag": "",
+      "name": "Eltanin Union"
+    },
+    {
+      "coordinates": [600, 525],
+      "flag": "",
+      "name": "Lyra Free Worlds"
+    },
+    {
+      "coordinates": [820, 170],
+      "flag": "",
+      "name": "Rasalhague Mandate"
+    }
+  ],
+  "themes": ["space"],
+  "translation_key": "map.nucleus"
+}
