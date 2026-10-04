@@ -307,4 +307,31 @@ describe("WorkerLobbyService thrones", () => {
       throne: { reservationUntil: 777_000 },
     });
   });
+
+  it("applies a rebuilt special round, clearing modifiers the new set lacks", () => {
+    const game = makeThroneGame("g01", { ...VEGA, type: "special" });
+    game.applyThronePick({
+      startingGold: 5_000_000,
+      publicGameModifiers: { startingGold: 5_000_000 },
+    });
+    expect(game.gameConfig.startingGold).toBe(5_000_000);
+    dispatch({
+      type: "updateLobby",
+      gameID: "g01",
+      gameConfig: {
+        gameMap: "Event Horizon",
+        maxPlayers: 12,
+        publicGameModifiers: { isCompact: true },
+        startingGold: undefined,
+        gameType: "Private",
+      },
+      throne: { heir: null, reign: 0 },
+    });
+    expect(game.gameConfig.gameMap).toBe("Event Horizon");
+    expect(game.gameConfig.maxPlayers).toBe(12);
+    expect(game.gameConfig.publicGameModifiers).toEqual({ isCompact: true });
+    expect(game.gameConfig.startingGold).toBeUndefined();
+    // Identity keys are never taken from a pick.
+    expect(game.gameConfig.gameType).toBe("Public");
+  });
 });

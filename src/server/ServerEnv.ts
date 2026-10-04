@@ -144,6 +144,14 @@ export class ServerEnv {
       ServerEnv.gameEnv === GameEnv.Dev ? 3 : 15,
     );
   }
+  // Special thrones in the pool (L2): 3 at launch, 1 in dev; the rest are
+  // FFA until T5 adds team thrones. THRONE_SPECIAL_COUNT overrides.
+  static throneSpecialCount(): number {
+    return ServerEnv.nonNegativeIntEnv(
+      "THRONE_SPECIAL_COUNT",
+      ServerEnv.gameEnv === GameEnv.Dev ? 1 : 3,
+    );
+  }
   // Humans (spectators excluded) a throne needs before its countdown runs
   // (L9). Two everywhere; THRONE_MIN_PLAYERS=1 lets one tab smoke-test a
   // throne alone in dev.
@@ -161,6 +169,15 @@ export class ServerEnv {
   // (L4): 30 s.
   static throneWindowMs(): number {
     return ServerEnv.positiveIntEnv("THRONE_WINDOW_MS", 30 * 1000);
+  }
+  private static nonNegativeIntEnv(name: string, fallback: number): number {
+    const raw = process.env[name];
+    if (raw === undefined || raw.length === 0) return fallback;
+    const n = Number(raw);
+    if (!Number.isInteger(n) || n < 0) {
+      throw new Error(`Invalid ${name}: ${JSON.stringify(raw)}`);
+    }
+    return n;
   }
   private static positiveIntEnv(name: string, fallback: number): number {
     const raw = process.env[name];

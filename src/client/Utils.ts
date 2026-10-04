@@ -13,6 +13,7 @@ import {
 } from "../core/game/Game";
 import { GameConfig } from "../core/Schemas";
 import { stripVersionPrefix } from "../core/ServerList";
+import { ThroneModifier } from "../core/ThroneModifiers";
 import { ClientEnv } from "./ClientEnv";
 import type { LangSelector } from "./LangSelector";
 import { pagePin } from "./PagePin";
@@ -243,6 +244,36 @@ export function getActiveModifiers(
     result.push(info);
   }
   return result;
+}
+
+/**
+ * Under a Dark Star: the chip label for a modifier a special throne's winner
+ * may pick (docs/DarkStar-Lobbies.md §5.4), the same badge text the lobby
+ * card shows once it is on.
+ */
+export function throneModifierLabel(modifier: ThroneModifier): string {
+  switch (modifier) {
+    case "isRandomSpawn":
+      return translateText("public_game_modifier.random_spawn");
+    case "isCompact":
+      return translateText("public_game_modifier.compact_map");
+    case "isCrowded":
+      return translateText("public_game_modifier.crowded");
+    case "isHardNations":
+      return translateText("public_game_modifier.hard_nations");
+    case "startingGold1M":
+      return translateText("public_game_modifier.starting_gold", { amount: 1 });
+    case "startingGold5M":
+      return translateText("public_game_modifier.starting_gold", { amount: 5 });
+    case "goldMultiplier":
+      return translateText("public_game_modifier.gold_multiplier", {
+        amount: 2,
+      });
+    case "isAlliancesDisabled":
+      return translateText("public_game_modifier.disable_alliances");
+    case "isPeaceTime":
+      return translateText("public_game_modifier.peace_time");
+  }
 }
 
 /**

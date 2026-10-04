@@ -4,6 +4,8 @@ node_modules
 out/
 static/
 coverage/
+# The account API's database and signing key in dev (src/api, DATA_DIR)
+.data/
 TODO.txt
 resources/images/.DS_Store
 resources/.DS_Store

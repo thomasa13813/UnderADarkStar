@@ -1,13 +1,17 @@
 import { Worker } from "cluster";
 import throneNames from "resources/thrones.json";
 import winston from "winston";
-import { GameMapType } from "../core/game/Game";
+import { GameMapType, GameMode, PublicGameModifiers } from "../core/game/Game";
 import {
   GameConfig,
   MAX_HOSTED_LOBBIES,
   PublicGameType,
   SCHEDULED_PUBLIC_GAME_TYPES,
 } from "../core/Schemas";
+import {
+  ThroneModifier,
+  validateThroneModifiers,
+} from "../core/ThroneModifiers";
 import {
   InternalGameInfo,
   InternalGameInfoSchema,
@@ -27,7 +31,7 @@ import {
   LobbyCoordinatorClient,
 } from "./LobbyCoordinatorClient";
 import { logger } from "./Logger";
-import { MapPlaylist } from "./MapPlaylist";
+import { MapPlaylist, ModifierKey } from "./MapPlaylist";
 import { startPolling } from "./PollingLoop";
 import { ServerEnv } from "./ServerEnv";
 import {
@@ -44,6 +48,52 @@ function isGameMap(name: string): name is GameMapType {
   return GAME_MAPS.has(name);
 }
 
+// The modifier keys a rolled special config carries, so a winner who picks
+// only a map keeps the lobby's modifiers.
+export function modifierKeysOf(
+  modifiers: PublicGameModifiers | undefined,
+): ModifierKey[] {
+  if (modifiers === undefined) return [];
+  const keys: ModifierKey[] = [];
+  if (modifiers.isRandomSpawn) keys.push("isRandomSpawn");
+  if (modifiers.isCompact) keys.push("isCompact");
+  if (modifiers.isCrowded) keys.push("isCrowded");
+  if (modifiers.isHardNations) keys.push("isHardNations");
+  if (modifiers.startingGold === 1_000_000) keys.push("startingGold1M");
+  if (modifiers.startingGold === 5_000_000) keys.push("startingGold5M");
+  if (modifiers.startingGold === 25_000_000) keys.push("startingGold25M");
+  if (modifiers.goldMultiplier) keys.push("goldMultiplier");
+  if (modifiers.isAlliancesDisabled) keys.push("isAlliancesDisabled");
+  if (modifiers.isNukesDisabled) keys.push("isNukesDisabled");
+  if (modifiers.isSAMsDisabled) keys.push("isSAMsDisabled");
+  if (modifiers.isPeaceTime) keys.push("isPeaceTime");
+  if (modifiers.isWaterNukes) keys.push("isWaterNukes");
+  if (modifiers.isDoomsdayClock) keys.push("isDoomsdayClock");
+  return keys;
+}
+
+// A rebuilt special round as a patch for the lobby: what the pick may change
+// (GameServer.applyThronePick's allowlist), nothing of the lobby's identity.
+export function throneConfigPatch(rebuilt: GameConfig): Partial<GameConfig> {
+  return {
+    gameMap: rebuilt.gameMap,
+    maxPlayers: rebuilt.maxPlayers,
+    gameMapSize: rebuilt.gameMapSize,
+    publicGameModifiers: rebuilt.publicGameModifiers,
+    startingGold: rebuilt.startingGold,
+    goldMultiplier: rebuilt.goldMultiplier,
+    disableAlliances: rebuilt.disableAlliances,
+    difficulty: rebuilt.difficulty,
+    nations: rebuilt.nations,
+    randomSpawn: rebuilt.randomSpawn,
+    bots: rebuilt.bots,
+    spawnImmunityDuration: rebuilt.spawnImmunityDuration,
+    disabledUnits: rebuilt.disabledUnits,
+    waterNukes: rebuilt.waterNukes,
+    doomsdayClock: rebuilt.doomsdayClock,
+  };
+}
+
 export interface MasterLobbyServiceOptions {
   playlist: MapPlaylist;
   log: typeof logger;
@@ -58,15 +108,16 @@ export const QUEUED_LOBBIES_PER_TYPE = 6;
 
 // Under a Dark Star: the throne pool from the environment
 // (docs/DarkStar-Lobbies.md §9), or null when the server runs upstream's
-// per-type queues instead (PUBLIC_LOBBIES=queue). FFA thrones only until
-// special (T4) and team (T5) thrones ship.
+// per-type queues instead (PUBLIC_LOBBIES=queue). FFA and special thrones;
+// team thrones wait for T5.
 export function throneRegistryFromEnv(): ThroneRegistry | null {
   if (ServerEnv.publicLobbyMode() !== "thrones") return null;
   const count = ServerEnv.throneCount();
+  const special = Math.min(count, ServerEnv.throneSpecialCount());
   return new ThroneRegistry({
     names: throneNames,
     count,
-    mix: { ffa: count, team: 0, special: 0 },
+    mix: { ffa: count - special, team: 0, special },
     minPlayers: ServerEnv.throneMinPlayers(),
     countdownMs: ServerEnv.throneCountdownMs(),
     windowMs: ServerEnv.throneWindowMs(),
@@ -617,11 +668,27 @@ export class MasterLobbyService {
         });
       }
     }
+    // Modifiers are a special throne's to set (§5.4); elsewhere, or off the
+    // whitelist, they are dropped and the rolled set stands.
+    let modifiers: ThroneModifier[] | undefined;
+    if (msg.modifiers !== undefined) {
+      const valid = validateThroneModifiers(msg.modifiers);
+      const special = this.thrones.get(msg.throneID)?.type === "special";
+      if (valid !== null && special) {
+        modifiers = valid;
+      } else {
+        this.log.warn("throne pick carried modifiers it may not, dropping", {
+          throneID: msg.throneID,
+          modifiers: msg.modifiers,
+          special,
+        });
+      }
+    }
     const actions = this.thrones.pickReceived(
       msg.throneID,
       msg.gameID,
       msg.persistentID,
-      { gameMap, stay: msg.stay },
+      { gameMap, modifiers, stay: msg.stay },
       Date.now(),
     );
     if (actions.length === 0) {
@@ -723,20 +790,37 @@ export class MasterLobbyService {
     }
   }
 
-  // The config patch for a pick: the map and the cap the playlist would give
-  // it; nothing when no map was chosen (the random one stands).
+  // The config patch for a pick. On an FFA throne: the map and the cap the
+  // playlist would give it. On a special throne: the round rebuilt from the
+  // map and the modifiers (the chosen ones, or the rolled ones kept when
+  // none were chosen). Nothing when nothing was chosen.
   private async pickedConfig(
     gameID: string,
     pick: ThronePick,
   ): Promise<Partial<GameConfig> | undefined> {
-    if (pick.gameMap === undefined) return undefined;
+    if (pick.gameMap === undefined && pick.modifiers === undefined) {
+      return undefined;
+    }
     const base = this.throneConfigs.get(gameID);
-    const patch: Partial<GameConfig> = { gameMap: pick.gameMap };
+    const throne = this.thrones?.byGame(gameID);
+    let patch: Partial<GameConfig>;
+    if (throne?.type === "special" && base !== undefined) {
+      const map = pick.gameMap ?? base.gameMap;
+      const modifiers =
+        pick.modifiers ?? modifierKeysOf(base.publicGameModifiers);
+      const rebuilt = await this.playlist.throneSpecialConfig(map, modifiers);
+      patch = throneConfigPatch(rebuilt);
+    } else {
+      if (pick.gameMap === undefined) return undefined;
+      patch = { gameMap: pick.gameMap };
+      if (base !== undefined) {
+        patch.maxPlayers = await this.playlist.maxPlayersForMap(
+          pick.gameMap,
+          base,
+        );
+      }
+    }
     if (base !== undefined) {
-      patch.maxPlayers = await this.playlist.maxPlayersForMap(
-        pick.gameMap,
-        base,
-      );
       this.throneConfigs.set(gameID, { ...base, ...patch });
     }
     return patch;
@@ -754,7 +838,10 @@ export class MasterLobbyService {
   // (map rotation, player cap, the throne enabled), never trusted-only (a
   // throne is open to everyone, L3). T2 merges the winner's pick on top.
   private async throneGameConfig(throne: Throne): Promise<GameConfig> {
-    const config = await this.playlist.gameConfig(throne.type);
+    // A special throne rolls a special game, FFA (the Hegemon is FFA only).
+    const config = await this.playlist.gameConfig(throne.type, {
+      mode: GameMode.FFA,
+    });
     delete config.trusted;
     config.hegemon = { ...config.hegemon, enabled: true };
     return config;

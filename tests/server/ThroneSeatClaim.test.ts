@@ -328,4 +328,17 @@ describe("GameServer - the winner's pick", () => {
     await mockWsOf(a).emit({ type: "throne_pick", stay: true });
     expect(picks).toEqual([]);
   });
+
+  it("forwards the modifiers of a special pick", async () => {
+    const { winner, picks } = await finishedRound();
+    await mockWsOf(winner).emit({
+      type: "throne_pick",
+      modifiers: ["isCompact", "goldMultiplier"],
+      stay: true,
+    });
+    expect(picks[0]).toMatchObject({
+      modifiers: ["isCompact", "goldMultiplier"],
+      stay: true,
+    });
+  });
 });

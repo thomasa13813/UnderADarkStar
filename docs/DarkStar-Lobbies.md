@@ -4,7 +4,7 @@
 > lobbies ("thrones") whose seat is the reward for winning. Decided with Tom on 2026-09-29.
 > Companion to `DarkStar-Design.md` (§2 round loop, §3 rules R1–R6, §5.2 continuity) and
 > `DarkStar-Roadmap.md` phase P6, which this document expands and supersedes.
-> T1–T3 are built (2026-10-03, §10.1–§10.3); T4–T6 are not. Changelog at the end.
+> T1–T4 are built (2026-10-03, §10.1–§10.4); T5 and T6 are not. Changelog at the end.
 
 ## 1. Goals
 
@@ -449,6 +449,32 @@ The client side of §4 and §6, plus the one server addition it needed.
   `new_lobby` / `successorCreated` in the worker and master throne tests. The win-screen panel and
   the modal footer are checked by hand in the browser (Tom's Stage 2 pass).
 
+### 10.4 As built: T4 (2026-10-03)
+
+Special thrones: the pool has them, and their winners set up to two modifiers.
+
+- **The whitelist lives in `src/core/ThroneModifiers.ts`**, shared by the server (validation) and
+  the client (the chips): the nine allowed keys of §5.4, `THRONE_MAX_MODIFIERS = 2`, and the one
+  exclusive pair inside the whitelist (the two starting-gold amounts). `validateThroneModifiers`
+  rejects anything off the list, repeated, in excess or exclusive, and the master then keeps the
+  rolled set (§8). Tests check the whitelist is a subset of the playlist's pool and that its
+  exclusive pairs match the playlist's table.
+- **The mix.** `THRONE_SPECIAL_COUNT` (3 in production, 1 in dev) special thrones; the rest FFA
+  until T5. A special throne's lobby rolls a special game pinned to FFA (`MapPlaylist.gameConfig`
+  took a `mode` option), since the Hegemon is FFA only.
+- **The pick.** `throne_pick` carries `modifiers` (schema-checked against the whitelist and the
+  cap). The master rebuilds the round with `MapPlaylist.throneSpecialConfig(map, modifiers)`: the
+  special builder run with an explicit modifier set, no roll, no map-forced modifiers, no random
+  fallback, the map's own disabled modifiers still honoured, not counted toward the trusted
+  rotation. A winner who picks only a map keeps the lobby's rolled modifiers (`modifierKeysOf`).
+  The worker takes the whole rebuilt round through `applyThronePick`, whose allowlist
+  (`THRONE_PICK_KEYS`) covers everything the playlist derives from the map and the modifiers and
+  nothing of the lobby's identity; keys the new set lacks are cleared.
+- **Client.** On a special throne the Next-round panel shows one chip per whitelisted modifier,
+  at most two on, an exclusive counterpart greyed out; none chosen keeps the rolled set.
+- **Tests.** `tests/server/ThroneModifiers.test.ts` (10), and special-throne cases added to the
+  master, worker and seat tests.
+
 ## 11. Tests
 
 - `tests/server/ThroneRegistry.test.ts`: every transition of §3.2; reservation expiry; vacate;
@@ -494,3 +520,6 @@ The client side of §4 and §6, plus the one server addition it needed.
   "reserved for" in the lobby, the winner's Next-round panel on the win screen with the map
   picker and the 30-second bar, Watch from the Thrones pane, the throne and reign on the Dark
   Star panel. One wire addition: `new_lobby` carries the window (`throne.reservationUntil`).
+- **2026-10-03** — **T4 built** (§10.4): special thrones in the pool (3 prod / 1 dev), the
+  modifier whitelist shared by server and client, the winner's modifier chips, the round rebuilt
+  from the pick. Q3 (the held-back modifiers) stays open for the first public playtests.

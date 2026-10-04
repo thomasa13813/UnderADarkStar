@@ -24,6 +24,10 @@ import {
   UnitType,
 } from "./game/Game";
 import { ArchivedPlayerStatsSchema, PlayerStatsSchema } from "./StatsSchemas";
+import {
+  THRONE_MAX_MODIFIERS,
+  THRONE_MODIFIER_WHITELIST,
+} from "./ThroneModifiers";
 import { flattenedEmojiTable, LOBBY_LABEL_MAX } from "./Util";
 
 export type GameID = string;
@@ -1315,6 +1319,12 @@ export const ClientSpectateMessageSchema = z.object({
 export const ClientThronePickSchema = z.object({
   type: z.literal("throne_pick"),
   gameMap: z.enum(GameMapType).optional(),
+  // Special thrones only (§5.4): up to THRONE_MAX_MODIFIERS from the
+  // whitelist. Absent keeps the modifiers the lobby rolled.
+  modifiers: z
+    .array(z.enum(THRONE_MODIFIER_WHITELIST))
+    .max(THRONE_MAX_MODIFIERS)
+    .optional(),
   stay: z.boolean(),
 });
 

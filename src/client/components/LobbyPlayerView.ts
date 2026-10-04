@@ -307,7 +307,12 @@ export class LobbyTeamView extends LitElement {
     >
       ${throne !== null
         ? html`<span class="font-bold tracking-wide text-purple-300"
-            >${translateText("throne.name_line", { name: throne.name })}</span
+            >${translateText(
+              throne.type === "special"
+                ? "throne.name_line_special"
+                : "throne.name_line",
+              { name: throne.name },
+            )}</span
           >`
         : html``}
       <span class="font-semibold text-amber-300">👑 ${holder}</span>

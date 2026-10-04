@@ -1,9 +1,19 @@
 import { html, LitElement, nothing } from "lit";
 import { customElement, state } from "lit/decorators.js";
-import { homeHref, translateText } from "../../../client/Utils";
+import {
+  homeHref,
+  throneModifierLabel,
+  translateText,
+} from "../../../client/Utils";
 import { EventBus } from "../../../core/EventBus";
 import { GameMapType } from "../../../core/game/Game";
 import { GameUpdateType } from "../../../core/game/GameUpdates";
+import {
+  THRONE_MAX_MODIFIERS,
+  THRONE_MODIFIER_WHITELIST,
+  ThroneModifier,
+  throneModifiersConflict,
+} from "../../../core/ThroneModifiers";
 import { ClientEnv } from "../../ClientEnv";
 import "../../components/map/MapPicker";
 import { Controller } from "../../Controller";
@@ -43,6 +53,9 @@ export class WinModal extends LitElement implements Controller {
   // The map the winner picked; undefined is a random map.
   @state() private pickedMap: GameMapType | undefined = undefined;
   @state() private pickSent = false;
+  // Special thrones: the modifiers chosen so far (§5.4); none keeps the
+  // lobby's rolled set.
+  @state() private pickedModifiers: ThroneModifier[] = [];
   // Repaints the window bar once a second while the panel is up.
   @state() private windowTick = 0;
   private windowTimer: number | null = null;
@@ -126,6 +139,7 @@ export class WinModal extends LitElement implements Controller {
       until: event.reservationUntil,
     };
     this.pickedMap = undefined;
+    this.pickedModifiers = [];
     this.pickSent = false;
     this.windowTimer ??= window.setInterval(() => {
       this.windowTick++;
@@ -148,7 +162,16 @@ export class WinModal extends LitElement implements Controller {
   private answer(stay: boolean) {
     if (this.throne === null || this.pickSent) return;
     this.pickSent = true;
-    this.eventBus.emit(new SendThronePickEvent(this.pickedMap, stay));
+    const special = currentThrone()?.type === "special";
+    this.eventBus.emit(
+      new SendThronePickEvent(
+        this.pickedMap,
+        stay,
+        special && this.pickedModifiers.length > 0
+          ? [...this.pickedModifiers]
+          : undefined,
+      ),
+    );
     // Give the socket a moment to flush the pick before the page unloads.
     window.setTimeout(() => {
       window.location.href = this.lobbyUrl();
@@ -157,6 +180,56 @@ export class WinModal extends LitElement implements Controller {
 
   private joinNext() {
     window.location.href = this.lobbyUrl();
+  }
+
+  private toggleModifier(modifier: ThroneModifier) {
+    if (this.pickedModifiers.includes(modifier)) {
+      this.pickedModifiers = this.pickedModifiers.filter((m) => m !== modifier);
+      return;
+    }
+    if (this.pickedModifiers.length >= THRONE_MAX_MODIFIERS) return;
+    if (this.pickedModifiers.some((m) => throneModifiersConflict(m, modifier)))
+      return;
+    this.pickedModifiers = [...this.pickedModifiers, modifier];
+  }
+
+  // Special thrones only: one chip per whitelisted modifier, up to two on,
+  // an exclusive counterpart greyed out while its pair is chosen.
+  private renderModifierChips() {
+    if (currentThrone()?.type !== "special") return nothing;
+    const full = this.pickedModifiers.length >= THRONE_MAX_MODIFIERS;
+    return html`
+      <div class="flex flex-col gap-1.5" data-throne-modifiers>
+        <span class="text-xs text-white/60"
+          >${translateText("throne.pick_modifiers")}</span
+        >
+        <div class="flex flex-wrap gap-1.5">
+          ${THRONE_MODIFIER_WHITELIST.map((modifier) => {
+            const on = this.pickedModifiers.includes(modifier);
+            const blocked =
+              !on &&
+              (full ||
+                this.pickedModifiers.some((m) =>
+                  throneModifiersConflict(m, modifier),
+                ));
+            return html`<button
+              type="button"
+              class="rounded px-2 py-1 text-xs font-bold tracking-widest uppercase transition ${on
+                ? "bg-malibu-blue text-white"
+                : blocked
+                  ? "bg-white/5 text-white/30 cursor-not-allowed"
+                  : "bg-white/10 text-white/80 hover:bg-white/20"}"
+              ?disabled=${blocked || this.pickSent}
+              aria-pressed=${on ? "true" : "false"}
+              data-modifier=${modifier}
+              @click=${() => this.toggleModifier(modifier)}
+            >
+              ${throneModifierLabel(modifier)}
+            </button>`;
+          })}
+        </div>
+      </div>
+    `;
   }
 
   private renderThronePanel() {
@@ -203,6 +276,7 @@ export class WinModal extends LitElement implements Controller {
           : html`<p class="text-xs text-white/60">
                 ${translateText("throne.pick_hint")}
               </p>
+              ${this.renderModifierChips()}
               <div class="max-h-[40vh] overflow-y-auto custom-scrollbar pr-1">
                 <map-picker
                   .selectedMap=${this.pickedMap ?? GameMapType.EventHorizon}

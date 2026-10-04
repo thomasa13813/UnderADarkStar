@@ -111,6 +111,28 @@ export function hashPersistentID(persistentID: string): string {
   return createHash("sha256").update(persistentID).digest("hex");
 }
 
+// What a throne winner's pick may change on the next round's config
+// (GameServer.applyThronePick): the map and what the playlist derives from
+// the map and the chosen modifiers. Never the type, the mode, the timer or
+// the throne itself.
+const THRONE_PICK_KEYS = [
+  "gameMap",
+  "maxPlayers",
+  "gameMapSize",
+  "publicGameModifiers",
+  "startingGold",
+  "goldMultiplier",
+  "disableAlliances",
+  "difficulty",
+  "nations",
+  "randomSpawn",
+  "bots",
+  "spawnImmunityDuration",
+  "disabledUnits",
+  "waterNukes",
+  "doomsdayClock",
+] as const satisfies readonly (keyof GameConfig)[];
+
 const KICK_REASON_DUPLICATE_SESSION = "kick_reason.duplicate_session";
 const KICK_REASON_LOBBY_CREATOR = "kick_reason.lobby_creator";
 const KICK_REASON_ADMIN = "kick_reason.admin";
@@ -1689,12 +1711,18 @@ export class GameServer {
   }
 
   // The winner's pick for this lobby (§5.5): the map and the cap the master
-  // rolled for it. Not the host's config-patch path: maxPlayers is server-
-  // owned there, and a throne lobby has no host.
+  // rolled for it, and on a special throne the whole rebuilt modifier set
+  // (§5.4). Every key the patch carries is taken, an explicit undefined
+  // included, so a modifier the new set lacks is cleared. Not the host's
+  // config-patch path: maxPlayers is server-owned there, and a throne lobby
+  // has no host.
   public applyThronePick(patch: Partial<GameConfig>) {
-    if (patch.gameMap !== undefined) this.gameConfig.gameMap = patch.gameMap;
-    if (patch.maxPlayers !== undefined) {
-      this.gameConfig.maxPlayers = patch.maxPlayers;
+    for (const key of THRONE_PICK_KEYS) {
+      if (key in patch) {
+        // The allowlist keeps the key sets aligned; TypeScript cannot see it
+        // through the generic key.
+        (this.gameConfig as Record<string, unknown>)[key] = patch[key];
+      }
     }
   }
 
@@ -1804,6 +1832,7 @@ export class GameServer {
       gameID: this.id,
       persistentID: client.persistentID,
       gameMap: msg.gameMap,
+      modifiers: msg.modifiers,
       stay: msg.stay,
     });
   }

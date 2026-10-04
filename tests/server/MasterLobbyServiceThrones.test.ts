@@ -83,6 +83,7 @@ describe("MasterLobbyService thrones", () => {
   let playlist: {
     gameConfig: ReturnType<typeof vi.fn>;
     maxPlayersForMap?: ReturnType<typeof vi.fn>;
+    throneSpecialConfig?: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(() => {
@@ -95,7 +96,7 @@ describe("MasterLobbyService thrones", () => {
     registry = new ThroneRegistry({
       names: NAMES,
       count: 3,
-      mix: { ffa: 3, team: 0, special: 0 },
+      mix: { ffa: 2, team: 0, special: 1 },
       minPlayers: 2,
       countdownMs: COUNTDOWN,
       windowMs: WINDOW,
@@ -150,13 +151,20 @@ describe("MasterLobbyService thrones", () => {
       {
         throneID: "throne-03",
         name: "Altair",
-        type: "ffa",
+        type: "special",
         reign: 0,
         minPlayers: 2,
       },
     ]);
-    // The playlist rolls an FFA config; a throne is never trusted-only (L3).
-    expect(playlist.gameConfig).toHaveBeenCalledWith("ffa");
+    // The playlist rolls an FFA config, or an FFA special game for a special
+    // throne; a throne is never trusted-only (L3).
+    expect(playlist.gameConfig).toHaveBeenCalledWith("ffa", {
+      mode: "Free For All",
+    });
+    expect(playlist.gameConfig).toHaveBeenCalledWith("special", {
+      mode: "Free For All",
+    });
+    expect(creates[2].gameConfig.gameMap).toBe("map-for-special");
     expect(creates[0].gameConfig).toEqual({
       gameMap: "map-for-ffa",
       hegemon: { enabled: true },
@@ -480,5 +488,127 @@ describe("MasterLobbyService thrones", () => {
         reservationUntil: T0 + WINDOW,
       },
     ]);
+  });
+
+  // --- T4: special thrones ---
+
+  async function winSpecialRound() {
+    await schedulerTask()();
+    worker.emit("message", {
+      type: "lobbyList",
+      lobbies: [
+        throneEntry("g01"),
+        throneEntry("g02"),
+        throneEntry("g03", {
+          throne: {
+            ...(throneEntry("g03").throne as object),
+            throneID: "throne-03",
+            type: "special",
+            running: true,
+          },
+        }),
+      ],
+    });
+    await schedulerTask()();
+    worker.emit("message", {
+      type: "throneRound",
+      throneID: "throne-03",
+      gameID: "g03",
+      outcome: "overthrown",
+      winner: ADA,
+    });
+    await vi.waitFor(() => expect(sent(worker, "createGame")).toHaveLength(4));
+    expect(sent(worker, "createGame")[3].throne.type).toBe("special");
+  }
+
+  it("rebuilds a special round from the winner's modifiers and map", async () => {
+    playlist.throneSpecialConfig = vi.fn(
+      async (map: string, mods: string[]) => ({
+        gameMap: map,
+        maxPlayers: 30,
+        gameMode: "Free For All",
+        publicGameModifiers: { isCompact: mods.includes("isCompact") },
+        startingGold: mods.includes("startingGold5M") ? 5_000_000 : undefined,
+        hegemon: { enabled: true },
+        gameType: "Public",
+      }),
+    );
+    await winSpecialRound();
+    worker.emit("message", {
+      type: "thronePick",
+      throneID: "throne-03",
+      gameID: "g03",
+      persistentID: ADA.persistentID,
+      gameMap: "Event Horizon",
+      modifiers: ["isCompact", "startingGold5M"],
+      stay: true,
+    });
+    await vi.waitFor(() =>
+      expect(sent(worker, "updateLobby").length).toBeGreaterThan(0),
+    );
+    expect(playlist.throneSpecialConfig).toHaveBeenCalledWith("Event Horizon", [
+      "isCompact",
+      "startingGold5M",
+    ]);
+    const update = sent(worker, "updateLobby")[0];
+    expect(update.gameConfig).toMatchObject({
+      gameMap: "Event Horizon",
+      maxPlayers: 30,
+      publicGameModifiers: { isCompact: true },
+      startingGold: 5_000_000,
+    });
+    expect("gameType" in update.gameConfig).toBe(false);
+    expect(update.throne).toEqual({ heir: ADA, reign: 1 });
+  });
+
+  it("keeps the rolled modifiers when the winner picks only a map on a special throne", async () => {
+    playlist.gameConfig = vi.fn(async (type: string) => ({
+      gameMap: `map-for-${type}`,
+      hegemon: { enabled: true },
+      publicGameModifiers:
+        type === "special"
+          ? { isPeaceTime: true, goldMultiplier: 2 }
+          : undefined,
+    }));
+    playlist.throneSpecialConfig = vi.fn(async (map: string) => ({
+      gameMap: map,
+      hegemon: { enabled: true },
+    }));
+    await winSpecialRound();
+    worker.emit("message", {
+      type: "thronePick",
+      throneID: "throne-03",
+      gameID: "g03",
+      persistentID: ADA.persistentID,
+      gameMap: "Event Horizon",
+      stay: false,
+    });
+    await vi.waitFor(() =>
+      expect(sent(worker, "updateLobby").length).toBeGreaterThan(0),
+    );
+    const [, mods] = playlist.throneSpecialConfig.mock.calls[0];
+    expect([...mods].sort()).toEqual(["goldMultiplier", "isPeaceTime"]);
+  });
+
+  it("drops modifiers off the whitelist, in excess, or on an FFA throne", async () => {
+    playlist.throneSpecialConfig = vi.fn(async (map: string) => ({
+      gameMap: map,
+      hegemon: { enabled: true },
+    }));
+    await winRound(); // throne-01, FFA
+    worker.emit("message", {
+      type: "thronePick",
+      throneID: "throne-01",
+      gameID: "g01",
+      persistentID: ADA.persistentID,
+      modifiers: ["isCompact"],
+      stay: true,
+    });
+    await vi.waitFor(() =>
+      expect(sent(worker, "updateLobby").length).toBeGreaterThan(0),
+    );
+    // No map, modifiers ignored: the seat answer alone.
+    expect(sent(worker, "updateLobby")[0].gameConfig).toBeUndefined();
+    expect(playlist.throneSpecialConfig).not.toHaveBeenCalled();
   });
 });

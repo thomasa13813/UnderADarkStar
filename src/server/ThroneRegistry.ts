@@ -1,5 +1,6 @@
 import { GameMapType } from "../core/game/Game";
 import { ThroneInfo, ThroneSeatState, ThroneType } from "../core/Schemas";
+import { ThroneModifier } from "../core/ThroneModifiers";
 import { ThroneRoundOutcome } from "./IPCBridgeSchema";
 
 // Under a Dark Star: the master's record of its public thrones
@@ -85,10 +86,12 @@ export interface ThroneObservation {
   running: boolean;
 }
 
-// The winner's answer (§5.5): the map, if they chose one, and whether they
-// keep the seat. Modifiers join at T4.
+// The winner's answer (§5.5): the map, if they chose one, on a special
+// throne the modifiers, if they chose any (§5.4), and whether they keep the
+// seat.
 export interface ThronePick {
   gameMap?: GameMapType;
+  modifiers?: ThroneModifier[];
   stay: boolean;
 }
 

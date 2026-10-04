@@ -64,7 +64,7 @@ const SPECIAL_TEAM_MAPS: ReadonlyMap<GameMapType, TeamCountConfig> = new Map(
     .map((m) => [m.type, m.specialTeamCount!]),
 );
 
-type ModifierKey =
+export type ModifierKey =
   | "isRandomSpawn"
   | "isCompact"
   | "isCrowded"
@@ -82,7 +82,7 @@ type ModifierKey =
 
 // Each entry represents one "ticket" in the pool. More tickets = higher chance of selection.
 // Weights are roughly informed by the community "favorite modifier" poll.
-const SPECIAL_MODIFIER_POOL: ModifierKey[] = [
+export const SPECIAL_MODIFIER_POOL: ModifierKey[] = [
   ...Array<ModifierKey>(4).fill("isRandomSpawn"),
   ...Array<ModifierKey>(4).fill("isCompact"),
   ...Array<ModifierKey>(2).fill("isCrowded"),
@@ -110,7 +110,7 @@ const DOOMSDAY_ROTATION_SPEEDS = [
 ] as const;
 
 // Modifiers that cannot be active at the same time.
-const MUTUALLY_EXCLUSIVE_MODIFIERS: [ModifierKey, ModifierKey][] = [
+export const MUTUALLY_EXCLUSIVE_MODIFIERS: [ModifierKey, ModifierKey][] = [
   ["startingGold5M", "startingGold25M"],
   ["startingGold5M", "startingGold1M"],
   ["startingGold25M", "startingGold1M"],
@@ -135,22 +135,44 @@ export class MapPlaylist {
   // Scheduled public games handed out so far, across all types.
   private scheduled = 0;
 
-  public async gameConfig(type: ScheduledPublicGameType): Promise<GameConfig> {
+  // `mode` pins a special game's mode (a throne is FFA only, Config
+  // disables the Hegemon otherwise); ffa and team ignore it.
+  public async gameConfig(
+    type: ScheduledPublicGameType,
+    opts: { mode?: GameMode } = {},
+  ): Promise<GameConfig> {
     this.scheduled++;
     const trusted = this.scheduled % TRUSTED_PUBLIC_EVERY === 0;
-    const config = await this.rollConfig(type, trusted);
+    const config = await this.rollConfig(type, trusted, opts.mode);
     if (trusted) {
       config.trusted = true;
     }
     return config;
   }
 
+  // Under a Dark Star: the next round of a special throne as its winner set
+  // it (docs/DarkStar-Lobbies.md §5.4): this map, exactly these modifiers,
+  // FFA, nothing rolled. The map's own disabled modifiers still apply; its
+  // forced ones do not (the winner chose). Not counted toward the trusted
+  // rotation: a throne is open to everyone.
+  public async throneSpecialConfig(
+    map: GameMapType,
+    modifiers: readonly ModifierKey[],
+  ): Promise<GameConfig> {
+    return this.getSpecialConfig(false, {
+      mode: GameMode.FFA,
+      map,
+      modifiers,
+    });
+  }
+
   private async rollConfig(
     type: ScheduledPublicGameType,
     trusted: boolean,
+    forcedMode?: GameMode,
   ): Promise<GameConfig> {
     if (type === "special") {
-      return this.getSpecialConfig(trusted);
+      return this.getSpecialConfig(trusted, { mode: forcedMode });
     }
 
     const mode = type === "ffa" ? GameMode.FFA : GameMode.Team;
@@ -217,9 +239,20 @@ export class MapPlaylist {
     } satisfies GameConfig;
   }
 
-  private async getSpecialConfig(trusted: boolean): Promise<GameConfig> {
-    const mode = Math.random() < 0.5 ? GameMode.FFA : GameMode.Team;
-    const map = this.getNextMap("special", mode);
+  private async getSpecialConfig(
+    trusted: boolean,
+    opts: {
+      mode?: GameMode;
+      map?: GameMapType;
+      // An explicit modifier set (a throne winner's pick): no roll, no
+      // map-forced modifiers, no random fallback.
+      modifiers?: readonly ModifierKey[];
+    } = {},
+  ): Promise<GameConfig> {
+    const mode =
+      opts.mode ?? (Math.random() < 0.5 ? GameMode.FFA : GameMode.Team);
+    const map = opts.map ?? this.getNextMap("special", mode);
+    const explicit = opts.modifiers !== undefined;
     let playerTeams =
       mode === GameMode.Team ? this.getTeamCount(map) : undefined;
 
@@ -278,7 +311,11 @@ export class MapPlaylist {
     // get rolled twice, but they respect excludedModifiers.
     // Roll percentage chances now so we can count them toward the 3-modifier cap.
     const appliedForced = new Set<ModifierKey>();
-    if (mapInfo?.forcedModifiers) {
+    if (explicit) {
+      for (const key of opts.modifiers!) {
+        if (!excludedModifiers.includes(key)) appliedForced.add(key);
+      }
+    } else if (mapInfo?.forcedModifiers) {
       for (const entry of mapInfo.forcedModifiers) {
         const [mod, pctStr] = entry.split(":");
         const key = mod as ModifierKey;
@@ -307,7 +344,7 @@ export class MapPlaylist {
     // Forced modifiers count toward the 3-modifier cap.
     const poolResult = this.getRandomSpecialGameModifiers(
       excludedModifiers,
-      undefined,
+      explicit ? 0 : undefined,
       appliedForced.size,
     );
     let {
@@ -351,6 +388,7 @@ export class MapPlaylist {
         // if it was the sole modifier, so the lobby always has at least one.
         isCrowded = undefined;
         if (
+          !explicit &&
           !isRandomSpawn &&
           !isCompact &&
           !isHardNations &&

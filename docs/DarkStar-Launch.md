@@ -91,7 +91,8 @@ browsers under `npm run dev`, including a winner who walks away. If Host or Join
 
 **3a. Accounts core (B1 → B2 → B3; M, L, M)**
 
-- [ ] **B1** The API skeleton, running under `npm run dev` and in the container.
+- [x] **B1** The API skeleton, running under `npm run dev` (built 2026-10-03, Accounts doc §12.1).
+      The container part waits for 3b.
 - [ ] **B2** Sign-in (the dev provider and Discord first), sessions, the account panel; guests
       accepted in production.
 - [ ] **B3** The production join path: bot check, name filter, stub endpoints, and the audit.
@@ -121,7 +122,8 @@ friends is possible.
 
 - [ ] **B4** Results: the record additions, ingest, reigns and longest reign (M).
 - [ ] **B5** The leaderboard page, the account panel's numbers, the win-screen prompt (M).
-- [ ] **T4** Special thrones: the modifier whitelist and picker (S).
+- [x] **T4** Special thrones: the modifier whitelist and picker (S). Built 2026-10-03 (Lobbies doc
+      §10.4), ahead of Stage 3 at Tom's request.
 
 _Done when_ a reign won on the live server appears on the live board.
 
@@ -224,3 +226,11 @@ _Done when_ the checklist is clean. This build is the release candidate.
   has the winner's Next-round panel (map picker, Keep the throne / Step down, 30-second bar), and
   the Dark Star panel shows the throne and reign. The stage's three-rounds-in-a-row check is
   Tom's to run.
+- **2026-10-03** — Tom reviewed Stage 2 in the browser (join prompt, the winner picking the map,
+  reign counts, spectating a running round) and called it sufficient. He asked to defer the
+  accounts work: Stage 4's T4 was pulled forward and built; B1 follows as code only, with the
+  sign-in providers and the first deployment postponed until he is closer to wanting a real
+  address.
+- **2026-10-03** — B1 built as code: the account API skeleton starts with `npm run dev`, serves
+  its signing key and clears the client's backend check. B2's providers, B3 and the first
+  deployment (3b) stay postponed.

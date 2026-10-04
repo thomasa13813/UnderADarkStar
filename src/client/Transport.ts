@@ -38,6 +38,7 @@ import {
   ServerMessage,
   Winner,
 } from "../core/Schemas";
+import { ThroneModifier } from "../core/ThroneModifiers";
 import {
   createGameWireContext,
   decodeServerMessage,
@@ -244,6 +245,8 @@ export class SendThronePickEvent implements GameEvent {
   constructor(
     public readonly gameMap: GameMapType | undefined,
     public readonly stay: boolean,
+    // Special thrones only: the chosen modifiers; undefined keeps the rolled.
+    public readonly modifiers?: ThroneModifier[],
   ) {}
 }
 
@@ -934,6 +937,7 @@ export class Transport {
     this.sendMsg({
       type: "throne_pick",
       gameMap: event.gameMap,
+      modifiers: event.modifiers,
       stay: event.stay,
     } satisfies ClientThronePickMessage);
   }

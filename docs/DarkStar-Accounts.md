@@ -5,7 +5,7 @@
 > decisions of that day; rows marked **Proposed** are recommendations waiting for his review (§15).
 > Companion to `DarkStar-Roadmap.md` phase P5, which this document expands and supersedes, and to
 > `DarkStar-Lobbies.md` (thrones, seats, reigns). Where it sits in the order of work is in
-> `DarkStar-Launch.md`. Nothing here is built yet. Changelog at the end.
+> `DarkStar-Launch.md`. B1 is built as code (2026-10-03, §12.1); B2–B7 are not. Changelog at the end.
 
 ## 1. Goals
 
@@ -347,6 +347,33 @@ show no call to a missing endpoint. B4, three throne rounds produce the right nu
 including a guest winner and a void round. B5, the board shows them. B6, a banned account cannot
 join, and a database restored from last night's backup serves the same board.
 
+### 12.1 As built: B1 (2026-10-03)
+
+The skeleton, as code only: Tom asked (2026-10-03) that nothing needing a sign-up or a server
+be done yet, so the container wiring of §9 (Dockerfile, supervisord, nginx) waits for the first
+deployment (Launch 3b) and the providers for B2.
+
+- **`src/api/`**: `Config.ts` (the environment: `GAME_ENV`, `DOMAIN`, `API_KEY`, `API_PORT`
+  default 8787, `DATA_DIR` default `.data` in dev and `/data` otherwise; `issuerFor` mirrors
+  `ServerEnv.jwtIssuer`; `allowedOrigin` is the site, or any localhost port in dev), `Db.ts`
+  (Node's built-in `node:sqlite`, confirmed working on Node 24; WAL; the §8 tables in two numbered
+  migrations applied once at boot in a `schema_migrations` table), `Keys.ts` (an Ed25519 pair
+  generated once into `signing-key.json`, mode 600, reloaded with the same `kid`; the JWKS
+  document in the exact shape `ServerEnv.jwkPublicKey` validates; `signToken` for B2), `App.ts`
+  (express factory: `/health`, `/.well-known/jwks.json` cacheable, `/cluster.json` 404, JSON
+  404s, CORS with credentials for the page's origin only, `no-store` by default) and `Server.ts`
+  (the entry point).
+- **`npm run dev`** now starts the API beside the client and the game server
+  (`start:api-dev`), with the dev `API_KEY` the game server already uses. Its data lands in
+  `.data/` (git-ignored). The client's backend check passes against it, which removes the "backend
+  unreachable" refusal of Host and Join that local testing could hit.
+- **Tests**: `tests/api/ApiSkeleton.test.ts` (12): config and origins, migrations idempotent and
+  the foreign key enforced, the key persisted and a token it signs verifying exactly as `jwt.ts`
+  does, and every route of the skeleton over a real socket.
+- **Not yet**: the game server never fetches the key in dev (dev tokens are browser IDs), so the
+  "Done when" of B1 is met by the test that verifies a signed token with the served JWKS, and by
+  the client's health check.
+
 ## 13. Tests
 
 API tests run against an in-memory database, under `tests/api/`, added to `npm test`.
@@ -394,6 +421,9 @@ API tests run against an in-memory database, under `tests/api/`, added to `npm t
 
 ## 16. Changelog
 
+- **2026-10-03** — **B1 built as code** (§12.1): `src/api/` skeleton on SQLite with the signing
+  key and the JWKS, started by `npm run dev`. Container wiring and the sign-in providers are
+  deferred with the first deployment at Tom's request.
 - **2026-10-01** — Created. Tom's decisions A1–A6 (accounts at launch, Discord and Google, guests
   unrecorded, every public round counts, three numbers, store later); A7–A20 proposed: a small
   service in the repo on SQLite, the existing token format, guests accepted in production, results

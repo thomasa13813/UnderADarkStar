@@ -102,6 +102,9 @@ export const mapAspectRatios = new MapAspectRatioCache();
  * winner it is reserved for, or the Dark Star when the AI will take it.
  */
 export function throneCardSubtitle(throne: ThroneInfo, mode: string): string {
+  // A special throne is FFA with modifiers; say "Special" where the plain
+  // throne says "Free for All", or the two are indistinguishable (L2, L13).
+  if (throne.type === "special") mode = translateText("throne.type_special");
   let holder: string;
   if (throne.seat === "open" || throne.holderName === undefined) {
     holder = translateText("throne.holder_ai");

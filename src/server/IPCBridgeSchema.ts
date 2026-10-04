@@ -101,6 +101,7 @@ const WorkerThronePickSchema = z.object({
   gameID: z.string(),
   persistentID: z.string(),
   gameMap: z.string().optional(),
+  modifiers: z.array(z.string()).optional(),
   stay: z.boolean(),
 });
 
