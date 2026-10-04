@@ -9,6 +9,7 @@ import {
 import { EventBus, EventConstructor, GameEvent } from "../core/EventBus";
 import {
   AllPlayers,
+  GameMapType,
   GameType,
   Gold,
   PlayerID,
@@ -29,6 +30,7 @@ import {
   ClientSendLiveStatsMessage,
   ClientSendWinnerMessage,
   ClientSpectateMessage,
+  ClientThronePickMessage,
   GameConfig,
   Intent,
   LiveStats,
@@ -226,7 +228,23 @@ export class SendHashEvent implements GameEvent {
 // Emitted when the server tells us the host started a successor lobby, carrying
 // the new game id to move the group to.
 export class NewLobbyEvent implements GameEvent {
-  constructor(public readonly gameID: string) {}
+  constructor(
+    public readonly gameID: string,
+    // Under a Dark Star: the throne's seat is reserved for the round's winner
+    // until this time (L4); the winner's Next-round panel runs on it.
+    public readonly reservationUntil?: number,
+  ) {}
+}
+
+// Under a Dark Star (docs/DarkStar-Lobbies.md §5.5, §5.6): the lobby's seat
+// controls, and the winner's answer on the finished game's socket.
+export class ClaimSeatEvent implements GameEvent {}
+export class LeaveSeatEvent implements GameEvent {}
+export class SendThronePickEvent implements GameEvent {
+  constructor(
+    public readonly gameMap: GameMapType | undefined,
+    public readonly stay: boolean,
+  ) {}
 }
 
 export class MoveWarshipIntentEvent implements GameEvent {
@@ -354,6 +372,13 @@ export class Transport {
     this.subscribe(GiftUnitIntentEvent, (e) => this.onGiftUnitIntent(e));
 
     this.subscribe(PauseGameIntentEvent, (e) => this.onPauseGameIntent(e));
+    this.subscribe(ClaimSeatEvent, () =>
+      this.sendIntent({ type: "claim_seat" }),
+    );
+    this.subscribe(LeaveSeatEvent, () =>
+      this.sendIntent({ type: "leave_seat" }),
+    );
+    this.subscribe(SendThronePickEvent, (e) => this.onSendThronePick(e));
     this.subscribe(SendWinnerEvent, (e) => this.onSendWinnerEvent(e));
     this.subscribe(SendLiveStatsEvent, (e) => this.onSendLiveStatsEvent(e));
     this.subscribe(SendPlayerReportEvent, (e) =>
@@ -902,6 +927,15 @@ export class Transport {
       type: "toggle_pause",
       paused: event.paused,
     });
+  }
+
+  private onSendThronePick(event: SendThronePickEvent) {
+    if (this.isLocal) return;
+    this.sendMsg({
+      type: "throne_pick",
+      gameMap: event.gameMap,
+      stay: event.stay,
+    } satisfies ClientThronePickMessage);
   }
 
   private onSendWinnerEvent(event: SendWinnerEvent) {

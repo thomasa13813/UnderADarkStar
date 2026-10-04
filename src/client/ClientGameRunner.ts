@@ -51,6 +51,7 @@ import {
 import { pagePin } from "./PagePin";
 import { versionedPathForMismatchedGame } from "./ServerList";
 import { terrainMapFileLoader } from "./TerrainMapFileLoader";
+import { resetThroneState, setCurrentThrone } from "./ThroneState";
 import { GoToPlayerEvent } from "./TransformHandler";
 import {
   MoveWarshipIntentEvent,
@@ -134,6 +135,7 @@ export function joinLobby(
   const userSettings: UserSettings = new UserSettings();
   themeProvider.reset(); // fresh colour allocators for this game
   goldRateTracker.resetAll(); // drop samples from a previous in-page game
+  resetThroneState(); // a new game may run for another throne, or none
 
   const transport = new Transport(lobbyConfig, eventBus);
 
@@ -214,6 +216,9 @@ export function joinLobby(
     if (message.type === "lobby_info") {
       // Server tells us our assigned clientID
       clientID = message.myClientID;
+      // Under a Dark Star: the throne this lobby runs for, kept for the HUD
+      // once the game is running and no lobby info arrives any more.
+      setCurrentThrone(message.lobby.throne);
       eventBus.emit(new LobbyInfoEvent(message.lobby, message.myClientID));
       // Preload the map while still in the lobby so game start can reuse the
       // cached result instead of blocking on the download in the short
@@ -1095,10 +1100,13 @@ export class ClientGameRunner {
         );
       }
       if (message.type === "new_lobby") {
-        // The host reused this private lobby: surface the successor id so the
-        // group can hop over. NewLobbyPrompt navigates the host and prompts
-        // everyone else.
-        this.eventBus.emit(new NewLobbyEvent(message.gameID));
+        // The host reused this private lobby, or a throne opened its next
+        // round: surface the successor id so the group can hop over.
+        // NewLobbyPrompt navigates the host and prompts everyone else; the
+        // winner of a throne round gets the Next-round panel (WinModal).
+        this.eventBus.emit(
+          new NewLobbyEvent(message.gameID, message.throne?.reservationUntil),
+        );
       }
       if (message.type === "turn") {
         if (

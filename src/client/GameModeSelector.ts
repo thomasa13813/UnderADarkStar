@@ -17,6 +17,7 @@ import {
   canJoinTrustedLobby,
   lobbyCard,
   mapAspectRatios,
+  throneCardSubtitle,
   trustRequiredDialog,
   viewerIsSignedIn,
   viewerIsTrusted,
@@ -441,9 +442,16 @@ export class GameModeSelector extends LitElement {
   }
 
   render() {
-    const ffa = this.lobbies?.games?.["ffa"]?.[0];
-    const teams = this.lobbies?.games?.["team"]?.[0];
-    const special = this.lobbies?.games?.["special"]?.[0];
+    // Under a Dark Star: thrones replace the per-type queues, so the three
+    // cards show the three thrones closest to starting (L13; the master sorts
+    // them). Rounds in progress are not joinable from here (Watch is T3).
+    // The ffa/team/special lookups stay for the queue fallback.
+    const thrones = (this.lobbies?.games?.["throne"] ?? []).filter(
+      (lobby) => lobby.throne?.running !== true,
+    );
+    const ffa = this.lobbies?.games?.["ffa"]?.[0] ?? thrones[0];
+    const teams = this.lobbies?.games?.["team"]?.[0] ?? thrones[1];
+    const special = this.lobbies?.games?.["special"]?.[0] ?? thrones[2];
     // The hero slot holds the spinner, then the FFA card; loaded without one
     // it goes and the upcoming column takes the whole row.
     const heroSlot = this.lobbies === null || ffa !== undefined;
@@ -704,7 +712,11 @@ export class GameModeSelector extends LitElement {
 
     let timeDisplay: string;
     let timeDisplayUppercase = false;
-    if (timeRemaining === undefined) {
+    if (timeRemaining === undefined && lobby.throne !== undefined) {
+      // A throne lobby has no countdown until enough players are in (L9).
+      timeDisplay = translateText("public_lobby.waiting_for_players");
+      timeDisplayUppercase = true;
+    } else if (timeRemaining === undefined) {
       timeDisplay = renderDuration(this.defaultLobbyTime);
     } else if (timeRemaining > 0) {
       timeDisplay = renderDuration(timeRemaining);
@@ -753,6 +765,14 @@ export class GameModeSelector extends LitElement {
   }
 
   private getLobbyTitle(lobby: PublicGameInfo): string {
+    // A throne card names its throne beside the mode.
+    if (lobby.throne !== undefined) {
+      return throneCardSubtitle(lobby.throne, this.getModeTitle(lobby));
+    }
+    return this.getModeTitle(lobby);
+  }
+
+  private getModeTitle(lobby: PublicGameInfo): string {
     const config = lobby.gameConfig!;
     if (config.gameMode === GameMode.FFA) {
       return translateText("game_mode.ffa");

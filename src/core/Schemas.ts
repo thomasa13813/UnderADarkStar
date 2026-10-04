@@ -58,7 +58,9 @@ export type Intent =
   | StrikeIntent
   | GateShotIntent
   | GiftUnitIntent
-  | PunitiveStrikeIntent;
+  | PunitiveStrikeIntent
+  | ClaimSeatIntent
+  | LeaveSeatIntent;
 
 export type AttackIntent = z.infer<typeof AttackIntentSchema>;
 export type CancelAttackIntent = z.infer<typeof CancelAttackIntentSchema>;
@@ -96,6 +98,9 @@ export type TogglePauseIntent = z.infer<typeof TogglePauseIntentSchema>;
 export type UpdateGameConfigIntent = z.infer<
   typeof UpdateGameConfigIntentSchema
 >;
+export type ClaimSeatIntent = z.infer<typeof ClaimSeatIntentSchema>;
+export type LeaveSeatIntent = z.infer<typeof LeaveSeatIntentSchema>;
+export type ClientThronePickMessage = z.infer<typeof ClientThronePickSchema>;
 export type ToggleGameStartTimer = z.infer<
   typeof ToggleGameStartTimerIntentSchema
 >;
@@ -113,6 +118,7 @@ export type ClientMessage =
   | ClientLogMessage
   | ClientHashMessage
   | ClientSpectateMessage
+  | ClientThronePickMessage
   | ClientReportMessage;
 
 export type ServerMessage =
@@ -174,6 +180,10 @@ export const PublicGameTypeSchema = z.enum([
   "team",
   "special",
   "hosted",
+  // Under a Dark Star: a persistent public lobby whose seat is the prize
+  // (docs/DarkStar-Lobbies.md). Thrones replace the ffa/team/special queues
+  // and are scheduled by the master's ThroneRegistry, not the per-type queue.
+  "throne",
 ]);
 
 // Lobby types the master schedules from the map playlist. "hosted" is
@@ -183,6 +193,7 @@ export const PublicGameTypeSchema = z.enum([
 // default and opting out is the explicit act.
 export const ScheduledPublicGameTypeSchema = PublicGameTypeSchema.exclude([
   "hosted",
+  "throne",
 ]);
 export const SCHEDULED_PUBLIC_GAME_TYPES =
   ScheduledPublicGameTypeSchema.options;
@@ -316,6 +327,30 @@ const ClientInfoSchema = z.object({
   teamIndex: zb.uint().optional(),
 });
 
+// Under a Dark Star: a throne's public face, carried on its lobby's info and
+// on its lobby-browser entry (docs/DarkStar-Lobbies.md §7). Who holds the seat
+// is a name only; the persistentID behind it never leaves the master (§5.10).
+export const ThroneTypeSchema = z.enum(["ffa", "team", "special"]);
+export type ThroneType = z.infer<typeof ThroneTypeSchema>;
+export const ThroneSeatStateSchema = z.enum(["reserved", "seated", "open"]);
+export type ThroneSeatState = z.infer<typeof ThroneSeatStateSchema>;
+export const ThroneInfoSchema = z.object({
+  throneID: z.string(),
+  name: z.string(),
+  type: ThroneTypeSchema,
+  // Consecutive rounds the holder has kept the seat (§3.1).
+  reign: zb.uint(),
+  holderName: z.string().optional(),
+  seat: ThroneSeatStateSchema,
+  // The round is in progress (the Thrones tab lists it with a Watch button).
+  running: z.boolean().optional(),
+  startedAt: zb.uint().optional(),
+  // While the seat is reserved: when the winner's window closes (L4), so the
+  // lobby can show "the Hegemon is choosing" with a bar.
+  reservationUntil: zb.uint().optional(),
+});
+export type ThroneInfo = z.infer<typeof ThroneInfoSchema>;
+
 export const GameInfoSchema = z.object({
   gameID: z.string(),
   clients: z.array(ClientInfoSchema).optional(),
@@ -337,6 +372,8 @@ export const GameInfoSchema = z.object({
   label: LobbyLabelSchema.optional(),
   accent: LobbyAccentSchema.optional(),
   featured: z.boolean().optional(),
+  // Throne lobbies only (Under a Dark Star).
+  throne: ThroneInfoSchema.optional(),
 });
 
 // Browser-facing lobby info. Master/worker-internal fields (the creator hash
@@ -354,6 +391,9 @@ export const PublicGameInfoSchema = z.object({
   label: LobbyLabelSchema.optional(),
   accent: LobbyAccentSchema.optional(),
   featured: z.boolean().optional(),
+  // Throne lobbies only (Under a Dark Star): the throne's name, type, holder
+  // and whether its round is running.
+  throne: ThroneInfoSchema.optional(),
 });
 
 export const PublicGamesSchema = z.object({
@@ -825,6 +865,18 @@ export const ToggleGameStartTimerIntentSchema = z.object({
   type: z.literal("toggle_game_start_timer"),
 });
 
+// Under a Dark Star (docs/DarkStar-Lobbies.md §5.6): in a throne lobby any
+// player may take an open seat, first come first served (L6), and give it up
+// again before the round starts. Lobby-only; the server refuses both once the
+// game has started, from spectators, and while the seat is reserved.
+export const ClaimSeatIntentSchema = z.object({
+  type: z.literal("claim_seat"),
+});
+
+export const LeaveSeatIntentSchema = z.object({
+  type: z.literal("leave_seat"),
+});
+
 export const IntentSchema = z.discriminatedUnion("type", [
   AttackIntentSchema,
   CancelAttackIntentSchema,
@@ -856,6 +908,8 @@ export const IntentSchema = z.discriminatedUnion("type", [
   GateShotIntentSchema,
   GiftUnitIntentSchema,
   PunitiveStrikeIntentSchema,
+  ClaimSeatIntentSchema,
+  LeaveSeatIntentSchema,
 ]);
 
 // StampedIntent = Intent with server-stamped clientID (used in turns and execution)
@@ -1098,6 +1152,14 @@ export const ServerLobbyInfoMessageSchema = z.object({
 export const ServerNewLobbyMessageSchema = z.object({
   type: z.literal("new_lobby"),
   gameID: ID,
+  // Under a Dark Star: the successor is a throne's next round and the seat is
+  // reserved for this round's winner until then (L4). The winner's client
+  // opens the Next-round panel on it; everyone else gets the join prompt.
+  throne: z
+    .object({
+      reservationUntil: zb.uint(),
+    })
+    .optional(),
 });
 
 export const ServerMessageSchema = zb.discriminatedUnion("type", [
@@ -1246,6 +1308,16 @@ export const ClientSpectateMessageSchema = z.object({
   spectator: z.boolean(),
 });
 
+// Under a Dark Star (docs/DarkStar-Lobbies.md §5.5): the round's winner, still
+// on the finished game's socket, picks the next round's map and says whether
+// they keep the throne or step down. No map means a random one. Accepted only
+// from the winner, only once, and only within the winner's window (L4).
+export const ClientThronePickSchema = z.object({
+  type: z.literal("throne_pick"),
+  gameMap: z.enum(GameMapType).optional(),
+  stay: z.boolean(),
+});
+
 export const ClientMessageSchema = zb.discriminatedUnion("type", [
   ClientSendWinnerSchema,
   ClientSendLiveStatsSchema,
@@ -1257,6 +1329,7 @@ export const ClientMessageSchema = zb.discriminatedUnion("type", [
   ClientHashSchema,
   ClientSpectateMessageSchema,
   ClientReportMessageSchema,
+  ClientThronePickSchema,
 ]);
 
 //

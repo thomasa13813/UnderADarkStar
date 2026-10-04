@@ -9,12 +9,15 @@ import {
 } from "../core/Schemas";
 import { encodeLobbyMessage } from "../core/ZbinWire";
 import { GameManager } from "./GameManager";
+import { GamePhase } from "./GameServer";
 import {
   InternalGameInfo,
   InternalPublicGames,
   MasterMessageSchema,
   WorkerLobbyList,
   WorkerReady,
+  WorkerThronePick,
+  WorkerThroneRound,
 } from "./IPCBridgeSchema";
 import { logger } from "./Logger";
 import { ServerEnv } from "./ServerEnv";
@@ -65,6 +68,14 @@ export class WorkerLobbyService {
     this.setupUpgradeHandler();
     this.setupLobbiesWebSocket();
     this.setupIPCListener();
+    // Under a Dark Star: a throne game's result goes to the master, which
+    // opens the next round's lobby (docs/DarkStar-Lobbies.md §5.8).
+    this.gm.setThroneRoundListener((round) =>
+      this.sendToMaster({ type: "throneRound", ...round }),
+    );
+    this.gm.setThronePickListener((pick) =>
+      this.sendToMaster({ type: "thronePick", ...pick }),
+    );
   }
 
   /**
@@ -130,6 +141,8 @@ export class WorkerLobbyService {
         );
         if (game === null) {
           this.log.warn(`Game ${msg.gameID} already exists, skipping create`);
+        } else if (msg.throne !== undefined) {
+          game.setThrone(msg.throne);
         }
         break;
       }
@@ -141,7 +154,31 @@ export class WorkerLobbyService {
           });
           return;
         }
-        game.setStartsAt(msg.startsAt);
+        // null withdraws a throne lobby's countdown (a hold, §5.7); absent
+        // leaves it alone.
+        if (msg.startsAt !== undefined) {
+          game.setStartsAt(msg.startsAt ?? undefined);
+        }
+        // The winner's pick (§5.5) and the seat it leaves behind.
+        if (msg.gameConfig !== undefined) {
+          game.applyThronePick(msg.gameConfig);
+        }
+        if (msg.throne !== undefined) {
+          game.updateThrone(msg.throne);
+        }
+        break;
+      }
+      case "successorCreated": {
+        // The finished throne game tells its win screen where the next round
+        // gathers (the same new_lobby a reused private lobby sends).
+        const game = this.gm.game(msg.gameID);
+        if (!game) {
+          this.log.warn("cannot announce successor, game not found", {
+            gameID: msg.gameID,
+          });
+          return;
+        }
+        game.setSuccessorLobby(msg.successorID, msg.reservationUntil);
         break;
       }
     }
@@ -151,7 +188,9 @@ export class WorkerLobbyService {
     this.sendToMaster({ type: "workerReady", workerId });
   }
 
-  private sendToMaster(msg: WorkerReady | WorkerLobbyList) {
+  private sendToMaster(
+    msg: WorkerReady | WorkerLobbyList | WorkerThroneRound | WorkerThronePick,
+  ) {
     process.send?.(msg);
   }
 
@@ -167,10 +206,31 @@ export class WorkerLobbyService {
         return {
           gameID: info.gameID,
           numClients: info.clients?.length ?? 0,
+          numPlayers: info.clients?.filter((c) => !c.spectator).length ?? 0,
           startsAt: info.startsAt,
           gameConfig: info.gameConfig,
           publicGameType: info.publicGameType!,
           createdAt: game.createdAt,
+          throne: info.throne,
+        } satisfies InternalGameInfo;
+      });
+    // Under a Dark Star: a throne's round in progress stays listed, so the
+    // master knows the round is running and the lobby browser can offer to
+    // watch it (docs/DarkStar-Lobbies.md §5.3). Everything else the master
+    // advertises is a lobby.
+    const runningThrones = this.gm
+      .throneGames()
+      .filter((g) => g.phase() !== GamePhase.Lobby)
+      .map((g) => {
+        const info = g.gameInfo();
+        return {
+          gameID: info.gameID,
+          numClients: info.clients?.length ?? 0,
+          numPlayers: info.clients?.filter((c) => !c.spectator).length ?? 0,
+          gameConfig: info.gameConfig,
+          publicGameType: "throne",
+          createdAt: g.createdAt,
+          throne: { ...info.throne!, running: true },
         } satisfies InternalGameInfo;
       });
     // Subscriber-listed private lobbies. creatorID (a hash of the creator's
@@ -196,7 +256,7 @@ export class WorkerLobbyService {
     });
     this.sendToMaster({
       type: "lobbyList",
-      lobbies: [...publicLobbies, ...hostedLobbies],
+      lobbies: [...publicLobbies, ...runningThrones, ...hostedLobbies],
       liveGames: this.gm.activeGames(),
     } satisfies WorkerLobbyList);
   }

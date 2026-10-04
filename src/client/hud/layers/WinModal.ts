@@ -1,12 +1,30 @@
-import { html, LitElement } from "lit";
+import { html, LitElement, nothing } from "lit";
 import { customElement, state } from "lit/decorators.js";
 import { homeHref, translateText } from "../../../client/Utils";
 import { EventBus } from "../../../core/EventBus";
+import { GameMapType } from "../../../core/game/Game";
 import { GameUpdateType } from "../../../core/game/GameUpdates";
+import { ClientEnv } from "../../ClientEnv";
+import "../../components/map/MapPicker";
 import { Controller } from "../../Controller";
 import { PlaySoundEffectEvent } from "../../sound/Sounds";
-import { SendWinnerEvent } from "../../Transport";
+import { currentThrone, setWonRound } from "../../ThroneState";
+import {
+  NewLobbyEvent,
+  SendThronePickEvent,
+  SendWinnerEvent,
+} from "../../Transport";
 import { GameView } from "../../view";
+
+// Under a Dark Star: the winner's Next-round panel on the win screen
+// (docs/DarkStar-Lobbies.md §4 step 4, §5.5). The master opened the throne's
+// next lobby and reserved its seat for the winner until `until`; here they
+// pick its map and keep the throne or step down, then jump to the lobby.
+interface ThronePanel {
+  gameID: string;
+  openedAt: number;
+  until: number;
+}
 
 @customElement("win-modal")
 export class WinModal extends LitElement implements Controller {
@@ -20,6 +38,14 @@ export class WinModal extends LitElement implements Controller {
 
   @state()
   private isWin = false;
+
+  @state() private throne: ThronePanel | null = null;
+  // The map the winner picked; undefined is a random map.
+  @state() private pickedMap: GameMapType | undefined = undefined;
+  @state() private pickSent = false;
+  // Repaints the window bar once a second while the panel is up.
+  @state() private windowTick = 0;
+  private windowTimer: number | null = null;
 
   private _title: string;
 
@@ -42,6 +68,7 @@ export class WinModal extends LitElement implements Controller {
         <h2 class="m-0 mb-4 text-[26px] text-center text-white shrink-0">
           ${this._title || ""}
         </h2>
+        ${this.renderThronePanel()}
         <div class="mt-4 flex justify-between gap-2.5 shrink-0">
           <o-button
             variant="primary"
@@ -71,6 +98,10 @@ export class WinModal extends LitElement implements Controller {
 
   hide() {
     this.isVisible = false;
+    if (this.windowTimer !== null) {
+      window.clearInterval(this.windowTimer);
+      this.windowTimer = null;
+    }
     this.requestUpdate();
   }
 
@@ -79,7 +110,132 @@ export class WinModal extends LitElement implements Controller {
     window.location.href = homeHref();
   }
 
-  init() {}
+  init() {
+    this.eventBus.on(NewLobbyEvent, (e) => this.onNewLobby(e));
+  }
+
+  // --- Under a Dark Star: the Next-round panel ---
+
+  private onNewLobby(event: NewLobbyEvent) {
+    // Only the winner of a throne round has a window; everyone else gets the
+    // join prompt (NewLobbyPrompt).
+    if (event.reservationUntil === undefined || !this.wonRound) return;
+    this.throne = {
+      gameID: event.gameID,
+      openedAt: Date.now(),
+      until: event.reservationUntil,
+    };
+    this.pickedMap = undefined;
+    this.pickSent = false;
+    this.windowTimer ??= window.setInterval(() => {
+      this.windowTick++;
+    }, 250);
+    this.show();
+  }
+
+  private wonRound = false;
+
+  private windowRemainingMs(): number {
+    if (this.throne === null) return 0;
+    return Math.max(0, this.throne.until - Date.now());
+  }
+
+  private lobbyUrl(): string {
+    const id = this.throne?.gameID ?? "";
+    return `${window.location.origin}${ClientEnv.gamePath(id)}`;
+  }
+
+  private answer(stay: boolean) {
+    if (this.throne === null || this.pickSent) return;
+    this.pickSent = true;
+    this.eventBus.emit(new SendThronePickEvent(this.pickedMap, stay));
+    // Give the socket a moment to flush the pick before the page unloads.
+    window.setTimeout(() => {
+      window.location.href = this.lobbyUrl();
+    }, 300);
+  }
+
+  private joinNext() {
+    window.location.href = this.lobbyUrl();
+  }
+
+  private renderThronePanel() {
+    const panel = this.throne;
+    if (panel === null) return nothing;
+    void this.windowTick;
+    const remaining = this.windowRemainingMs();
+    const total = Math.max(1, panel.until - panel.openedAt);
+    const expired = remaining === 0 && !this.pickSent;
+    const name = currentThrone()?.name ?? "";
+    return html`
+      <div
+        class="flex flex-col gap-3 min-h-0 rounded-lg border border-purple-400/40 bg-black/30 p-3"
+        data-throne-panel
+      >
+        <div class="flex items-center justify-between gap-3">
+          <span class="font-bold tracking-wide text-purple-300">
+            ${translateText("throne.next_round", { name })}
+          </span>
+          ${expired
+            ? nothing
+            : html`<span class="text-sm tabular-nums text-white/80">
+                ${translateText("throne.window_seconds", {
+                  seconds: String(Math.ceil(remaining / 1000)),
+                })}
+              </span>`}
+        </div>
+        <div class="relative h-1.5 w-full overflow-hidden rounded bg-white/10">
+          <div
+            class="absolute inset-y-0 left-0 bg-purple-400 transition-[width] duration-200"
+            style="width:${Math.min(100, (remaining / total) * 100)}%"
+          ></div>
+        </div>
+        ${expired
+          ? html`<p class="text-sm text-white/80">
+                ${translateText("throne.window_passed")}
+              </p>
+              <o-button
+                variant="primary"
+                width="block"
+                .title=${translateText("throne.join_next")}
+                @click=${() => this.joinNext()}
+              ></o-button>`
+          : html`<p class="text-xs text-white/60">
+                ${translateText("throne.pick_hint")}
+              </p>
+              <div class="max-h-[40vh] overflow-y-auto custom-scrollbar pr-1">
+                <map-picker
+                  .selectedMap=${this.pickedMap ?? GameMapType.EventHorizon}
+                  .useRandomMap=${this.pickedMap === undefined}
+                  .onSelectMap=${(map: GameMapType) => {
+                    this.pickedMap = map;
+                  }}
+                  .onSelectRandom=${() => {
+                    this.pickedMap = undefined;
+                  }}
+                ></map-picker>
+              </div>
+              <div class="flex gap-2.5">
+                <o-button
+                  variant="primary"
+                  width="block"
+                  class="flex-1"
+                  .title=${translateText("throne.keep")}
+                  .disable=${this.pickSent}
+                  @click=${() => this.answer(true)}
+                ></o-button>
+                <o-button
+                  variant="ghost"
+                  width="block"
+                  class="flex-1"
+                  .title=${translateText("throne.step_down")}
+                  .disable=${this.pickSent}
+                  @click=${() => this.answer(false)}
+                ></o-button>
+              </div>`}
+      </div>
+    `;
+  }
 
   tick() {
     const myPlayer = this.game.myPlayer();
@@ -146,6 +302,10 @@ export class WinModal extends LitElement implements Controller {
         }
         const me = this.game.myPlayer();
         if (winnerClient !== null && winnerClient === me?.clientID()) {
+          // Under a Dark Star: the throne's next round is mine to shape
+          // (ThroneState tells NewLobbyPrompt to stand aside).
+          this.wonRound = true;
+          setWonRound(true);
           // From the throne, outlasting the round is the reign continuing (R4).
           this._title = winner.isHegemon()
             ? translateText("win_modal.hegemon_reigns")

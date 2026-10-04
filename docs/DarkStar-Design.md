@@ -2318,3 +2318,6 @@ to the invader (H9), gold donations from the throne (H9), hydrogen-bomb removal 
   as a grid of island cells, since solid faces would be three times the land budget; with nations
   on the outer rows only the throne held 3 of 3, so the third cell in on each face's diagonal
   (just past 500 tiles) seats a nation too (24): then overthrown in 3 of 3, once inside 15 minutes by one of those three. Tom has not yet played any of the six.
+- **2026-10-03** — **Public thrones, step T1 built** (`docs/DarkStar-Lobbies.md` §10.1): the
+  master runs a fixed pool of named throne lobbies back to back with the AI seated; no gameplay
+  rule changed. The seat, the winner's pick and the client's throne views follow in T2 and T3.

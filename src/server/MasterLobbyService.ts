@@ -1,6 +1,9 @@
 import { Worker } from "cluster";
+import throneNames from "resources/thrones.json";
 import winston from "winston";
+import { GameMapType } from "../core/game/Game";
 import {
+  GameConfig,
   MAX_HOSTED_LOBBIES,
   PublicGameType,
   SCHEDULED_PUBLIC_GAME_TYPES,
@@ -10,8 +13,11 @@ import {
   InternalGameInfoSchema,
   MasterCreateGame,
   MasterLobbiesBroadcast,
+  MasterSuccessorCreated,
   MasterUpdateGame,
   WorkerMessageSchema,
+  WorkerThronePick,
+  WorkerThroneRound,
 } from "./IPCBridgeSchema";
 import {
   CoordinatorCreateGame,
@@ -24,6 +30,19 @@ import { logger } from "./Logger";
 import { MapPlaylist } from "./MapPlaylist";
 import { startPolling } from "./PollingLoop";
 import { ServerEnv } from "./ServerEnv";
+import {
+  DEFAULT_VANISH_GRACE_MS,
+  Throne,
+  ThroneAction,
+  ThroneObservation,
+  ThronePick,
+  ThroneRegistry,
+} from "./ThroneRegistry";
+
+const GAME_MAPS = new Set<string>(Object.values(GameMapType));
+function isGameMap(name: string): name is GameMapType {
+  return GAME_MAPS.has(name);
+}
 
 export interface MasterLobbyServiceOptions {
   playlist: MapPlaylist;
@@ -36,6 +55,25 @@ export interface MasterLobbyServiceOptions {
  * View can show what's coming, not just the lobby about to start.
  */
 export const QUEUED_LOBBIES_PER_TYPE = 6;
+
+// Under a Dark Star: the throne pool from the environment
+// (docs/DarkStar-Lobbies.md §9), or null when the server runs upstream's
+// per-type queues instead (PUBLIC_LOBBIES=queue). FFA thrones only until
+// special (T4) and team (T5) thrones ship.
+export function throneRegistryFromEnv(): ThroneRegistry | null {
+  if (ServerEnv.publicLobbyMode() !== "thrones") return null;
+  const count = ServerEnv.throneCount();
+  return new ThroneRegistry({
+    names: throneNames,
+    count,
+    mix: { ffa: count, team: 0, special: 0 },
+    minPlayers: ServerEnv.throneMinPlayers(),
+    countdownMs: ServerEnv.throneCountdownMs(),
+    windowMs: ServerEnv.throneWindowMs(),
+    vanishGraceMs: DEFAULT_VANISH_GRACE_MS,
+    mintGameID: () => ServerEnv.generateGameId(),
+  });
+}
 
 export class MasterLobbyService {
   private readonly workers = new Map<number, Worker>();
@@ -83,13 +121,28 @@ export class MasterLobbyService {
   // between broadcasts does not lose the first one's delists.
   private readonly pendingDelist = new Set<string>();
 
+  // Under a Dark Star: the persistent public lobbies this master runs
+  // (docs/DarkStar-Lobbies.md). With a registry the master schedules thrones
+  // and nothing else; null keeps the per-type queues. Defaults from the
+  // environment; tests pass their own.
+  private readonly thrones: ThroneRegistry | null;
+  // The config each current throne lobby was created with, so a picked map
+  // can be given the cap the playlist would have rolled for it.
+  private readonly throneConfigs = new Map<string, GameConfig>();
+
   constructor(
     private playlist: MapPlaylist,
     private log: winston.Logger,
     awaitApiState = false,
+    thrones: ThroneRegistry | null | undefined = undefined,
   ) {
     this.active = !awaitApiState;
     this.stateKnown = !awaitApiState;
+    this.thrones = thrones === undefined ? throneRegistryFromEnv() : thrones;
+  }
+
+  throneRegistry(): ThroneRegistry | null {
+    return this.thrones;
   }
 
   registerWorker(workerId: number, worker: Worker) {
@@ -114,6 +167,16 @@ export class MasterLobbyService {
           // heartbeat. Every change is offered so a numClients-only change
           // still reaches the site roster within a second.
           this.coordinator?.report(this.ownLobbies(), this.liveGames());
+          break;
+        case "throneRound":
+          this.handleThroneRound(msg).catch((error) => {
+            this.log.error("throne round handling failed:", error);
+          });
+          break;
+        case "thronePick":
+          this.handleThronePick(msg).catch((error) => {
+            this.log.error("throne pick handling failed:", error);
+          });
           break;
       }
     });
@@ -281,13 +344,40 @@ export class MasterLobbyService {
       team: [],
       special: [],
       hosted: [],
+      throne: [],
     };
 
     for (const lobby of lobbies) {
       result[lobby.publicGameType].push(lobby);
     }
 
+    // Thrones: only the games the registry currently runs. A worker keeps
+    // reporting a finished round while its players sit on the win screen,
+    // and that round's successor is already listed in its place.
+    if (this.thrones !== null) {
+      const current = this.thrones.currentGameIDs();
+      result.throne = result.throne.filter((l) => current.has(l.gameID));
+    }
+    // Soonest to start first (L13): counting down by startsAt, then open
+    // lobbies by how many are waiting, then by name so the order is stable;
+    // running rounds last.
+    result.throne.sort((a, b) => {
+      const aRunning = a.throne?.running === true ? 1 : 0;
+      const bRunning = b.throne?.running === true ? 1 : 0;
+      if (aRunning !== bRunning) return aRunning - bRunning;
+      if (a.startsAt !== undefined || b.startsAt !== undefined) {
+        if (a.startsAt === undefined) return 1;
+        if (b.startsAt === undefined) return -1;
+        if (a.startsAt !== b.startsAt) return a.startsAt - b.startsAt;
+      }
+      const aPlayers = a.numPlayers ?? a.numClients;
+      const bPlayers = b.numPlayers ?? b.numClients;
+      if (aPlayers !== bPlayers) return bPlayers - aPlayers;
+      return (a.throne?.name ?? "").localeCompare(b.throne?.name ?? "");
+    });
+
     for (const type of Object.keys(result) as PublicGameType[]) {
+      if (type === "throne") continue;
       result[type].sort((a, b) => {
         if (a.startsAt === undefined && b.startsAt === undefined) {
           // Queue order: oldest first, so a lobby moves up a place each time
@@ -421,6 +511,12 @@ export class MasterLobbyService {
     // coordinator's; adding our own here would double-schedule.
     if (this.isCoordinated()) return;
 
+    // Under a Dark Star: thrones replace the per-type queues.
+    if (this.thrones !== null) {
+      await this.scheduleThrones();
+      return;
+    }
+
     const lobbiesByType = this.getAllLobbies().games;
 
     // Scheduled types only: hosted lobbies are started by their host, never
@@ -456,7 +552,217 @@ export class MasterLobbyService {
     }
   }
 
-  private sendMessageToWorker(msg: MasterCreateGame | MasterUpdateGame): void {
+  // --- Under a Dark Star: thrones (docs/DarkStar-Lobbies.md §5) ---
+
+  // One pass over the pool: open lobbies for thrones without one, start or
+  // withdraw countdowns on the players reported, and recycle games that
+  // vanished. An inactive deployment finishes its rounds but opens nothing.
+  private async scheduleThrones() {
+    if (this.thrones === null) return;
+    const actions = this.thrones.observe(
+      Date.now(),
+      this.throneReports(),
+      this.active,
+    );
+    await this.runThroneActions(actions);
+  }
+
+  // What the workers last reported about each throne game.
+  private throneReports(): Map<string, ThroneObservation> {
+    const reports = new Map<string, ThroneObservation>();
+    for (const lobby of this.ownLobbies()) {
+      if (lobby.publicGameType !== "throne") continue;
+      reports.set(lobby.gameID, {
+        numPlayers: lobby.numPlayers ?? lobby.numClients,
+        running: lobby.throne?.running === true,
+      });
+    }
+    return reports;
+  }
+
+  // A round ended on a worker: open the successor at once, so the lobby is
+  // gathering while the win screen is still up (§5.8).
+  private async handleThroneRound(msg: WorkerThroneRound) {
+    if (this.thrones === null) return;
+    this.log.info("throne round ended", {
+      throneID: msg.throneID,
+      gameID: msg.gameID,
+      outcome: msg.outcome,
+      winner: msg.winner?.name,
+    });
+    const actions = this.thrones.roundEnded(
+      msg.gameID,
+      msg.outcome,
+      msg.winner,
+      Date.now(),
+      this.active,
+    );
+    await this.runThroneActions(actions);
+  }
+
+  // The winner's answer (§5.5). The registry checks the heir and the window;
+  // the map is checked here against the full list (L7). A map that is not a
+  // map is a protocol error (the picker cannot produce it): the random one
+  // stands and the stay/leave answer is kept.
+  private async handleThronePick(msg: WorkerThronePick) {
+    if (this.thrones === null) return;
+    let gameMap: GameMapType | undefined;
+    if (msg.gameMap !== undefined) {
+      if (isGameMap(msg.gameMap)) {
+        gameMap = msg.gameMap;
+      } else {
+        this.log.warn("throne pick named an unknown map, keeping random", {
+          throneID: msg.throneID,
+          gameMap: msg.gameMap,
+        });
+      }
+    }
+    const actions = this.thrones.pickReceived(
+      msg.throneID,
+      msg.gameID,
+      msg.persistentID,
+      { gameMap, stay: msg.stay },
+      Date.now(),
+    );
+    if (actions.length === 0) {
+      this.log.info("throne pick ignored", {
+        throneID: msg.throneID,
+        gameID: msg.gameID,
+      });
+    }
+    await this.runThroneActions(actions);
+  }
+
+  private async runThroneActions(actions: ThroneAction[]) {
+    for (const action of actions) {
+      switch (action.kind) {
+        case "create": {
+          const { throne, gameID, previousGameID } = action;
+          this.log.info("opening throne lobby", {
+            throneID: throne.throneID,
+            name: throne.name,
+            gameID,
+            previousGameID,
+            heir: throne.heir?.name,
+          });
+          const gameConfig = await this.throneGameConfig(throne);
+          this.throneConfigs.set(gameID, gameConfig);
+          this.pruneThroneConfigs();
+          this.sendMessageToWorker({
+            type: "createGame",
+            gameID,
+            gameConfig,
+            publicGameType: "throne",
+            throne: {
+              throneID: throne.throneID,
+              name: throne.name,
+              type: throne.type,
+              reign: throne.reign,
+              minPlayers: this.thrones!.minPlayers(),
+              heir: throne.heir ?? undefined,
+              reservationUntil: throne.reservationUntil ?? undefined,
+            },
+          } satisfies MasterCreateGame);
+          if (previousGameID !== null) {
+            this.sendMessageToWorker({
+              type: "successorCreated",
+              gameID: previousGameID,
+              successorID: gameID,
+              reservationUntil: throne.reservationUntil ?? undefined,
+            } satisfies MasterSuccessorCreated);
+          }
+          break;
+        }
+        case "countdown":
+          this.sendMessageToWorker({
+            type: "updateLobby",
+            gameID: action.gameID,
+            startsAt: action.startsAt,
+          });
+          break;
+        case "hold":
+          this.log.info("holding throne lobby, too few players", {
+            gameID: action.gameID,
+          });
+          this.sendMessageToWorker({
+            type: "updateLobby",
+            gameID: action.gameID,
+            startsAt: null,
+          });
+          break;
+        case "pick": {
+          const gameConfig = await this.pickedConfig(
+            action.gameID,
+            action.pick,
+          );
+          this.log.info("throne pick applied", {
+            gameID: action.gameID,
+            gameMap: action.pick.gameMap,
+            stay: action.pick.stay,
+            reign: action.reign,
+          });
+          this.sendMessageToWorker({
+            type: "updateLobby",
+            gameID: action.gameID,
+            gameConfig,
+            throne: { heir: action.heir, reign: action.reign },
+          } satisfies MasterUpdateGame);
+          break;
+        }
+        case "expire":
+          this.log.info("winner's window expired, throne open", {
+            gameID: action.gameID,
+          });
+          this.sendMessageToWorker({
+            type: "updateLobby",
+            gameID: action.gameID,
+            throne: { heir: null, reign: 0 },
+          } satisfies MasterUpdateGame);
+          break;
+      }
+    }
+  }
+
+  // The config patch for a pick: the map and the cap the playlist would give
+  // it; nothing when no map was chosen (the random one stands).
+  private async pickedConfig(
+    gameID: string,
+    pick: ThronePick,
+  ): Promise<Partial<GameConfig> | undefined> {
+    if (pick.gameMap === undefined) return undefined;
+    const base = this.throneConfigs.get(gameID);
+    const patch: Partial<GameConfig> = { gameMap: pick.gameMap };
+    if (base !== undefined) {
+      patch.maxPlayers = await this.playlist.maxPlayersForMap(
+        pick.gameMap,
+        base,
+      );
+      this.throneConfigs.set(gameID, { ...base, ...patch });
+    }
+    return patch;
+  }
+
+  private pruneThroneConfigs() {
+    const current = this.thrones?.currentGameIDs();
+    if (current === undefined) return;
+    for (const gameID of this.throneConfigs.keys()) {
+      if (!current.has(gameID)) this.throneConfigs.delete(gameID);
+    }
+  }
+
+  // A throne round's config: the playlist's usual roll for the throne's type
+  // (map rotation, player cap, the throne enabled), never trusted-only (a
+  // throne is open to everyone, L3). T2 merges the winner's pick on top.
+  private async throneGameConfig(throne: Throne): Promise<GameConfig> {
+    const config = await this.playlist.gameConfig(throne.type);
+    delete config.trusted;
+    config.hegemon = { ...config.hegemon, enabled: true };
+    return config;
+  }
+
+  private sendMessageToWorker(
+    msg: MasterCreateGame | MasterUpdateGame | MasterSuccessorCreated,
+  ): void {
     const workerId = ServerEnv.workerIndex(msg.gameID);
     const worker = this.workers.get(workerId);
     if (!worker) {

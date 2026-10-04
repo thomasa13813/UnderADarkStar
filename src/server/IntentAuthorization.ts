@@ -111,6 +111,19 @@ export function authorizeIntent(
       }
       return null;
 
+    // Under a Dark Star: the throne's seat in a public throne lobby (§5.6).
+    // Anyone connected may ask; the game itself checks the seat is open, the
+    // sender is playing (not watching) and no reservation stands.
+    case "claim_seat":
+    case "leave_seat":
+      if (actor.isAdminBot) {
+        return { status: 403, error: "the admin bot holds no seat" };
+      }
+      if (game.hasStarted) {
+        return { status: 409, error: "game already started" };
+      }
+      return null;
+
     case "toggle_pause":
       if (!actor.isLobbyCreator && !actor.isAdminBot) {
         return { status: 403, error: "only the lobby creator can pause" };

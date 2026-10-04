@@ -4,6 +4,7 @@ import { translateText } from "../../../client/Utils";
 import { EventBus } from "../../../core/EventBus";
 import { ClientEnv } from "../../ClientEnv";
 import { Controller } from "../../Controller";
+import { didWinRound } from "../../ThroneState";
 import { NewLobbyEvent } from "../../Transport";
 import { GameView } from "../../view";
 
@@ -31,6 +32,9 @@ export class NewLobbyPrompt extends LitElement implements Controller {
   }
 
   private onNewLobby(event: NewLobbyEvent) {
+    // A throne's next round, announced to its winner: the win screen's
+    // Next-round panel owns the answer and the jump (WinModal), so no prompt.
+    if (event.reservationUntil !== undefined && didWinRound()) return;
     this.gameID = event.gameID;
     // The host asked for this lobby, so send them back to the host view. The
     // ?host flag routes them there instead of the join flow on reload.

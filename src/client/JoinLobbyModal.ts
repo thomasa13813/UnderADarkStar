@@ -20,6 +20,7 @@ import {
   GameRecordSchema,
   LobbyInfoEvent,
   PublicGameInfo,
+  ThroneInfo,
 } from "../core/Schemas";
 import {
   Difficulty,
@@ -33,7 +34,7 @@ import { PublicLobbySocket } from "./LobbySocket";
 import { JoinLobbyEvent } from "./Main";
 import { ensureServerList, redirectToGameVersion } from "./ServerList";
 import { terrainMapFileLoader } from "./TerrainMapFileLoader";
-import { SendSpectateEvent } from "./Transport";
+import { ClaimSeatEvent, LeaveSeatEvent, SendSpectateEvent } from "./Transport";
 import { normaliseMapKey } from "./Utils";
 import { isReplayShellHost, versionedReplayUrl } from "./VersionedReplay";
 import { BaseModal } from "./components/BaseModal";
@@ -59,6 +60,8 @@ export class JoinLobbyModal extends BaseModal {
   @state() private serverTimeOffset: number = 0;
   @state() private isConnecting: boolean = true;
   @state() private lobbyCreatorClientID: string | null = null;
+  // Under a Dark Star: the public throne this lobby runs for, if any.
+  @state() private throne: ThroneInfo | null = null;
   // Subscriber-hosted private lobbies listed in the public browser, shown on
   // the pre-join form.
   @state() private hostedLobbies: PublicGameInfo[] = [];
@@ -310,7 +313,9 @@ export class JoinLobbyModal extends BaseModal {
       secondsRemaining === null
         ? this.isPrivateLobby()
           ? translateText("private_lobby.joined_waiting")
-          : translateText("public_lobby.waiting_for_players")
+          : this.throneChoosing()
+            ? translateText("throne.choosing")
+            : translateText("public_lobby.waiting_for_players")
         : secondsRemaining > 0
           ? translateText("public_lobby.starting_in", {
               time: renderDuration(secondsRemaining),
@@ -351,6 +356,11 @@ export class JoinLobbyModal extends BaseModal {
                         .hegemonSeat=${this.gameConfig?.hegemon?.enabled
                           ? (this.gameConfig.hegemon.seat ?? null)
                           : null}
+                        .throne=${this.throne}
+                        .onClaimSeat=${() =>
+                          this.eventBus?.emit(new ClaimSeatEvent())}
+                        .onLeaveSeat=${() =>
+                          this.eventBus?.emit(new LeaveSeatEvent())}
                         .anonymizeNames=${this.gameConfig?.anonymizeNames ??
                         false}
                         .teamCount=${this.gameConfig?.playerTeams ?? 2}
@@ -675,6 +685,7 @@ export class JoinLobbyModal extends BaseModal {
     this.lobbyStartAt = null;
     this.serverTimeOffset = 0;
     this.lobbyCreatorClientID = null;
+    this.throne = null;
     this.notifyOnStart = false;
     this.isConnecting = true;
     this.handledJoinTimeout = false;
@@ -734,6 +745,7 @@ export class JoinLobbyModal extends BaseModal {
     this.lobbyStartAt = null;
     this.serverTimeOffset = 0;
     this.lobbyCreatorClientID = null;
+    this.throne = null;
     this.notifyOnStart = false;
     this.isConnecting = true;
   }
@@ -1142,6 +1154,17 @@ export class JoinLobbyModal extends BaseModal {
       "lobbyCreatorClientID" in lobby
         ? (lobby.lobbyCreatorClientID ?? null)
         : null;
+    this.throne = lobby.throne ?? null;
+  }
+
+  // Under a Dark Star: the last winner is still choosing the next map and
+  // whether to keep the seat (L4); the lobby waits for them.
+  private throneChoosing(): boolean {
+    const until = this.throne?.reservationUntil;
+    return (
+      until !== undefined &&
+      getSecondsUntilServerTimestamp(until, this.serverTimeOffset) > 0
+    );
   }
 
   private startLobbyUpdates() {

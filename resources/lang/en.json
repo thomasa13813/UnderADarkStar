@@ -277,6 +277,7 @@
     "pane_hosted": "Hosted",
     "pane_special": "Special",
     "pane_team": "Teams",
+    "pane_throne": "Thrones",
     "per_team": "Players per team",
     "profile_name": "Profile name",
     "profiles": "Profiles",
@@ -1122,6 +1123,27 @@
     "pattern": {
       "default": "Default"
     }
+  },
+  "throne": {
+    "card_subtitle": "{name} · {mode} · {holder}",
+    "choosing": "The Hegemon is choosing…",
+    "claim": "Claim the throne",
+    "holder_ai": "Dark Star",
+    "holder_reign": "{name} · reign {reign}",
+    "join_next": "Join the next round",
+    "keep": "Keep the throne",
+    "leave": "Give up the throne",
+    "name_line": "Throne of {name}",
+    "next_round": "Next round on the throne of {name}",
+    "panel_line": "Throne of {name}",
+    "panel_line_reign": "Throne of {name} · reign {reign}",
+    "pick_hint": "Pick the next map, then keep the throne or step down. No answer in time: a random map, and the seat opens.",
+    "reign_line": "Reign {reign}",
+    "reserved_for": "Reserved for {name}",
+    "step_down": "Step down",
+    "watch": "Watch",
+    "window_passed": "Your time to choose has passed: the seat is open and the map is random.",
+    "window_seconds": "{seconds}s"
   },
   "troubleshooting": {
     "battery": "Battery",

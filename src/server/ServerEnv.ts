@@ -127,6 +127,50 @@ export class ServerEnv {
   static gameCreationRate(): number {
     return ServerEnv.gameEnv === GameEnv.Dev ? 5 * 1000 : 2 * 60 * 1000;
   }
+
+  // --- Under a Dark Star: public thrones (docs/DarkStar-Lobbies.md §9) ---
+
+  // How the master fills the public lobby list. "thrones" (the default) runs
+  // the fixed pool of persistent throne lobbies; PUBLIC_LOBBIES=queue keeps
+  // upstream's disposable per-type queues (ffa/team/special) as a fallback.
+  static publicLobbyMode(): "thrones" | "queue" {
+    return process.env.PUBLIC_LOBBIES === "queue" ? "queue" : "thrones";
+  }
+  // Thrones in the pool (L1). 15 at launch, 3 in dev; THRONE_COUNT overrides
+  // both (the opening count is a few, raised with the population).
+  static throneCount(): number {
+    return ServerEnv.positiveIntEnv(
+      "THRONE_COUNT",
+      ServerEnv.gameEnv === GameEnv.Dev ? 3 : 15,
+    );
+  }
+  // Humans (spectators excluded) a throne needs before its countdown runs
+  // (L9). Two everywhere; THRONE_MIN_PLAYERS=1 lets one tab smoke-test a
+  // throne alone in dev.
+  static throneMinPlayers(): number {
+    return ServerEnv.positiveIntEnv("THRONE_MIN_PLAYERS", 2);
+  }
+  // The countdown once the minimum is met (L10): 2 minutes, 5 s in dev.
+  static throneCountdownMs(): number {
+    return ServerEnv.positiveIntEnv(
+      "THRONE_COUNTDOWN_MS",
+      ServerEnv.gameEnv === GameEnv.Dev ? 5 * 1000 : 2 * 60 * 1000,
+    );
+  }
+  // The winner's window to pick the next map and keep or leave the seat
+  // (L4): 30 s.
+  static throneWindowMs(): number {
+    return ServerEnv.positiveIntEnv("THRONE_WINDOW_MS", 30 * 1000);
+  }
+  private static positiveIntEnv(name: string, fallback: number): number {
+    const raw = process.env[name];
+    if (raw === undefined || raw.length === 0) return fallback;
+    const n = Number(raw);
+    if (!Number.isInteger(n) || n < 1) {
+      throw new Error(`Invalid ${name}: ${JSON.stringify(raw)}`);
+    }
+    return n;
+  }
   static workerIndex(gameID: GameID): number {
     return simpleHash(gameID) % ServerEnv.numWorkers();
   }

@@ -27,6 +27,7 @@ import {
   ClientReportMessage,
   ClientSendLiveStatsMessage,
   ClientSendWinnerMessage,
+  ClientThronePickMessage,
   GameConfig,
   GameID,
   GameInfo,
@@ -48,8 +49,10 @@ import {
   ServerTurnMessage,
   StampedIntent,
   TeamCountConfig,
+  ThroneInfo,
   Tribe,
   Turn,
+  Winner,
 } from "../core/Schemas";
 import { createPartialGameRecord } from "../core/Util";
 import { createGameWireContext, encodeServerMessage } from "../core/ZbinWire";
@@ -64,6 +67,13 @@ import {
   IntentActor,
   IntentOutcome,
 } from "./IntentAuthorization";
+import {
+  MasterThroneUpdate,
+  ThroneAssignment,
+  ThronePickReport,
+  ThroneRoundOutcome,
+  ThroneRoundReport,
+} from "./IPCBridgeSchema";
 import { ListingState } from "./ListingState";
 import { identityFor, MatchTelemetryRecorder } from "./MatchTelemetryRecorder";
 import { friendsLookup, NameVisibility } from "./NameVisibility";
@@ -139,6 +149,12 @@ export interface GameServerDeps {
   // so a test can pin a value it can assert on; production always takes the
   // random default.
   mintGroupToken: () => string;
+  // Under a Dark Star: a throne game reports its round's result here when
+  // the winner vote resolves (GameManager forwards it to the master).
+  throneRound: (round: ThroneRoundReport) => void;
+  // Under a Dark Star: the winner's answer for the next round (§5.5), relayed
+  // to the master, which holds the window and validates the map.
+  thronePick: (pick: ThronePickReport) => void;
 }
 
 // 16 URL-safe characters of CSPRNG output — 12 bytes is exactly 16 base64url
@@ -159,6 +175,8 @@ export function defaultGameServerDeps(): GameServerDeps {
     telemetry: noopMatchTelemetryEmitter,
     telemetryBuildHash: "DEV",
     mintGroupToken,
+    throneRound: () => {},
+    thronePick: () => {},
   };
 }
 
@@ -246,6 +264,12 @@ export class GameServer {
   private successorLobbyId: GameID | null = null;
   // The previous round's winner (persistentID), heir to this lobby's throne.
   private hegemonHeir: string | null = null;
+  // Under a Dark Star: the public throne this game runs for, if any
+  // (docs/DarkStar-Lobbies.md). Set by the worker from the master's
+  // createGame; a private lobby or a queued public game has none.
+  private throneAssignment: ThroneAssignment | null = null;
+  // The winner has answered (§5.5): a second throne_pick is dropped.
+  private thronePickSent = false;
 
   // This match's telemetry stream: envelopes, sequence, per-tick intent
   // counters, finished-once (see MatchTelemetryRecorder.ts).
@@ -417,6 +441,12 @@ export class GameServer {
         }
         return finish({ status: 200 });
       }
+
+      case "claim_seat":
+        return finish(this.claimSeat(stamped.clientID));
+
+      case "leave_seat":
+        return finish(this.leaveSeat(stamped.clientID));
 
       case "toggle_pause": {
         const outcome = finish({ status: 200 });
@@ -763,6 +793,10 @@ export class GameServer {
         this.handleReport(client, clientMsg);
         break;
       }
+      case "throne_pick": {
+        this.handleThronePick(client, clientMsg);
+        break;
+      }
       default: {
         this.log.warn(`Unknown message type: ${(clientMsg as any).type}`, {
           clientID: client.clientID,
@@ -799,10 +833,12 @@ export class GameServer {
     }
   }
 
-  public setStartsAt(startsAt: number) {
+  // undefined withdraws a throne lobby's countdown (a hold, L10): phase()
+  // reads a missing startsAt as "still a lobby".
+  public setStartsAt(startsAt: number | undefined) {
     this.startsAt = startsAt;
     // Record when the lobby first became visible to players, used to measure lobby fill time.
-    this.visibleAt ??= Date.now();
+    if (startsAt !== undefined) this.visibleAt ??= Date.now();
   }
 
   public numClients(): number {
@@ -1004,13 +1040,14 @@ export class GameServer {
   // reuse the private lobby via create_game?previous=). Remember it so repeat
   // requests reuse the same lobby, and tell everyone still connected its id so
   // they can hop over without re-sharing a link.
-  public setSuccessorLobby(gameID: GameID) {
+  public setSuccessorLobby(gameID: GameID, reservationUntil?: number) {
     this.successorLobbyId = gameID;
     this.log.info("successor lobby created", {
       gameID: this.id,
       successorID: gameID,
+      reservationUntil,
     });
-    this.broadcastNewLobby(gameID);
+    this.broadcastNewLobby(gameID, reservationUntil);
   }
 
   public successorLobby(): GameID | null {
@@ -1071,11 +1108,13 @@ export class GameServer {
     this.log.info("seated player left, throne unseated", { clientID: seat });
   }
 
-  private broadcastNewLobby(gameID: GameID) {
+  private broadcastNewLobby(gameID: GameID, reservationUntil?: number) {
     const msg = encodeServerMessage(
       {
         type: "new_lobby",
         gameID,
+        throne:
+          reservationUntil === undefined ? undefined : { reservationUntil },
       } satisfies ServerNewLobbyMessage,
       this.zbinCtx,
     );
@@ -1570,7 +1609,7 @@ export class GameServer {
 
     const lessThanLifetime = this.startsAt ? Date.now() < this.startsAt : true;
     if (
-      lessThanLifetime &&
+      (lessThanLifetime || this.throneHeld()) &&
       !this.hasStarted() &&
       !this.hasReachedMaxPlayerCount
     ) {
@@ -1638,7 +1677,204 @@ export class GameServer {
       label: this.listing.lobbyLabel(),
       accent: this.listing.lobbyAccent(),
       featured: this.listing.isFeatured() ? true : undefined,
+      throne: this.throneInfo(),
     };
+  }
+
+  // --- Under a Dark Star: public thrones (docs/DarkStar-Lobbies.md) ---
+
+  public setThrone(throne: ThroneAssignment) {
+    this.throneAssignment = throne;
+    this.hegemonHeir = throne.heir?.persistentID ?? null;
+  }
+
+  // The winner's pick for this lobby (§5.5): the map and the cap the master
+  // rolled for it. Not the host's config-patch path: maxPlayers is server-
+  // owned there, and a throne lobby has no host.
+  public applyThronePick(patch: Partial<GameConfig>) {
+    if (patch.gameMap !== undefined) this.gameConfig.gameMap = patch.gameMap;
+    if (patch.maxPlayers !== undefined) {
+      this.gameConfig.maxPlayers = patch.maxPlayers;
+    }
+  }
+
+  // The master resolved the winner's window (§5.5): the heir stays, with
+  // their reign, or the seat opens. An open seat unseats a heir who had
+  // already sat down in this lobby, and lets anyone claim it.
+  public updateThrone(update: MasterThroneUpdate) {
+    const t = this.throneAssignment;
+    if (t === null) return;
+    const previousHeir = this.hegemonHeir;
+    this.throneAssignment = {
+      ...t,
+      reign: update.reign,
+      heir: update.heir ?? undefined,
+      reservationUntil: undefined,
+    };
+    this.hegemonHeir = update.heir?.persistentID ?? null;
+    if (update.heir === null && previousHeir !== null) {
+      const seat = this.gameConfig.hegemon?.seat;
+      const seated = seat === undefined ? undefined : this.clients.get(seat);
+      if (seated?.persistentID === previousHeir) {
+        this.unseat();
+        this.log.info("heir stepped down, throne unseated", {
+          clientID: seat,
+        });
+      }
+    }
+    this.broadcastLobbyInfo();
+  }
+
+  // A player takes the open seat (L6, §5.6). Refused once the game started,
+  // from a spectator, while someone holds the seat, and while the previous
+  // winner is owed it (reserved, or seated-but-away).
+  private claimSeat(clientID: ClientID): IntentOutcome {
+    if (this.throneAssignment === null) {
+      return { status: 400, error: "not a throne lobby" };
+    }
+    const client = this.clients.get(clientID);
+    if (client === undefined || client.spectator) {
+      return { status: 403, error: "spectators cannot claim the throne" };
+    }
+    if (this.gameConfig.hegemon?.seat !== undefined) {
+      return { status: 409, error: "the throne is taken" };
+    }
+    if (this.hegemonHeir !== null) {
+      return { status: 409, error: "the throne is reserved" };
+    }
+    this.gameConfig.hegemon = { ...this.gameConfig.hegemon, seat: clientID };
+    this.log.info("throne claimed", { clientID });
+    this.broadcastLobbyInfo();
+    return { status: 200 };
+  }
+
+  // The seat holder gives it up before the start. A heir who steps down here
+  // gives up the reservation too, so the seat is open to everyone.
+  private leaveSeat(clientID: ClientID): IntentOutcome {
+    if (this.throneAssignment === null) {
+      return { status: 400, error: "not a throne lobby" };
+    }
+    if (this.gameConfig.hegemon?.seat !== clientID) {
+      return { status: 409, error: "not on the throne" };
+    }
+    this.unseat();
+    if (this.clients.get(clientID)?.persistentID === this.hegemonHeir) {
+      this.hegemonHeir = null;
+      if (this.throneAssignment.heir !== undefined) {
+        this.throneAssignment = {
+          ...this.throneAssignment,
+          heir: undefined,
+          reservationUntil: undefined,
+        };
+      }
+    }
+    this.log.info("throne given up", { clientID });
+    this.broadcastLobbyInfo();
+    return { status: 200 };
+  }
+
+  private unseat() {
+    const h = this.gameConfig.hegemon;
+    if (h === undefined) return;
+    const cleared = { ...h };
+    delete cleared.seat;
+    this.gameConfig.hegemon = cleared;
+  }
+
+  // The winner's pick arrives on this (finished) game's socket (§5.5). Only
+  // the winner may send it, once; the master checks the window and the map.
+  private handleThronePick(client: Client, msg: ClientThronePickMessage) {
+    const t = this.throneAssignment;
+    if (t === null || this.thronePickSent) return;
+    const winner = this.winnerPersistentID();
+    if (winner === null || client.persistentID !== winner) {
+      this.log.warn("throne pick from someone other than the winner", {
+        clientID: client.clientID,
+      });
+      return;
+    }
+    this.thronePickSent = true;
+    this.log.info("throne pick received", {
+      clientID: client.clientID,
+      gameMap: msg.gameMap,
+      stay: msg.stay,
+    });
+    this.deps.thronePick({
+      throneID: t.throneID,
+      gameID: this.id,
+      persistentID: client.persistentID,
+      gameMap: msg.gameMap,
+      stay: msg.stay,
+    });
+  }
+
+  public throne(): ThroneAssignment | null {
+    return this.throneAssignment;
+  }
+
+  // The throne's public face on lobby info and the lobby browser: who holds
+  // the seat by name (never by persistentID, §5.10), and the window while the
+  // winner is choosing.
+  public throneInfo(): ThroneInfo | undefined {
+    const t = this.throneAssignment;
+    if (t === null) return undefined;
+    const seat = this.gameConfig.hegemon?.seat;
+    const seated = seat === undefined ? undefined : this.clients.get(seat);
+    const reserved =
+      t.reservationUntil !== undefined && Date.now() <= t.reservationUntil;
+    return {
+      throneID: t.throneID,
+      name: t.name,
+      type: t.type,
+      reign: t.reign,
+      holderName: seated?.username ?? t.heir?.name,
+      seat:
+        seat !== undefined
+          ? "seated"
+          : this.hegemonHeir !== null
+            ? "reserved"
+            : "open",
+      reservationUntil: reserved ? t.reservationUntil : undefined,
+      running: this.hasStarted() || undefined,
+      startedAt: this._startTime ?? undefined,
+    };
+  }
+
+  // A throne lobby does not start with fewer than the minimum number of
+  // humans (L9), even past its startsAt: the master withdraws the countdown
+  // when it sees the dip (§5.7), and this is the worker's own guard for the
+  // second between the dip and that message.
+  private throneHeld(): boolean {
+    return (
+      this.throneAssignment !== null &&
+      this.playerCount() < this.throneAssignment.minPlayers
+    );
+  }
+
+  // The round's result for the master, from the winner vote. The vote names
+  // a player (the Hegemon who held the timer, or the challenger who
+  // overthrew them), a nation (the AI held the seat, or a nation landed the
+  // killing blow) or nobody (void). persistentID stays master-side (§5.10).
+  private throneRoundReport(winner: Winner): ThroneRoundReport {
+    const t = this.throneAssignment!;
+    const base = { throneID: t.throneID, gameID: this.id };
+    let outcome: ThroneRoundOutcome = "void";
+    if (winner?.[0] === "nation") {
+      outcome = "ai";
+    } else if (winner?.[0] === "player") {
+      const player = this.gameStartInfo.players.find(
+        (p) => p.clientID === winner[1],
+      );
+      const client = this.clients.get(winner[1]);
+      if (player !== undefined && client !== undefined) {
+        return {
+          ...base,
+          outcome: player.isHegemon === true ? "timer" : "overthrown",
+          winner: { persistentID: client.persistentID, name: player.username },
+        };
+      }
+    }
+    return { ...base, outcome };
   }
 
   public isPublic(): boolean {
@@ -1877,6 +2113,9 @@ export class GameServer {
         [...this.reports.values()],
       ),
     );
+    if (this.throneAssignment !== null) {
+      this.deps.throneRound(this.throneRoundReport(winner?.winner));
+    }
   }
 
   // A player reporting another. The API resolves both clientIDs through this

@@ -15,6 +15,7 @@ import {
 } from "../core/Schemas";
 import { Client } from "./Client";
 import { GamePhase, GameServer, JoinResult } from "./GameServer";
+import { ThronePickReport, ThroneRoundReport } from "./IPCBridgeSchema";
 import {
   noopMatchTelemetryEmitter,
   type MatchTelemetryEmitter,
@@ -22,6 +23,11 @@ import {
 
 export class GameManager {
   private games: Map<GameID, GameServer> = new Map();
+  // Under a Dark Star: where a throne game's round result goes (the worker
+  // lobby service forwards it to the master).
+  private throneRoundListener: ((round: ThroneRoundReport) => void) | null =
+    null;
+  private thronePickListener: ((pick: ThronePickReport) => void) | null = null;
 
   constructor(
     private log: Logger,
@@ -39,6 +45,27 @@ export class GameManager {
     return Array.from(this.games.values()).filter(
       (g) => g.phase() === GamePhase.Lobby && g.isPublic(),
     );
+  }
+
+  // Under a Dark Star: every game that runs for a throne, in any phase short
+  // of Finished. Lobbies are already in publicLobbies(); the rest are the
+  // running rounds the lobby browser lists for watching.
+  public throneGames(): GameServer[] {
+    return Array.from(this.games.values()).filter(
+      (g) => g.throne() !== null && g.phase() !== GamePhase.Finished,
+    );
+  }
+
+  public setThroneRoundListener(
+    listener: (round: ThroneRoundReport) => void,
+  ): void {
+    this.throneRoundListener = listener;
+  }
+
+  public setThronePickListener(
+    listener: (pick: ThronePickReport) => void,
+  ): void {
+    this.thronePickListener = listener;
   }
 
   // Private lobbies a subscriber has listed in the public lobby browser.
@@ -112,6 +139,8 @@ export class GameManager {
       {
         telemetry: this.telemetry,
         telemetryBuildHash: this.telemetryBuildHash,
+        throneRound: (round) => this.throneRoundListener?.(round),
+        thronePick: (pick) => this.thronePickListener?.(pick),
       },
     );
     this.games.set(id, game);

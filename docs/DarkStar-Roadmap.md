@@ -413,10 +413,12 @@ machine, IPC and schema additions, implementation steps T1–T6). It supersedes 
 where they differ: no login is required to hold a seat, the pool starts at **15** named thrones of
 fixed type, the winner may step down after picking, no reign cap, and a restart opens every seat.
 
-**Exists.** `MasterLobbyService` schedules public lobbies per type (`ffa`, `team`, `special`; up to 6
-queued per type, a new one every 2 minutes in prod), picks maps from a weighted playlist, and
-assigns games to workers by hash. The successor flow and archive from P0. Nothing persists between
-games server-side today.
+**Exists.** T1 of the Lobbies doc (built 2026-10-03, its §10.1): the master runs a fixed pool of
+named FFA throne lobbies back to back (`ThroneRegistry`), AI seated, two humans to fire with a
+hold, the successor opened the moment a round ends. Upstream's per-type queues (`ffa`, `team`,
+`special`; up to 6 queued per type, a new one every 2 minutes in prod) remain behind
+`PUBLIC_LOBBIES=queue`. The map playlist, worker hashing, the successor flow and the archive from P0
+are reused. Nothing persists between games server-side yet (L12).
 
 **Tom's outline, and the recommended first version.** Thirty lobbies firing every minute is a target
 for a large population; the mechanism should be the same at any count, so start with a handful of

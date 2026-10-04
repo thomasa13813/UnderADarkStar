@@ -494,6 +494,8 @@ describe("MasterLobbyService hosted lobbies", () => {
     vi.stubEnv("DOMAIN", "localhost");
     vi.spyOn(ServerEnv, "numWorkers").mockReturnValue(2);
     vi.spyOn(ServerEnv, "workerIndex").mockReturnValue(1);
+    // These exercise the per-type queues; thrones are the default now.
+    vi.stubEnv("PUBLIC_LOBBIES", "queue");
     vi.spyOn(ServerEnv, "gameCreationRate").mockReturnValue(60_000);
     const playlist = {
       gameConfig: vi.fn().mockResolvedValue({ gameType: GameType.Public }),
@@ -713,6 +715,9 @@ describe("WorkerLobbyService hosted lobbies", () => {
       listedLobbies: vi.fn().mockReturnValue([]),
       game: vi.fn().mockReturnValue(null),
       activeGames: vi.fn().mockReturnValue(0),
+      throneGames: vi.fn().mockReturnValue([]),
+      setThroneRoundListener: vi.fn(),
+      setThronePickListener: vi.fn(),
     };
     const server = new EventEmitter();
     service = new WorkerLobbyService(

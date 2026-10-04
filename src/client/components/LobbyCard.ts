@@ -1,7 +1,7 @@
 import { html, nothing, svg, TemplateResult } from "lit";
 import { UserMeResponse } from "../../core/ApiSchemas";
 import { GameMapType } from "../../core/game/Game";
-import { PublicGameInfo } from "../../core/Schemas";
+import { PublicGameInfo, ThroneInfo } from "../../core/Schemas";
 import { responseHasLinkedIdentity } from "../AccountIdentity";
 import { terrainMapFileLoader } from "../TerrainMapFileLoader";
 import { getMapName, getModifierLabels, translateText } from "../Utils";
@@ -95,6 +95,32 @@ class MapAspectRatioCache {
 }
 
 export const mapAspectRatios = new MapAspectRatioCache();
+
+/**
+ * Under a Dark Star: a throne card's bottom line (L13): the throne's name,
+ * the mode, and who holds the seat — the holder with their reign, the last
+ * winner it is reserved for, or the Dark Star when the AI will take it.
+ */
+export function throneCardSubtitle(throne: ThroneInfo, mode: string): string {
+  let holder: string;
+  if (throne.seat === "open" || throne.holderName === undefined) {
+    holder = translateText("throne.holder_ai");
+  } else if (throne.seat === "reserved") {
+    holder = translateText("throne.reserved_for", { name: throne.holderName });
+  } else if (throne.reign > 0) {
+    holder = translateText("throne.holder_reign", {
+      name: throne.holderName,
+      reign: String(throne.reign),
+    });
+  } else {
+    holder = throne.holderName;
+  }
+  return translateText("throne.card_subtitle", {
+    name: throne.name,
+    mode,
+    holder,
+  });
+}
 
 export interface LobbyCardOptions {
   lobby: PublicGameInfo;

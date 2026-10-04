@@ -3,6 +3,7 @@ import {
   GameConfigSchema,
   PublicGameInfoSchema,
   PublicGameTypeSchema,
+  ThroneTypeSchema,
 } from "../core/Schemas";
 
 export type InternalGameInfo = z.infer<typeof InternalGameInfoSchema>;
@@ -15,6 +16,16 @@ export type MasterLobbiesBroadcast = z.infer<
 
 export type MasterUpdateGame = z.infer<typeof MasterUpdateGameSchema>;
 export type MasterCreateGame = z.infer<typeof MasterCreateGameSchema>;
+export type MasterSuccessorCreated = z.infer<
+  typeof MasterSuccessorCreatedSchema
+>;
+export type ThroneAssignment = z.infer<typeof ThroneAssignmentSchema>;
+export type WorkerThroneRound = z.infer<typeof WorkerThroneRoundSchema>;
+export type ThroneRoundReport = Omit<WorkerThroneRound, "type">;
+export type WorkerThronePick = z.infer<typeof WorkerThronePickSchema>;
+export type ThronePickReport = Omit<WorkerThronePick, "type">;
+export type MasterThroneUpdate = NonNullable<MasterUpdateGame["throne"]>;
+export type ThroneRoundOutcome = WorkerThroneRound["outcome"];
 export type WorkerMessage = z.infer<typeof WorkerMessageSchema>;
 export type MasterMessage = z.infer<typeof MasterMessageSchema>;
 
@@ -29,6 +40,9 @@ export const InternalGameInfoSchema = PublicGameInfoSchema.extend({
   // counting-down lobby by this, so lobbies advance one place as the front one
   // starts instead of shuffling when a new one spawns.
   createdAt: z.number().optional(),
+  // Connected non-spectators. A throne fires on humans who will play (L9), so
+  // the master counts these rather than numClients. Absent means numClients.
+  numPlayers: z.number().int().min(0).optional(),
 });
 
 export const InternalPublicGamesSchema = z.object({
@@ -58,17 +72,99 @@ const WorkerReadySchema = z.object({
   workerId: z.number(),
 });
 
+// Under a Dark Star: a throne's round ended (docs/DarkStar-Lobbies.md §5.8).
+// Sent from GameServer.archiveGame, where the winner vote has resolved. The
+// outcome follows the vote: a player who was the Hegemon held the timer, any
+// other player overthrew them, a nation means the AI won (the AI Hegemon
+// outlasted the round, or a nation landed the killing blow), and void is a
+// round with no winner at all. The master opens the successor lobby on it.
+const WorkerThroneRoundSchema = z.object({
+  type: z.literal("throneRound"),
+  throneID: z.string(),
+  gameID: z.string(),
+  outcome: z.enum(["overthrown", "timer", "ai", "void"]),
+  winner: z
+    .object({
+      persistentID: z.string(),
+      name: z.string(),
+    })
+    .optional(),
+});
+
+// Under a Dark Star: the winner's answer from the finished game's socket
+// (§5.5), relayed verbatim for the master to validate against the registry
+// (the heir, the window) and the map list.
+const WorkerThronePickSchema = z.object({
+  type: z.literal("thronePick"),
+  throneID: z.string(),
+  // The finished game the pick came from.
+  gameID: z.string(),
+  persistentID: z.string(),
+  gameMap: z.string().optional(),
+  stay: z.boolean(),
+});
+
 export const WorkerMessageSchema = z.discriminatedUnion("type", [
   WorkerLobbyListSchema,
   WorkerReadySchema,
+  WorkerThroneRoundSchema,
+  WorkerThronePickSchema,
 ]);
 
 // --- Master Messages ---
 
+const ThroneHolderSchema = z.object({
+  persistentID: z.string(),
+  name: z.string(),
+});
+
 const MasterUpdateGameSchema = z.object({
   type: z.literal("updateLobby"),
   gameID: z.string(),
-  startsAt: z.number(),
+  // null holds a throne lobby: its countdown is withdrawn until the minimum
+  // number of players is back (docs/DarkStar-Lobbies.md §5.7). Absent leaves
+  // the countdown alone (a throne update that carries only the pick).
+  startsAt: z.number().nullable().optional(),
+  // Under a Dark Star: the winner's pick, merged on the lobby's config (§5.5).
+  gameConfig: GameConfigSchema.partial().optional(),
+  // Under a Dark Star: the seat after the winner answered or the window ran
+  // out. heir null opens the seat (the worker unseats a seated heir); a heir
+  // keeps or takes it as they join (GameServer.seatHeir).
+  throne: z
+    .object({
+      heir: ThroneHolderSchema.nullable(),
+      reign: z.number().int().min(0),
+    })
+    .optional(),
+});
+
+// Under a Dark Star: the throne a public lobby runs for. The worker keeps it
+// on the GameServer (lobby info, the lobby-browser entry, the round report)
+// and holds the start while fewer than minPlayers humans are connected.
+const ThroneAssignmentSchema = z.object({
+  throneID: z.string(),
+  name: z.string(),
+  type: ThroneTypeSchema,
+  reign: z.number().int().min(0),
+  minPlayers: z.number().int().min(1),
+  // The previous round's winner, owed the seat (§3.1): seated as they join,
+  // and while they are the heir nobody else may claim.
+  heir: ThroneHolderSchema.optional(),
+  // While the heir is still choosing: when their window closes (L4).
+  reservationUntil: z.number().optional(),
+});
+
+// Under a Dark Star: the master opened the next round's lobby for a finished
+// throne game. The worker hands the id to the finished game, which broadcasts
+// new_lobby so everyone still on the win screen can hop over (§5.8).
+const MasterSuccessorCreatedSchema = z.object({
+  type: z.literal("successorCreated"),
+  // The finished game (routes the message to its worker).
+  gameID: z.string(),
+  successorID: z.string(),
+  // While the winner's window is open (L4): forwarded in new_lobby so the
+  // winner's client can show the window.
+  reservationUntil: z.number().optional(),
 });
 
 // Broadcasts all public game info to all workers.
@@ -95,10 +191,12 @@ const MasterCreateGameSchema = z.object({
   gameID: z.string(),
   gameConfig: GameConfigSchema,
   publicGameType: PublicGameTypeSchema,
+  throne: ThroneAssignmentSchema.optional(),
 });
 
 export const MasterMessageSchema = z.discriminatedUnion("type", [
   MasterLobbiesBroadcastSchema,
   MasterCreateGameSchema,
   MasterUpdateGameSchema,
+  MasterSuccessorCreatedSchema,
 ]);

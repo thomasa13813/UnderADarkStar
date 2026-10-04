@@ -124,7 +124,7 @@ GameServer tests; no `archiveGame` spies.
 Status (2026-08-25): done. `new GameServer(opts, deps?)` with
 `GameServerDeps = { archive, fetchTribes, env, turnIntervalMs, telemetry,
 telemetryBuildHash }` and `defaultGameServerDeps()`; `GameManager.createGame`
-passes only telemetry. One deviation from the plan above: `archive` takes the
+passes only telemetry. One deviation from the plan above: `archive` takes the1: O
 _partial_ record and the default does `archive(finalizeGameRecord(record))`,
 because `finalizeGameRecord` reads `GIT_COMMIT` and throws when it is unset —
 with the real one in the path every archive-reaching test would have had to

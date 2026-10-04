@@ -19,6 +19,9 @@ describe("WorkerLobbyService deployment drain flag", () => {
       listedLobbies: vi.fn().mockReturnValue([]),
       game: vi.fn().mockReturnValue(null),
       activeGames: vi.fn().mockReturnValue(0),
+      throneGames: vi.fn().mockReturnValue([]),
+      setThroneRoundListener: vi.fn(),
+      setThronePickListener: vi.fn(),
     };
     const server = new EventEmitter();
     service = new WorkerLobbyService(

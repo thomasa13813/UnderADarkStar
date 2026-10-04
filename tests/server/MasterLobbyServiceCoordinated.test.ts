@@ -68,6 +68,8 @@ describe("MasterLobbyService with a lobby coordinator", () => {
 
   beforeEach(() => {
     vi.stubEnv("DOMAIN", "localhost");
+    // These exercise the per-type queues; thrones are the default now.
+    vi.stubEnv("PUBLIC_LOBBIES", "queue");
     vi.spyOn(ServerEnv, "numWorkers").mockReturnValue(1);
     playlist = { gameConfig: vi.fn(async () => ({})) };
     const log = { info: vi.fn(), error: vi.fn(), warn: vi.fn() } as any;
@@ -119,6 +121,7 @@ describe("MasterLobbyService with a lobby coordinator", () => {
         team: [],
         special: [],
         hosted: [],
+        throne: [],
       },
       delistGameIDs: [],
     });
@@ -137,7 +140,7 @@ describe("MasterLobbyService with a lobby coordinator", () => {
   it("forwards the coordinator's delists once", async () => {
     service.coordinatorHandlers().onRoster({
       serverTime: 1,
-      games: { ffa: [], team: [], special: [], hosted: [] },
+      games: { ffa: [], team: [], special: [], hosted: [], throne: [] },
       delistGameIDs: ["LOSER1"],
     });
     await broadcaster()();
@@ -201,6 +204,7 @@ describe("MasterLobbyService with a lobby coordinator", () => {
         team: [],
         special: [],
         hosted: [],
+        throne: [],
       },
       delistGameIDs: [],
     });

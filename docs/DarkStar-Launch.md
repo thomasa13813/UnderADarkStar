@@ -72,11 +72,16 @@ _Done when_ Tom has turned one drawing into a playable map without help.
 
 ### Stage 2 — Public thrones on the dev server (T1 → T2 → T3; M each)
 
-- [ ] **T1** The throne registry and back-to-back named lobbies with the AI seated.
-- [ ] **T2** The seat: the winner's window, map pick, keep or step down, claim and leave.
-- [ ] **T3** The client: throne cards, the Thrones tab with Watch, lobby seat buttons, the
-      win-screen panel, the name and reign on the Dark Star panel.
-- [ ] A list of throne names (`resources/thrones.json`, at least 60; Claude drafts, Tom edits).
+- [x] **T1** The throne registry and back-to-back named lobbies with the AI seated. Built
+      2026-10-03 (Lobbies doc §10.1).
+- [x] **T2** The seat: the winner's window, map pick, keep or step down, claim and leave. Built
+      2026-10-03, server side with tests (Lobbies doc §10.2); the browser cannot exercise it until
+      T3 adds the panel and the buttons.
+- [x] **T3** The client: throne cards, the Thrones tab with Watch, lobby seat buttons, the
+      win-screen panel, the name and reign on the Dark Star panel. Built 2026-10-03 (Lobbies doc
+      §10.3); Tom's browser pass is the stage's _Done when_.
+- [x] A list of throne names (`resources/thrones.json`, 80 real star names; Tom may edit or add
+      invented ones later).
 
 _Done when_ three public rounds in a row on one throne pass the seat correctly between two
 browsers under `npm run dev`, including a winner who walks away. If Host or Join is refused with
@@ -206,3 +211,16 @@ _Done when_ the checklist is clean. This build is the release candidate.
 - **2026-10-03** — Six new maps exist (No Moon, Nucleic Acid, Nucleus, Jovian System, Bullseye,
   Cube), each generated from one of Tom's sketches and run three times in `HegemonSim`. Stage 5's
   map item stays open until Tom has played each and the inherited maps have been culled.
+- **2026-10-03** — Stage 2's T1 built: the master runs a fixed pool of named throne lobbies back
+  to back (`src/server/ThroneRegistry.ts`), FFA only, AI seated, two humans to fire with a hold,
+  the next lobby opened the moment a round ends. The home cards and the lobby browser show them
+  with a thin shim; the Thrones tab, Watch and the seat buttons wait for T3. Names drafted as 80
+  real star names.
+- **2026-10-03** — Stage 2's T2 built on the server: the winner's reservation and 30-second window,
+  the `throne_pick` message (map, keep or step down), `claim_seat` / `leave_seat`, heir seating
+  and unseating, reigns. Nothing in the browser sends these yet: T3 is next.
+- **2026-10-03** — Stage 2's T3 built: throne cards name the holder, the lobby browser's Thrones
+  pane watches running rounds, the lobby has Claim / Give up and "reserved for", the win screen
+  has the winner's Next-round panel (map picker, Keep the throne / Step down, 30-second bar), and
+  the Dark Star panel shows the throne and reign. The stage's three-rounds-in-a-row check is
+  Tom's to run.

@@ -1,6 +1,7 @@
 import { html, LitElement, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { PlayerType, UnitType } from "../../core/game/Game";
+import { currentThrone } from "../ThroneState";
 import { renderTroops, translateText } from "../Utils";
 import { GameView, PlayerView } from "../view";
 
@@ -114,6 +115,22 @@ export class DarkStarPanel extends LitElement {
       return dir * (a[this.sortKey] - b[this.sortKey]);
     });
     return rows;
+  }
+
+  // Under a Dark Star: the public throne this round runs for and the
+  // holder's reign (docs/DarkStar-Lobbies.md §4 step 3). Nothing for a
+  // private lobby's throne.
+  private renderThroneLine() {
+    const throne = currentThrone();
+    if (throne === undefined) return nothing;
+    return html`<div class="text-xs text-gray-300">
+      ${throne.reign > 0
+        ? translateText("throne.panel_line_reign", {
+            name: throne.name,
+            reign: String(throne.reign),
+          })
+        : translateText("throne.panel_line", { name: throne.name })}
+    </div>`;
   }
 
   private renderHeader(key: SortKey, labelKey: string, align = "text-right") {
@@ -245,6 +262,7 @@ export class DarkStarPanel extends LitElement {
           </span>
           <span class="text-xs text-gray-300">${hegemon.displayName()}</span>
         </div>
+        ${this.renderThroneLine()}
         <div class="relative h-2.5 w-52 overflow-hidden rounded bg-gray-600/60">
           <div
             class="absolute inset-y-0 left-0 bg-purple-400"

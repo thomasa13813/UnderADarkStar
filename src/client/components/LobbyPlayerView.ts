@@ -14,7 +14,12 @@ import {
 } from "../../core/game/Game";
 import { assignTeamsLobbyPreview } from "../../core/game/TeamAssignment";
 import { UserSettings } from "../../core/game/UserSettings";
-import { ClientID, ClientInfo, TeamCountConfig } from "../../core/Schemas";
+import {
+  ClientID,
+  ClientInfo,
+  TeamCountConfig,
+  ThroneInfo,
+} from "../../core/Schemas";
 import { createRandomName, formatPlayerDisplayName } from "../../core/Util";
 import { Theme, themeProvider } from "../theme/ThemeProvider";
 import {
@@ -43,6 +48,13 @@ export class LobbyTeamView extends LitElement {
   // the creator's seat control (FFA private lobbies only).
   @property({ type: String }) hegemonSeat: string | null = null;
   @property({ type: Function }) onSeatHegemon?: (clientID: string) => void;
+  // Under a Dark Star: a public throne lobby (docs/DarkStar-Lobbies.md §4, §6):
+  // the throne's name and the holder's reign, who the seat is reserved for
+  // while the last winner is still choosing, and the seat controls any player
+  // gets (claim an open seat, give up the one they hold).
+  @property({ attribute: false }) throne: ThroneInfo | null = null;
+  @property({ type: Function }) onClaimSeat?: () => void;
+  @property({ type: Function }) onLeaveSeat?: () => void;
   @property({ type: Function }) onToggleNameReveal?: (clientID: string) => void;
   @property({ type: Array }) nameReveals: string[] = [];
   @property({ type: Boolean }) anonymizeNames: boolean = false;
@@ -276,21 +288,77 @@ export class LobbyTeamView extends LitElement {
     const seated = this.activePlayers.find(
       (c) => c.clientID === this.hegemonSeat,
     );
+    const throne = this.throne;
+    // A public throne: the seat may be reserved for the last winner, who is
+    // not in the lobby yet, and is named by the server.
+    const reserved =
+      throne !== null && seated === undefined && throne.seat === "reserved";
     const holder = seated
       ? translateText("host_modal.throne_holder", {
           username: this.getClientDisplayName(seated),
         })
-      : translateText("host_modal.throne_ai");
+      : reserved
+        ? translateText("throne.reserved_for", {
+            name: throne.holderName ?? "",
+          })
+        : translateText("host_modal.throne_ai");
     return html`<div
       class="flex flex-wrap items-center gap-x-3 gap-y-1 mb-3 text-sm"
     >
+      ${throne !== null
+        ? html`<span class="font-bold tracking-wide text-purple-300"
+            >${translateText("throne.name_line", { name: throne.name })}</span
+          >`
+        : html``}
       <span class="font-semibold text-amber-300">👑 ${holder}</span>
+      ${throne !== null && throne.reign > 0
+        ? html`<span class="text-white/60 text-xs"
+            >${translateText("throne.reign_line", {
+              reign: String(throne.reign),
+            })}</span
+          >`
+        : html``}
+      ${this.renderSeatControl(seated)}
       ${this.onSeatHegemon
         ? html`<span class="text-white/50 text-xs"
             >${translateText("host_modal.throne_hint")}</span
           >`
         : html``}
     </div>`;
+  }
+
+  // Claim an open seat, or give up the one I hold (L6). Spectators get no
+  // button: the server would refuse them. While the last winner is still
+  // choosing, the seat is theirs and the row says so instead.
+  private renderSeatControl(seated: ClientInfo | undefined) {
+    if (this.throne === null) return html``;
+    const me = this.clients.find((c) => c.clientID === this.currentClientID);
+    if (me === undefined || me.spectator === true) return html``;
+    const button =
+      "px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-widest transition";
+    if (seated?.clientID === this.currentClientID && this.onLeaveSeat) {
+      return html`<button
+        class="${button} bg-white/10 text-white hover:bg-white/20"
+        data-throne-action="leave"
+        @click=${() => this.onLeaveSeat?.()}
+      >
+        ${translateText("throne.leave")}
+      </button>`;
+    }
+    if (
+      seated === undefined &&
+      this.throne.seat === "open" &&
+      this.onClaimSeat
+    ) {
+      return html`<button
+        class="${button} bg-amber-400 text-black hover:bg-amber-300"
+        data-throne-action="claim"
+        @click=${() => this.onClaimSeat?.()}
+      >
+        ${translateText("throne.claim")}
+      </button>`;
+    }
+    return html``;
   }
 
   // The throne: a badge on whoever is seated, and for the creator a crown on

@@ -829,6 +829,21 @@ export class MapPlaylist {
     return undefined;
   }
 
+  // Under a Dark Star: the lobby cap for a map the throne's winner picked
+  // (L7), rolled the same way as for a map the playlist chose, so a picked
+  // map plays like a rolled one. The rest of the config stays.
+  public async maxPlayersForMap(
+    map: GameMapType,
+    config: GameConfig,
+  ): Promise<number> {
+    const cap = await this.lobbyMaxPlayers(
+      map,
+      config.gameMode,
+      config.gameMapSize === GameMapSize.Compact,
+    );
+    return this.adjustForTeams(cap, config.playerTeams);
+  }
+
   private async lobbyMaxPlayers(
     map: GameMapType,
     mode: GameMode,

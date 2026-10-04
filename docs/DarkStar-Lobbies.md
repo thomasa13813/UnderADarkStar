@@ -4,7 +4,7 @@
 > lobbies ("thrones") whose seat is the reward for winning. Decided with Tom on 2026-09-29.
 > Companion to `DarkStar-Design.md` (§2 round loop, §3 rules R1–R6, §5.2 continuity) and
 > `DarkStar-Roadmap.md` phase P6, which this document expands and supersedes.
-> Nothing here is built yet. Changelog at the end.
+> T1–T3 are built (2026-10-03, §10.1–§10.3); T4–T6 are not. Changelog at the end.
 
 ## 1. Goals
 
@@ -329,6 +329,126 @@ current round ends and wake in name order when needed. Off at launch: the count 
 
 T1–T4 can ship to the private playtest server; T5 gates team thrones only.
 
+### 10.1 As built: T1 (2026-10-03)
+
+What exists, and where it departs from the plan above:
+
+- **`src/server/ThroneRegistry.ts`** is the pure state machine of §5.1, driven by
+  `MasterLobbyService`. It has no clock and no I/O: each scheduling pass hands it the time and a
+  map of what the workers reported per game (`numPlayers`, `running`) and it answers with actions
+  (`create`, `countdown`, `hold`). Phases in T1 are `gathering`, `countdown`, `running`; the
+  `deciding` window arrives with T2. The seat is always `open` and the reign 0 until T2.
+- **Mode switch.** Thrones are the default everywhere, `npm run dev` included. `PUBLIC_LOBBIES=queue`
+  restores the per-type queues (the fallback of §5.2). The master builds the registry from the
+  environment (`throneRegistryFromEnv`): `THRONE_COUNT` (15 prod / 3 dev), `THRONE_MIN_PLAYERS`
+  (2; set 1 to smoke-test a throne alone in dev, Tom's choice), `THRONE_COUNTDOWN_MS` (2 min / 5 s).
+  The mix is all FFA until T4 and T5 add the other types.
+- **The hold (§5.7) keeps the remaining time.** A dip below the minimum withdraws the worker's
+  `startsAt` (`updateLobby` with `startsAt: null`) and stores what was left; reaching the minimum
+  again resumes with that remainder, zero if the countdown had already run out. The worker guards
+  the same rule itself: a throne lobby's `phase()` stays `Lobby` past `startsAt` while under the
+  minimum (`GameServer.throneHeld`), covering the second before the master's hold lands.
+- **Counting humans.** Worker reports gained `numPlayers` (connected non-spectators) beside
+  `numClients`; the master counts the former.
+- **Round end.** `archiveGame` calls the new `GameServerDeps.throneRound` hook, which the
+  `GameManager` routes to `WorkerLobbyService` and on to the master as `throneRound`. Outcomes are
+  `timer` (the seated player won), `overthrown` (another player won), **`ai`** (a nation won; the
+  server cannot tell an AI Hegemon holding the timer from an AI slayer, and T1 needs no
+  distinction) and `void` (no winner). The master opens the successor at once and sends
+  `successorCreated` to the finished game's worker, which broadcasts the existing `new_lobby`.
+- **Vanished games.** A throne whose game is missing from every worker report for 10 s
+  (`DEFAULT_VANISH_GRACE_MS`) is recycled as a void round. This covers a lobby reaped empty by the
+  3-hour cap, a worker crash and a game that ended without a vote.
+- **Stale reports.** A finished round stays in its worker's report while players sit on the win
+  screen; the master advertises only the registry's current game per throne.
+- **Lobby list.** Running throne rounds are reported (`throne.running`, `startedAt`) and sort
+  last; open thrones sort countdown first, then by players waiting, then by name (L13).
+- **Client shim (T3 does the rest).** The three home cards show the three thrones closest to
+  starting, named in the subtitle (`throne.card_subtitle`), "Waiting for players" instead of a
+  countdown while gathering. The lobby browser has a plain **Thrones** pane listing every throne;
+  a running round reads "In progress" and is not clickable. No Watch, no holder line, no seat
+  buttons, nothing on the Dark Star panel yet.
+- **Names.** `resources/thrones.json`: 80 real star names (Tom: invented names may come later).
+- **Tests.** `tests/server/ThroneRegistry.test.ts` (15), `MasterLobbyServiceThrones.test.ts` (8),
+  `WorkerLobbyServiceThrones.test.ts` (6), `ThroneGame.test.ts` (7). The wire snapshot gained the
+  optional `throne` field.
+
+### 10.2 As built: T2 (2026-10-03)
+
+The seat, server side. Nothing in the browser sends these messages yet (T3), so the only
+observable behaviour under `npm run dev` is the expiry path: a human winner's seat is reserved for
+30 s and then opens.
+
+- **Registry.** `ThroneRegistry` gained the `deciding` phase and the seat fields of §5.1 (`heir`,
+  `reservationUntil`, `pendingReign`, `previousGameID`). `roundEnded` with a human winner
+  (`timer` or `overthrown`) reserves the seat and opens the successor at once with the heir in
+  its assignment; an `ai` or `void` round opens the seat. `pickReceived` accepts the answer only
+  from the heir, only from the game they won, only inside the window, and only once; it returns a
+  `pick` action (map, heir or null, reign). `observe` expires the window on the master's clock
+  (`expire` action) and **does not count down while deciding**, so a round cannot start under a
+  map the winner has not picked (the dev countdown is shorter than the window).
+- **Reigns (§3.1).** `pendingReign` is 1 for a slayer and for a claimant who held the timer, and
+  `reign + 1` for the sitting holder who held it; it becomes the reign on "stay". Step down,
+  expiry, AI and void reset to 0. The registry never learns who claimed a seat in the lobby (it
+  does not need to: their first timer win makes them the holder).
+- **IPC.** `createGame.throne` carries `heir` and `reservationUntil`. `updateLobby` carries
+  `gameConfig` (the pick's `gameMap` and a `maxPlayers` recomputed for it through the new
+  `MapPlaylist.maxPlayersForMap`) and `throne: { heir, reign }`; its `startsAt` is now optional.
+  Worker → master `thronePick { throneID, gameID, persistentID, gameMap?, stay }`. The master
+  checks the map against the full `GameMapType` list; an unknown name keeps the random map and
+  the stay/leave answer (§8).
+- **GameServer.** `setThrone` seats the heir on arrival through P0's `seatHeir`. `updateThrone`
+  applies the master's answer: a null heir unseats a heir who had already sat down and lets
+  anyone claim. `claim_seat` / `leave_seat` are **intents** (lobby-phase, like
+  `toggle_game_start_timer`), authorized for any websocket player before start, and granted when
+  the lobby is a throne's, the sender is not a spectator, the seat is empty and no heir stands;
+  a heir who leaves the seat gives up the reservation too. `throne_pick` is a client **message**
+  on the finished game's socket, accepted from the winner only and once. The pick's config lands
+  through `applyThronePick` (map and cap), not the host's config-patch path, which deliberately
+  excludes `maxPlayers`. Lobby info's `throne` now carries `holderName`, the seat state
+  (`seated` when a seat is set, `reserved` while a heir stands, else `open`) and
+  `reservationUntil` while the window is open.
+- **Config.** `THRONE_WINDOW_MS` (30 s).
+- **Tests.** `tests/server/ThroneSeatClaim.test.ts` (12: claims, refusals, the heir, isHegemon at
+  start, the pick), plus seat cases added to `ThroneRegistry` (9), `MasterLobbyServiceThrones` (4)
+  and `WorkerLobbyServiceThrones` (3).
+
+### 10.3 As built: T3 (2026-10-03)
+
+The client side of §4 and §6, plus the one server addition it needed.
+
+- **The window reaches the win screen.** `successorCreated` carries `reservationUntil`, and the
+  finished game's `new_lobby` broadcast gained `throne: { reservationUntil }`. That is how the
+  winner's client learns both the successor's id and how long it has.
+- **`src/client/ThroneState.ts`** keeps, per join, the throne from the last lobby info (the HUD
+  needs it after start, when lobby info stops) and whether this client won the round (set by the
+  win modal, read by `NewLobbyPrompt` to stand aside for the winner).
+- **Transport** gained `ClaimSeatEvent`, `LeaveSeatEvent` (sent as the `claim_seat` /
+  `leave_seat` intents) and `SendThronePickEvent` (the `throne_pick` message); `NewLobbyEvent`
+  carries `reservationUntil`.
+- **Lobby** (`JoinLobbyModal`, `LobbyPlayerView`): the throne row shows "Throne of <name>", the
+  holder (the seated player, "Reserved for <winner>" while they choose, or the AI), the reign when
+  above zero, and one button: **Claim the throne** on an open seat, **Give up the throne** for the
+  holder; spectators get none. The footer reads "The Hegemon is choosing…" while the window is
+  open.
+- **Win screen** (`WinModal`): for the winner, on the new-lobby announcement, a **Next-round**
+  panel: the throne's name, a bar and seconds counting down to the window's end, the map picker
+  (the host modal's `map-picker`, Random selected by default), **Keep the throne** / **Step
+  down**. Either answer sends the pick and jumps to the new lobby a moment later. If the window
+  passes first, the panel says so and offers **Join the next round**. Everyone else keeps the
+  existing join prompt.
+- **Cards** (`LobbyCard.throneCardSubtitle`): "<throne> · <mode> · <holder>", the holder being
+  "<name> · reign N", "Reserved for <name>" or "Dark Star". Used on the home cards and in the
+  lobby browser.
+- **Thrones pane and Watch**: a running round's card reads **Watch** and joins the game as a
+  spectator (`join-lobby` with `spectator: true`). A separate home-page tab was not added: the
+  lobby browser's Thrones pane is the Thrones tab of L13.
+- **Dark Star panel**: a line under the title, "Throne of <name>" or "Throne of <name> · reign N",
+  for public throne rounds only.
+- **Tests.** `tests/client/components/LobbyPlayerView.throne.test.ts` (5), plus the window on
+  `new_lobby` / `successorCreated` in the worker and master throne tests. The win-screen panel and
+  the modal footer are checked by hand in the browser (Tom's Stage 2 pass).
+
 ## 11. Tests
 
 - `tests/server/ThroneRegistry.test.ts`: every transition of §3.2; reservation expiry; vacate;
@@ -359,3 +479,18 @@ T1–T4 can ship to the private playtest server; T5 gates team thrones only.
   type per throne, no accounts, 30-second winner window with map and rules pick and the option to
   step down, first-come open seats, AI fallback, two humans to fire with a hold, no reign cap,
   restart opens every seat, three cards plus a Thrones tab, private lobbies unchanged.
+- **2026-10-03** — **T1 built** (§10.1): `ThroneRegistry`, master scheduling of FFA thrones with
+  the AI seated, the hold that keeps its remaining time, `throneRound` / `successorCreated` IPC,
+  running rounds in the lobby list, a thin client shim. Tom's decisions of the day: the Thrones
+  tab, Watch and the seat buttons wait for T3; `THRONE_MIN_PLAYERS` may be overridden to 1 for a
+  solo smoke test in dev; throne names are real stars for now. A fourth round outcome, `ai`, was
+  added to §5.3's `throneRound` because the server cannot tell an AI Hegemon's timer win from an
+  AI slayer.
+- **2026-10-03** — **T2 built, server side** (§10.2): reservation and window, `throne_pick`,
+  `claim_seat` / `leave_seat` as intents, heir seating and unseating, reigns, the pick merged
+  with a recomputed player cap. Two refinements of the plan: no countdown while the winner is
+  choosing; a heir who leaves the seat in the lobby gives up the reservation. T3 brings the UI.
+- **2026-10-03** — **T3 built** (§10.3): the client. Cards with the holder, Claim / Give up and
+  "reserved for" in the lobby, the winner's Next-round panel on the win screen with the map
+  picker and the 30-second bar, Watch from the Thrones pane, the throne and reign on the Dark
+  Star panel. One wire addition: `new_lobby` carries the window (`throne.reservationUntil`).

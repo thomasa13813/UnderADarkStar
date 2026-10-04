@@ -37,6 +37,7 @@ import {
   canJoinTrustedLobby,
   lobbyCard,
   mapAspectRatios,
+  throneCardSubtitle,
   trustRequiredDialog,
   viewerIsSignedIn,
   viewerIsTrusted,
@@ -44,8 +45,12 @@ import {
 import { modalHeader } from "./ui/ModalHeader";
 import { styledSelect } from "./ui/StyledSelect";
 
-/** The three scheduled buckets, in the order their panes are laid out. */
-const SCHEDULED_PANES = ["ffa", "team", "special"] as const;
+/**
+ * The scheduled buckets, in the order their panes are laid out. Thrones
+ * (Under a Dark Star) replace the three queues; those stay for the queue
+ * fallback and read "No lobbies" otherwise.
+ */
+const SCHEDULED_PANES = ["throne", "ffa", "team", "special"] as const;
 
 /**
  * Slots a pane always renders, matching QUEUED_LOBBIES_PER_TYPE on the master:
@@ -56,6 +61,15 @@ const PANE_SLOTS = 6;
 
 /** Tab key for the overview: every bucket at once, as three panes. */
 const ALL_TAB = "all";
+
+/**
+ * Placeholder slots a bucket pads itself to. The queues always refill to
+ * PANE_SLOTS; the throne pool is a fixed number of lobbies, so it shows
+ * exactly what exists.
+ */
+function paneSlots(type: string): number {
+  return type === "throne" ? 0 : PANE_SLOTS;
+}
 
 /** Slot height; cards and the spawning placeholder both fill it exactly. */
 const SLOT_CLASS = "h-40";
@@ -275,12 +289,17 @@ export class DetailedGameViewModal extends BaseModal {
                       translateText(`detailed_view.pane_${type}`),
                       ofType(shown, type),
                       ofType(all, type).length,
+                      paneSlots(type),
                     ),
                   )}
                 </div>
                 ${this.renderHostedPane(ofType(shown, "hosted"))}
               `
-            : this.renderTypeTab(ofType(shown, tab), ofType(all, tab).length)}
+            : this.renderTypeTab(
+                ofType(shown, tab),
+                ofType(all, tab).length,
+                paneSlots(tab),
+              )}
       </div>
     `;
   }
@@ -289,8 +308,12 @@ export class DetailedGameViewModal extends BaseModal {
    * A single bucket's tab: the same slots as its pane in the overview, two
    * across instead of the one narrow column it gets there.
    */
-  private renderTypeTab(lobbies: PublicGameInfo[], bucketTotal: number) {
-    const placeholders = Math.max(0, PANE_SLOTS - bucketTotal);
+  private renderTypeTab(
+    lobbies: PublicGameInfo[],
+    bucketTotal: number,
+    slots: number,
+  ) {
+    const placeholders = Math.max(0, slots - bucketTotal);
     if (lobbies.length === 0 && placeholders === 0) {
       return html`<p class="py-12 text-center text-sm text-white/50">
         ${translateText("detailed_view.pane_empty")}
@@ -321,8 +344,9 @@ export class DetailedGameViewModal extends BaseModal {
     name: string,
     lobbies: PublicGameInfo[],
     bucketTotal: number,
+    slots: number,
   ) {
-    const placeholders = Math.max(0, PANE_SLOTS - bucketTotal);
+    const placeholders = Math.max(0, slots - bucketTotal);
     return html`
       <section class="flex flex-col gap-2 min-w-0">
         <h3 class="${PANE_HEADING}">
@@ -401,7 +425,10 @@ export class DetailedGameViewModal extends BaseModal {
     if (!config) return nothing;
     return lobbyCard({
       lobby,
-      subtitle: getGameModeLabel(config),
+      subtitle:
+        lobby.throne !== undefined
+          ? throneCardSubtitle(lobby.throne, getGameModeLabel(config))
+          : getGameModeLabel(config),
       timeDisplay: this.timeDisplay(lobby),
       timeDisplayUppercase: lobby.startsAt === undefined,
       heightClass: "h-full",
@@ -411,8 +438,13 @@ export class DetailedGameViewModal extends BaseModal {
   }
 
   private timeDisplay(lobby: PublicGameInfo): string {
+    // A throne's round in progress: the card is the Watch button (§4 step 5).
+    if (lobby.throne?.running === true) {
+      return translateText("throne.watch");
+    }
     if (lobby.startsAt === undefined) {
-      if (lobby.publicGameType === "hosted") {
+      // A throne has no queue: it waits for players, then counts down.
+      if (lobby.publicGameType === "hosted" || lobby.throne !== undefined) {
         return translateText("public_lobby.waiting_for_players");
       }
       // Use the full server queue so filtering doesn't renumber waiting lobbies.
@@ -747,6 +779,9 @@ export class DetailedGameViewModal extends BaseModal {
           gameID: lobby.gameID,
           source: "public",
           publicLobbyInfo: lobby,
+          // Watching a throne's round in progress: the server seats a late
+          // joiner as a spectator anyway; asking up front skips the attempt.
+          spectator: lobby.throne?.running === true ? true : undefined,
         } as JoinLobbyEvent,
         bubbles: true,
         composed: true,
