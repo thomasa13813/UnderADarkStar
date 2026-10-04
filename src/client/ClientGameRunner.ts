@@ -1102,8 +1102,8 @@ export class ClientGameRunner {
       if (message.type === "new_lobby") {
         // The host reused this private lobby, or a throne opened its next
         // round: surface the successor id so the group can hop over.
-        // NewLobbyPrompt navigates the host and prompts everyone else; the
-        // winner of a throne round gets the Next-round panel (WinModal).
+        // The win screen (WinModal) navigates the host, offers everyone else
+        // a Join button, and gives a throne round's winner the Next-round panel.
         this.eventBus.emit(
           new NewLobbyEvent(message.gameID, message.throne?.reservationUntil),
         );

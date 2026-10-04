@@ -258,9 +258,9 @@ subject replaces the UUID in the same field with no registry change (L3).
   `enterLobbyFromInput(spectator = true)`).
 - **Lobby** (`JoinLobbyModal.ts`, `LobbyPlayerView.ts`): the P0 seat badge; Claim / Give up buttons
   gated on seat state; "reserved for <name>" and "The Hegemon is choosing…" states.
-- **Win screen** (`WinModal.ts`, `NewLobbyPrompt.ts`): the Next-round panel for the winner (map
-  picker reused from the host modal's picker, modifier chips on special thrones, Keep / Step down,
-  30-second bar). Sends `throne_pick`.
+- **Win screen** (`WinModal.ts`): the Next-round panel for the winner (map picker reused from the
+  host modal's picker, modifier chips on special thrones, Keep / Step down, 30-second bar). Sends
+  `throne_pick`. Everyone else gets a **Join Next Round** button beside Exit and Spectate.
 - **HUD**: throne name and reign on the Dark Star panel.
 - All strings through `translateText` with keys in `resources/lang/en.json` (`throne.*`).
 
@@ -421,8 +421,8 @@ The client side of §4 and §6, plus the one server addition it needed.
   finished game's `new_lobby` broadcast gained `throne: { reservationUntil }`. That is how the
   winner's client learns both the successor's id and how long it has.
 - **`src/client/ThroneState.ts`** keeps, per join, the throne from the last lobby info (the HUD
-  needs it after start, when lobby info stops) and whether this client won the round (set by the
-  win modal, read by `NewLobbyPrompt` to stand aside for the winner).
+  needs it after start, when lobby info stops). The win modal itself remembers whether this
+  client won the round.
 - **Transport** gained `ClaimSeatEvent`, `LeaveSeatEvent` (sent as the `claim_seat` /
   `leave_seat` intents) and `SendThronePickEvent` (the `throne_pick` message); `NewLobbyEvent`
   carries `reservationUntil`.
@@ -435,8 +435,10 @@ The client side of §4 and §6, plus the one server addition it needed.
   panel: the throne's name, a bar and seconds counting down to the window's end, the map picker
   (the host modal's `map-picker`, Random selected by default), **Keep the throne** / **Step
   down**. Either answer sends the pick and jumps to the new lobby a moment later. If the window
-  passes first, the panel says so and offers **Join the next round**. Everyone else keeps the
-  existing join prompt.
+  passes first, the panel says so and offers **Join the next round**. Everyone else gets a
+  **Join Next Round** button in the same window, beside Exit and Spectate (the window reopens if
+  they had dismissed it to spectate); the host is sent straight to the new host view. The separate
+  top-of-screen join prompt was folded into the win screen on 2026-10-04.
 - **Cards** (`LobbyCard.throneCardSubtitle`): "<throne> · <mode> · <holder>", the holder being
   "<name> · reign N", "Reserved for <name>" or "Dark Star". Used on the home cards and in the
   lobby browser.

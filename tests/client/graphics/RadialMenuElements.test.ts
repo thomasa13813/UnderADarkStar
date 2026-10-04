@@ -595,7 +595,7 @@ describe("RadialMenuElements", () => {
       ]);
     });
 
-    it("caps the nuke bulk amount at loaded silo tubes", () => {
+    it("never offers a bulk amount for warheads", () => {
       const enemyPlayer = {
         id: () => 2,
         isPlayer: vi.fn(() => true),
@@ -607,74 +607,17 @@ describe("RadialMenuElements", () => {
         (item) => item.id === "attack_Atom Bomb",
       );
 
-      const slotIds = [
-        `upgrade_${UnitType.AtomBomb}_1`,
-        `upgrade_${UnitType.AtomBomb}_2`,
-        `upgrade_${UnitType.AtomBomb}_5`,
-        `upgrade_${UnitType.AtomBomb}_max`,
-      ];
-
-      // Gold for five bombs but only two loaded tubes (level-2 silo):
-      // fixed x1/x2/x5/xMax slots, x5 disabled, max fires 2.
+      // Gold and loaded tubes for many bombs: still no submenu, so the click
+      // falls through to a single launch (stacked bombs all land on one tile).
       (mockGame as any).myPlayer = vi.fn(() => ({
         gold: () => 1_000_000n,
-        readyMissileCount: () => 2,
-      }));
-      let options = atomBombElement!.subMenu!(mockParams);
-      expect(options.map((o) => o.id)).toEqual(slotIds);
-      expect(options.map((o) => o.disabled(mockParams))).toEqual([
-        false,
-        false,
-        true,
-        false,
-      ]);
-      options[3].action!(mockParams);
-      expect(mockParams.eventBus.emit).toHaveBeenLastCalledWith(
-        expect.objectContaining({ amount: 2 }),
-      );
-
-      // Gold for three bombs and plenty of tubes: gold caps the max at 3.
-      (mockGame as any).myPlayer = vi.fn(() => ({
-        gold: () => 350n,
         readyMissileCount: () => 10,
-      }));
-      options = atomBombElement!.subMenu!(mockParams);
-      expect(options.map((o) => o.id)).toEqual(slotIds);
-      expect(options.map((o) => o.disabled(mockParams))).toEqual([
-        false,
-        false,
-        true,
-        false,
-      ]);
-      options[3].action!(mockParams);
-      expect(mockParams.eventBus.emit).toHaveBeenLastCalledWith(
-        expect.objectContaining({ amount: 3 }),
-      );
-
-      // A single loaded tube: no submenu — the click launches one bomb.
-      (mockGame as any).myPlayer = vi.fn(() => ({
-        gold: () => 1_000_000n,
-        readyMissileCount: () => 1,
       }));
       expect(atomBombElement!.subMenu!(mockParams)).toHaveLength(0);
 
-      // Plenty of gold and 12 loaded tubes: every slot executable, max
-      // fires 12.
-      (mockGame as any).myPlayer = vi.fn(() => ({
-        gold: () => 1_000_000n,
-        readyMissileCount: () => 12,
-      }));
-      options = atomBombElement!.subMenu!(mockParams);
-      expect(options.map((o) => o.id)).toEqual(slotIds);
-      expect(options.map((o) => o.disabled(mockParams))).toEqual([
-        false,
-        false,
-        false,
-        false,
-      ]);
-      options[3].action!(mockParams);
+      atomBombElement!.action!(mockParams);
       expect(mockParams.eventBus.emit).toHaveBeenLastCalledWith(
-        expect.objectContaining({ amount: 12 }),
+        expect.objectContaining({ unit: UnitType.AtomBomb, amount: undefined }),
       );
     });
   });

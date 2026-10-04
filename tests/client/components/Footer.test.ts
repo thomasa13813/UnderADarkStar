@@ -63,3 +63,41 @@ describe("page-footer version line", () => {
     expect(line?.textContent?.trim()).toBe(composeGameVersion(version, SHA));
   });
 });
+
+describe("page-footer studio wordmark", () => {
+  let footer: Footer;
+
+  beforeEach(() => {
+    if (!customElements.get("page-footer")) {
+      customElements.define("page-footer", Footer);
+    }
+    ClientEnv.reset();
+  });
+
+  afterEach(() => {
+    footer?.remove();
+    ClientEnv.reset();
+  });
+
+  // The by-line is the January Games wordmark from branding/ on md+ screens,
+  // with the "Made by January Games" string kept as its alt text so screen
+  // readers and the language switcher (data-i18n-alt) still carry the
+  // attribution; narrow screens hide the image and show the text span.
+  it("shows the January Games wordmark with the by-line as alt text", async () => {
+    footer = document.createElement("page-footer") as Footer;
+    document.body.appendChild(footer);
+    await footer.updateComplete;
+
+    const img = footer.querySelector<HTMLImageElement>("img.studio-wordmark");
+    expect(img).not.toBeNull();
+    expect(img?.getAttribute("src")).toContain(
+      "images/JanuaryGamesWordmarkDark.svg",
+    );
+    expect(img?.getAttribute("data-i18n-alt")).toBe("main.by_line");
+    expect(img?.alt).toBe("Made by January Games");
+
+    // The text fallback exists for narrow screens, where the image is hidden.
+    const span = footer.querySelector('span[data-i18n="main.by_line"]');
+    expect(span?.classList.contains("md:hidden")).toBe(true);
+  });
+});

@@ -23,7 +23,9 @@ open licence and are not in this repository. See [LICENSING.md](LICENSING.md).
 ## Under a Dark Star
 
 - **Branding** (name, wordmark, logo, favicon; `branding/`): © January Games,
-  all rights reserved. See [branding/LICENSE](branding/LICENSE).
+  all rights reserved. See [branding/LICENSE](branding/LICENSE). The January
+  Games wordmark in the footer (`branding/images/JanuaryGamesWordmark*.svg`)
+  is an AI-generated placeholder mark, kept until a final studio logo is made.
 - **Placeholder audio:** `resources/sounds/music/*.mp3` and
   `resources/sounds/effects/game-start-alert.mp3` are silent placeholders until
   the soundtrack lands (roadmap P4).

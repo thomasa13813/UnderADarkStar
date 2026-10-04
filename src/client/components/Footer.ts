@@ -56,10 +56,29 @@ export class Footer extends LitElement {
           <div
             class="text-xs mt-1 lg:mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 px-4 text-center"
           >
-            <span data-i18n="main.by_line"></span>
+            <!-- Text by-line only where the wordmark is hidden (narrow
+                 screens), so the attribution is never shown twice. -->
+            <span class="md:hidden" data-i18n="main.by_line"></span>
             <span data-i18n="main.copyright"></span>
           </div>
         </div>
+
+        <!-- The studio wordmark: pinned to the left edge and vertically
+             centred, the mirror of the language selector on the right, and
+             out of the flow so it does not add height to the centred rows.
+             Hidden on narrow screens where it would run under the centred
+             text; the span above carries the by-line there. It is 48px of
+             pixel art (154x48 viewBox), shown at exactly 1:1 with
+             image-rendering: pixelated to keep the pixels square; a
+             fractional scale would smear them. The "dark" variant is the one
+             with pale lettering, for this dark footer. -->
+        <img
+          src=${assetUrl("images/JanuaryGamesWordmarkDark.svg")}
+          alt="Made by January Games"
+          data-i18n-alt="main.by_line"
+          class="studio-wordmark hidden md:block absolute left-4 top-1/2 -translate-y-1/2 h-12 w-auto object-contain [image-rendering:pixelated] pointer-events-none"
+          draggable="false"
+        />
 
         <!-- Single instance: translateText() resolves the active language via
              document.querySelector("lang-selector"), so a second one would

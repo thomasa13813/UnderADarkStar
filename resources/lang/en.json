@@ -875,10 +875,7 @@
   },
   "new_lobby_prompt": {
     "confirm": "Start a new lobby? All players will be invited to join.",
-    "dismiss": "Dismiss",
-    "failed": "Could not create a new lobby. Please try again.",
-    "join": "Join",
-    "message": "Host started a new lobby"
+    "failed": "Could not create a new lobby. Please try again."
   },
   "overtime": {
     "first_place": "1st: {name} ({pct}%)",
@@ -1457,6 +1454,7 @@
     "died": "You died",
     "exit": "Exit Game",
     "hegemon_reigns": "The Hegemon Reigns Supreme",
+    "join_next": "Join Next Round",
     "keep": "Keep Playing",
     "match_cancelled": "Match cancelled — not all players spawned",
     "nation_won": "Nation {nation} has won!",

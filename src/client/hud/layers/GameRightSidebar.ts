@@ -258,8 +258,8 @@ export class GameRightSidebar extends LitElement implements Controller {
     this.requestUpdate();
     try {
       // The worker mints the successor lobby and has the current game
-      // broadcast its id, so everyone else gets the NewLobbyPrompt. We (the
-      // host) navigate straight to the new host view from the response.
+      // broadcast its id, so everyone else gets a Join button on the win
+      // screen. We (the host) navigate straight to the new host view from the response.
       const lobby = await createNextLobby(this.game.gameID());
       const id = lobby.gameID;
       // ?host routes the creator back into the host view on load.

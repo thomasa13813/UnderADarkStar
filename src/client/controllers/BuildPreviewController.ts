@@ -521,18 +521,12 @@ export class BuildPreviewController implements Controller {
       radiusTileY = this.game.y(upgradeTargetTile);
     }
 
-    const isNuke = u.type === UnitType.AtomBomb;
+    // Only structure upgrades buy in bulk; a warhead is always a single shot.
     const multiplier =
-      u.canUpgrade !== false || isNuke
-        ? (this.uiState.upgradeMultiplier ?? 1)
-        : 1;
+      u.canUpgrade !== false ? (this.uiState.upgradeMultiplier ?? 1) : 1;
     const cost = bulkCost(u, multiplier);
-    // Drives the red cost label: gold short of the bulk total, or (for
-    // bombs) fewer loaded silo tubes than the selected amount.
-    let canAfford = myPlayer.gold() >= cost;
-    if (isNuke) {
-      canAfford &&= myPlayer.readyMissileCount() >= multiplier;
-    }
+    // Drives the red cost label: gold short of the bulk total.
+    const canAfford = myPlayer.gold() >= cost;
     return {
       ghostType: u.type,
       tileX: this.game.x(tileRef),
@@ -620,18 +614,12 @@ export class BuildPreviewController implements Controller {
         return;
       }
 
-      const isNuke = unitType === UnitType.AtomBomb;
       const rocketDirectionUp =
         unitType === UnitType.AtomBomb || unitType === UnitType.HydrogenBomb
           ? this.uiState.rocketDirectionUp
           : undefined;
       this.eventBus.emit(
-        new BuildUnitIntentEvent(
-          unitType,
-          targetTile,
-          rocketDirectionUp,
-          isNuke ? this.uiState.upgradeMultiplier || 1 : undefined,
-        ),
+        new BuildUnitIntentEvent(unitType, targetTile, rocketDirectionUp),
       );
       if (!shouldPreserveGhostAfterBuild(unitType)) {
         this.removeGhostStructure();

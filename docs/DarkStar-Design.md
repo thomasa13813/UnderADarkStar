@@ -1948,7 +1948,9 @@ these before any public release.
 - **`proprietary/`: removed (2026-09-27, roadmap P1 step A).** OpenFront's logos, `OpenFront.ttf`,
   favicon and music are out of the repository and the build. Our own marks live in **`branding/`**
   (© January Games, All Rights Reserved, `branding/LICENSE`), which overrides `resources/` through
-  the same build mechanism; a modified version must replace it.
+  the same build mechanism; a modified version must replace it. Holds the Dark Star favicon and,
+  since 2026-10-04, the January Games studio wordmark (dark and light variants) shown in the
+  footer; the game's own logo, title treatment and font are still open (roadmap P1 step E).
 - **Stripped (P1 step A):** ads/analytics, the CrazyGames SDK, the Steam wishlist, OpenFront's
   Discord/wiki/reddit links, OpenFront's legal pages and press kit, `index.html` canonical/OpenGraph
   tags, PWA manifest and `package.json` name. The footer carries "Source", "Made by January Games"
@@ -2387,3 +2389,8 @@ hydrogen-bomb removal (closed by S6).
   throne by proxy. Donations to the invader and gold from the throne stay shelved. Same day, at
   Tom's ask: a **Reinforce the throne** entry in the radial menu's ally slot when a challenger
   right-clicks the Dark Star, sized by the attack-ratio slider like the team-mode donation.
+- **2026-10-04** — **Studio wordmark in the footer.** Tom supplied the January Games logo (pixel art,
+  AI-generated, a placeholder mark he may replace). The dark- and light-background wordmarks are in
+  `branding/images/` under the existing All Rights Reserved overlay; the footer shows the dark one
+  at 1:1 in place of the "Made by January Games" text, which stays as its alt. Favicon unchanged
+  (the Dark Star). The game's own logo, title and font remain P1 step E. §8 amended.

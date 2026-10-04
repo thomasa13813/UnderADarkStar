@@ -118,7 +118,11 @@ join) and is a commit of its own.
   OpenFront's distribution deals; nothing of ours will ever run in them. Mechanical but wide
   (about 50 files, 30 tests). Playtest: full round in a lobby.
 - **E. The home screen.** The space background is built (2026-09-27, below); the title
-  treatment and play buttons wait on the logo, wordmark and font.
+  treatment and play buttons wait on the logo, wordmark and font. The **studio** mark is in:
+  Tom's January Games wordmark (pixel art, dark and light variants, an AI-generated placeholder
+  for now) landed in `branding/images/` on 2026-10-04 and replaces the "Made by January Games"
+  text in the footer, which stays as the image's alt text. The favicon stays the Dark Star. The
+  **game's** logo, title treatment and font remain open.
 
 **Decided 2026-09-27.** Tom supplies the logo and wordmark when ready (text wordmark until then);
 the font is revisited later (Overpass stays); no upstream community links; step D is in P1.

@@ -7,10 +7,6 @@ import { ThroneInfo } from "../core/Schemas";
 // here per join; a new join clears it.
 
 let throne: ThroneInfo | undefined;
-// Whether the round just played was won by this client (the win screen sets
-// it): the new-lobby announcement then belongs to the winner's Next-round
-// panel, not to the join prompt everyone else gets.
-let wonRound = false;
 
 export function currentThrone(): ThroneInfo | undefined {
   return throne;
@@ -20,15 +16,6 @@ export function setCurrentThrone(info: ThroneInfo | undefined): void {
   throne = info;
 }
 
-export function setWonRound(won: boolean): void {
-  wonRound = won;
-}
-
-export function didWinRound(): boolean {
-  return wonRound;
-}
-
 export function resetThroneState(): void {
   throne = undefined;
-  wonRound = false;
 }

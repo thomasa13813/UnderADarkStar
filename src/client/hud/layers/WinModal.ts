@@ -18,7 +18,7 @@ import { ClientEnv } from "../../ClientEnv";
 import "../../components/map/MapPicker";
 import { Controller } from "../../Controller";
 import { PlaySoundEffectEvent } from "../../sound/Sounds";
-import { currentThrone, setWonRound } from "../../ThroneState";
+import { currentThrone } from "../../ThroneState";
 import {
   NewLobbyEvent,
   SendThronePickEvent,
@@ -30,6 +30,7 @@ import { GameView } from "../../view";
 // (docs/DarkStar-Lobbies.md §4 step 4, §5.5). The master opened the throne's
 // next lobby and reserved its seat for the winner until `until`; here they
 // pick its map and keep the throne or step down, then jump to the lobby.
+// Everyone else gets a Join button beside Exit and Spectate (nextLobbyID).
 interface ThronePanel {
   gameID: string;
   openedAt: number;
@@ -50,6 +51,9 @@ export class WinModal extends LitElement implements Controller {
   private isWin = false;
 
   @state() private throne: ThronePanel | null = null;
+  // The successor lobby announced to a non-winner (the host reused the
+  // private lobby, or a throne opened its next round): a Join button here.
+  @state() private nextLobbyID: string | null = null;
   // The map the winner picked; undefined is a random map.
   @state() private pickedMap: GameMapType | undefined = undefined;
   @state() private pickSent = false;
@@ -99,6 +103,16 @@ export class WinModal extends LitElement implements Controller {
               : translateText("win_modal.spectate")}
             @click=${this.hide}
           ></o-button>
+          ${this.nextLobbyID !== null
+            ? html`<o-button
+                variant="primary"
+                width="block"
+                class="flex-1"
+                translationKey="win_modal.join_next"
+                data-join-next
+                @click=${() => this.joinNext()}
+              ></o-button>`
+            : nothing}
         </div>
       </div>
     `;
@@ -130,9 +144,19 @@ export class WinModal extends LitElement implements Controller {
   // --- Under a Dark Star: the Next-round panel ---
 
   private onNewLobby(event: NewLobbyEvent) {
-    // Only the winner of a throne round has a window; everyone else gets the
-    // join prompt (NewLobbyPrompt).
-    if (event.reservationUntil === undefined || !this.wonRound) return;
+    if (event.reservationUntil === undefined || !this.wonRound) {
+      // Not the winner's reserved seat. The host asked for this lobby, so
+      // send them straight back to the host view (the ?host flag routes them
+      // there instead of the join flow on reload); everyone else gets a Join
+      // button on this screen, reopened if they had dismissed it to spectate.
+      if (this.game?.myPlayer()?.isLobbyCreator()) {
+        window.location.href = `${this.lobbyUrl(event.gameID)}?host`;
+        return;
+      }
+      this.nextLobbyID = event.gameID;
+      this.show();
+      return;
+    }
     this.throne = {
       gameID: event.gameID,
       openedAt: Date.now(),
@@ -154,8 +178,7 @@ export class WinModal extends LitElement implements Controller {
     return Math.max(0, this.throne.until - Date.now());
   }
 
-  private lobbyUrl(): string {
-    const id = this.throne?.gameID ?? "";
+  private lobbyUrl(id: string): string {
     return `${window.location.origin}${ClientEnv.gamePath(id)}`;
   }
 
@@ -173,13 +196,16 @@ export class WinModal extends LitElement implements Controller {
       ),
     );
     // Give the socket a moment to flush the pick before the page unloads.
+    const id = this.throne.gameID;
     window.setTimeout(() => {
-      window.location.href = this.lobbyUrl();
+      window.location.href = this.lobbyUrl(id);
     }, 300);
   }
 
   private joinNext() {
-    window.location.href = this.lobbyUrl();
+    const id = this.throne?.gameID ?? this.nextLobbyID;
+    if (id === null) return;
+    window.location.href = this.lobbyUrl(id);
   }
 
   private toggleModifier(modifier: ThroneModifier) {
@@ -377,9 +403,8 @@ export class WinModal extends LitElement implements Controller {
         const me = this.game.myPlayer();
         if (winnerClient !== null && winnerClient === me?.clientID()) {
           // Under a Dark Star: the throne's next round is mine to shape
-          // (ThroneState tells NewLobbyPrompt to stand aside).
+          // (onNewLobby opens the Next-round panel instead of a Join button).
           this.wonRound = true;
-          setWonRound(true);
           // From the throne, outlasting the round is the reign continuing (R4).
           this._title = winner.isHegemon()
             ? translateText("win_modal.hegemon_reigns")

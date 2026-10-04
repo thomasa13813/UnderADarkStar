@@ -1190,9 +1190,8 @@ export function maxBulkAmount(bu: BuildableUnit, gold: Gold): number {
   return max;
 }
 
-// Fixed mid-ladder steps for the bulk menus. Bombs come in smaller batches
-// than structure upgrades — x2 is the standard play against a single SAM.
-export const NUKE_BULK_STEPS: readonly number[] = [2, 5];
+// Fixed mid-ladder steps for the structure bulk-upgrade menu. Warheads are
+// never bought in bulk: a stack on one tile all lands on the same spot.
 export const STRUCTURE_BULK_STEPS: readonly number[] = [5, 10];
 
 export interface PlayerProfile {
