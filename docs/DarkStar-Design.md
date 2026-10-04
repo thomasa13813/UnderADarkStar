@@ -409,10 +409,20 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   freighters overland [Built 2026-09-26, §6.18], straight lanes [Built 2026-09-26, §6.19; Tom kept them, hop
   threshold 3], the names [Built 2026-09-26, §6.20]. A
   freighter on a land leg cannot be captured — a destroyer's reach ends at the water's edge.
-- **S8 — Audio.** No audio work for now. **Before any public release:** the game must have sound
-  effects — the repo carries 34 effect files that `Sounds.ts` plays, so silence in play is a bug to
-  diagnose, not missing assets — and a unique, legally compliant soundtrack replacing the proprietary
-  music (§8).
+- **S8 — Audio.** [Revised 2026-10-04] Sound work has started, cue by cue: Tom describes the sound
+  and the rule for who hears it, supplies the file (his own recordings, or CC0 / CC BY sources
+  credited in `CREDITS.md`), and it is wired into `Sounds.ts` and the controllers. **Audience
+  principle:** a cue is heard by the players involved, not by the whole map — a landing by the one
+  who lands, the one who launched it and the one whose land it comes down on; a third player hears
+  nothing. **The one exception:** the Hegemon hears every missile launch in the galaxy. A missile's
+  detonation is heard by all. Cues under the principle so far: `launch` (troops leaving the Dark
+  Star or a stargate — the opening, strikes and gate shots), `landing` (those troops coming down),
+  `missile` (a nuke leaving a stargate; distinct from `launch` so the ear tells a missile from an
+  invasion). The atom/hydrogen/MIRV launch cues are no longer played; the hit cues remain (§6.12
+  and §6.9 notes). **Before any public release:** the remaining effects verified (the repo carries
+  37 effect files that `Sounds.ts`
+  plays, so silence in play is a bug to diagnose, not missing assets) and a unique, legally
+  compliant soundtrack replacing the proprietary music (§8).
 - **S9 — Map library.** [Decided 2026-09-24] Launch with **10–20 galaxy maps** authored around the
   Dark Star; Event Horizon is the first and `scripts/generateGalaxyMap.ts` the tool. Most or all
   existing maps — the Earth-geography ones in particular — are removed, decided map by map (F17).
@@ -986,7 +996,9 @@ Stages 1 and 2 of §6.8, narrow by design: no stargate structure, no menu change
   nuke-style trail), **owner colours, no flicker** (decided: one shared type, so a future gate shot flies
   in its owner's colours for free); an impact ring on the aim tile through `NUKE_MAGNITUDES`
   (`PROJECTILE_TELEGRAPH_RADIUS` = 8, the ~200-tile bubble footprint, one ring); a small shockwave and
-  flash at impact (`fx.strikeImpactRadius`); the atom launch/hit sounds stand in as cues.
+  flash at impact (`fx.strikeImpactRadius`). [2026-10-04] The atom cues that stood in are gone: a
+  strike or stargate shot leaves to Tom's `launch` cue and lands to his `landing` cue, both heard by
+  the shooter and the aimed tile's owner only (S8).
 - **Measured.** World seed a, AI-only: identical to the previous build until the first strike lands at
   minute 2.8, then the rounds diverge on timing (a flight is now the arc ÷ 10 tiles/tick, 5–8 s on World
   rather than 3 s + distance); both end with the throne holding on the timer (before: 4 strikes,
@@ -1216,7 +1228,8 @@ Go came from the official zip into the user profile, no installer.
   view (no target tile on a phantom). `MapConsistency` covers the new map's files.
 - **Deferred.** Own art for the projectile and a launch sound of its own; the flights in replays;
   decorative stars in the void and a per-map palette; per-map thumbnail colours; whether 24 nations is
-  the right count once Tom has played the map.
+  the right count once Tom has played the map. [2026-10-04] The landing now plays Tom's `landing`
+  cue, to the player whose flight came down only; the Hegemon and spectators hear none (S8).
 
 ### 6.13 As built — the throne's toolkit, chunk 1 (2026-09-25)
 
@@ -2394,3 +2407,12 @@ hydrogen-bomb removal (closed by S6).
   `branding/images/` under the existing All Rights Reserved overlay; the footer shows the dark one
   at 1:1 in place of the "Made by January Games" text, which stays as its alt. Favicon unchanged
   (the Dark Star). The game's own logo, title and font remain P1 step E. §8 amended.
+- **2026-10-04** — **First sound cues of our own: launch, landing, missile.** Tom recorded the
+  three. `landing` plays when the player's own opening flight comes down and when a projectile they
+  fired, or one aimed at their land, comes down — the throne's strike included, since it is an
+  invasion (a first cut wrongly kept the atom cues for it). `launch` replaces the atom launch cue for
+  the opening, strikes and gate shots, to the same audience. `missile` replaces the atom, hydrogen
+  and MIRV launch cues, to the launcher, the target and always the Hegemon; detonations stay
+  audible to all. Never to a third player or a spectator. The defender of a shot is remembered from
+  the flight, since the aimed tile is the shooter's by the landing update. S8 revised with the
+  audience principle and the per-cue workflow; §6.9 and §6.12 noted; `CREDITS.md` credits the files.

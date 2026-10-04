@@ -206,24 +206,26 @@ describe("OpeningController", () => {
     const pullOut = events[0] as GoToPositionEvent;
     expect(pullOut).toBeInstanceOf(GoToPositionEvent);
     expect([pullOut.x, pullOut.y, pullOut.zoom]).toEqual([100, 100, 0.45]);
-    expect((events[1] as PlaySoundEffectEvent).effect).toBe("atom-launch");
+    expect((events[1] as PlaySoundEffectEvent).effect).toBe("launch");
 
     const first = opening.landTickOf(1)!;
     const mine = opening.landTickOf(2)!;
     for (let t = 1; t < first; t++) step(t);
     expect(events).toHaveLength(2);
     step(first);
-    // Somebody else landed: a cue, no camera move.
-    expect(events).toHaveLength(3);
-    expect((events[2] as PlaySoundEffectEvent).effect).toBe("atom-hit");
+    // Somebody else landed: nothing to hear, no camera move.
+    expect(events).toHaveLength(2);
     for (let t = first + 1; t < mine; t++) step(t);
     step(mine);
-    const home = events[events.length - 1] as GoToPositionEvent;
+    // My own landing: the landing cue, then the camera comes home.
+    expect(events).toHaveLength(4);
+    expect((events[2] as PlaySoundEffectEvent).effect).toBe("landing");
+    const home = events[3] as GoToPositionEvent;
     expect(home).toBeInstanceOf(GoToPositionEvent);
     expect([home.x, home.y, home.zoom]).toEqual([20, 100, 8]);
   });
 
-  it("throttles the landing cue and leaves the Hegemon's wide view alone", () => {
+  it("plays no landing cue to the Hegemon and leaves its wide view alone", () => {
     const { opening, events, step } = harness({
       me: { smallID: 9, hegemon: true },
     });
@@ -235,10 +237,10 @@ describe("OpeningController", () => {
     const landAt = opening.landTickOf(1)!;
     for (let t = 0; t <= landAt + 2; t++) step(t);
     const cues = events.filter(
-      (e) => e instanceof PlaySoundEffectEvent && e.effect === "atom-hit",
+      (e) => e instanceof PlaySoundEffectEvent && e.effect === "landing",
     );
-    // Three landings within a few ticks: one cue.
-    expect(cues).toHaveLength(1);
+    // Three challengers land; none of them is the throne.
+    expect(cues).toHaveLength(0);
     // One camera move: the pull-out, never a return home.
     expect(events.filter((e) => e instanceof GoToPositionEvent)).toHaveLength(
       1,

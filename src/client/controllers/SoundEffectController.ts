@@ -1,5 +1,6 @@
 import { EventBus } from "../../core/EventBus";
 import { MessageType, PlayerType, UnitType } from "../../core/game/Game";
+import { TileRef } from "../../core/game/GameMap";
 import { GameUpdateType } from "../../core/game/GameUpdates";
 import { Controller } from "../Controller";
 import { PlaySoundEffectEvent, SoundEffect } from "../sound/Sounds";
@@ -25,6 +26,9 @@ const TRAIN_STATION_SOUND_INTERVAL_TICKS = 10;
 // rare enough that the scan costs nothing.
 const TRAIN_STATION_SWEEP_INTERVAL_TICKS = 100;
 
+// Several stargate shots can come down on the same tick; one landing cue.
+const LANDING_SOUND_INTERVAL_TICKS = 5;
+
 // Structures a train station can be attached to (see TrainStationExecution).
 const STATION_CAPABLE_TYPES = new Set<UnitType>([
   UnitType.City,
@@ -47,6 +51,13 @@ export class SoundEffectController implements Controller {
   // one when first seen (e.g. joining mid-game) stay silent.
   private hadTrainStation = new Map<number, boolean>();
   private lastTrainStationSweepTick = -Infinity;
+  private lastLandingSoundTick = -Infinity;
+  // Who a stargate shot is coming down on, by unit id: the aimed tile's owner
+  // as of the previous update (null for unclaimed land). The sim conquers the
+  // tile on the tick it lands, so by the time the landing update arrives the
+  // tile already reads as the shooter's; the defender has to be remembered
+  // from the flight. Entries go when the shot does.
+  private shotDefender = new Map<number, number | null>();
 
   constructor(
     private readonly game: GameView,
@@ -128,10 +139,65 @@ export class SoundEffectController implements Controller {
         this.onNukeDetonation(unit, "hydrogen-hit");
         break;
       case UnitType.Projectile:
-        // A DarkStar strike coming down; the atom cues stand in for now.
-        this.onNukeDetonation(unit, "atom-hit");
+        this.handleProjectile(unit);
         break;
     }
+  }
+
+  /**
+   * A Projectile is troops in flight: the throne's strike (RazeExecution)
+   * or a challenger's stargate shot (GateShotExecution). Launch and landing
+   * are heard by the shooter and by whoever owned the aimed tile — not by a
+   * third player across the map (Tom, 2026-10-04).
+   */
+  private handleProjectile(unit: UnitView): void {
+    if (unit.isActive()) {
+      this.shotDefender.set(unit.id(), this.ownerSmallID(unit.targetTile()));
+      return;
+    }
+    const defender = this.shotDefender.get(unit.id()) ?? null;
+    this.shotDefender.delete(unit.id());
+    if (!unit.reachedTarget()) return; // recalled, or the owner died
+    if (!this.involvesMe(unit, defender)) return;
+    const tick = this.game.ticks();
+    if (tick - this.lastLandingSoundTick < LANDING_SOUND_INTERVAL_TICKS) return;
+    this.lastLandingSoundTick = tick;
+    this.emit("landing");
+  }
+
+  private ownerSmallID(tile: TileRef | undefined): number | null {
+    if (tile === undefined) return null;
+    const owner = this.game.owner(tile);
+    return owner.isPlayer() ? owner.smallID() : null;
+  }
+
+  private involvesMe(unit: UnitView, defender: number | null): boolean {
+    const me = this.game.myPlayer();
+    if (me === null) return false;
+    return (
+      unit.owner() === me || (defender !== null && defender === me.smallID())
+    );
+  }
+
+  /**
+   * A missile leaving a stargate. The launcher and the owner of the aimed
+   * tile hear it; so does the Hegemon, whoever fired at whom — the throne
+   * hears every missile in its galaxy (Tom, 2026-10-04). The detonation
+   * (onNukeDetonation) stays audible to all.
+   */
+  private onMissileLaunch(unit: UnitView): void {
+    const me = this.game.myPlayer();
+    if (me === null) return;
+    const target = this.ownerSmallID(unit.targetTile());
+    if (me.isHegemon() || this.involvesMe(unit, target)) {
+      this.emit("missile");
+    }
+  }
+
+  private onProjectileLaunch(unit: UnitView): void {
+    const defender = this.ownerSmallID(unit.targetTile());
+    this.shotDefender.set(unit.id(), defender);
+    if (this.involvesMe(unit, defender)) this.emit("launch");
   }
 
   private onMirvWarheadDetonation(unit: UnitView): void {
@@ -149,16 +215,12 @@ export class SoundEffectController implements Controller {
     const myPlayer = this.game.myPlayer();
     switch (unit.type()) {
       case UnitType.AtomBomb:
-        this.emit("atom-launch");
-        break;
       case UnitType.HydrogenBomb:
-        this.emit("hydrogen-launch");
-        break;
       case UnitType.MIRV:
-        this.emit("mirv-launch");
+        this.onMissileLaunch(unit);
         break;
       case UnitType.Projectile:
-        this.emit("atom-launch");
+        this.onProjectileLaunch(unit);
         break;
       case UnitType.Warship:
         if (unit.owner() === myPlayer) this.emit("build-warship");

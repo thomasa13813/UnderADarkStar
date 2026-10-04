@@ -31,6 +31,9 @@ export type SoundEffect =
   | "transport-ship"
   | "nuke-warning"
   | "spawn"
+  | "landing"
+  | "launch"
+  | "missile"
   | "game-start"
   | "victory"
   | "defeat";
@@ -66,6 +69,9 @@ export const soundEffectUrls: ReadonlyMap<SoundEffect, string> = new Map([
   ["transport-ship", assetUrl("sounds/effects/transport-ship.mp3")],
   ["nuke-warning", assetUrl("sounds/effects/nuke-warning.mp3")],
   ["spawn", assetUrl("sounds/effects/spawn.mp3")],
+  ["landing", assetUrl("sounds/effects/landing.mp3")],
+  ["launch", assetUrl("sounds/effects/launch.mp3")],
+  ["missile", assetUrl("sounds/effects/missile.mp3")],
   ["game-start", assetUrl("sounds/effects/game-start.mp3")],
   ["victory", assetUrl("sounds/effects/victory.mp3")],
   ["defeat", assetUrl("sounds/effects/defeat.mp3")],
@@ -126,6 +132,12 @@ const CUE_CATEGORY: Record<SoundEffect, Exclude<CueCategory, "ambience">> = {
   "silo-built": "effects",
   "transport-ship": "effects",
   spawn: "effects",
+  // Troops: launched from the Dark Star or a stargate, and coming down. Heard
+  // only by the players involved (SoundEffectController, OpeningController).
+  launch: "effects",
+  landing: "effects",
+  // A missile leaving a stargate: the launcher, the target and the Hegemon.
+  missile: "effects",
   "game-start": "effects",
   victory: "effects",
   defeat: "effects",

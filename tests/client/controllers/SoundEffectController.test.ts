@@ -182,6 +182,240 @@ describe("SoundEffectController", () => {
     expect(played).toEqual(["build-factory", "transport-ship"]);
   });
 
+  describe("projectiles", () => {
+    const TILE = 42;
+    const me = { smallID: () => 1, isHegemon: () => false };
+    const rival = { smallID: () => 2, isHegemon: () => false };
+    const third = { smallID: () => 3, isHegemon: () => false };
+    const throne = { smallID: () => 9, isHegemon: () => true };
+    let tileOwner: any;
+
+    beforeEach(() => {
+      game.myPlayer = () => me;
+      game.owner = (tile: number) => {
+        expect(tile).toBe(TILE);
+        return tileOwner;
+      };
+    });
+
+    function asOwner(p: { smallID: () => number }) {
+      return { isPlayer: () => true, smallID: p.smallID };
+    }
+    const noOwner = { isPlayer: () => false };
+
+    // One projectile across its life: created at the gate, in flight, landed.
+    function shot(id: number, owner: object) {
+      const state = { created: true, active: true, landed: false };
+      const unit = {
+        id: () => id,
+        type: () => UnitType.Projectile,
+        isActive: () => state.active,
+        reachedTarget: () => state.landed,
+        createdAt: () => (state.created ? tick : -1),
+        owner: () => owner,
+        targetTile: () => TILE,
+        hasTrainStation: () => false,
+      };
+      return {
+        unit,
+        fly() {
+          state.created = false;
+        },
+        land() {
+          state.created = false;
+          state.active = false;
+          state.landed = true;
+        },
+        recall() {
+          state.created = false;
+          state.active = false;
+        },
+      };
+    }
+
+    it("plays launch and landing for my own stargate shot", () => {
+      tileOwner = asOwner(rival);
+      const s = shot(1, me);
+      tickWithUnits(s.unit);
+      s.fly();
+      tickWithUnits(s.unit);
+      s.land();
+      // The sim conquers the aimed tile as the shot lands: by now it is mine.
+      tileOwner = asOwner(me);
+      tickWithUnits(s.unit);
+      expect(played).toEqual(["launch", "landing"]);
+    });
+
+    it("plays launch and landing for a shot coming down on my land", () => {
+      tileOwner = asOwner(me);
+      const s = shot(1, rival);
+      tickWithUnits(s.unit);
+      s.fly();
+      tickWithUnits(s.unit);
+      s.land();
+      tileOwner = asOwner(rival);
+      tickWithUnits(s.unit);
+      expect(played).toEqual(["launch", "landing"]);
+    });
+
+    it("stays silent for a shot between two other players", () => {
+      tileOwner = asOwner(rival);
+      const s = shot(1, third);
+      tickWithUnits(s.unit);
+      s.fly();
+      tickWithUnits(s.unit);
+      s.land();
+      tileOwner = asOwner(third);
+      tickWithUnits(s.unit);
+      expect(played).toEqual([]);
+    });
+
+    it("remembers the defender from the flight, not the landing tick", () => {
+      // My land when launched at; conquered by the shooter as it lands.
+      tileOwner = asOwner(me);
+      const s = shot(1, rival);
+      tickWithUnits(s.unit);
+      s.land();
+      tileOwner = asOwner(rival);
+      tickWithUnits(s.unit);
+      expect(played).toEqual(["launch", "landing"]);
+      expect((controller as any).shotDefender.size).toBe(0);
+    });
+
+    it("hears a shot aimed at my land only once it is mine", () => {
+      // Unclaimed when launched; I take the tile while the shot is in the air.
+      tileOwner = noOwner;
+      const s = shot(1, rival);
+      tickWithUnits(s.unit);
+      expect(played).toEqual([]);
+      s.fly();
+      tileOwner = asOwner(me);
+      tickWithUnits(s.unit);
+      s.land();
+      tileOwner = asOwner(rival);
+      tickWithUnits(s.unit);
+      expect(played).toEqual(["landing"]);
+    });
+
+    it("plays nothing for a recalled shot and forgets it", () => {
+      tileOwner = asOwner(rival);
+      const s = shot(1, me);
+      tickWithUnits(s.unit);
+      s.recall();
+      tickWithUnits(s.unit);
+      expect(played).toEqual(["launch"]);
+      expect((controller as any).shotDefender.size).toBe(0);
+    });
+
+    it("plays one landing cue when several shots come down together", () => {
+      tileOwner = asOwner(rival);
+      const shots = [shot(1, me), shot(2, me), shot(3, me)];
+      tickWithUnits(...shots.map((s) => s.unit));
+      shots.forEach((s) => s.land());
+      tileOwner = asOwner(me);
+      tickWithUnits(...shots.map((s) => s.unit));
+      expect(played).toEqual(["launch", "launch", "launch", "landing"]);
+    });
+
+    it("treats the throne's strike as an invasion of my land", () => {
+      tileOwner = asOwner(me);
+      const s = shot(1, throne);
+      tickWithUnits(s.unit);
+      s.land();
+      tileOwner = asOwner(throne);
+      tickWithUnits(s.unit);
+      expect(played).toEqual(["launch", "landing"]);
+      expect((controller as any).shotDefender.size).toBe(0);
+    });
+
+    it("plays the throne's own strike to the throne, not to a bystander", () => {
+      game.myPlayer = () => throne;
+      tileOwner = asOwner(rival);
+      const s = shot(1, throne);
+      tickWithUnits(s.unit);
+      s.land();
+      tileOwner = asOwner(throne);
+      tickWithUnits(s.unit);
+      expect(played).toEqual(["launch", "landing"]);
+
+      // A rival's shot at a third player: the throne is not involved.
+      played.length = 0;
+      tileOwner = asOwner(third);
+      const other = shot(2, rival);
+      tickWithUnits(other.unit);
+      other.land();
+      tileOwner = asOwner(rival);
+      tickWithUnits(other.unit);
+      expect(played).toEqual([]);
+    });
+
+    function missile(id: number, type: UnitType, owner: object) {
+      const state = { created: true, active: true, hit: false };
+      const unit = {
+        id: () => id,
+        type: () => type,
+        isActive: () => state.active,
+        reachedTarget: () => state.hit,
+        createdAt: () => (state.created ? tick : -1),
+        owner: () => owner,
+        targetTile: () => TILE,
+        hasTrainStation: () => false,
+      };
+      return {
+        unit,
+        detonate() {
+          state.created = false;
+          state.active = false;
+          state.hit = true;
+        },
+      };
+    }
+
+    it("plays the missile cue to the launcher and the target, never the atom launch", () => {
+      tileOwner = asOwner(rival);
+      const mine = missile(1, UnitType.AtomBomb, me);
+      tickWithUnits(mine.unit);
+      expect(played).toEqual(["missile"]);
+
+      tileOwner = asOwner(me);
+      const atMe = missile(2, UnitType.HydrogenBomb, rival);
+      tickWithUnits(atMe.unit);
+      expect(played).toEqual(["missile", "missile"]);
+
+      tileOwner = asOwner(third);
+      const elsewhere = missile(3, UnitType.MIRV, rival);
+      tickWithUnits(elsewhere.unit);
+      expect(played).toEqual(["missile", "missile"]);
+    });
+
+    it("plays every missile launch to the Hegemon", () => {
+      game.myPlayer = () => throne;
+      tileOwner = asOwner(third);
+      const m = missile(1, UnitType.AtomBomb, rival);
+      tickWithUnits(m.unit);
+      expect(played).toEqual(["missile"]);
+    });
+
+    it("plays a detonation to everyone", () => {
+      tileOwner = asOwner(third);
+      const m = missile(1, UnitType.HydrogenBomb, rival);
+      tickWithUnits(m.unit);
+      m.detonate();
+      tickWithUnits(m.unit);
+      expect(played).toEqual(["hydrogen-hit"]);
+    });
+
+    it("plays nothing to a spectator", () => {
+      game.myPlayer = () => null;
+      tileOwner = asOwner(rival);
+      const s = shot(1, third);
+      tickWithUnits(s.unit);
+      s.land();
+      tickWithUnits(s.unit);
+      expect(played).toEqual([]);
+    });
+  });
+
   it("plays build-train-station when my structure gains a station", () => {
     const me = {};
     game.myPlayer = () => me;
