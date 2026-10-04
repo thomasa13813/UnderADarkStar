@@ -1,4 +1,4 @@
-import { html } from "lit";
+import { html, nothing } from "lit";
 import { customElement, state } from "lit/decorators.js";
 import { renderNumber, textDirection, translateText } from "../client/Utils";
 import { assetUrl } from "../core/AssetUrls";
@@ -36,6 +36,11 @@ export class HelpModal extends BaseModal {
       AltRight: "Alt",
       MetaLeft: "⌘",
       MetaRight: "⌘",
+      // Modifier names as they appear in combos such as "Shift+KeyR".
+      Shift: "⇧ Shift",
+      Ctrl: "Ctrl",
+      Alt: "Alt",
+      Meta: "⌘",
       Space: "Space",
       Escape: "Esc",
       Enter: "↵ Return",
@@ -55,7 +60,18 @@ export class HelpModal extends BaseModal {
     return code;
   }
 
+  /** A binding; combos such as "Shift+KeyR" become one badge per part. */
   private renderKey(code: string) {
+    const parts = code ? code.split("+") : [""];
+    return html`${parts.map(
+      (part, i) =>
+        html`${i > 0
+          ? html`<span class="mx-1 text-white/40">+</span>`
+          : nothing}${this.renderKeyBadge(part)}`,
+    )}`;
+  }
+
+  private renderKeyBadge(code: string) {
     const label = this.getKeyLabel(code);
     // Key names stay left-to-right even inside RTL locales so the badges
     // (and combos like "Shift + click") never scramble.
@@ -403,6 +419,56 @@ export class HelpModal extends BaseModal {
                     </td>
                     <td class="py-3 border-b border-white/5 text-white/70">
                       ${translateText("help_modal.action_warship_selectall")}
+                    </td>
+                  </tr>
+                  <tr class="hover:bg-white/5 transition-colors">
+                    <td class="py-3 ps-4 border-b border-white/5">
+                      ${this.renderKey(keybinds.buildCity)}
+                      <span class="mx-1 text-white/40">–</span>
+                      ${this.renderKey(keybinds.buildHydrogenBomb)}
+                    </td>
+                    <td class="py-3 border-b border-white/5 text-white/70">
+                      ${translateText("help_modal.action_build_units")}
+                    </td>
+                  </tr>
+                  <tr class="hover:bg-white/5 transition-colors">
+                    <td class="py-3 ps-4 border-b border-white/5">
+                      ${this.renderKey(keybinds.boatAttack)}
+                    </td>
+                    <td class="py-3 border-b border-white/5 text-white/70">
+                      ${translateText("help_modal.action_boat_attack")}
+                    </td>
+                  </tr>
+                  <tr class="hover:bg-white/5 transition-colors">
+                    <td class="py-3 ps-4 border-b border-white/5">
+                      ${this.renderKey(keybinds.groundAttack)}
+                    </td>
+                    <td class="py-3 border-b border-white/5 text-white/70">
+                      ${translateText("help_modal.action_ground_attack")}
+                    </td>
+                  </tr>
+                  <tr class="hover:bg-white/5 transition-colors">
+                    <td class="py-3 ps-4 border-b border-white/5">
+                      ${this.renderKey(keybinds.retaliateAttack)}
+                    </td>
+                    <td class="py-3 border-b border-white/5 text-white/70">
+                      ${translateText("help_modal.action_retaliate")}
+                    </td>
+                  </tr>
+                  <tr class="hover:bg-white/5 transition-colors">
+                    <td class="py-3 ps-4 border-b border-white/5">
+                      ${this.renderKey(keybinds.requestAlliance)}
+                    </td>
+                    <td class="py-3 border-b border-white/5 text-white/70">
+                      ${translateText("help_modal.action_request_alliance")}
+                    </td>
+                  </tr>
+                  <tr class="hover:bg-white/5 transition-colors">
+                    <td class="py-3 ps-4 border-b border-white/5">
+                      ${this.renderKey(keybinds.breakAlliance)}
+                    </td>
+                    <td class="py-3 border-b border-white/5 text-white/70">
+                      ${translateText("help_modal.action_break_alliance")}
                     </td>
                   </tr>
                 </tbody>

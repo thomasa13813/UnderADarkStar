@@ -834,26 +834,6 @@ export class UserSettingModal extends BaseModal {
       ></setting-keybind>
 
       <setting-keybind
-        action="buildMissileSilo"
-        label=${translateText("user_setting.build_missile_silo")}
-        description=${translateText("user_setting.build_missile_silo_desc")}
-        defaultKey=${this.defaultKeybinds.buildMissileSilo}
-        .value=${this.getKeyValue("buildMissileSilo")}
-        .display=${this.getKeyChar("buildMissileSilo")}
-        @change=${this.handleKeybindChange}
-      ></setting-keybind>
-
-      <setting-keybind
-        action="buildSamLauncher"
-        label=${translateText("user_setting.build_sam_launcher")}
-        description=${translateText("user_setting.build_sam_launcher_desc")}
-        defaultKey=${this.defaultKeybinds.buildSamLauncher}
-        .value=${this.getKeyValue("buildSamLauncher")}
-        .display=${this.getKeyChar("buildSamLauncher")}
-        @change=${this.handleKeybindChange}
-      ></setting-keybind>
-
-      <setting-keybind
         action="buildStargate"
         label=${translateText("user_setting.build_stargate")}
         description=${translateText("user_setting.build_stargate_desc")}
@@ -900,16 +880,6 @@ export class UserSettingModal extends BaseModal {
         defaultKey=${this.defaultKeybinds.buildHydrogenBomb}
         .value=${this.getKeyValue("buildHydrogenBomb")}
         .display=${this.getKeyChar("buildHydrogenBomb")}
-        @change=${this.handleKeybindChange}
-      ></setting-keybind>
-
-      <setting-keybind
-        action="buildMIRV"
-        label=${translateText("user_setting.build_mirv")}
-        description=${translateText("user_setting.build_mirv_desc")}
-        defaultKey=${this.defaultKeybinds.buildMIRV}
-        .value=${this.getKeyValue("buildMIRV")}
-        .display=${this.getKeyChar("buildMIRV")}
         @change=${this.handleKeybindChange}
       ></setting-keybind>
 

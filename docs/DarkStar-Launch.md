@@ -266,3 +266,10 @@ _Done when_ the checklist is clean. This build is the release candidate.
   card carries a one-line description (every game has a Dark Star; the AI holds the throne unless
   you take the seat). The shared toggle card gained an optional `descriptionKey`. The Help and
   tutorial item is ticked.
+- **2026-10-04** — Hotkeys brought in line with the Dark Star (Tom chose the compact form). The
+  help page's Hotkeys table gains one row for the hotbar's build keys (1 to 9, shown as a range)
+  and rows for the fleet, ground attack, retaliate, request-alliance and break-alliance keys,
+  none of which it listed; combos such as Shift+R render as separate badges. The settings
+  screen's keybind list loses its Missile Silo, SAM Launcher and MIRV rows, and the Stargate and
+  Shield Array rows no longer talk about sharing a key. The default bindings themselves are
+  unchanged.
