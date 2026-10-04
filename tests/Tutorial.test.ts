@@ -29,16 +29,22 @@ function ctx(overrides: Partial<TutorialContext> = {}): TutorialContext {
     factories: 0,
     warshipDisabled: false,
     warships: 0,
-    siloDisabled: false,
-    silos: 0,
+    stargateDisabled: false,
+    stargates: 0,
+    gateReady: false,
+    gateShotFired: false,
     atomDisabled: false,
-    siloReady: false,
-    atomLaunched: false,
-    hydrogenDisabled: false,
-    mirvDisabled: false,
-    samDisabled: false,
+    shieldArrayDisabled: false,
+    // Off by default so the flow tests read as plain OpenFront; the Dark
+    // Star tests opt in with throne().
+    hegemonExists: false,
     ...overrides,
   };
+}
+
+/** A context from a game with a Hegemon on the Dark Star. */
+function throne(overrides: Partial<TutorialContext> = {}): TutorialContext {
+  return ctx({ hegemonExists: true, ...overrides });
 }
 
 // Feed the same context until the completed step has lingered and advanced.
@@ -150,13 +156,12 @@ describe("TutorialProgress", () => {
       defensePostDisabled: true,
       factoryDisabled: true,
       warshipDisabled: true,
-      siloDisabled: true,
+      stargateDisabled: true,
       atomDisabled: true,
-      hydrogenDisabled: true,
-      mirvDisabled: true,
-      samDisabled: true,
+      shieldArrayDisabled: true,
     });
-    expect(p.total(c)).toBe(TUTORIAL_STEPS.length - 17);
+    // Everything but spawn, the spawn ring, troops, troop rate and the ratio.
+    expect(p.total(c)).toBe(5);
 
     settle(p, c);
     settle(p, c);
@@ -218,60 +223,116 @@ describe("TutorialProgress", () => {
     expect(p.stepDone()).toBe(true);
   });
 
-  it("runs city, factory, port, warship, silo, pausing on each info step", () => {
+  it("runs factory, port, warship, stargate, pausing on each info step", () => {
     const first = TUTORIAL_STEPS.findIndex((s) => s.id === "buy_factory");
     const p = new TutorialProgress(TUTORIAL_STEPS.slice(first));
-    p.update(ctx());
+    p.update(throne());
     expect(p.current()?.id).toBe("buy_factory");
 
-    settle(p, ctx({ factories: 1 }));
+    settle(p, throne({ factories: 1 }));
     expect(p.current()?.id).toBe("factory_info");
-    for (let i = 0; i < 50; i++) p.update(ctx({ factories: 1 }));
+    for (let i = 0; i < 50; i++) p.update(throne({ factories: 1 }));
     expect(p.current()?.id).toBe("factory_info");
     p.acknowledge();
-    settle(p, ctx({ factories: 1 }));
+    settle(p, throne({ factories: 1 }));
 
     expect(p.current()?.id).toBe("send_boat");
-    settle(p, ctx({ factories: 1, boatSent: true }));
+    settle(p, throne({ factories: 1, boatSent: true }));
 
     expect(p.current()?.id).toBe("buy_port");
     expect(p.current()?.highlight).toBe("port");
-    settle(p, ctx({ factories: 1, ports: 1 }));
+    settle(p, throne({ factories: 1, ports: 1 }));
     expect(p.current()?.id).toBe("port_info");
     expect(p.current()?.bullets).toHaveLength(2);
     p.acknowledge();
-    settle(p, ctx({ factories: 1, ports: 1 }));
+    settle(p, throne({ factories: 1, ports: 1 }));
 
     expect(p.current()?.id).toBe("buy_defense_post");
     expect(p.current()?.highlight).toBe("defense_post");
-    settle(p, ctx({ factories: 1, ports: 1, defensePosts: 1 }));
+    settle(p, throne({ factories: 1, ports: 1, defensePosts: 1 }));
 
     expect(p.current()?.id).toBe("buy_warship");
     expect(p.current()?.highlight).toBe("warship");
-    settle(p, ctx({ factories: 1, ports: 1, warships: 1 }));
+    settle(p, throne({ factories: 1, ports: 1, warships: 1 }));
 
-    expect(p.current()?.id).toBe("buy_silo");
-    expect(p.current()?.highlight).toBe("silo");
-    p.update(ctx({ factories: 1, ports: 1, warships: 1 }));
+    expect(p.current()?.id).toBe("buy_stargate");
+    expect(p.current()?.highlight).toBe("stargate");
+    p.update(throne({ factories: 1, ports: 1, warships: 1 }));
     expect(p.stepDone()).toBe(false);
-    settle(p, ctx({ factories: 1, ports: 1, warships: 1, silos: 1 }));
+    settle(p, throne({ factories: 1, ports: 1, warships: 1, stargates: 1 }));
 
-    expect(p.current()?.id).toBe("launch_atom");
-    expect(p.current()?.highlight).toBe("atom");
-    settle(p, ctx({ silos: 1, atomLaunched: true }));
+    // The shot step waits for a shot, not for the gate to be ready.
+    expect(p.current()?.id).toBe("fire_gate");
+    expect(p.current()?.highlight).toBe("stargate");
+    for (let i = 0; i < 50; i++)
+      p.update(throne({ stargates: 1, gateReady: true }));
+    expect(p.current()?.id).toBe("fire_gate");
+    settle(p, throne({ stargates: 1, gateShotFired: true }));
 
-    for (const [id, highlight] of [
-      ["atom_info", "atom"],
-      ["hydrogen_info", "hydrogen"],
-      ["mirv_info", "mirv"],
-      ["sam_info", "sam"],
-    ]) {
+    for (const [id, highlight, bullets] of [
+      ["warhead_info", "atom", 2],
+      ["shield_info", "shield_array", undefined],
+      ["strike_info", undefined, 2],
+      ["invade_info", "hegemon", 2],
+    ] as const) {
       expect(p.current()?.id).toBe(id);
       expect(p.current()?.highlight).toBe(highlight);
+      expect(p.current()?.bullets?.length).toBe(bullets);
       p.acknowledge();
-      settle(p, ctx({ silos: 1 }));
+      settle(p, throne({ stargates: 1 }));
     }
     expect(p.finished()).toBe(true);
+  });
+
+  it("tells the player about the Dark Star once they are on the map", () => {
+    const p = new TutorialProgress();
+    p.update(throne());
+    expect(p.current()?.id).toBe("spawn");
+    settle(p, throne({ hasSpawned: true }));
+    expect(p.current()?.id).toBe("dark_star");
+    expect(p.current()?.highlight).toBe("hegemon");
+    // Informational: stays until acknowledged.
+    for (let i = 0; i < 50; i++) p.update(throne({ hasSpawned: true }));
+    expect(p.current()?.id).toBe("dark_star");
+    p.acknowledge();
+    settle(p, throne({ hasSpawned: true }));
+    expect(p.current()?.id).toBe("attack_wilderness");
+  });
+
+  it("drops every Dark Star step in a game without a throne", () => {
+    const noThrone = ctx({ hasSpawned: true });
+    const p = new TutorialProgress();
+    settle(p, noThrone);
+    expect(p.current()?.id).toBe("attack_wilderness");
+    const ids = TUTORIAL_STEPS.filter((s) => s.applies?.(noThrone) ?? true).map(
+      (s) => s.id,
+    );
+    expect(ids).not.toContain("dark_star");
+    expect(ids).not.toContain("strike_info");
+    expect(ids).not.toContain("invade_info");
+    // The gate and shield steps are about units, not the throne.
+    expect(ids).toContain("buy_stargate");
+    expect(ids).toContain("shield_info");
+  });
+
+  it("skips the gate, warhead and shield steps when those units are off", () => {
+    const off = throne({
+      stargateDisabled: true,
+      shieldArrayDisabled: true,
+      hasSpawned: true,
+    });
+    const ids = TUTORIAL_STEPS.filter((s) => s.applies?.(off) ?? true).map(
+      (s) => s.id,
+    );
+    for (const id of [
+      "buy_stargate",
+      "fire_gate",
+      "warhead_info",
+      "shield_info",
+    ]) {
+      expect(ids).not.toContain(id);
+    }
+    expect(ids).toContain("strike_info");
   });
 });
 
@@ -312,12 +373,12 @@ describe("TutorialProgress step counter", () => {
     const p = new TutorialProgress();
     // Pre-spawn ticks (nothing spawned yet) must not freeze the counter.
     p.update(ctx({ botsExist: false, nationsExist: false }));
-    const before = ctx({ hasSpawned: true });
+    const before = throne({ hasSpawned: true });
     p.update(before);
     const total = p.total(before);
     expect(total).toBe(TUTORIAL_STEPS.length);
 
-    const after = ctx({
+    const after = throne({
       hasSpawned: true,
       botsExist: false,
       nationsExist: false,

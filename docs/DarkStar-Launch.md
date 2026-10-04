@@ -68,7 +68,7 @@ Sizes as in the roadmap: S is a session, M a few, L a week or more of sessions.
       `info.json` out, plus a one-page guide. From here Tom draws maps while engineering continues.
       Built 2026-10-01: `npm run map`, guide in `docs/MapMaking.md`.
 
-_Done when_ Tom has turned one drawing into a playable map without help.
+_Done when_ Tom has turned one drawing into a playable map without help. **Passed 2026-10-04** (Tom).
 
 ### Stage 2 — Public thrones on the dev server (T1 → T2 → T3; M each)
 
@@ -84,8 +84,9 @@ _Done when_ Tom has turned one drawing into a playable map without help.
       invented ones later).
 
 _Done when_ three public rounds in a row on one throne pass the seat correctly between two
-browsers under `npm run dev`, including a winner who walks away. If Host or Join is refused with
-"backend unreachable" during this testing, do B1 first: it removes the cause.
+browsers under `npm run dev`, including a winner who walks away. **Passed 2026-10-04:** Tom
+accepted public thrones after his browser pass. (B1 now removes the "backend unreachable" refusal
+that this testing could hit.)
 
 ### Stage 3 — Accounts core and the first deployment
 
@@ -129,8 +130,10 @@ _Done when_ a reign won on the live server appears on the live board.
 
 ### Stage 5 — Content lands (Track B merges)
 
-- [ ] **Maps**: at least six new ones; unwanted inherited maps removed; each one run once in
-      `HegemonSim` (nation count, nations reach the moat) and played once by Tom.
+- [x] **Maps**: at least six new ones, each run once in `HegemonSim` (nation count, nations
+      reach the moat) and played once by Tom. Accepted by Tom 2026-10-04 with the map kit (Stage
+      1). Still open: which inherited maps to remove (Stage 0 / §6.3); one config edit when he
+      decides.
 - [ ] **Sound** (P4): the menu theme and gameplay music replacing the silent placeholders, the new
       cues wired, the four orphan files resolved, every sound credited.
 - [ ] **Brand** (P1 step E): logo, wordmark, font, favicon and the home-screen title.
@@ -144,9 +147,9 @@ _Done when_ nothing a player sees or hears is a placeholder.
 - [ ] **Legal pages**: Terms of Service and Privacy Policy, linked from the footer, with a contact
       address. Then publish the Google sign-in (it needs the privacy policy on the live domain)
       and add the Google provider to production.
-- [ ] **Help and tutorial** rewritten for the Hegemon rules; the solo screen explains the throne.
-      The help page's rulebook is built (2026-10-04, below); the in-game tutorial and the solo
-      screen remain.
+- [x] **Help and tutorial** rewritten for the Hegemon rules; the solo screen explains the throne.
+      Built 2026-10-04 in three parts (below): the help page's rulebook, the in-game tutorial,
+      and a one-line note under the solo screen's "Play as the Hegemon" toggle.
 - [ ] **Licence items**: the Source link points at the deployed commit; `CREDITS.md` complete; the
       attribution line present.
 - [ ] **Production keys**: real Turnstile keys; secrets rotated from anything used in testing.
@@ -245,3 +248,21 @@ _Done when_ the checklist is clean. This build is the release candidate.
   written in. The build table lost the silo, SAM and MIRV rows and gained the stargate;
   troubleshooting moved to the foot of the page. Still to do: the in-game tutorial (its SAM and
   spawn steps are OpenFront's) and the solo screen's throne note.
+- **2026-10-04** — Stage 6's help rewrite, part two: the in-game tutorial adapted to the Dark
+  Star. New steps: the Dark Star explainer right after spawning (the Hegemon is the marked
+  player, so Go to flies there), build a Stargate, fire a gate shot (with a loading text while
+  the gate builds or reloads), warheads and the punitive flag, the Shield Array, the throne's
+  strike and how to fight its bubble, and how the round is won. Gone: the silo, atom launch,
+  atom/hydrogen/MIRV/SAM steps. The Dark Star steps drop out in a game without a throne; the
+  gate and shield steps drop out when those units are off. A seated Hegemon gets no tutorial
+  (its spawn and build prompts never fitted the throne); a throne track is a possible follow-up.
+  Numbers in the step texts (flag seconds, stall seconds, shield radius) come from the core
+  defaults. `tests/Tutorial.test.ts` reworked (15 tests).
+- **2026-10-04** — Tom marked Stage 1 (the map kit), Stage 2 (public thrones) and Stage 5's maps
+  item as passing. The engineering track from here is Stage 3 onward: B2, B3, the first
+  deployment, then B4–B6 and the Stage 6 checklist. Open on the content side: sound (P4), the
+  wordmark and font, and the inherited-map cull.
+- **2026-10-04** — Stage 6's help rewrite, part three: the solo screen's "Play as the Hegemon"
+  card carries a one-line description (every game has a Dark Star; the AI holds the throne unless
+  you take the seat). The shared toggle card gained an optional `descriptionKey`. The Help and
+  tutorial item is ticked.

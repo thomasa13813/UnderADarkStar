@@ -13,13 +13,12 @@ export type TutorialHighlight =
   | "defense_post"
   | "factory"
   | "warship"
-  | "silo"
+  | "stargate"
+  | "shield_array"
   | "atom"
-  | "hydrogen"
-  | "mirv"
-  | "sam"
   | "tribes"
-  | "nation";
+  | "nation"
+  | "hegemon";
 
 /** Emitted whenever the highlighted HUD element changes (null clears it). */
 export class TutorialHighlightEvent implements GameEvent {
@@ -56,16 +55,16 @@ export interface TutorialContext {
   factories: number;
   warshipDisabled: boolean;
   warships: number;
-  siloDisabled: boolean;
-  silos: number;
+  stargateDisabled: boolean;
+  stargates: number;
+  /** A completed stargate that isn't reloading exists. */
+  gateReady: boolean;
+  /** A gate shot of ours is (or was seen) in flight. */
+  gateShotFired: boolean;
   atomDisabled: boolean;
-  /** A completed missile silo that isn't reloading exists. */
-  siloReady: boolean;
-  /** An atom bomb of ours is (or was seen) in flight. */
-  atomLaunched: boolean;
-  hydrogenDisabled: boolean;
-  mirvDisabled: boolean;
-  samDisabled: boolean;
+  shieldArrayDisabled: boolean;
+  /** A Hegemon holds the Dark Star in this game (the throne is on). */
+  hegemonExists: boolean;
 }
 
 export interface TutorialStep {
@@ -83,8 +82,7 @@ export interface TutorialStep {
     | "buildDefensePost"
     | "buildFactory"
     | "buildWarship"
-    | "buildMissileSilo"
-    | "buildAtomBomb";
+    | "buildStargate";
   /**
    * Render these `tutorial.step.*` keys as a bullet list instead of the
    * step's own single text.
@@ -101,6 +99,14 @@ export const TUTORIAL_STEPS: readonly TutorialStep[] = [
   // Waits out the multiplayer spawn timer too: the next step asks the
   // player to expand, which is impossible until the game actually starts.
   { id: "spawn", isDone: (c) => c.hasSpawned && !c.inSpawnPhase },
+  // The point of the game, told once the player is on the map; Go to flies
+  // the camera to the Dark Star (the Hegemon is the marked player).
+  {
+    id: "dark_star",
+    highlight: "hegemon",
+    applies: (c) => c.hegemonExists,
+    manual: true,
+  },
   // Keeps the spawn ring on the player's territory so they can find it.
   // Any attack counts so a player who hits a bot first doesn't get stuck.
   {
@@ -196,47 +202,51 @@ export const TUTORIAL_STEPS: readonly TutorialStep[] = [
     applies: (c) => !c.warshipDisabled && !c.portDisabled,
     isDone: (c) => c.warships > 0,
   },
+  // The gate replaces the silo: a troop launcher first, a warhead launcher
+  // second (C4).
   {
-    id: "buy_silo",
-    highlight: "silo",
-    unit: UnitType.MissileSilo,
-    hotkey: "buildMissileSilo",
-    applies: (c) => !c.siloDisabled,
-    isDone: (c) => c.silos > 0,
+    id: "buy_stargate",
+    highlight: "stargate",
+    unit: UnitType.Stargate,
+    hotkey: "buildStargate",
+    applies: (c) => !c.stargateDisabled,
+    isDone: (c) => c.stargates > 0,
   },
-  // Waits (via the earn-gold text) until the bomb is affordable, then asks
-  // for a launch; done as soon as one of ours is in flight.
+  // Waits (via the gate-loading text) until a gate is ready, then asks for
+  // a shot; done as soon as one of ours is in flight.
   {
-    id: "launch_atom",
+    id: "fire_gate",
+    highlight: "stargate",
+    applies: (c) => !c.stargateDisabled,
+    isDone: (c) => c.gateShotFired,
+  },
+  // Warheads need a gate (S6), so the explainer goes with it.
+  {
+    id: "warhead_info",
     highlight: "atom",
-    unit: UnitType.AtomBomb,
-    hotkey: "buildAtomBomb",
-    applies: (c) => !c.siloDisabled && !c.atomDisabled,
-    isDone: (c) => c.atomLaunched,
-  },
-  // One stop per weapon, each highlighting its spot in the unit hotbar.
-  {
-    id: "atom_info",
-    highlight: "atom",
-    applies: (c) => !c.siloDisabled && !c.atomDisabled,
+    bullets: ["warhead_info_launch", "warhead_info_punish"],
+    applies: (c) => !c.stargateDisabled && !c.atomDisabled,
     manual: true,
   },
   {
-    id: "hydrogen_info",
-    highlight: "hydrogen",
-    applies: (c) => !c.siloDisabled && !c.hydrogenDisabled,
+    id: "shield_info",
+    highlight: "shield_array",
+    applies: (c) => !c.shieldArrayDisabled,
     manual: true,
   },
+  // What the throne can do to the player, and how to answer it (H8, H17).
   {
-    id: "mirv_info",
-    highlight: "mirv",
-    applies: (c) => !c.siloDisabled && !c.mirvDisabled,
+    id: "strike_info",
+    bullets: ["strike_info", "strike_info_counter"],
+    applies: (c) => c.hegemonExists,
     manual: true,
   },
+  // How the round is won (R1-R3, H6, H13).
   {
-    id: "sam_info",
-    highlight: "sam",
-    applies: (c) => !c.samDisabled,
+    id: "invade_info",
+    highlight: "hegemon",
+    bullets: ["invade_info_slot", "invade_info_win"],
+    applies: (c) => c.hegemonExists,
     manual: true,
   },
 ];

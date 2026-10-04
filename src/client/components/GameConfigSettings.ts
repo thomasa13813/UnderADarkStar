@@ -68,18 +68,26 @@ function renderTextCardButton(
   active: boolean,
   onClick: () => void,
   cardExtraClass: string,
+  description?: string,
 ): TemplateResult {
   return html`
     <button
       class="${cardClass(
         active,
         cardExtraClass,
-      )} flex items-center justify-center"
+      )} flex flex-col items-center justify-center gap-1"
       @click=${onClick}
     >
       <span class="${CARD_LABEL_CLASS} ${stateTextClass(active)}">
         ${label}
       </span>
+      ${description
+        ? html`<span
+            class="text-xs font-normal normal-case tracking-normal text-white/60"
+          >
+            ${description}
+          </span>`
+        : nothing}
     </button>
   `;
 }
@@ -188,6 +196,8 @@ export interface ToggleOptionConfig {
   labelKey: string;
   checked: boolean;
   hidden?: boolean;
+  /** A one-line explanation shown under the label. */
+  descriptionKey?: string;
   // When set, this toggle's card expands to a pace dropdown while it is checked.
   doomsdayClockSpeed?: DoomsdayClockSpeed;
 }
@@ -336,6 +346,7 @@ export class GameConfigSettings extends LitElement {
       toggle.checked,
       () => this.handleOptionToggle(toggle),
       "p-4 text-center",
+      toggle.descriptionKey && translateText(toggle.descriptionKey),
     );
   }
 

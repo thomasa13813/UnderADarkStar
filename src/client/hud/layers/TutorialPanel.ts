@@ -1,6 +1,10 @@
 import { LitElement, html, nothing } from "lit";
 import { customElement, state } from "lit/decorators.js";
 import { EventBus } from "../../../core/EventBus";
+import {
+  HEGEMON_DEFAULTS,
+  SHIELD_ARRAY_DEFAULTS,
+} from "../../../core/configuration/Config";
 import { PlayerType, Relation, UnitType } from "../../../core/game/Game";
 import { UserSettings } from "../../../core/game/UserSettings";
 import { Controller } from "../../Controller";
@@ -28,8 +32,7 @@ const COST_POLL_TYPES = [
   UnitType.Port,
   UnitType.DefensePost,
   UnitType.Warship,
-  UnitType.MissileSilo,
-  UnitType.AtomBomb,
+  UnitType.Stargate,
 ] as const;
 
 /** `unit_type.*` name key per build-step unit, for the earn-gold text. */
@@ -39,8 +42,7 @@ const UNIT_NAME_KEYS: Partial<Record<UnitType, string>> = {
   [UnitType.Port]: "port",
   [UnitType.DefensePost]: "defense_post",
   [UnitType.Warship]: "warship",
-  [UnitType.MissileSilo]: "missile_silo",
-  [UnitType.AtomBomb]: "atom_bomb",
+  [UnitType.Stargate]: "stargate",
 };
 /** Ticks the "you're ready" message stays up before the panel closes. */
 const COMPLETE_LINGER_TICKS = 50;
@@ -69,8 +71,8 @@ const TOUCH_TEXT_STEPS = new Set([
   "buy_port",
   "buy_defense_post",
   "buy_warship",
-  "buy_silo",
-  "launch_atom",
+  "buy_stargate",
+  "fire_gate",
 ]);
 
 /** Defaults shown when the player hasn't rebound the action (see UnitDisplay). */
@@ -80,8 +82,7 @@ const HOTKEY_FALLBACKS = {
   buildPort: "3",
   buildDefensePost: "4",
   buildWarship: "7",
-  buildMissileSilo: "5",
-  buildAtomBomb: "8",
+  buildStargate: "6",
 } as const;
 
 @customElement("tutorial-panel")
@@ -100,8 +101,8 @@ export class TutorialPanel extends LitElement implements Controller {
   private costs = new Map<UnitType, bigint>();
   private keybinds: Record<string, { key?: string }> | null = null;
   private mapMarksActive = false;
-  /** Latched: an atom bomb of ours was seen in flight at least once. */
-  private atomLaunchSeen = false;
+  /** Latched: a gate shot of ours was seen in flight at least once. */
+  private gateShotSeen = false;
   /** Latched: a transport ship of ours was seen afloat at least once. */
   private boatSeen = false;
   /** Attack ratio as of the previous tick, to spot the slider moving. */
@@ -139,6 +140,7 @@ export class TutorialPanel extends LitElement implements Controller {
     if (
       this.game.config().isReplay() ||
       player === null ||
+      player.isHegemon() ||
       (player.hasSpawned() && !player.isAlive())
     ) {
       this.setActive(false);
@@ -182,11 +184,18 @@ export class TutorialPanel extends LitElement implements Controller {
    * the next candidates take their place.
    */
   private syncMapMarkers(target: TutorialHighlight | null) {
-    if (target !== "tribes" && target !== "nation") {
+    if (target !== "tribes" && target !== "nation" && target !== "hegemon") {
       if (this.mapMarksActive) {
         this.mapMarksActive = false;
         this.game.setMarkedPlayers(null);
       }
+      return;
+    }
+    if (target === "hegemon") {
+      const hegemon = this.game.hegemon();
+      if (hegemon === null) return;
+      this.game.setMarkedPlayers(new Set([hegemon.smallID()]));
+      this.mapMarksActive = true;
       return;
     }
     const player = this.game.myPlayer();
@@ -360,22 +369,22 @@ export class TutorialPanel extends LitElement implements Controller {
       factories: player.units(UnitType.Factory).length,
       warshipDisabled: this.game.config().isUnitDisabled(UnitType.Warship),
       warships: player.units(UnitType.Warship).length,
-      siloDisabled: this.game.config().isUnitDisabled(UnitType.MissileSilo),
-      silos: player.units(UnitType.MissileSilo).length,
-      atomDisabled: this.game.config().isUnitDisabled(UnitType.AtomBomb),
-      // Mirrors PlayerImpl.nukeSpawn's ready-silo filter.
-      siloReady: player
-        .units(UnitType.MissileSilo)
+      stargateDisabled: this.game.config().isUnitDisabled(UnitType.Stargate),
+      stargates: player.units(UnitType.Stargate).length,
+      // A gate holds one shot: built, and not reloading.
+      gateReady: player
+        .units(UnitType.Stargate)
         .some(
           (s) => s.isActive() && !s.isInCooldown() && !s.isUnderConstruction(),
         ),
-      atomLaunched: (this.atomLaunchSeen ||=
-        player.units(UnitType.AtomBomb).length > 0),
-      hydrogenDisabled: this.game
+      // A gate shot is a Projectile of ours (the throne's strikes are its).
+      gateShotFired: (this.gateShotSeen ||=
+        player.units(UnitType.Projectile).length > 0),
+      atomDisabled: this.game.config().isUnitDisabled(UnitType.AtomBomb),
+      shieldArrayDisabled: this.game
         .config()
-        .isUnitDisabled(UnitType.HydrogenBomb),
-      mirvDisabled: this.game.config().isUnitDisabled(UnitType.MIRV),
-      samDisabled: this.game.config().isUnitDisabled(UnitType.SAMLauncher),
+        .isUnitDisabled(UnitType.ShieldArray),
+      hegemonExists: this.game.hegemon() !== null,
     };
   }
 
@@ -520,7 +529,10 @@ export class TutorialPanel extends LitElement implements Controller {
                 // then keep their punctuation on the correct end.
                 (b) =>
                   html`<li dir="auto">
-                    ${translateText(`tutorial.step.${b}`)}
+                    ${translateText(
+                      `tutorial.step.${b}`,
+                      this.stepParams(step),
+                    )}
                   </li>`,
               )}
             </ul>`
@@ -553,10 +565,10 @@ export class TutorialPanel extends LitElement implements Controller {
         cost: renderNumber(cost),
       });
     }
-    // The launch step must not claim the silo is armed while it's still
-    // under construction or reloading.
-    if (!done && step.id === "launch_atom" && this.ctx?.siloReady === false) {
-      return translateText("tutorial.step.silo_loading");
+    // The shot step must not claim the gate is ready while it's still under
+    // construction or reloading.
+    if (!done && step.id === "fire_gate" && this.ctx?.gateReady === false) {
+      return translateText("tutorial.step.gate_loading");
     }
     const id =
       !done && step.id === "capture_tribes" && this.attackNations
@@ -564,9 +576,17 @@ export class TutorialPanel extends LitElement implements Controller {
         : step.id;
     const block =
       Platform.isTouch && TOUCH_TEXT_STEPS.has(id) ? "step_touch" : "step";
-    return translateText(`tutorial.${block}.${id}`, {
+    return translateText(`tutorial.${block}.${id}`, this.stepParams(step));
+  }
+
+  /** Every placeholder any step text may use; unused ones are ignored. */
+  private stepParams(step: TutorialStep): Record<string, string | number> {
+    return {
       cost: renderNumber(this.costs.get(UnitType.City) ?? 0n),
       key: this.hotkeyFor(step),
-    });
+      flag: HEGEMON_DEFAULTS.punitiveFlagSeconds,
+      stall: HEGEMON_DEFAULTS.invasionStallSeconds,
+      shield: SHIELD_ARRAY_DEFAULTS.radius,
+    };
   }
 }

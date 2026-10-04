@@ -501,6 +501,7 @@ export class SinglePlayerModal extends BaseModal {
                   // choice is whether you sit on it.
                   {
                     labelKey: "game_settings.play_as_hegemon",
+                    descriptionKey: "game_settings.play_as_hegemon_desc",
                     checked: this.playAsHegemon,
                     hidden: !this.hegemon || this.gameMode !== GameMode.FFA,
                   },
