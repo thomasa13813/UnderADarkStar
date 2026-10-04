@@ -828,6 +828,81 @@ export function giftMenuElement(params: MenuElementParams): MenuElement {
   };
 }
 
+// Reinforce the throne (H9): a challenger's ally slot when the target is the
+// Hegemon, who allies with nobody. Sends troops sized by the attack ratio, as
+// the team-mode donation does; the sim clamps to the room on the throne and,
+// while someone holds the Dark Star, throws them into the counter-attack.
+export function reinforceThroneElement(params: MenuElementParams): MenuElement {
+  const throne = params.selected;
+  const room =
+    throne === null
+      ? 0
+      : Math.max(0, params.game.config().maxTroops(throne) - throne.troops());
+  // Shown as sized by the slider; what is sent stops at the room left.
+  const offered = Math.floor(
+    (params.uiState?.attackRatio ?? 1) * params.myPlayer.troops(),
+  );
+  const troops = Math.min(room, offered);
+  const canDonate = params.playerActions.interaction?.canDonateTroops === true;
+  const invader =
+    params.game.playerViews().find((p) => p.domainTilesHeld() > 0) ?? null;
+  const tooltipItems: TooltipItem[] = [
+    {
+      text: translateText("dark_star.reinforce_tooltip", {
+        troops: renderTroops(offered),
+      }),
+      className: "text-white font-bold",
+    },
+  ];
+  if (room === 0) {
+    tooltipItems.push({
+      text: translateText("dark_star.reinforce_full"),
+      className: "text-red-400",
+    });
+  } else {
+    tooltipItems.push({
+      text: translateText("dark_star.reinforce_room", {
+        troops: renderTroops(room),
+      }),
+      className: "text-slate-300",
+    });
+    if (!canDonate) {
+      tooltipItems.push({
+        text: translateText("dark_star.reinforce_wait"),
+        className: "text-yellow-300",
+      });
+    }
+  }
+  if (invader !== null) {
+    tooltipItems.push({
+      text: translateText("dark_star.reinforce_counterattack", {
+        name: invader.displayName(),
+      }),
+      className: "text-green-400",
+    });
+  } else {
+    tooltipItems.push({
+      text: translateText("dark_star.reinforce_description"),
+      className: "description",
+    });
+  }
+  return {
+    id: Slot.Ally,
+    name: "reinforce",
+    icon: donateTroopIcon,
+    color: COLORS.ally,
+    tooltipItems,
+    disabled: (p: MenuElementParams) =>
+      p.game.inSpawnPhase() || !canDonate || troops < 1,
+    action: (p: MenuElementParams) => {
+      if (throne !== null && troops >= 1) {
+        p.playerActionHandler.handleDonateTroops(throne, troops);
+      }
+      p.closeMenu();
+    },
+  };
+}
+
 export const boatMenuElement: MenuElement = {
   id: Slot.Boat,
   name: "boat",
@@ -1066,12 +1141,15 @@ export const rootMenuElement: MenuElement = {
               : isAllied && !isDisconnected
                 ? allyBreakElement
                 : boatMenuElement,
-            // The Hegemon allies with no one: its ally slot is the gift (H18).
+            // The Hegemon allies with no one: its ally slot is the gift (H18),
+            // and a challenger's ally slot on the throne is the reinforcement (H9).
             params.playerActions.giftHost !== undefined
               ? giftMenuElement(params)
-              : inExtensionWindow
-                ? allyExtendElement
-                : allyRequestElement,
+              : params.selected?.isHegemon() && !params.myPlayer.isHegemon()
+                ? reinforceThroneElement(params)
+                : inExtensionWindow
+                  ? allyExtendElement
+                  : allyRequestElement,
             // A flagged silo (H19): the throne's attack slot is Punish.
             params.playerActions.punitiveStrike !== undefined &&
             params.myPlayer.isHegemon()

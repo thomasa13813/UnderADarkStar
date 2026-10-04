@@ -137,11 +137,10 @@ describe("The Hegemon donates troops to anyone (H9)", () => {
     expect(hegemon.canDonateTroops(east)).toBe(true);
   });
 
-  test("gold stays closed, and nobody donates to the throne", () => {
+  test("gold stays closed, and challengers among themselves are unchanged", () => {
     expect(hegemon.canDonateGold(east)).toBe(false);
-    expect(east.canDonateTroops(hegemon)).toBe(false);
     expect(east.canDonateGold(hegemon)).toBe(false);
-    // Challengers among themselves are unchanged: allies only, toggle on.
+    // Allies only, toggle on, as the engine has it.
     expect(east.canDonateTroops(west)).toBe(false);
   });
 
@@ -155,6 +154,95 @@ describe("The Hegemon donates troops to anyone (H9)", () => {
     // The engine's donation cooldown applies to the throne as to anyone.
     expect(hegemon.canDonateTroops(east)).toBe(false);
     expect(hegemon.canDonateTroops(west)).toBe(true);
+  });
+});
+
+describe("Anyone reinforces the throne (H9)", () => {
+  beforeEach(() => start());
+
+  // The eastern half of the domain to east, who keeps nothing beyond the moat:
+  // an exhausted invader whose troop cap has collapsed (H5).
+  function strandedInvader() {
+    const g = game.darkStar()!;
+    for (const tile of Array.from(hegemon.tiles())) {
+      if (game.x(tile) > g.cx) east.conquer(tile);
+    }
+    for (const tile of Array.from(east.tiles())) {
+      if (!game.isInDarkStar(tile)) west.conquer(tile);
+    }
+    east.setTroops(0);
+    expect(game.darkStarInvader()).toBe(east);
+  }
+
+  test("any challenger may donate troops to the Hegemon while its pool has room", () => {
+    expect(game.config().donateTroops()).toBe(false);
+    expect(east.isFriendly(hegemon)).toBe(false);
+    // The pool starts full: nothing fits until the throne has spent some.
+    const max = game.config().maxTroops(hegemon);
+    expect(hegemon.troops()).toBe(max);
+    expect(east.canDonateTroops(hegemon)).toBe(false);
+    hegemon.setTroops(max - 1);
+    expect(east.canDonateTroops(hegemon)).toBe(true);
+    expect(west.canDonateTroops(hegemon)).toBe(true);
+  });
+
+  test("with nobody on the Dark Star the troops join the pool, up to the ceiling", () => {
+    const max = game.config().maxTroops(hegemon);
+    hegemon.setTroops(max - 10_000);
+    game.addExecution(new DonateTroopsExecution(east, hegemon.id(), 50_000));
+    executeTicks(game, 3);
+    expect(hegemon.troops()).toBe(max);
+    expect(hegemon.outgoingAttacks()).toHaveLength(0);
+    // Only the room there was is taken from the donor (east started at 200k).
+    expect(east.troops()).toBeLessThan(195_000);
+    expect(east.troops()).toBeGreaterThan(185_000);
+    // The engine's cooldown applies to the throne as to any recipient.
+    hegemon.setTroops(max - 10_000);
+    expect(east.canDonateTroops(hegemon)).toBe(false);
+    expect(west.canDonateTroops(hegemon)).toBe(true);
+  });
+
+  test("while someone holds the Dark Star they are thrown at the invader at once", () => {
+    east.conquer(domainShore(1));
+    expect(game.darkStarInvader()).toBe(east);
+    hegemon.setTroops(100_000);
+    expect(hegemon.outgoingAttacks()).toHaveLength(0);
+
+    game.addExecution(new DonateTroopsExecution(west, hegemon.id(), 50_000));
+    executeTicks(game, 2);
+    const attacks = hegemon.outgoingAttacks();
+    expect(attacks).toHaveLength(1);
+    expect(attacks[0].target()).toBe(east);
+    expect(attacks[0].troops()).toBe(50_000);
+    // The pool itself is untouched: the attack carries the donation only.
+    expect(hegemon.troops()).toBeGreaterThanOrEqual(100_000);
+    expect(hegemon.troops()).toBeLessThan(110_000);
+    expect(west.troops()).toBeLessThan(160_000);
+
+    executeTicks(game, 100);
+    expect(game.darkStarInvader()).toBeNull();
+  });
+
+  test("and so a third player breaks a deadlocked invasion", () => {
+    strandedInvader();
+    const held = east.domainTilesHeld();
+    hegemon.setTroops(0); // the throne emptied by the fight
+    executeTicks(game, 50);
+    // Nobody can move: the invader has no cap to rebuild, the throne no troops.
+    expect(east.domainTilesHeld()).toBe(held);
+    expect(game.darkStarInvader()).toBe(east);
+
+    game.addExecution(new DonateTroopsExecution(west, hegemon.id(), 150_000));
+    executeTicks(game, 2);
+    expect(hegemon.outgoingAttacks()).toHaveLength(1);
+    expect(hegemon.outgoingAttacks()[0].troops()).toBe(150_000);
+
+    executeTicks(game, 600);
+    expect(game.darkStarInvader()).toBeNull();
+    expect(east.domainTilesHeld()).toBe(0);
+    expect(hegemon.numTilesOwned()).toBe(game.darkStar()!.domainTileCount);
+    // The slot is free again for whoever wants it.
+    expect(game.canInvadeDarkStar(west)).toBe(true);
   });
 });
 

@@ -124,8 +124,8 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   lost (the engine's own rule, `troops ÷ current tiles`, would bleed it faster as it shrank).
 - **H6 — One invader at a time.** Only **two players can ever occupy the Dark Star at once: the Hegemon
   and one invader.** Invader status is defined purely by occupancy — the invader is whichever
-  challenger holds any tile inside the domain. Everyone else can take part only indirectly, by donating
-  troops to the invader — or to the Hegemon.
+  challenger holds any tile inside the domain. Everyone else can take part only indirectly, by
+  reinforcing the Hegemon with troops (H9, open since 2026-10-04); donations to the invader stay closed.
 - **H7 — Invasion is the only way to kill the Hegemon.** The domain **cannot be harmed by nukes** — it _can_ be targeted, the nuke simply does nothing to domain
   tiles (decided 2026-09-20: better than making it untargetable) — and the engine's
   non-combat elimination paths (enclosed-cluster capture, the <100-tile mop-up handing tiles to
@@ -150,9 +150,16 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   spent to prop up whoever the balance needs (H15). This relaxes the engine's `isFriendly`
   requirement in `canDonateTroops` for a Hegemon donor only; the existing donation flow (order, HUD
   button, cooldown) is reused. **Shelved:** gold donations from the throne (liked, not a priority) and
-  challengers donating to the Hegemon or to the invader (revisit if a playtest asks). F9 closed.
+  challengers donating to the invader (revisit if a playtest asks). F9 closed.
   [Built 2026-09-25, §6.13] The throne's troop donations also ignore the lobby's donation toggle
-  and may go to the current invader; gold donations and donations to the throne are refused outright.
+  and may go to the current invader; gold donations are refused outright.
+  [Decided 2026-10-04, built the same day, §6.25] **Anyone may donate troops to the Hegemon** while
+  its pool has room — no alliance, the lobby toggle ignored, the cooldown as usual. **While someone
+  holds the Dark Star, every troop donated to the throne goes straight into the counter-attack
+  against them**, stalled or not, human or AI throne. Why: a round can deadlock when an invader takes
+  most of the domain and exhausts the throne but loses its land beyond the moat, so its troop cap
+  collapses (H5) and neither side can move; the other challengers' donations finish the failed
+  invasion and free the slot, and are how rivals compete for the throne by proxy.
 - **H10 — Destroyers of the Dark Star.** [Revised 2026-09-24] The Hegemon may build **destroyers**
   (the engine's warship, S7) **without a port** — it has none (H2). They **spawn in the moat** and are
   purely defensive: they move to intercept fleets bound for the domain and harass the trade of the
@@ -187,9 +194,9 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   itself should stay single is open (F16).
 - **H13 — The Dark Star fights back against a stalled invasion.** An invasion is **stalled** once the
   invader's territory inside the domain has not changed for **5 seconds** (tunable). From that point,
-  **all of the Hegemon's troop income — including troops donated to it — is automatically sent into an
-  attack on the invader** until they are evicted. While the invader is still advancing, the Hegemon
-  defends normally. Consequently nobody can take a sliver of the domain and sit on the slot: a failed
+  **all of the Hegemon's troop income is automatically sent into an attack on the invader** until they
+  are evicted. While the invader is still advancing, the Hegemon defends normally. Troops donated to
+  the throne go into that attack at once whether or not the invasion has stalled (H9, 2026-10-04). Consequently nobody can take a sliver of the domain and sit on the slot: a failed
   invasion is always pushed out, and domain tiles return to the Hegemon by reconquest, not by fiat.
   This is a rule of the role, applied identically to human and AI Hegemons.
 - **H14 — The moat.** The Dark Star is separated from the rest of the map by a ring of "water" (deep
@@ -1864,6 +1871,57 @@ missileShieldAt` and the gate in `nukeSpawn` are gone: a warhead may be aimed an
   the alliance list ignores a sheltered player and not an exposed one; an array under construction
   protects nothing and a finished one shelters from the tick it stands.
 
+### 6.25 As built — reinforcing the throne (2026-10-04)
+
+Tom's call (2026-10-04): the H9 shelf item "challengers donating to the Hegemon" is opened. Any
+player may donate troops to the Hegemon while its pool has room, and while someone holds the Dark
+Star every troop donated goes straight into the counter-attack against them. Why: a round can
+deadlock — an invader takes most of the domain and exhausts the throne, but loses its land beyond
+the moat, so its troop cap collapses (H5) and neither side can move. Donations from the other
+challengers break it, finish the failed invasion and free the slot; they are also how rivals compete
+for the throne by proxy.
+
+- **The rule (`PlayerImpl.canDonateTroops`).** A Hegemon recipient is open to every living player:
+  no alliance needed, the lobby's `donateTroops` toggle ignored (it gates human recipients, and
+  Hegemon rounds run with it off, so a human throne would otherwise be unreachable). Refused while
+  the pool is at its ceiling (`maxTroops`), so the HUD's Troops button vanishes from the throne's
+  panel while it is full; the order clamps to the room left, as the engine always has. The
+  per-recipient cooldown (10 s) applies. Gold to or from the throne stays closed. Nothing changes
+  between challengers (allies only, toggle on).
+- **Routing (`DonateTroopsExecution`).** After the transfer, if the recipient is the Hegemon and
+  `darkStarInvader()` is not null, the order adds an `AttackExecution` from the Hegemon against the
+  invader for exactly the troops that landed. The attack starts — and takes the troops back out of
+  the pool — at the end of the same tick, so H13's stall pin never sees them and nothing is sent
+  twice (verified tick by tick: the pool runs identically with and without the donation, the
+  standing attack gains the donation at the tick the attack starts). The engine merges it into the
+  standing counter-attack. Stalled or not, AI or human throne: donated troops fight at once. With no
+  invader they join the pool. `HegemonExecution` is untouched.
+- **Not done.** The invader may donate to the throne (its troops would be thrown back at it;
+  harmless, not worth a rule). No AI donor: nations only donate to teammates in team games, and the
+  throne is on no team. Donations to the invader stay shelved. An event line when a donation lands
+  in the counter-attack, if the playtest wants it.
+- **The control (same day, Tom's ask: the panel's Troops button was buried).** Right-clicking the
+  Dark Star as a challenger, the radial menu's **ally slot** — useless there, the throne allies
+  with nobody — is **Reinforce the throne** (`reinforceThroneElement`, `RadialMenuElements.ts`):
+  the donate-troops icon in the ally green, sending troops sized by the attack-ratio slider exactly
+  as the team-mode centre button does, clamped to the room on the throne. Its tooltip shows the
+  amount, the room left ("The throne is full" when none), a wait line while `canDonateTroops` is
+  false with room left (cooldown), and either "{invader} is invading: your troops join the
+  counter-attack at once" or that they join the pool. Greyed out in the spawn phase, while the
+  throne is full or on cooldown, or with nothing to send. The player panel's Troops button and the
+  send-troops modal (which already caps at the recipient's room) remain the precise route. The
+  help modal's radial list gained a line. Checked in the browser on Event Horizon
+  (`.claude/skills/run-openfront/reinforce.mjs`): the slot, the icon, the greyed state and the
+  tooltip against a full AI throne.
+- **Tests.** `HegemonToolkit` "Anyone reinforces the throne (H9)" (4): open to any challenger while
+  there is room, refused when full (the pool starts full); without an invader the troops join the
+  pool up to the ceiling and the cooldown applies; with an invader the donation becomes an attack of
+  exactly that size and the pool is untouched, and the invader is evicted; the deadlock — east
+  holding the eastern half of the domain with no land outside and no troops, the throne at zero,
+  nothing moving for 50 ticks, no `HegemonExecution` — is broken by a 150k donation from west inside
+  600 ticks, the domain whole again and the slot free. `HegemonInvasion` H13: a donation to a
+  stalled throne is sent once and the pool is not drained below its pin.
+
 ## 7. Constraints (non-negotiable engineering rules)
 
 - `src/core/` must stay **deterministic** (seeded PRNG, no wall-clock, careful with floats) and
@@ -1920,8 +1978,9 @@ public thrones, the store, release); M5–M9 below are kept as the earlier sketc
 | **M8**    | **Release hygiene.** §8 cleanup (proprietary assets, ads, links); the splash page and main menu rebuilt for DarkStar with attribution (S10); sound effects verified and a legal soundtrack (S8); remove or stub API-dependent features; local game archive.                                                                                                                                                                                                                                                             |                                                                                                                                                                                                                                                                                     |
 | **M9**    | **Public lobbies** with a persistent Hegemon (own persistence + identity); Hegemon high scores (S5, F13).                                                                                                                                                                                                                                                                                                                                                                                                               |                                                                                                                                                                                                                                                                                     |
 
-Considered and set aside, not scheduled: multiple invaders at once (F16), donations to the Hegemon or
-to the invader (H9), gold donations from the throne (H9), hydrogen-bomb removal (closed by S6).
+Considered and set aside, not scheduled: multiple invaders at once (F16), donations to the invader
+(H9; donations _to the Hegemon_ were opened 2026-10-04, §6.25), gold donations from the throne (H9),
+hydrogen-bomb removal (closed by S6).
 
 ## 10. Glossary
 
@@ -2321,3 +2380,10 @@ to the invader (H9), gold donations from the throne (H9), hydrogen-bomb removal 
 - **2026-10-03** — **Public thrones, step T1 built** (`docs/DarkStar-Lobbies.md` §10.1): the
   master runs a fixed pool of named throne lobbies back to back with the AI seated; no gameplay
   rule changed. The seat, the winner's pick and the client's throne views follow in T2 and T3.
+- **2026-10-04** — **Reinforcing the throne (H9, §6.25).** Any player may donate troops to the Hegemon
+  while its pool has room; while someone holds the Dark Star the troops go straight into the
+  counter-attack against them, stalled or not. Opened by Tom to break deadlocked invasions (an
+  exhausted invader with no land beyond the moat, an emptied throne) and to let rivals bid for the
+  throne by proxy. Donations to the invader and gold from the throne stay shelved. Same day, at
+  Tom's ask: a **Reinforce the throne** entry in the radial menu's ally slot when a challenger
+  right-clicks the Dark Star, sized by the attack-ratio slider like the team-mode donation.

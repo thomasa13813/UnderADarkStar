@@ -234,8 +234,8 @@ mode otherwise, the playlist's `hegemon: mode === FFA`). A team throne needs, in
   `playerTeams` count so team assignment ignores it.
 - `WinCheckExecution`'s team win check defers to the Hegemon check: overthrow and timer are the
   only round ends (R1), so the ordinary team-tile win is disabled under a Dark Star.
-- Team donation toggles (gold and troops on by default in team games) already exclude the throne
-  as a recipient except as H9 allows.
+- Team donation toggles (gold and troops on by default in team games) do not touch the throne: H9
+  governs its donations both ways (troops to and from the Hegemon ignore the toggle; gold is closed).
 - Nation and Tribe behaviour toward the Hegemon is team-agnostic already (design doc §3.2 H11: the nation target search passes over the Hegemon).
 
 This is the largest engineering item and ships last (§10, T5). Until then team thrones are not in

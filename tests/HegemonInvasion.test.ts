@@ -1,3 +1,4 @@
+import { DonateTroopsExecution } from "../src/core/execution/DonateTroopExecution";
 import { HegemonExecution } from "../src/core/execution/HegemonExecution";
 import { TransportShipExecution } from "../src/core/execution/TransportShipExecution";
 import {
@@ -181,6 +182,39 @@ describe("The Dark Star fights back (H13)", () => {
     expect(hegemon.outgoingAttacks()[0].troops()).toBeGreaterThan(
       committed + 50_000,
     );
+  });
+
+  test("a donation to a stalled throne is sent once, not pinned and sent again", async () => {
+    await start(PlayerType.Human);
+    const g = game.darkStar()!;
+    for (const tile of Array.from(hegemon.tiles())) {
+      if (game.x(tile) > g.cx) east.conquer(tile);
+    }
+    east.setTroops(5_000_000);
+    executeTicks(game, 70);
+    const committed = hegemon.outgoingAttacks()[0].troops();
+    const pinned = hegemon.troops();
+
+    // The order itself throws the troops at the invader (H9); the attack
+    // takes them back out of the pool the same tick, so H13's surplus
+    // routing never sees them and the pool is not drained below its pin.
+    // (The pool breathes by one second of regeneration around its pin, so the
+    // bound below allows one surplus send; a second send of the donation
+    // would drain it by 100k.)
+    game.addExecution(new DonateTroopsExecution(west, hegemon.id(), 100_000));
+    executeTicks(game, 2);
+    expect(hegemon.outgoingAttacks()).toHaveLength(1);
+    expect(hegemon.outgoingAttacks()[0].troops()).toBeGreaterThanOrEqual(
+      committed + 99_000,
+    );
+    expect(hegemon.outgoingAttacks()[0].troops()).toBeLessThan(
+      committed + 110_000,
+    );
+    expect(hegemon.troops()).toBeGreaterThan(pinned - 5_000);
+    executeTicks(game, 10);
+    expect(hegemon.troops()).toBeGreaterThan(pinned - 5_000);
+    expect(hegemon.troops()).toBeLessThan(pinned + 5_000);
+    expect(west.troops()).toBeLessThan(110_000);
   });
 
   test("an invader that advances again is no longer stalled", async () => {

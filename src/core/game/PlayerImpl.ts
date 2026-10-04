@@ -1189,17 +1189,23 @@ export class PlayerImpl implements Player {
     if (recipient === this) {
       return false;
     }
-    // Nobody props up the throne (H9).
-    if (recipient.isHegemon()) {
-      return false;
-    }
     if (!this.isAlive() || !recipient.isAlive()) {
       return false;
     }
-    // The Hegemon may donate troops to ANY challenger, friend or not, whatever
-    // the lobby's donation toggle says (H9, H15: the throne is the balance of
-    // power, and its pool is the price). Everyone else needs an ally.
-    if (!this.isHegemon()) {
+    if (recipient.isHegemon()) {
+      // Anyone may reinforce the throne while its pool has room (H9): no
+      // alliance needed, the lobby's donation toggle ignored. While someone
+      // holds the Dark Star the order throws the troops straight at the
+      // invader (DonateTroopsExecution), so rivals can finish a failed
+      // invasion and clear the slot for a bid of their own.
+      if (recipient.troops() >= this.mg.config().maxTroops(recipient)) {
+        return false;
+      }
+    } else if (!this.isHegemon()) {
+      // The Hegemon may donate troops to ANY challenger, friend or not,
+      // whatever the lobby's donation toggle says (H9, H15: the throne is the
+      // balance of power, and its pool is the price). Everyone else needs an
+      // ally.
       if (!this.isFriendly(recipient)) {
         return false;
       }
