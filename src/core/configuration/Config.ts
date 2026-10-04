@@ -280,7 +280,7 @@ const OVERTIME_DEFAULTS = {
 // Stargates (C4 in docs/DarkStar-Design.md): a challenger structure that
 // fires troops as a projectile at any tile in range. Numbers are F15's
 // starting points (decided 2026-09-24), tunable here.
-const STARGATE_DEFAULTS = {
+export const STARGATE_DEFAULTS = {
   // Range in tiles at level 1 and what each upgrade adds (range 180 / 255 /
   // 330 / ...; raised 2026-09-26 from 120 +60, which underperformed in play).
   // No level cap (2026-09-30, was 5): like a city, a gate upgrades for as
@@ -302,7 +302,7 @@ const STARGATE_DEFAULTS = {
 // inside of. It intercepts nothing and refuses no launch — a warhead lands as
 // usual and the blast is simply kept off the tiles inside. The throne's
 // missiles are kept out like anyone else's; only its strikes pass through.
-const SHIELD_ARRAY_DEFAULTS = {
+export const SHIELD_ARRAY_DEFAULTS = {
   // The protected radius in tiles: half the range of the level-1 SAM it
   // replaces (70), and never more (decided 2026-09-28). A single level, so
   // upgrades buy nothing.
@@ -313,7 +313,7 @@ const SHIELD_ARRAY_DEFAULTS = {
   constructionSeconds: 10,
 };
 
-const HEGEMON_DEFAULTS = {
+export const HEGEMON_DEFAULTS = {
   enabled: false,
   defaultRoundMinutes: 20, // R5, used when maxTimerValue is unset
   domainRadiusPermille: 90,

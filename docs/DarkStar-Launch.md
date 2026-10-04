@@ -145,6 +145,8 @@ _Done when_ nothing a player sees or hears is a placeholder.
       address. Then publish the Google sign-in (it needs the privacy policy on the live domain)
       and add the Google provider to production.
 - [ ] **Help and tutorial** rewritten for the Hegemon rules; the solo screen explains the throne.
+      The help page's rulebook is built (2026-10-04, below); the in-game tutorial and the solo
+      screen remain.
 - [ ] **Licence items**: the Source link points at the deployed commit; `CREDITS.md` complete; the
       attribution line present.
 - [ ] **Production keys**: real Turnstile keys; secrets rotated from anything used in testing.
@@ -234,3 +236,12 @@ _Done when_ the checklist is clean. This build is the release candidate.
 - **2026-10-03** — B1 built as code: the account API skeleton starts with `npm run dev`, serves
   its signing key and clears the client's backend check. B2's providers, B3 and the first
   deployment (3b) stay postponed.
+- **2026-10-04** — Stage 6's help rewrite, part one: the help page opens with a technical
+  rulebook (Tom's choice over flavour text) in eight numbered sections: the round, the Dark
+  Star, the Hegemon, strikes, invading, stargates/warheads/shields, gifts and the economy,
+  thrones. Every number in it is read from the core defaults (`HEGEMON_DEFAULTS`,
+  `STARGATE_DEFAULTS`, `SHIELD_ARRAY_DEFAULTS`, now exported from `Config.ts`) so the text
+  cannot drift; only the winner's 30-second window (server config) and the warhead prices are
+  written in. The build table lost the silo, SAM and MIRV rows and gained the stargate;
+  troubleshooting moved to the foot of the page. Still to do: the in-game tutorial (its SAM and
+  spawn steps are OpenFront's) and the solo screen's throne note.

@@ -1,7 +1,12 @@
 import { html } from "lit";
 import { customElement, state } from "lit/decorators.js";
-import { textDirection, translateText } from "../client/Utils";
+import { renderNumber, textDirection, translateText } from "../client/Utils";
 import { assetUrl } from "../core/AssetUrls";
+import {
+  HEGEMON_DEFAULTS,
+  SHIELD_ARRAY_DEFAULTS,
+  STARGATE_DEFAULTS,
+} from "../core/configuration/Config";
 import { UserSettings } from "../core/game/UserSettings";
 import { BaseModal } from "./components/BaseModal";
 import "./components/Difficulties";
@@ -81,6 +86,7 @@ export class HelpModal extends BaseModal {
           [&_h2]:text-xl [&_h2]:font-bold [&_h2]:mt-6 [&_h2]:mb-3 [&_h2]:text-blue-200
           [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:mt-4 [&_h3]:mb-2 [&_h3]:text-blue-100
           [&_ul]:ps-5 [&_ul]:list-disc [&_ul]:space-y-1
+          [&_ol]:ps-5 [&_ol]:list-decimal [&_ol]:space-y-2
           [&_li]:text-gray-300 [&_li]:leading-relaxed
           [&_p]:text-gray-300 [&_p]:mb-3 [&_strong]:text-white [&_strong]:font-bold
           [&_p]:[unicode-bidi:plaintext] [&_li]:[unicode-bidi:plaintext]
@@ -108,53 +114,8 @@ export class HelpModal extends BaseModal {
             </button>
           </section>
 
-          <!-- Troubleshooting Section -->
-          <div class="flex items-center gap-3 mb-3">
-            <div class="text-blue-400">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path d="M2 20 L12 0 L22 20 L2 20"></path>
-                <line x1="12" y1="8" x2="12" y2="14"></line>
-                <line x1="12" y1="17" x2="12.01" y2="17"></line>
-              </svg>
-            </div>
-            <h3
-              class="text-xl font-bold uppercase tracking-widest text-white/90"
-            >
-              ${translateText("main.troubleshooting")}
-            </h3>
-            <div
-              class="flex-1 h-px bg-gradient-to-r from-blue-500/50 to-transparent"
-            ></div>
-          </div>
-          <section>
-            <div class="w-full flex flex-col items-center">
-              <p class="mb-6 text-white/70 text-sm">
-                ${translateText("help_modal.troubleshooting_desc")}
-              </p>
-              <button
-                id="troubleshooting-button"
-                class="hover:bg-white/5 px-6 py-2 text-xs font-bold transition-all duration-200 rounded-lg uppercase tracking-widest bg-malibu-blue/20 text-aquarius border border-malibu-blue/30 shadow-[var(--shadow-malibu-blue)]"
-                data-page="page-troubleshooting"
-                @click="${this.openTroubleshooting}"
-                data-i18n="main.go_to_troubleshooting"
-              >
-                <span
-                  class="relative z-10 text-2xl"
-                  data-i18n="main.go_to_troubleshooting"
-                ></span>
-              </button>
-            </div>
-          </section>
+          ${this.renderRules()}
+
           <!-- Hotkeys Section -->
           <div class="flex items-center gap-3 mb-3">
             <div class="text-blue-400">
@@ -1017,34 +978,23 @@ export class HelpModal extends BaseModal {
                   </tr>
                   <tr class="bg-white/5 hover:bg-white/10 transition-colors">
                     <td class="py-3 ps-4 border-b border-white/5 font-medium">
-                      ${translateText("unit_type.missile_silo")}
+                      ${translateText("unit_type.stargate")}
                     </td>
                     <td class="py-3 border-b border-white/5">
                       <img
-                        src=${assetUrl("images/MissileSiloIconWhite.svg")}
+                        src=${assetUrl("images/StargateIconWhite.svg")}
                         class="w-8 h-8 scale-75 origin-left"
                       />
                     </td>
                     <td
                       class="py-3 border-b border-white/5 text-white/60 text-sm"
                     >
-                      ${translateText("help_modal.build_silo_desc")}
-                    </td>
-                  </tr>
-                  <tr class="bg-white/5 hover:bg-white/10 transition-colors">
-                    <td class="py-3 ps-4 border-b border-white/5 font-medium">
-                      ${translateText("unit_type.sam_launcher")}
-                    </td>
-                    <td class="py-3 border-b border-white/5">
-                      <img
-                        src=${assetUrl("images/SamLauncherIconWhite.svg")}
-                        class="w-8 h-8 scale-75 origin-left"
-                      />
-                    </td>
-                    <td
-                      class="py-3 border-b border-white/5 text-white/60 text-sm"
-                    >
-                      ${translateText("help_modal.build_sam_desc")}
+                      ${translateText("help_modal.build_stargate_desc", {
+                        cost: renderNumber(STARGATE_DEFAULTS.costGold),
+                        base: STARGATE_DEFAULTS.rangeBase,
+                        per: STARGATE_DEFAULTS.rangePerLevel,
+                        reload: STARGATE_DEFAULTS.cooldownSeconds,
+                      })}
                     </td>
                   </tr>
                   <tr class="bg-white/5 hover:bg-white/10 transition-colors">
@@ -1093,22 +1043,6 @@ export class HelpModal extends BaseModal {
                       class="py-3 border-b border-white/5 text-white/60 text-sm"
                     >
                       ${translateText("help_modal.build_hydrogen_desc")}
-                    </td>
-                  </tr>
-                  <tr class="bg-white/5 hover:bg-white/10 transition-colors">
-                    <td class="py-3 ps-4 border-b border-white/5 font-medium">
-                      ${translateText("unit_type.mirv")}
-                    </td>
-                    <td class="py-3 border-b border-white/5">
-                      <img
-                        src=${assetUrl("images/MIRVIcon.svg")}
-                        class="w-8 h-8 scale-75 origin-left"
-                      />
-                    </td>
-                    <td
-                      class="py-3 border-b border-white/5 text-white/60 text-sm"
-                    >
-                      ${translateText("help_modal.build_mirv_desc")}
                     </td>
                   </tr>
                 </tbody>
@@ -1236,8 +1170,155 @@ export class HelpModal extends BaseModal {
               </div>
             </div>
           </section>
+
+          <!-- Troubleshooting Section -->
+          <div class="flex items-center gap-3 mb-3">
+            <div class="text-blue-400">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M2 20 L12 0 L22 20 L2 20"></path>
+                <line x1="12" y1="8" x2="12" y2="14"></line>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+              </svg>
+            </div>
+            <h3
+              class="text-xl font-bold uppercase tracking-widest text-white/90"
+            >
+              ${translateText("main.troubleshooting")}
+            </h3>
+            <div
+              class="flex-1 h-px bg-gradient-to-r from-blue-500/50 to-transparent"
+            ></div>
+          </div>
+          <section>
+            <div class="w-full flex flex-col items-center">
+              <p class="mb-6 text-white/70 text-sm">
+                ${translateText("help_modal.troubleshooting_desc")}
+              </p>
+              <button
+                id="troubleshooting-button"
+                class="hover:bg-white/5 px-6 py-2 text-xs font-bold transition-all duration-200 rounded-lg uppercase tracking-widest bg-malibu-blue/20 text-aquarius border border-malibu-blue/30 shadow-[var(--shadow-malibu-blue)]"
+                data-page="page-troubleshooting"
+                @click="${this.openTroubleshooting}"
+                data-i18n="main.go_to_troubleshooting"
+              >
+                <span
+                  class="relative z-10 text-2xl"
+                  data-i18n="main.go_to_troubleshooting"
+                ></span>
+              </button>
+            </div>
+          </section>
         </div>
       </div>
+    `;
+  }
+
+  // The rulebook: every number is read from the core defaults so the text
+  // cannot drift from the simulation. Gold is passed pre-formatted because
+  // ICU would print 500000 with locale separators.
+  private renderRules() {
+    const h = HEGEMON_DEFAULTS;
+    const g = STARGATE_DEFAULTS;
+    const a = SHIELD_ARRAY_DEFAULTS;
+    // "1M", not "1.00M".
+    const gold = (n: number) => renderNumber(n).replace(/\.0+([KMB])$/, "$1");
+    const params: Record<string, string | number> = {
+      minutes: h.defaultRoundMinutes,
+      ceiling: h.troopCeilingPercentOfWholeMapCap,
+      refill: h.refillMinutes,
+      tax: h.shadowTaxPercent,
+      leveller: h.levellerFullPercent,
+      threat: h.levellerThreatPercentOfCeiling,
+      laststand: h.lastStandDomainLostPercent,
+      reserve: h.lastStandReservePercent,
+      raze: h.razeAttackerLossPercent / 100,
+      free: h.tyrannyFreePermille / 10,
+      floor: h.tyrannyFloorPermille / 10,
+      stall: h.invasionStallSeconds,
+      gateCost: gold(g.costGold),
+      gateBase: g.rangeBase,
+      gatePer: g.rangePerLevel,
+      gateReload: g.cooldownSeconds,
+      // The warhead prices under a Dark Star (Config.unitInfo, S6).
+      nukeCost: gold(1_000_000),
+      hCost: gold(5_000_000),
+      flag: h.punitiveFlagSeconds,
+      levyN: h.punitiveLevyPercentNuclear,
+      levyA: h.punitiveLevyPercentAntimatter,
+      pRadius: h.punitiveRadius,
+      halt: h.punitiveHaltSeconds,
+      shieldCost: gold(a.costGold),
+      shieldR: a.radius,
+      // The winner's window is server configuration (ThroneRegistry windowMs).
+      window: 30,
+    };
+    const sections: [string, number][] = [
+      ["round", 6],
+      ["domain", 4],
+      ["hegemon", 5],
+      ["strike", 5],
+      ["invasion", 5],
+      ["arsenal", 4],
+      ["gift", 3],
+      ["throne", 5],
+    ];
+    return html`
+      <!-- Rules Section -->
+      <div class="flex items-center gap-3 mb-3">
+        <div class="text-blue-400">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="12" cy="12" r="3"></circle>
+            <circle cx="12" cy="12" r="9" stroke-dasharray="3 3"></circle>
+          </svg>
+        </div>
+        <h3 class="text-xl font-bold uppercase tracking-widest text-white/90">
+          ${translateText("help_modal.rules_title")}
+        </h3>
+        <div
+          class="flex-1 h-px bg-gradient-to-r from-blue-500/50 to-transparent"
+        ></div>
+      </div>
+      <section
+        class="bg-white/5 rounded-xl border border-white/10 px-5 py-4 mb-8"
+      >
+        <p class="text-sm">${translateText("help_modal.rules_intro")}</p>
+        ${sections.map(
+          ([name, count]) => html`
+            <h4 class="text-blue-100 font-semibold mt-4 mb-1">
+              ${translateText(`help_modal.rules_${name}_title`)}
+            </h4>
+            <ol class="text-sm">
+              ${Array.from({ length: count }, (_, i) => i + 1).map(
+                (n) => html`
+                  <li>
+                    ${translateText(`help_modal.rules_${name}_${n}`, params)}
+                  </li>
+                `,
+              )}
+            </ol>
+          `,
+        )}
+      </section>
     `;
   }
 
