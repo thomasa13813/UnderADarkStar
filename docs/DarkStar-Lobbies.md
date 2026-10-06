@@ -493,15 +493,75 @@ Special thrones: the pool has them, and their winners set up to two modifiers.
 
 ## 12. Open questions
 
-- **Q1 — Dormant thrones and the mix.** When scaling wakes thrones, in name order or by type to
-  keep the ratio? (Suggest: by type.)
+- **Q1 — Dormant thrones and the mix.** Superseded 2026-10-05 by the launch queues (§13): only
+  the head of each type's queue is ever active, so nothing needs waking.
 - **Q2 — Reign display for the AI.** Show the AI's consecutive holds as a reign ("the Dark Star
   has held Cygnus for 4 rounds") or always 0? (Suggest: show it; it invites a challenger.)
 - **Q3 — Held-back modifiers.** Review the second column of §5.4 after the first public playtests.
 - **Q4 — Persisting seats** once P5's database exists: reservations and reign counts survive a
   restart (L12 revisited).
 
-## 13. Changelog
+## 13. Direction (2026-10-05): launch queues per type [Proposed, L16 onward tomorrow]
+
+Tom's notes from the evening of 2026-10-05, written up so the decisions can be numbered next
+session. Nothing here is built; §2 still describes what runs today.
+
+**The problem.** OpenFront's scheduler has one property that makes its public games work with
+any population: there is always exactly one lobby about to start, so players converge on it.
+The throne pool dropped that property because a throne has to wait for its winner (§3.3). As
+built, every throne runs its own countdown the moment it has two humans, so with fifteen
+thrones and ten players the result is five thin rounds instead of one good one. (In dev the
+countdown is 5 s, which makes this look worse than production's 2 minutes, but the scattering
+is real at either setting.) A round of two is legal and should stay legal; it is just a poor
+experience for both, so launches need metering that consolidates players into fewer, fuller
+rooms without breaking the seat-driven, round-to-round throne.
+
+**The model.** Per game type (FFA, team, special: players should be able to seek the mode they
+prefer), a **launch queue** of gathering thrones:
+
+1. **Floor of five.** Each type's queue holds at least five thrones. When the head launches,
+   a fresh throne is created at the back to restore the floor (names from `thrones.json`,
+   80 of them). There is no fixed ceiling: the queue grows as rounds end and shrinks by
+   culling (rule 5).
+2. **Only the head counts down.** The 2-minute countdown runs on the head once it has the
+   minimum two humans and fires at zero; it holds at zero on a dip, as today. A throne
+   anywhere in the queue that reaches the map's capacity fires at once.
+3. **The head is the first throne in line that has met the minimum.** A throne with fewer
+   humans keeps its place while the countdown passes it by, so a single waiting player never
+   blocks a populated throne behind them. The home page steers people to the head.
+4. **Returning rounds.** A round that ends with a human on the seat (the winner kept it, or a
+   claimant took it in the window) re-enters the queue in **second place**: behind a head
+   whose countdown is already running, at the head if nothing is counting down. Several
+   returning winners order by arrival. A round that ends with the seat open or AI-held goes to
+   the **back**. Reasoning (Tom): a fresh winner must not be punted behind a line that fires
+   once every two minutes, but neither may they interrupt a countdown others are already
+   watching.
+5. **Culling.** When a type's queue holds more than five thrones and one of them has no humans
+   at all, it is retired. Because new thrones are only ever created to restore the floor, the
+   surplus is always returned rounds nobody stayed for, so nothing of value is lost: a throne
+   with zero humans holds no reign. Culling uses the registry's existing vanish grace, so a
+   player mid-join is moved to the head rather than dropped.
+
+**What it changes.** L1's fixed pool of fifteen immortal thrones becomes a floor of five per
+type with creation and retirement; L12's "restart opens every seat" still holds; L13's home
+page shows the three heads, and the Thrones tab lists what exists, head first, each with its
+place in line. §9's deferred scaling rule and Q1 (dormant thrones) are superseded: with few
+players only the three heads are ever active, and the rest wait in line. The Stage 6 "throne
+count" item in `DarkStar-Launch.md` is replaced by this work; Tom's opening numbers are
+5 / 5 / 5 (team thrones still wait on T5, §5.9).
+
+**Player-facing consequences to design with it.** The win screen can say exactly where the
+winner stands ("Your throne is second in line for the FFA queue"); a throne card shows "next"
+or "N ahead"; joining a throne that is not the head is allowed and says so.
+
+**Open for tomorrow (L16 onward).** The numbering of the rules above; whether the floor (5)
+and the minimum (2) stay separate config values (`THRONE_COUNT` becomes a per-type floor;
+`THRONE_MIN_PLAYERS` unchanged); the dev values (floor 1 per type, 5 s countdown); what the
+home page's three cards do when a type's head has nobody; the win-screen and Thrones-tab
+strings; the registry changes and tests (`ThroneRegistry` stays pure: the queue is an ordering
+over the existing gathering state, plus `create` / `retire` actions).
+
+## 14. Changelog
 
 - **2026-09-29** — Created from Tom's outline and answers: fixed pool of 15 named thrones, fixed
   type per throne, no accounts, 30-second winner window with map and rules pick and the option to
@@ -525,3 +585,8 @@ Special thrones: the pool has them, and their winners set up to two modifiers.
 - **2026-10-03** — **T4 built** (§10.4): special thrones in the pool (3 prod / 1 dev), the
   modifier whitelist shared by server and client, the winner's modifier chips, the round rebuilt
   from the pick. Q3 (the held-back modifiers) stays open for the first public playtests.
+- **2026-10-05** — **Direction set for launch queues** (§13, proposed): per-type queues with a
+  floor of five thrones, only the head counts down, the head is the first throne that has met
+  the minimum, returning rounds with a seated human enter second, open or AI rounds go to the
+  back, surplus empty thrones are culled with the vanish grace. Supersedes L1's fixed pool,
+  §9's scaling rule and Q1. Decisions to be numbered L16 onward.

@@ -21,8 +21,6 @@ export function getDefaultKeybinds(isMac: boolean): Record<string, string> {
     buildFactory: "Digit2",
     buildPort: "Digit3",
     buildDefensePost: "Digit4",
-    buildMissileSilo: "Digit5",
-    buildSamLauncher: "Digit6",
     // DarkStar: shares the SAM's key; SAMs are disabled under a Dark Star.
     buildStargate: "Digit6",
     // DarkStar: shares the silo's key; silos are disabled under a Dark Star.
@@ -30,7 +28,6 @@ export function getDefaultKeybinds(isMac: boolean): Record<string, string> {
     buildWarship: "Digit7",
     buildAtomBomb: "Digit8",
     buildHydrogenBomb: "Digit9",
-    buildMIRV: "Digit0",
     attackRatioDown: "KeyT",
     attackRatioUp: "KeyY",
     boatAttack: "KeyB",

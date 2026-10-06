@@ -23,10 +23,7 @@ import {
   factoryIcon,
   goldCoinIcon,
   hydrogenBombIcon,
-  mirvIcon,
-  missileSiloIcon,
   portIcon,
-  samLauncherIcon,
   shieldArrayIcon,
   stargateIcon,
   warshipIcon,
@@ -43,10 +40,8 @@ export class UnitDisplay extends LitElement implements Controller {
   private _cities = 0;
   private _warships = 0;
   private _factories = 0;
-  private _missileSilo = 0;
   private _port = 0;
   private _defensePost = 0;
-  private _samLauncher = 0;
   private _stargate = 0;
   private _shieldArray = 0;
   private allDisabled = false;
@@ -135,10 +130,8 @@ export class UnitDisplay extends LitElement implements Controller {
       this.playerBuildables = buildables;
     });
     this._cities = player.totalUnitLevels(UnitType.City);
-    this._missileSilo = player.totalUnitLevels(UnitType.MissileSilo);
     this._port = player.totalUnitLevels(UnitType.Port);
     this._defensePost = player.totalUnitLevels(UnitType.DefensePost);
-    this._samLauncher = player.totalUnitLevels(UnitType.SAMLauncher);
     this._stargate = player.totalUnitLevels(UnitType.Stargate);
     this._shieldArray = player.totalUnitLevels(UnitType.ShieldArray);
     this._factories = player.totalUnitLevels(UnitType.Factory);
@@ -192,42 +185,18 @@ export class UnitDisplay extends LitElement implements Controller {
             this.keybinds["buildDefensePost"]?.key ?? "4",
           )}
           ${this.renderUnitItem(
-            missileSiloIcon,
-            this._missileSilo,
-            UnitType.MissileSilo,
-            "missile_silo",
-            this.keybinds["buildMissileSilo"]?.key ?? "5",
-          )}
-          ${this.renderUnitItem(
             shieldArrayIcon,
             this._shieldArray,
             UnitType.ShieldArray,
             "shield_array",
-            // DarkStar (C5): the array takes the silo's slot and key, since
-            // silos are off under a Dark Star. In a vanilla game the silo
-            // keeps the key and the array is click-only.
-            this.game.config().isUnitDisabled(UnitType.MissileSilo)
-              ? (this.keybinds["buildShieldArray"]?.key ?? "5")
-              : "",
-          )}
-          ${this.renderUnitItem(
-            samLauncherIcon,
-            this._samLauncher,
-            UnitType.SAMLauncher,
-            "sam_launcher",
-            this.keybinds["buildSamLauncher"]?.key ?? "6",
+            this.keybinds["buildShieldArray"]?.key ?? "5",
           )}
           ${this.renderUnitItem(
             stargateIcon,
             this._stargate,
             UnitType.Stargate,
             "stargate",
-            // DarkStar (C4): the gate takes the SAM's slot and key, since SAMs
-            // are off under a Dark Star. In a vanilla game the SAM keeps the
-            // key and the gate is click-only.
-            this.game.config().isUnitDisabled(UnitType.SAMLauncher)
-              ? (this.keybinds["buildStargate"]?.key ?? "6")
-              : "",
+            this.keybinds["buildStargate"]?.key ?? "6",
           )}
           ${this.renderUnitItem(
             warshipIcon,
@@ -249,13 +218,6 @@ export class UnitDisplay extends LitElement implements Controller {
             UnitType.HydrogenBomb,
             "hydrogen_bomb",
             this.keybinds["buildHydrogenBomb"]?.key ?? "9",
-          )}
-          ${this.renderUnitItem(
-            mirvIcon,
-            null,
-            UnitType.MIRV,
-            "mirv",
-            this.keybinds["buildMIRV"]?.key ?? "0",
           )}
         </div>
       </div>
@@ -341,8 +303,6 @@ export class UnitDisplay extends LitElement implements Controller {
               case UnitType.HydrogenBomb:
                 this.eventBus?.emit(
                   new ToggleStructureEvent([
-                    UnitType.MissileSilo,
-                    UnitType.SAMLauncher,
                     UnitType.Stargate,
                     UnitType.ShieldArray,
                   ]),

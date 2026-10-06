@@ -690,18 +690,20 @@ describe("InputHandler AutoUpgrade", () => {
       expect(inputHandler["uiState"].ghostStructure).toBe(UnitType.City);
     });
 
-    test("Numpad5 sets ghost structure to MissileSilo when buildMissileSilo is Digit5", () => {
+    test("Numpad5 sets ghost structure to ShieldArray when buildShieldArray is Digit5", () => {
       window.dispatchEvent(
         new KeyboardEvent("keyup", { code: "Numpad5", key: "5" }),
       );
-      expect(inputHandler["uiState"].ghostStructure).toBe(UnitType.MissileSilo);
+      expect(inputHandler["uiState"].ghostStructure).toBe(UnitType.ShieldArray);
     });
 
-    test("Numpad0 sets ghost structure to MIRV when buildMIRV is Digit0", () => {
+    test("Numpad9 sets ghost structure to HydrogenBomb when buildHydrogenBomb is Digit9", () => {
       window.dispatchEvent(
-        new KeyboardEvent("keyup", { code: "Numpad0", key: "0" }),
+        new KeyboardEvent("keyup", { code: "Numpad9", key: "9" }),
       );
-      expect(inputHandler["uiState"].ghostStructure).toBe(UnitType.MIRV);
+      expect(inputHandler["uiState"].ghostStructure).toBe(
+        UnitType.HydrogenBomb,
+      );
     });
 
     test("does not set ghost structure when the player is dead", () => {
@@ -716,10 +718,9 @@ describe("InputHandler AutoUpgrade", () => {
     });
   });
 
-  // DarkStar: the stargate shares the SAM's default key (6). A disabled unit
-  // never claims a build key, so under a Dark Star (SAMs off, S6) the key
-  // reaches the gate; in a vanilla game the SAM keeps it.
-  describe("Shared build key falls through a disabled unit", () => {
+  // A disabled unit never claims a build key: its key does nothing rather
+  // than ghosting a structure the lobby has switched off.
+  describe("Build keys of disabled units", () => {
     const newHandler = (disabled: UnitType[]) => {
       inputHandler.destroy();
       mockGameView.config = () =>
@@ -739,24 +740,24 @@ describe("InputHandler AutoUpgrade", () => {
       inputHandler.initialize();
     };
 
-    test("Digit6 sets the SAM when nothing is disabled", () => {
+    test("Digit6 sets the Stargate when nothing is disabled", () => {
       newHandler([]);
-      window.dispatchEvent(
-        new KeyboardEvent("keyup", { code: "Digit6", key: "6" }),
-      );
-      expect(inputHandler["uiState"].ghostStructure).toBe(UnitType.SAMLauncher);
-    });
-
-    test("Digit6 sets the Stargate when the SAM is disabled", () => {
-      newHandler([UnitType.SAMLauncher]);
       window.dispatchEvent(
         new KeyboardEvent("keyup", { code: "Digit6", key: "6" }),
       );
       expect(inputHandler["uiState"].ghostStructure).toBe(UnitType.Stargate);
     });
 
-    test("Numpad6 alias also reaches the Stargate when the SAM is disabled", () => {
-      newHandler([UnitType.SAMLauncher]);
+    test("Digit6 does nothing when the Stargate is disabled", () => {
+      newHandler([UnitType.Stargate]);
+      window.dispatchEvent(
+        new KeyboardEvent("keyup", { code: "Digit6", key: "6" }),
+      );
+      expect(inputHandler["uiState"].ghostStructure).toBeNull();
+    });
+
+    test("Numpad6 alias also reaches the Stargate", () => {
+      newHandler([]);
       window.dispatchEvent(
         new KeyboardEvent("keyup", { code: "Numpad6", key: "6" }),
       );
@@ -769,7 +770,7 @@ describe("InputHandler AutoUpgrade", () => {
       inputHandler.destroy();
       testSettings.setKeybinds({
         buildCity: "Numpad1",
-        buildMIRV: "Numpad0",
+        buildHydrogenBomb: "Numpad0",
       });
       const uiState: UIState = {
         attackRatio: 20,
@@ -790,11 +791,13 @@ describe("InputHandler AutoUpgrade", () => {
       );
       expect(inputHandler["uiState"].ghostStructure).toBe(UnitType.City);
     });
-    test("Digit0 sets ghost structrue to MIRV when buildMIRV is Numpad0", () => {
+    test("Digit0 sets ghost structure to HydrogenBomb when buildHydrogenBomb is Numpad0", () => {
       window.dispatchEvent(
         new KeyboardEvent("keyup", { code: "Digit0", key: "0" }),
       );
-      expect(inputHandler["uiState"].ghostStructure).toBe(UnitType.MIRV);
+      expect(inputHandler["uiState"].ghostStructure).toBe(
+        UnitType.HydrogenBomb,
+      );
     });
   });
 

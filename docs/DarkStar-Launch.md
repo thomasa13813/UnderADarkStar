@@ -153,9 +153,11 @@ _Done when_ nothing a player sees or hears is a placeholder.
 - [ ] **Licence items**: the Source link points at the deployed commit; `CREDITS.md` complete; the
       attribution line present.
 - [ ] **Production keys**: real Turnstile keys; secrets rotated from anything used in testing.
-- [ ] **Throne count for the opening.** With few players online, 15 thrones spread them too thin
-      to reach two humans in one lobby. Open with 3 to 5 (it is one config value) and raise it
-      with the population.
+- [ ] **Throne count for the opening.** Replaced 2026-10-05 by the launch-queue work
+      (`DarkStar-Lobbies.md` §13): per-type queues with a floor of five thrones, only the head
+      counting down, so fifteen thrones (5 / 5 / 5, Tom's numbers) no longer spread a small
+      population thin. Decisions L16 onward and the build are next; this box ticks when it is
+      live on the dev server.
 - [ ] **Watching it**: an uptime check on `/api/health` and the API's `/health`; a look at the
       server's logs and load with a dozen clients connected.
 - [ ] **Somewhere to report bugs** (a Discord server or an email address; Tom's choice).
@@ -273,3 +275,11 @@ _Done when_ the checklist is clean. This build is the release candidate.
   screen's keybind list loses its Missile Silo, SAM Launcher and MIRV rows, and the Stargate and
   Shield Array rows no longer talk about sharing a key. The default bindings themselves are
   unchanged.
+- **2026-10-05** — The silo, SAM and MIRV key bindings are gone for good (Tom: the vanilla path
+  is dropped). Removed from the default keybinds, the input handler's build-key lists and the
+  in-game hotbar, which now shows nine units (1 to 9) with the Shield Array on 5 and the Stargate
+  on 6 unconditionally. Side effect fixed: the hidden bindings no longer block a player from
+  rebinding another action to 5, 6 or 0. Input handler tests retargeted.
+- **2026-10-05** — Tom set the direction for throne launches: per-type launch queues with a
+  floor of five, replacing the Stage 6 throne-count item (Lobbies doc §13). Opening numbers
+  stay 15 thrones, 5 of each type.
