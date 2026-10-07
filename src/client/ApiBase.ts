@@ -12,10 +12,19 @@ export function getApiBase() {
     if (apiDomain) {
       return `https://${apiDomain}`;
     }
-    return localStorage.getItem("apiHost") ?? "http://localhost:8787";
+    // A developer's own override first; then the origin the server injected
+    // into the page (a production-mode container audited on one PC runs its
+    // API on another port); then upstream's default.
+    return (
+      localStorage.getItem("apiHost") ??
+      ClientEnv.apiOrigin() ??
+      "http://localhost:8787"
+    );
   }
 
-  return `https://api.${domainname}`;
+  // One rule, kept in ClientEnv: the page's apiOrigin when the server
+  // injected one (API_DOMAIN), else api.<audience>.
+  return ClientEnv.jwtIssuer();
 }
 
 export function getAudience() {

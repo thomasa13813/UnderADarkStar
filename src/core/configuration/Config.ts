@@ -49,6 +49,10 @@ declare global {
       numWorkers?: number;
       turnstileSiteKey?: string;
       jwtAudience?: string;
+      // Under a Dark Star: the account API's origin as the server knows it
+      // (ServerEnv.jwtIssuer, from API_DOMAIN). Optional: a page that
+      // predates it derives api.<jwtAudience> as before.
+      apiOrigin?: string;
       // Environment-scoped like turnstileSiteKey, but optional: a deployment
       // without one (dev, desktop shells) just keeps the inline Stripe flow
       // off.

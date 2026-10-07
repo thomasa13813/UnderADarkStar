@@ -1,3 +1,4 @@
+import { getApiBase } from "src/client/ApiBase";
 import { ClientEnv } from "src/client/ClientEnv";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { GameEnv, parseGameEnv } from "../../../src/core/configuration/Config";
@@ -101,5 +102,34 @@ describe("ClientEnv", () => {
       gitCommit: "abc123",
     };
     expect(ClientEnv.jwtIssuer()).toBe("https://api.openfront.io");
+  });
+
+  test("getApiBase on localhost follows the page's apiOrigin", () => {
+    window.BOOTSTRAP_CONFIG = {
+      gameEnv: "prod",
+      numWorkers: 1,
+      turnstileSiteKey: "k",
+      jwtAudience: "localhost",
+      apiOrigin: "http://localhost:8790",
+      instanceId: "x",
+      gitCommit: "abc123",
+    };
+    expect(getApiBase()).toBe("http://localhost:8790");
+    expect(ClientEnv.jwtIssuer()).toBe("http://localhost:8790");
+  });
+
+  test("jwtIssuer takes the page's apiOrigin when the server injected one", () => {
+    window.BOOTSTRAP_CONFIG = {
+      gameEnv: "prod",
+      numWorkers: 1,
+      turnstileSiteKey: "k",
+      jwtAudience: "darkstar.january-games.com",
+      apiOrigin: "https://darkstar-api.january-games.com",
+      instanceId: "x",
+      gitCommit: "abc123",
+    };
+    expect(ClientEnv.jwtIssuer()).toBe(
+      "https://darkstar-api.january-games.com",
+    );
   });
 });

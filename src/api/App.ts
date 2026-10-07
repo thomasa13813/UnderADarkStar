@@ -2,6 +2,7 @@ import express, { Express, NextFunction, Request, Response } from "express";
 import { DatabaseSync } from "node:sqlite";
 import { mountAuthRoutes } from "./AuthRoutes";
 import { allowedOrigin, ApiConfig } from "./Config";
+import { mountJoinRoutes } from "./JoinRoutes";
 import { jwksDocument, SigningKey } from "./Keys";
 import { FetchLike } from "./Providers";
 
@@ -64,6 +65,7 @@ export function createApiApp(deps: ApiDeps): Express {
   });
 
   mountAuthRoutes(app, deps);
+  mountJoinRoutes(app, deps);
 
   app.use((_req, res) => {
     res.status(404).json({ error: "not found" });

@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("../../src/client/ClientEnv", () => ({
-  ClientEnv: { jwtAudience: () => "localhost" },
+  // getApiBase also asks for the page's injected API origin (none here).
+  ClientEnv: { jwtAudience: () => "localhost", apiOrigin: () => undefined },
 }));
 
 import { userAuth } from "../../src/client/Auth";

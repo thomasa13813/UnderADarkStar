@@ -66,6 +66,15 @@ RUN rm -f /etc/nginx/sites-enabled/default
 COPY generate-nginx-upstream.sh /usr/local/bin/generate-nginx-upstream.sh
 RUN chmod +x /usr/local/bin/generate-nginx-upstream.sh
 
+# Under a Dark Star: the account API's server block, from API_DOMAIN at start.
+COPY generate-nginx-api.sh /usr/local/bin/generate-nginx-api.sh
+RUN chmod +x /usr/local/bin/generate-nginx-api.sh
+
+# The account API's data volume (docs/DarkStar-Accounts.md §8, §10): the
+# SQLite database and the signing key. Owned by the user the API runs as.
+RUN mkdir -p /data && chown node:node /data
+VOLUME ["/data"]
+
 # Copy production node_modules from prod-deps stage (cached separately from build)
 COPY --from=prod-deps /usr/src/app/node_modules ./node_modules
 COPY package*.json ./
@@ -90,14 +99,15 @@ ENV GIT_COMMIT="$GIT_COMMIT"
 
 RUN <<'EOF' tee /usr/local/bin/start.sh
 #!/bin/sh
-# Generate the create-game nginx upstream from NUM_WORKERS before nginx starts.
+# Generate the create-game nginx upstream from NUM_WORKERS, and the account
+# API's server block from API_DOMAIN, before nginx starts.
 /usr/local/bin/generate-nginx-upstream.sh
+/usr/local/bin/generate-nginx-api.sh
 
-if [ "$DOMAIN" = openfront.dev ] && [ "$SUBDOMAIN" != main ]; then
-    exec timeout 25h /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
-else
-    exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
-fi
+# Upstream's start script put a 25-hour life on its staging containers here
+# (DOMAIN=openfront.dev). Under a Dark Star has one server and no staging
+# fleet, so the container runs until it is stopped.
+exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
 EOF
 RUN chmod +x /usr/local/bin/start.sh
 ENTRYPOINT ["/usr/local/bin/start.sh"]

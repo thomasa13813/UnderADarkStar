@@ -601,6 +601,7 @@ describe("providers offered", () => {
       GAME_ENV: "prod",
       DOMAIN: "example.com",
       API_KEY: "k",
+      TURNSTILE_SECRET_KEY: "s",
     });
     try {
       expect(
@@ -627,6 +628,7 @@ describe("providers offered", () => {
       API_KEY: "k",
       DISCORD_CLIENT_ID: "id",
       DISCORD_CLIENT_SECRET: "secret",
+      TURNSTILE_SECRET_KEY: "s",
     });
     try {
       const res = await fetch(`${prod.base}/auth/login/discord`, {

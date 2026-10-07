@@ -102,10 +102,14 @@ that this testing could hit.)
 - [x] **B2** Sign-in (the dev provider and Discord first), sessions, the account panel; guests
       accepted in production. Built 2026-10-07 (Accounts doc §12.2); the Discord round trip runs
       for real at H5, once the production redirect URI exists.
-- [ ] **B3** The production join path: bot check, name filter, stub endpoints, and the audit.
+- [x] **B3** The production join path: bot check, name filter, stub endpoints, and the audit.
+      Built and audited 2026-10-07 (Accounts doc §12.3): the production-mode container on Tom's
+      PC played a game with an account and a guest, no call to a missing endpoint.
 
 _Done when_ a container built on Tom's PC in production mode plays a public round with a guest and
-a signed-in account, with no call to OpenFront's API.
+a signed-in account, with no call to OpenFront's API. **Passed 2026-10-07** with a hosted lobby
+(the public thrones need two humans and a countdown, which the same two browsers can also do; the
+join path is identical).
 
 **3b. First deployment (M)**
 
@@ -113,10 +117,18 @@ a signed-in account, with no call to OpenFront's API.
       `january-games.com`, Cloudflare account on an address outside the domain with Email Routing);
       the server (about 4 cores) and its provider remain.
 - [ ] **H2** The server set up: Docker, a compose file with two containers (the game, and
-      `cloudflared` for the tunnel), a `/data` volume, the two hostnames (`<domain>` and
-      `api.<domain>`) routed through the tunnel.
+      `cloudflared` for the tunnel), a `/data` volume, the two hostnames
+      (`darkstar.january-games.com` and `darkstar-api.january-games.com`) routed through the
+      tunnel. Also at H2: the production redirect
+      `https://darkstar-api.january-games.com/auth/callback/discord` added to the Discord
+      application.
 - [ ] **H3** The environment file with the production settings and secrets (Accounts §11), kept
-      off the repository.
+      off the repository. Known so far: `GAME_ENV=prod`, `DOMAIN=darkstar.january-games.com`,
+      `API_DOMAIN=darkstar-api.january-games.com`, `NUM_WORKERS` (about the core count),
+      `INSTANCE_LETTER=a`, `API_KEY` (a long random secret shared by the two programs),
+      `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` (Tom's, from `.env`), `DISCORD_CLIENT_ID`
+      and `DISCORD_CLIENT_SECRET`, `DATA_DIR=/data`. `CDN_BASE` stays unset (assets come from the
+      game server); `RANKED_MATCHMAKING` stays unset (off).
 - [ ] **H4** A deploy script of our own (pull, build, restart), replacing upstream's `deploy.sh`,
       `update.sh`, `build.sh`, `build-deploy.sh`, `setup.sh` and GitHub workflows, which target
       OpenFront's infrastructure.
@@ -160,7 +172,8 @@ _Done when_ nothing a player sees or hears is a placeholder.
       and a one-line note under the solo screen's "Play as the Hegemon" toggle.
 - [ ] **Licence items**: the Source link points at the deployed commit; `CREDITS.md` complete; the
       attribution line present.
-- [ ] **Production keys**: real Turnstile keys; secrets rotated from anything used in testing.
+- [ ] **Production keys**: ~~real Turnstile keys~~ (issued 2026-10-07, in `.env`); secrets rotated
+      from anything used in testing (the `API_KEY` of the audit was a throwaway).
 - [ ] **Throne launch lines** (was: throne count for the opening). Decided 2026-10-06 as
       L16-L28 in `DarkStar-Lobbies.md`: per-type lines with a floor of five, one countdown per
       line. The server side is built (Lobbies §10.5); the client (home cards per line head,
@@ -211,10 +224,13 @@ _Done when_ the checklist is clean. This build is the release candidate.
 
 1. ~~Hosting shape.~~ Confirmed 2026-10-01: one VPS behind Cloudflare. Which provider is still
    open (decide at H1).
-2. ~~The domain name.~~ Bought 2026-10-06: `january-games.com` at Cloudflare. Still open: the
-   game's hostname. Options: the bare domain (`january-games.com`) with `api.january-games.com`,
-   or a subdomain for the game (`darkstar.january-games.com`, `play.january-games.com`) with
-   the studio page at the root. Needed at H2, when the tunnel's hostnames are set.
+2. ~~The domain name.~~ Bought 2026-10-06: `january-games.com` at Cloudflare. ~~Still open: the
+   game's hostname.~~ Decided 2026-10-07: the game lives at `darkstar.january-games.com`, the
+   studio page can take the root later. The API is `darkstar-api.january-games.com`, not
+   `api.darkstar.…`: Cloudflare's free certificate covers `january-games.com` and one level of
+   names under it, and a second level would need the paid certificate. The code takes the API
+   hostname from `API_DOMAIN` (default `api.<DOMAIN>`), and the page learns it from
+   `BOOTSTRAP_CONFIG.apiOrigin`.
 3. ~~The launch map count~~ (at least six new maps, 2026-10-01); which of the 13 inherited maps
    stay is still open.
 4. How many thrones to open with (suggest 3 to 5).
@@ -224,6 +240,19 @@ _Done when_ the checklist is clean. This build is the release candidate.
 
 ## 7. Changelog
 
+- **2026-10-07** — **B3 built and Stage 3a passed** (Accounts doc §12.3). The production-mode
+  container, built and run on Tom's PC through Docker Desktop, served the page, verified an
+  account's token, passed a guest through the Turnstile check (test keys), and ran a game with
+  both. The audit found and fixed two bugs that only production mode shows: the inlined game
+  worker could not resolve asset URLs without a CDN (no game could start), and a guest's browser
+  ID was dropped on every page load (a new `Anon` name every visit). The ranked matchmaking poll
+  is off by default. Next: 3b, the first deployment (H1: the VPS).
+- **2026-10-07** — **Hostnames decided** (§6.2): `darkstar.january-games.com` for the game,
+  `darkstar-api.january-games.com` for the API (Tom spotted that `api.darkstar.…` falls outside
+  the free certificate). `API_DOMAIN` added across the server, the page bootstrap, the client and
+  the API so the two names need not be related. Turnstile widget hostnames set by Tom
+  (127.0.0.1, darkstar.january-games.com, january-games.com, localhost); the Turnstile keys are in
+  `.env`; the Discord production redirect waits for H2. A20 decided (Accounts doc).
 - **2026-10-07** — **Discord developer application created** by Tom on the studio Discord account
   (`hello@january-games.com`), with the dev redirect `http://localhost:8787/auth/callback/discord`
   registered; the production redirect waits for the hostname decision (§6.2). The client ID and

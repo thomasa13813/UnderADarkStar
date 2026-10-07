@@ -17,6 +17,15 @@ const JwksSchema = z.object({
     .min(1),
 });
 
+// The origin for an explicit API hostname. localhost is never behind TLS, so
+// a localhost name (with or without a port, as a production-mode audit on one
+// PC uses: API_DOMAIN=localhost:8790) is plain http; anything else is https.
+export function apiOriginFor(apiDomain: string): string {
+  return /^localhost(:\d+)?$/.test(apiDomain)
+    ? `http://${apiDomain}`
+    : `https://${apiDomain}`;
+}
+
 export class ServerEnv {
   private static readonly gameEnv: GameEnv = parseGameEnv(process.env.GAME_ENV);
   private static publicKey: JWK | null = null;
@@ -97,7 +106,15 @@ export class ServerEnv {
   static cdnBase(): string {
     return process.env.CDN_BASE ?? "";
   }
+  // The account API's origin, which is also the token issuer. Under a Dark
+  // Star: API_DOMAIN names it outright when set (the launch site is
+  // darkstar.january-games.com and Cloudflare's free certificate covers one
+  // level of names only, so the API is darkstar-api.january-games.com, not
+  // api.darkstar...); otherwise api.<DOMAIN>, as upstream. The page learns the
+  // same value through BOOTSTRAP_CONFIG.apiOrigin (RenderHtml.ts).
   static jwtIssuer(): string {
+    const explicit = process.env.API_DOMAIN;
+    if (explicit) return apiOriginFor(explicit);
     const audience = ServerEnv.jwtAudience();
     return audience === "localhost"
       ? "http://localhost:8787"
@@ -130,6 +147,13 @@ export class ServerEnv {
 
   // --- Under a Dark Star: public thrones (docs/DarkStar-Lobbies.md §9) ---
 
+  // Ranked matchmaking polls the API's /matchmaking/checkin from every
+  // worker. Our API has no matchmaking (ranked is not offered, Accounts doc
+  // §7), so the loop is off unless RANKED_MATCHMAKING=on; with it off a
+  // production container makes no call to an endpoint that does not exist.
+  static rankedMatchmaking(): boolean {
+    return process.env.RANKED_MATCHMAKING === "on";
+  }
   // How the master fills the public lobby list. "thrones" (the default) runs
   // the fixed pool of persistent throne lobbies; PUBLIC_LOBBIES=queue keeps
   // upstream's disposable per-type queues (ffa/team/special) as a fallback.

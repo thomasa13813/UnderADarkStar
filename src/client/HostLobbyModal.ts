@@ -51,6 +51,12 @@ import {
   toOptionalNumber,
 } from "./utilities/GameConfigHelpers";
 
+// Under a Dark Star (docs/DarkStar-Accounts.md A20): listing a private lobby
+// in the public browser is off at launch; thrones are the public offer. The
+// server refuses it too (the API grants no canCreatePublicLobbies), so this
+// only hides a switch that could never succeed. Flip to offer it again.
+const PUBLIC_LISTING_OFFERED = false;
+
 @customElement("host-lobby-modal")
 export class HostLobbyModal extends BaseModal {
   @state() private selectedMap: GameMapType = GameMapType.EventHorizon;
@@ -226,7 +232,7 @@ export class HostLobbyModal extends BaseModal {
         >
           ${translateText("host_modal.title")}
         </span>
-        ${this.renderVisibilityToggle()}
+        ${PUBLIC_LISTING_OFFERED ? this.renderVisibilityToggle() : nothing}
       `,
       onBack: () => {
         this.leaveLobbyOnClose = true;

@@ -139,6 +139,19 @@ describe("ServerEnv.jwtAudience", () => {
   });
 });
 
+describe("ServerEnv.rankedMatchmaking", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  test("is off unless RANKED_MATCHMAKING=on", () => {
+    vi.stubEnv("RANKED_MATCHMAKING", "");
+    expect(ServerEnv.rankedMatchmaking()).toBe(false);
+    vi.stubEnv("RANKED_MATCHMAKING", "on");
+    expect(ServerEnv.rankedMatchmaking()).toBe(true);
+  });
+});
+
 describe("ServerEnv.jwtIssuer", () => {
   afterEach(() => {
     vi.unstubAllEnvs();
@@ -152,6 +165,20 @@ describe("ServerEnv.jwtIssuer", () => {
   test("derives api.<audience> for non-localhost", () => {
     vi.stubEnv("DOMAIN", "openfront.io");
     expect(ServerEnv.jwtIssuer()).toBe("https://api.openfront.io");
+  });
+
+  test("keeps a localhost API_DOMAIN on plain http, port included", () => {
+    vi.stubEnv("DOMAIN", "localhost");
+    vi.stubEnv("API_DOMAIN", "localhost:8790");
+    expect(ServerEnv.jwtIssuer()).toBe("http://localhost:8790");
+  });
+
+  test("takes API_DOMAIN outright when set", () => {
+    vi.stubEnv("DOMAIN", "darkstar.january-games.com");
+    vi.stubEnv("API_DOMAIN", "darkstar-api.january-games.com");
+    expect(ServerEnv.jwtIssuer()).toBe(
+      "https://darkstar-api.january-games.com",
+    );
   });
 });
 

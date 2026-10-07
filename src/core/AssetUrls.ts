@@ -108,6 +108,16 @@ export function assetUrl(path: string): string {
   return buildAssetUrl(path, getAssetManifest(), getCdnBase());
 }
 
+// The base the game worker fetches assets from. The worker is inlined
+// (WorkerClient: `?worker&inline`), so it runs under a blob: URL where a
+// relative "/_assets/..." cannot be resolved at all. With a CDN that base is
+// the CDN; without one (Under a Dark Star serves its assets from the game
+// server itself, Launch doc 3b) it is the page's own origin. Pure, so the
+// rule is testable without a worker.
+export function workerAssetBase(cdnBase: string, pageOrigin: string): string {
+  return cdnBase !== "" ? cdnBase : pageOrigin;
+}
+
 // Rewrites Vite's emitted /assets/... references in the built index.html to
 // use the cdnBaseRaw EJS placeholder, so RenderHtml.ts can prefix them with
 // CDN_BASE at request time. Scoped to src=/href= attribute values so inline

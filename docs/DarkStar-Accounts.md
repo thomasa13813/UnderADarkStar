@@ -5,7 +5,7 @@
 > decisions of that day; rows marked **Proposed** are recommendations waiting for his review (§15).
 > Companion to `DarkStar-Roadmap.md` phase P5, which this document expands and supersedes, and to
 > `DarkStar-Lobbies.md` (thrones, seats, reigns). Where it sits in the order of work is in
-> `DarkStar-Launch.md`. B1 (2026-10-03, §12.1) and B2 (2026-10-07, §12.2) are built as code; B3–B7 are not. Changelog at the end.
+> `DarkStar-Launch.md`. B1 (2026-10-03, §12.1), B2 (2026-10-07, §12.2) and B3 (2026-10-07, §12.3) are built; B4–B7 are not. Changelog at the end.
 
 ## 1. Goals
 
@@ -49,7 +49,7 @@ Numbered so the code and tests can cite them. Build steps are B1–B7 (§12).
 | A17 | **An account can delete itself.** Sign-ins and sessions are erased; its rounds stay as anonymous history and leave the board.                                                                                                                                                                                                  | Proposed |
 | A18 | **Moderation by command line.** A ban is a role on the account, carried in the token; the game server already refuses a banned token. Tom runs ban, unban and rename from a script on the server. No admin web page at launch.                                                                                                 | Proposed |
 | A19 | **Full game records are kept 30 days,** compressed on disk, then deleted. They are for bug reports and for replay-checking a disputed result (§5.5); the leaderboard does not need them.                                                                                                                                       | Proposed |
-| A20 | **Listing a private lobby publicly is off at launch.** Upstream sold it with a subscription; thrones are our public offer.                                                                                                                                                                                                     | Proposed |
+| A20 | **Listing a private lobby publicly is off at launch.** Upstream sold it with a subscription; thrones are our public offer. Decided 2026-10-07.                                                                                                                                                                                 | Decided  |
 | A21 | **Guests do not choose a name.** The server gives a guest the name `Anon` plus five digits (`Anon48213`), derived from their browser ID so it stays the same between games. Choosing a name is a reason to sign in.                                                                                                            | Decided  |
 
 ## 3. How the pieces fit
@@ -317,15 +317,16 @@ Schema changes are numbered migration files applied at boot.
 
 ## 11. Configuration
 
-| Setting                                      | Where            | Notes                                                       |
-| -------------------------------------------- | ---------------- | ----------------------------------------------------------- |
-| `DOMAIN`                                     | both programs    | The site; the API is `api.<DOMAIN>`. Already exists.        |
-| `API_KEY`                                    | both programs    | Shared secret for server-to-API calls. Already exists.      |
-| `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET` | API              | From a Discord developer application (Tom creates it).      |
-| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`   | API              | From a Google Cloud OAuth client (Tom creates it).          |
-| `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | game server, API | From the Cloudflare dashboard. The site key already exists. |
-| `DATA_DIR`                                   | API              | `/data` in the container; `.data/` (git-ignored) in dev.    |
-| Record retention, name-change wait           | API constants    | 30 days each.                                               |
+| Setting                                      | Where            | Notes                                                                                                                                                                                                                                             |
+| -------------------------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DOMAIN`                                     | both programs    | The site; the API is `api.<DOMAIN>`. Already exists.                                                                                                                                                                                              |
+| `API_DOMAIN`                                 | both programs    | The API's hostname when it is not `api.<DOMAIN>`. At launch `darkstar-api.january-games.com` beside `DOMAIN=darkstar.january-games.com` (Launch §6.2: the free certificate covers one level). The page learns it as `BOOTSTRAP_CONFIG.apiOrigin`. |
+| `API_KEY`                                    | both programs    | Shared secret for server-to-API calls. Already exists.                                                                                                                                                                                            |
+| `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET` | API              | From a Discord developer application (Tom creates it).                                                                                                                                                                                            |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`   | API              | From a Google Cloud OAuth client (Tom creates it).                                                                                                                                                                                                |
+| `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | game server, API | From the Cloudflare dashboard. The site key already exists.                                                                                                                                                                                       |
+| `DATA_DIR`                                   | API              | `/data` in the container; `.data/` (git-ignored) in dev.                                                                                                                                                                                          |
+| Record retention, name-change wait           | API constants    | 30 days each.                                                                                                                                                                                                                                     |
 
 ## 12. Implementation order
 
@@ -431,6 +432,58 @@ trip itself is exercised against a stubbed Discord in the tests and for real at 
   (B6), the Google provider (after the privacy policy), the schema cut-down, and the
   production redirect URI in the Discord application (needs the hostname, Launch §6.2).
 
+### 12.3 As built: B3 (2026-10-07)
+
+The production join path, audited the same day: a container built on Tom's PC with
+`GAME_ENV=prod` and no OpenFront API anywhere ran a lobby with a signed-in account
+(`Auditor.0001`, a session planted in the container's database, since the production API has no
+dev provider) and a guest (`Anon82577`, the same name in the identity row and the lobby); the
+host started the game, both spawned, and the simulation ran past tick 150 with 427 players on
+the map. The container's logs showed no call to a missing endpoint. Cloudflare's always-pass
+Turnstile test keys were used so headless Chromium could pass the bot check; the real keys are
+in Tom's `.env` and are exercised at H5.
+
+- **`src/api/JoinRoutes.ts`**: `POST /join_verify` (shared key required): the Turnstile
+  `siteverify` call with the secret, the token and the joiner's IP, then the name filter
+  (`Censor.ts`) on the typed name and tag, answering in the shape `JoinVerify.verifyJoin`
+  parses (`approved` with the display-ready pair, or `rejected` with Cloudflare's reason). A
+  null token skips Cloudflare (an admitted reconnect) and still screens the name. Cloudflare
+  itself failing answers 5xx, so the game server fails open to its local filter as before.
+  Without a secret (dev only) every token passes with one warning. The stubs of §7:
+  `GET /cosmetics.json` (empty catalogue the schema accepts), `GET /reserved_clan_tags` (`[]`),
+  `GET /custom_tribes` (`{tribes: []}`), `POST /archive_singleplayer_game` (202, discarded),
+  `POST /game/:id` (shared key; 202, logged, discarded until B4), `GET /game/:id` (404).
+- **`Config.ts`**: `TURNSTILE_SECRET_KEY` (required outside dev). A `localhost` DOMAIN keeps the
+  localhost CORS rule in every environment, which is what lets a production container be
+  audited on one PC. `API_DOMAIN` may carry a port for localhost (`localhost:8790`, plain http),
+  for the same reason: the dev stack holds 8787.
+- **Game server**: ranked matchmaking's `/matchmaking/checkin` poll is off unless
+  `RANKED_MATCHMAKING=on` (`ServerEnv.rankedMatchmaking`); it was the one call to a missing
+  endpoint the first audit run showed, every five seconds from every worker. A20 needs no server
+  change: the worker already refuses to list a lobby when `/users/@me` grants no
+  `canCreatePublicLobbies`, which ours never does; the client's Private/Public switch is hidden
+  (`HostLobbyModal.ts`, `PUBLIC_LISTING_OFFERED`).
+- **Two production-only bugs found by the audit**, neither visible under `npm run dev`:
+  the game worker is inlined (a `blob:` URL), so with no `CDN_BASE` its relative asset fetches
+  could not be resolved and no game could start; `workerAssetBase` (`AssetUrls.ts`) now hands
+  it the page's origin when there is no CDN. And `Auth.clearLocalSession` dropped the guest's
+  browser ID on every page load (the refresh answers 401 for a guest), so a guest got a new
+  `Anon` name on every visit; the ID is now dropped only on an actual sign-out.
+- **Container**: `supervisord.conf` runs the API as a third program (`npm run start:api`, user
+  `node`, port 8787 or `API_PORT`); the `Dockerfile` creates the `/data` volume for the database
+  and signing key and drops upstream's 25-hour staging timeout from the start script;
+  `generate-nginx-api.sh` writes a `server` block for `API_DOMAIN` to `127.0.0.1:8787` at start
+  (none for a localhost `API_DOMAIN`, which is reached on its published port directly).
+- **Tests**: `tests/api/JoinVerify.test.ts` (the Cloudflare call and verdicts against a stubbed
+  `siteverify`, the null-token path, fail-open on a Cloudflare 5xx, the shared key, the dev
+  no-secret path, every stub route against its schema), `tests/AssetUrls.test.ts`
+  (`workerAssetBase`), `tests/server/ServerEnv.test.ts` (`API_DOMAIN`, localhost with a port,
+  `RANKED_MATCHMAKING`), `tests/core/configuration/ConfigLoader.test.ts` (`apiOrigin` on the
+  client, `getApiBase` on localhost).
+- **Not yet**: the results ingest behind `POST /game/:id` (B4); rate limits (B6); the game
+  server reaching the API by its public name from inside the container (an internal origin
+  setting would save the round trip through Cloudflare; decide at H2).
+
 ## 13. Tests
 
 API tests run against an in-memory database, under `tests/api/`, added to `npm test`.
@@ -468,8 +521,8 @@ API tests run against an in-memory database, under `tests/api/`, added to `npm t
 
 ## 15. Open questions for Tom
 
-- **Q1 — The proposed rows of §2.** A7 to A12, A14 and A16 to A20 are still recommendations. The
-  ones most worth a look are A17 (deletion) and A20 (no public listing of private lobbies).
+- **Q1 — The proposed rows of §2.** A7 to A12, A14 and A16 to A19 are still recommendations (A20
+  was decided 2026-10-07). The one most worth a look is A17 (deletion).
 - ~~**Q2 — Playing under another name.**~~ Answered 2026-10-01: a signed-in player may type any
   name; a guest may not and is given an `Anon` name (A13, A21).
 - **Q3 — Minimum age.** The terms need one; 13 is the usual floor for Discord and Google accounts.
@@ -478,6 +531,17 @@ API tests run against an in-memory database, under `tests/api/`, added to `npm t
 
 ## 16. Changelog
 
+- **2026-10-07** — **B3 built and audited** (§12.3): `join_verify` with Turnstile and the name
+  filter, the stub endpoints, A20 in the client, the API as a third program in the container
+  with a `/data` volume. The production-mode container played a game with an account and a
+  guest on Tom's PC with no call to a missing endpoint. Two production-only bugs fixed on the
+  way (the inlined worker's asset base; a guest's browser ID dropped on every load). Ranked
+  matchmaking's poll is now off by default. Stage 3a is done.
+- **2026-10-07** — `API_DOMAIN` added (§11): the API hostname no longer has to be `api.<DOMAIN>`;
+  at launch it is `darkstar-api.january-games.com`. Wherever this document says `api.<DOMAIN>`,
+  read "the API's hostname".
+- **2026-10-07** — Tom decided A20: private lobbies cannot be listed publicly at launch (built in B3).
+  Turnstile keys issued and placed in `.env` the same day.
 - **2026-10-07** — **B2 built as code** (§12.2): the dev and Discord providers, sessions
   with a rotating refresh cookie, refresh/logout/revoke, `/users/@me`, guests accepted in
   every environment with the assigned `Anon#####` name, the Sign in button and account

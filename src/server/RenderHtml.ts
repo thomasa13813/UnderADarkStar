@@ -89,6 +89,10 @@ export async function renderHtmlContent(
     gameEnv: JSON.stringify(ServerEnv.gameEnvName()),
     turnstileSiteKey: JSON.stringify(ServerEnv.turnstileSiteKey()),
     jwtAudience: JSON.stringify(ServerEnv.jwtAudience()),
+    // The account API's origin (ServerEnv.jwtIssuer): environment-scoped,
+    // so the page need not guess it from the audience. Optional on the
+    // client for pages that predate it.
+    apiOrigin: JSON.stringify(ServerEnv.jwtIssuer()),
     // Environment-scoped like the two above (so the static per-version page
     // carries it too), but optional: absent when the deployment has no key,
     // and the guarded template line then drops out entirely.

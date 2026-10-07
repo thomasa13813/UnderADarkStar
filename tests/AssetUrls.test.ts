@@ -1,5 +1,9 @@
 import { describe, expect, test } from "vitest";
-import { buildAssetUrl, rewriteAssetsForCdn } from "../src/core/AssetUrls";
+import {
+  buildAssetUrl,
+  rewriteAssetsForCdn,
+  workerAssetBase,
+} from "../src/core/AssetUrls";
 
 describe("AssetUrls", () => {
   test("returns hashed URLs for direct asset matches", () => {
@@ -160,5 +164,21 @@ describe("rewriteAssetsForCdn", () => {
   test("does not match data-src or other custom attributes", () => {
     const html = `<img data-src="/assets/foo.png">`;
     expect(rewriteAssetsForCdn(html)).toBe(html);
+  });
+});
+
+describe("workerAssetBase", () => {
+  test("uses the CDN when there is one", () => {
+    expect(
+      workerAssetBase("https://cdn.example.com", "https://game.example.com"),
+    ).toBe("https://cdn.example.com");
+  });
+
+  test("falls back to the page's origin when there is no CDN", () => {
+    // The inlined worker runs under a blob: URL, where a relative path has
+    // nothing to resolve against; same-origin serving needs the origin.
+    expect(workerAssetBase("", "https://darkstar.january-games.com")).toBe(
+      "https://darkstar.january-games.com",
+    );
   });
 });

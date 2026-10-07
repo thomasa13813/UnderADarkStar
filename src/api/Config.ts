@@ -19,9 +19,14 @@ export interface ApiConfig {
   // Where the database and the signing key live: /data in the container
   // (a volume), .data/ in dev (git-ignored).
   dataDir: string;
-  // The site. The API is api.<DOMAIN>, which is also the token issuer the game
-  // server checks (ServerEnv.jwtIssuer); DOMAIN is the token audience.
+  // The site. DOMAIN is the token audience; the API's own hostname is
+  // apiDomain, or api.<DOMAIN> when that is not set, and its origin is the
+  // token issuer the game server checks (ServerEnv.jwtIssuer).
   domain: string;
+  // API_DOMAIN: the API's hostname when it is not api.<DOMAIN>. At launch it
+  // is darkstar-api.january-games.com, because Cloudflare's free certificate
+  // covers one level of names under the registered domain only.
+  apiDomain: string | null;
   // Shared secret for server-to-API calls (x-api-key).
   apiKey: string;
   // The page's origin, where a sign-in sends the browser back when the login
@@ -32,6 +37,9 @@ export interface ApiConfig {
   // then not offered, which is how a fresh checkout runs with the dev
   // provider alone.
   discord: ProviderCredentials | null;
+  // Cloudflare Turnstile's secret, for the join bot check (§7, join_verify).
+  // Required outside dev; in dev it may be absent, and every token passes.
+  turnstileSecret: string | null;
 }
 
 export function apiConfigFromEnv(
@@ -59,11 +67,21 @@ export function apiConfigFromEnv(
       : domain === "localhost"
         ? "http://localhost:9000"
         : `https://${domain}`;
+  const apiDomain =
+    env.API_DOMAIN && env.API_DOMAIN.length > 0 ? env.API_DOMAIN : null;
+  const turnstileSecret =
+    env.TURNSTILE_SECRET_KEY && env.TURNSTILE_SECRET_KEY.trim().length > 0
+      ? env.TURNSTILE_SECRET_KEY.trim()
+      : null;
+  if (turnstileSecret === null && gameEnv !== GameEnv.Dev) {
+    throw new Error("TURNSTILE_SECRET_KEY not set");
+  }
   return {
     env: gameEnv,
     port,
     dataDir,
     domain,
+    apiDomain,
     apiKey,
     siteOrigin,
     discord: providerCredentials(
@@ -71,6 +89,7 @@ export function apiConfigFromEnv(
       env.DISCORD_CLIENT_ID,
       env.DISCORD_CLIENT_SECRET,
     ),
+    turnstileSecret,
   };
 }
 
@@ -96,15 +115,24 @@ function providerCredentials(
 // domain (ServerEnv.jwtIssuer, ClientEnv.jwtIssuer): one rule in three
 // places, so a token minted here is accepted there.
 export function issuerFor(config: ApiConfig): string {
+  if (config.apiDomain !== null) {
+    // Same rule as ServerEnv.apiOriginFor: localhost is plain http.
+    return /^localhost(:\d+)?$/.test(config.apiDomain)
+      ? `http://${config.apiDomain}`
+      : `https://${config.apiDomain}`;
+  }
   return config.domain === "localhost"
     ? `http://localhost:${config.port}`
     : `https://api.${config.domain}`;
 }
 
 // Browser origins the API answers cross-origin requests from: the site, and
-// in dev the Vite page and the game server on any localhost port.
+// in dev the Vite page and the game server on any localhost port. A
+// localhost DOMAIN is never a public site, so it keeps the localhost rule in
+// every environment: that is how a production-mode container is audited on
+// one PC (Launch stage 3a).
 export function allowedOrigin(config: ApiConfig, origin: string): boolean {
-  if (config.env === GameEnv.Dev) {
+  if (config.env === GameEnv.Dev || config.domain === "localhost") {
     return /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
   }
   return (

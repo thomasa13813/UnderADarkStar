@@ -51,11 +51,51 @@ describe("api config", () => {
       port: 8787,
       dataDir: ".data",
       domain: "localhost",
+      apiDomain: null,
       apiKey: "test-key",
       siteOrigin: "http://localhost:9000",
       discord: null,
+      turnstileSecret: null,
     });
     expect(issuerFor(config)).toBe("http://localhost:8787");
+  });
+
+  it("requires the Turnstile secret outside dev", () => {
+    expect(() =>
+      apiConfigFromEnv({
+        GAME_ENV: "prod",
+        DOMAIN: "example.com",
+        API_KEY: "k",
+      }),
+    ).toThrow(/TURNSTILE_SECRET_KEY/);
+  });
+
+  it("keeps a localhost API_DOMAIN on plain http, port included", () => {
+    const config = apiConfigFromEnv({
+      GAME_ENV: "prod",
+      DOMAIN: "localhost",
+      API_DOMAIN: "localhost:8790",
+      API_PORT: "8790",
+      API_KEY: "k",
+      TURNSTILE_SECRET_KEY: "s",
+    });
+    expect(issuerFor(config)).toBe("http://localhost:8790");
+    expect(allowedOrigin(config, "http://localhost")).toBe(true);
+  });
+
+  it("names the API outright when API_DOMAIN is set", () => {
+    const config = apiConfigFromEnv({
+      GAME_ENV: "prod",
+      DOMAIN: "darkstar.january-games.com",
+      API_DOMAIN: "darkstar-api.january-games.com",
+      API_KEY: "k",
+      TURNSTILE_SECRET_KEY: "s",
+    });
+    expect(issuerFor(config)).toBe("https://darkstar-api.january-games.com");
+    expect(config.siteOrigin).toBe("https://darkstar.january-games.com");
+    expect(allowedOrigin(config, "https://darkstar.january-games.com")).toBe(
+      true,
+    );
   });
 
   it("defaults production to /data and the api subdomain, and refuses gaps", () => {
@@ -64,6 +104,7 @@ describe("api config", () => {
       DOMAIN: "example.com",
       API_KEY: "k",
       API_PORT: "9000",
+      TURNSTILE_SECRET_KEY: "s",
     });
     expect(config.dataDir).toBe("/data");
     expect(config.port).toBe(9000);
@@ -88,6 +129,7 @@ describe("api config", () => {
       GAME_ENV: "prod",
       DOMAIN: "example.com",
       API_KEY: "k",
+      TURNSTILE_SECRET_KEY: "s",
     });
     expect(allowedOrigin(prod, "https://example.com")).toBe(true);
     expect(allowedOrigin(prod, "https://www.example.com")).toBe(true);

@@ -1,4 +1,4 @@
-import { getCdnBase } from "../AssetUrls";
+import { getCdnBase, workerAssetBase } from "../AssetUrls";
 import {
   BuildableUnit,
   Cell,
@@ -93,7 +93,7 @@ export class WorkerClient {
         id: messageId,
         gameStartInfo: this.gameStartInfo,
         clientID: this.clientID,
-        cdnBase: getCdnBase(),
+        cdnBase: workerAssetBase(getCdnBase(), self.location.origin),
       });
 
       setTimeout(() => {

@@ -67,7 +67,13 @@ function announceLoggedOut(): void {
 export function clearLocalSession(): void {
   const hadSession = __jwt !== null;
   __jwt = null;
-  localStorage.removeItem(PERSISTENT_ID_KEY);
+  // Under a Dark Star (docs/DarkStar-Accounts.md A21): a guest's browser ID
+  // is their identity, and the name the server assigns is derived from it.
+  // Every page load of a signed-out player ends here (the refresh answers
+  // 401), so dropping the ID unconditionally, as upstream did, would hand
+  // the guest a new name on every visit. Only an actual sign-out forgets
+  // it: the account's identity should not leak into the guest that follows.
+  if (hadSession) localStorage.removeItem(PERSISTENT_ID_KEY);
   // Switch cosmetics back to the logged-out scope. The player's own
   // selections stay stored under their publicId and are restored on the
   // next login (#4955).
