@@ -4,28 +4,39 @@ import { ThroneModifier } from "../core/ThroneModifiers";
 import { ThroneRoundOutcome } from "./IPCBridgeSchema";
 
 // Under a Dark Star: the master's record of its public thrones
-// (docs/DarkStar-Lobbies.md §3, §5.1). A throne is a persistent public lobby
-// slot: it runs rounds back to back under one name, and the winner of a round
-// is the Hegemon of the next. This class is pure state and transitions, no
-// I/O and no clock of its own: the master feeds it what the workers report
-// and a timestamp, and it answers with the actions to take. Everything lives
-// in memory (L12): a restart reopens every throne with the AI seated.
+// (docs/DarkStar-Lobbies.md §3, §5.1, and the launch queues of L16-L27). A
+// throne is a public lobby that runs rounds back to back under one name, and
+// the winner of a round is the Hegemon of the next. This class is pure state
+// and transitions, no I/O and no clock of its own: the master feeds it what
+// the workers report and a timestamp, and it answers with the actions to
+// take. Everything lives in memory (L12): a restart opens a fresh floor of
+// thrones with the AI seated.
 //
 // Each throne's lobby moves through these phases:
 //
 //   deciding   — the round's winner holds a reservation on the seat and has
 //                the winner's window (L4) to pick the next map and say
 //                whether they stay or step down. The successor lobby is
-//                already open so players can gather, but it does not count
-//                down until the window resolves.
-//   gathering  — the lobby is open and waiting for THRONE_MIN_PLAYERS humans
-//                (L9). No countdown.
-//   countdown  — the minimum was met; startsAt was sent to the worker (L10).
-//                A dip below the minimum HOLDS the countdown: the remaining
-//                time is kept and the worker's startsAt is withdrawn, so
-//                reaching the minimum again resumes without resetting.
+//                already open so players can gather, but the throne is not
+//                in line until the window resolves (L23).
+//   gathering  — in line, waiting for its turn or for THRONE_MIN_PLAYERS
+//                humans (L9). No countdown.
+//   countdown  — this type's one running countdown (L17); startsAt was sent
+//                to the worker (L10). A dip below the minimum HOLDS it: the
+//                remaining time is kept and the worker's startsAt is
+//                withdrawn. The time is kept only until another throne of
+//                the type starts counting.
 //   running    — the game started. The worker reports it until it is
 //                reaped, so the Thrones tab can list it (T3).
+//
+// The launch queue (L16-L22). Thrones of one type that are gathering or
+// counting down form a line, ordered: the counting throne, then the thrones
+// that came back from a round with a human on the seat (by arrival), then
+// the rest (by arrival). Only one throne per type counts down, and it is the
+// first in line with the minimum number of humans; a running countdown is
+// never interrupted. Each line keeps at least `floor` thrones (a new one is
+// opened at the back when it runs short) and loses its surplus thrones that
+// nobody is in.
 //
 // A round ends when the worker reports it (throneRound, from the winner
 // vote) or when the game vanishes from every worker's report for longer
@@ -37,6 +48,8 @@ import { ThroneRoundOutcome } from "./IPCBridgeSchema";
 
 export type ThronePhase = "deciding" | "gathering" | "countdown" | "running";
 
+export const THRONE_TYPES: readonly ThroneType[] = ["ffa", "team", "special"];
+
 export interface ThroneHolder {
   persistentID: string;
   name: string;
@@ -47,7 +60,7 @@ export interface Throne {
   readonly name: string;
   readonly type: ThroneType;
   // Consecutive rounds the holder has kept the seat (§3.1): a slayer starts
-  // at 1, a timer win adds 1, an AI, vacated or expired seat resets to 0.
+  // at 1, a timer win adds 1, an AI or vacated seat resets to 0.
   reign: number;
   // The human who holds the seat for the coming round (confirmed winner).
   // Players who claim an open seat in the lobby are the worker's business
@@ -76,6 +89,15 @@ export interface Throne {
   lastSeenAt: number;
   // Rounds this throne has finished since boot (telemetry, T6).
   roundsPlayed: number;
+  // In line: came back from a round with a human on the seat, so it stands
+  // ahead of the thrones that did not (L19). Fixed at entry (L24).
+  priority: boolean;
+  // In line: order of arrival, lower is earlier.
+  enteredSeq: number;
+  // Connected non-spectators, as last reported.
+  numPlayers: number;
+  // In line: since when the lobby has had no humans at all (L20).
+  emptySince: number | null;
 }
 
 // What a worker's lobby list says about a throne's game this tick.
@@ -98,19 +120,21 @@ export interface ThronePick {
 export type ThroneAction =
   // Open a lobby for the throne under this game id. previousGameID names the
   // finished game whose players should be told about the successor; null when
-  // there is nobody to tell (boot, or a game that vanished). The throne's
-  // heir and reservationUntil ride along to the worker.
+  // there is nobody to tell (boot, a new throne, or a game that vanished).
+  // The throne's heir and reservationUntil ride along to the worker.
   | {
       kind: "create";
       throne: Throne;
       gameID: string;
       previousGameID: string | null;
     }
-  // The minimum was met: start (or resume) the countdown.
+  // This throne is its type's head and has the minimum: start (or resume)
+  // the countdown.
   | { kind: "countdown"; gameID: string; startsAt: number }
   // The count dipped below the minimum: withdraw the countdown.
   | { kind: "hold"; gameID: string }
-  // The winner answered: apply their map and keep or clear the heir.
+  // The window resolved: the winner answered, or it ran out and they keep
+  // the seat on a random map (L4). Apply the map and keep or clear the heir.
   | {
       kind: "pick";
       gameID: string;
@@ -118,18 +142,15 @@ export type ThroneAction =
       heir: ThroneHolder | null;
       reign: number;
     }
-  // The winner's window ran out: the seat opens.
-  | { kind: "expire"; gameID: string };
+  // A surplus throne nobody is in was retired (L20): close its lobby.
+  | { kind: "retire"; throneID: string; gameID: string | null };
 
 export interface ThroneRegistryOptions {
-  // Fixed names, in order (resources/thrones.json). There must be at least
-  // `count` of them.
+  // Throne names (resources/thrones.json), handed out in order and reused
+  // once a throne that carried one has been retired.
   names: readonly string[];
-  // Pool size (L1).
-  count: number;
-  // How many thrones of each type, in that order (L2). Counts beyond `count`
-  // are cut; a shortfall is filled with FFA thrones.
-  mix: { ffa: number; team: number; special: number };
+  // Thrones each type's line keeps open (L16). 0 switches the type off.
+  floor: Readonly<Record<ThroneType, number>>;
   // Humans needed to fire (L9).
   minPlayers: number;
   // Countdown length once met (L10).
@@ -139,6 +160,10 @@ export interface ThroneRegistryOptions {
   // How long a game may be missing from every worker's report before its
   // round is taken to be over.
   vanishGraceMs: number;
+  // How long a surplus throne must have had nobody in it before it is
+  // retired (L20). Longer than the vanish grace: the players of the round
+  // that just ended are still on its win screen.
+  cullGraceMs: number;
   mintGameID: () => string;
 }
 
@@ -147,33 +172,19 @@ export const DEFAULT_VANISH_GRACE_MS = 10_000;
 export class ThroneRegistry {
   private readonly thrones: Throne[] = [];
   private readonly byGameID = new Map<string, Throne>();
+  private idSeq = 0;
+  private lineSeq = 0;
+  private nameCursor = 0;
 
   constructor(private readonly opts: ThroneRegistryOptions) {
-    if (opts.names.length < opts.count) {
-      throw new Error(
-        `ThroneRegistry: ${opts.count} thrones but only ${opts.names.length} names`,
-      );
+    if (opts.names.length === 0) {
+      throw new Error("ThroneRegistry: no throne names");
     }
-    const types = throneTypes(opts.count, opts.mix);
-    for (let i = 0; i < opts.count; i++) {
-      this.thrones.push({
-        throneID: `throne-${String(i + 1).padStart(2, "0")}`,
-        name: opts.names[i],
-        type: types[i],
-        reign: 0,
-        holder: null,
-        seat: "open",
-        heir: null,
-        reservationUntil: null,
-        pendingReign: 0,
-        previousGameID: null,
-        gameID: null,
-        phase: "gathering",
-        startsAt: null,
-        remainingMs: null,
-        lastSeenAt: 0,
-        roundsPlayed: 0,
-      });
+    // The opening floor, FFA first, then team, then special (L2).
+    for (const type of THRONE_TYPES) {
+      for (let i = 0; i < Math.max(0, opts.floor[type]); i++) {
+        this.addThrone(type);
+      }
     }
   }
 
@@ -200,6 +211,27 @@ export class ThroneRegistry {
     return new Set(this.byGameID.keys());
   }
 
+  // A type's line in launch order (L16-L19): the counting throne, the
+  // returned winners by arrival, then the rest by arrival.
+  line(type: ThroneType): Throne[] {
+    return this.thrones
+      .filter((t) => t.type === type && inLine(t))
+      .sort(
+        (a, b) =>
+          Number(b.phase === "countdown") - Number(a.phase === "countdown") ||
+          Number(b.priority) - Number(a.priority) ||
+          a.enteredSeq - b.enteredSeq,
+      );
+  }
+
+  // A throne's place in its line, 1 for the next to launch; undefined while
+  // it is deciding or running.
+  placeOf(throne: Throne): number | undefined {
+    if (!inLine(throne)) return undefined;
+    const index = this.line(throne.type).indexOf(throne);
+    return index < 0 ? undefined : index + 1;
+  }
+
   // The throne's public face for lobby info and the lobby browser.
   info(throne: Throne): ThroneInfo {
     return {
@@ -210,31 +242,30 @@ export class ThroneRegistry {
       holderName: (throne.heir ?? throne.holder)?.name,
       seat: throne.seat,
       reservationUntil: throne.reservationUntil ?? undefined,
+      place: this.placeOf(throne),
     };
   }
 
   // One scheduling pass. `reports` maps game id to what the workers last said
   // about it; a throne's game missing from it for longer than the grace
   // period ends the round. `allowCreate` is false on an inactive deployment,
-  // which finishes what it runs but opens no new lobby.
+  // which finishes what it runs but opens no new lobby and no new throne.
   observe(
     now: number,
     reports: ReadonlyMap<string, ThroneObservation>,
     allowCreate = true,
   ): ThroneAction[] {
     const actions: ThroneAction[] = [];
-    for (const throne of this.thrones) {
+
+    // 1. Each throne: the window, the lobby, what the workers say.
+    for (const throne of [...this.thrones]) {
       // The window runs on the master's clock whether or not the lobby exists
-      // yet (L4): no answer means the seat opens.
+      // yet. No answer keeps the winner on the seat, on a random map (L4).
       if (
         throne.phase === "deciding" &&
         now > (throne.reservationUntil ?? now)
       ) {
-        this.openSeat(throne);
-        throne.phase = "gathering";
-        if (throne.gameID !== null) {
-          actions.push({ kind: "expire", gameID: throne.gameID });
-        }
+        actions.push(...this.resolveWindow(throne, { stay: true }));
       }
       if (throne.gameID === null) {
         if (allowCreate) actions.push(this.create(throne, null, now));
@@ -243,36 +274,91 @@ export class ThroneRegistry {
       const report = reports.get(throne.gameID);
       if (report === undefined) {
         if (now - throne.lastSeenAt > this.opts.vanishGraceMs) {
+          // Gone. A throne that was in line keeps its place; one that was
+          // running or deciding joins the back with the seat open.
+          const keepsPlace = inLine(throne);
           this.endRound(throne);
           this.openSeat(throne);
-          throne.phase = "gathering";
+          if (keepsPlace) {
+            throne.phase = "gathering";
+          } else {
+            this.enterLine(throne, false);
+          }
           if (allowCreate) actions.push(this.create(throne, null, now));
         }
         continue;
       }
       throne.lastSeenAt = now;
+      throne.numPlayers = report.numPlayers;
       if (report.running) {
         throne.phase = "running";
         throne.startsAt = null;
         throne.remainingMs = null;
+        throne.emptySince = null;
         continue;
       }
-      // No countdown while the winner is choosing: the round must not start
-      // under a map they have not picked yet (§3.2).
-      if (throne.phase === "deciding") continue;
-      if (report.numPlayers >= this.opts.minPlayers) {
-        if (throne.phase !== "countdown") {
-          const startsAt = now + (throne.remainingMs ?? this.opts.countdownMs);
-          throne.phase = "countdown";
-          throne.startsAt = startsAt;
-          throne.remainingMs = null;
-          actions.push({ kind: "countdown", gameID: throne.gameID, startsAt });
+      if (inLine(throne)) {
+        throne.emptySince =
+          report.numPlayers === 0 ? (throne.emptySince ?? now) : null;
+      }
+    }
+
+    // 2. Each line: its one countdown (L17, L18, L26).
+    for (const type of THRONE_TYPES) {
+      let counting = this.thrones.find(
+        (t) => t.type === type && t.phase === "countdown",
+      );
+      if (
+        counting !== undefined &&
+        counting.numPlayers < this.opts.minPlayers
+      ) {
+        counting.remainingMs = Math.max(0, (counting.startsAt ?? now) - now);
+        counting.startsAt = null;
+        counting.phase = "gathering";
+        if (counting.gameID !== null) {
+          actions.push({ kind: "hold", gameID: counting.gameID });
         }
-      } else if (throne.phase === "countdown") {
-        throne.remainingMs = Math.max(0, (throne.startsAt ?? now) - now);
-        throne.startsAt = null;
-        throne.phase = "gathering";
-        actions.push({ kind: "hold", gameID: throne.gameID });
+        counting = undefined;
+      }
+      if (counting !== undefined) continue;
+      const line = this.line(type);
+      const head = line.find(
+        (t) => t.gameID !== null && t.numPlayers >= this.opts.minPlayers,
+      );
+      if (head === undefined || head.gameID === null) continue;
+      const startsAt = now + (head.remainingMs ?? this.opts.countdownMs);
+      // The time a held throne had left is its own only until another takes
+      // the countdown: the meter starts afresh for everyone else.
+      for (const other of line) other.remainingMs = null;
+      head.phase = "countdown";
+      head.startsAt = startsAt;
+      actions.push({ kind: "countdown", gameID: head.gameID, startsAt });
+    }
+
+    // 3. Each line keeps its floor: a new throne joins the back (L16).
+    if (allowCreate) {
+      for (const type of THRONE_TYPES) {
+        while (this.line(type).length < this.opts.floor[type]) {
+          actions.push(this.create(this.addThrone(type), null, now));
+        }
+      }
+    }
+
+    // 4. Surplus thrones nobody is in are retired, last in line first (L20).
+    for (const type of THRONE_TYPES) {
+      for (;;) {
+        const line = this.line(type);
+        if (line.length <= this.opts.floor[type]) break;
+        const victim = line
+          .reverse()
+          .find(
+            (t) =>
+              t.phase === "gathering" &&
+              t.emptySince !== null &&
+              now - t.emptySince >= this.opts.cullGraceMs,
+          );
+        if (victim === undefined) break;
+        actions.push(this.retire(victim));
       }
     }
     return actions;
@@ -282,7 +368,8 @@ export class ThroneRegistry {
   // throne's current one (a repeat, or a round the registry already closed as
   // vanished). Opens the successor at once, naming the finished game so its
   // win screen can announce it (§5.8). A human winner gets the seat reserved
-  // for the window (L4); anything else opens it (L6, R6).
+  // for the window (L4) and the throne waits out of line until it resolves
+  // (L23); anything else opens the seat and joins the back (L19).
   roundEnded(
     gameID: string,
     outcome: ThroneRoundOutcome,
@@ -303,6 +390,7 @@ export class ThroneRegistry {
       throne.reservationUntil = now + this.opts.windowMs;
       throne.previousGameID = gameID;
       throne.phase = "deciding";
+      throne.emptySince = null;
       // A timer win extends the sitting holder's reign; a slayer, or a
       // claimant who held the timer, starts one (§3.1).
       throne.pendingReign =
@@ -312,7 +400,7 @@ export class ThroneRegistry {
           : 1;
     } else {
       this.openSeat(throne);
-      throne.phase = "gathering";
+      this.enterLine(throne, false);
     }
     return allowCreate ? [this.create(throne, gameID, now)] : [];
   }
@@ -338,7 +426,14 @@ export class ThroneRegistry {
     ) {
       return [];
     }
-    if (pick.stay) {
+    return this.resolveWindow(throne, pick);
+  }
+
+  // The window is over, by an answer or by the clock: seat or unseat the
+  // winner and put the throne in line (L23). Staying stands it ahead of the
+  // open thrones; stepping down sends it to the back (L19).
+  private resolveWindow(throne: Throne, pick: ThronePick): ThroneAction[] {
+    if (pick.stay && throne.heir !== null) {
       throne.holder = throne.heir;
       throne.reign = throne.pendingReign;
       throne.seat = "seated";
@@ -347,7 +442,7 @@ export class ThroneRegistry {
     }
     throne.reservationUntil = null;
     throne.pendingReign = 0;
-    throne.phase = "gathering";
+    this.enterLine(throne, throne.seat === "seated");
     if (throne.gameID === null) return [];
     return [
       {
@@ -370,12 +465,22 @@ export class ThroneRegistry {
     throne.reign = 0;
   }
 
+  private enterLine(throne: Throne, priority: boolean) {
+    throne.phase = "gathering";
+    throne.priority = priority;
+    throne.enteredSeq = ++this.lineSeq;
+    throne.startsAt = null;
+    throne.remainingMs = null;
+    throne.emptySince = null;
+  }
+
   private endRound(throne: Throne) {
     if (throne.gameID !== null) this.byGameID.delete(throne.gameID);
     throne.gameID = null;
     throne.previousGameID = null;
     throne.startsAt = null;
     throne.remainingMs = null;
+    throne.numPlayers = 0;
     throne.roundsPlayed++;
   }
 
@@ -388,23 +493,65 @@ export class ThroneRegistry {
     throne.gameID = gameID;
     throne.startsAt = null;
     throne.remainingMs = null;
+    throne.numPlayers = 0;
     throne.lastSeenAt = now;
     this.byGameID.set(gameID, throne);
     return { kind: "create", throne, gameID, previousGameID };
   }
+
+  // A new throne at the back of its type's line, the AI seated.
+  private addThrone(type: ThroneType): Throne {
+    const throne: Throne = {
+      throneID: `throne-${String(++this.idSeq).padStart(2, "0")}`,
+      name: this.nextName(),
+      type,
+      reign: 0,
+      holder: null,
+      seat: "open",
+      heir: null,
+      reservationUntil: null,
+      pendingReign: 0,
+      previousGameID: null,
+      gameID: null,
+      phase: "gathering",
+      startsAt: null,
+      remainingMs: null,
+      lastSeenAt: 0,
+      roundsPlayed: 0,
+      priority: false,
+      enteredSeq: ++this.lineSeq,
+      numPlayers: 0,
+      emptySince: null,
+    };
+    this.thrones.push(throne);
+    return throne;
+  }
+
+  private retire(throne: Throne): ThroneAction {
+    const gameID = throne.gameID;
+    if (gameID !== null) this.byGameID.delete(gameID);
+    this.thrones.splice(this.thrones.indexOf(throne), 1);
+    return { kind: "retire", throneID: throne.throneID, gameID };
+  }
+
+  // The next name no living throne carries, in list order. With every name
+  // taken (more thrones than names) the next in order is reused.
+  private nextName(): string {
+    const names = this.opts.names;
+    const taken = new Set(this.thrones.map((t) => t.name));
+    for (let i = 0; i < names.length; i++) {
+      const name = names[(this.nameCursor + i) % names.length];
+      if (!taken.has(name)) {
+        this.nameCursor = (this.nameCursor + i + 1) % names.length;
+        return name;
+      }
+    }
+    const name = names[this.nameCursor % names.length];
+    this.nameCursor = (this.nameCursor + 1) % names.length;
+    return name;
+  }
 }
 
-// The type of each throne, FFA first, then team, then special (L2). A mix
-// that does not add up to `count` is cut or padded with FFA thrones.
-export function throneTypes(
-  count: number,
-  mix: { ffa: number; team: number; special: number },
-): ThroneType[] {
-  const types: ThroneType[] = [
-    ...Array<ThroneType>(Math.max(0, mix.ffa)).fill("ffa"),
-    ...Array<ThroneType>(Math.max(0, mix.team)).fill("team"),
-    ...Array<ThroneType>(Math.max(0, mix.special)).fill("special"),
-  ].slice(0, count);
-  while (types.length < count) types.push("ffa");
-  return types;
+function inLine(throne: Throne): boolean {
+  return throne.phase === "gathering" || throne.phase === "countdown";
 }

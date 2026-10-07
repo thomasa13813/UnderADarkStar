@@ -153,11 +153,11 @@ _Done when_ nothing a player sees or hears is a placeholder.
 - [ ] **Licence items**: the Source link points at the deployed commit; `CREDITS.md` complete; the
       attribution line present.
 - [ ] **Production keys**: real Turnstile keys; secrets rotated from anything used in testing.
-- [ ] **Throne count for the opening.** Replaced 2026-10-05 by the launch-queue work
-      (`DarkStar-Lobbies.md` §13): per-type queues with a floor of five thrones, only the head
-      counting down, so fifteen thrones (5 / 5 / 5, Tom's numbers) no longer spread a small
-      population thin. Decisions L16 onward and the build are next; this box ticks when it is
-      live on the dev server.
+- [ ] **Throne launch lines** (was: throne count for the opening). Decided 2026-10-06 as
+      L16-L28 in `DarkStar-Lobbies.md`: per-type lines with a floor of five, one countdown per
+      line. The server side is built (Lobbies §10.5); the client (home cards per line head,
+      place in line, the win screen's stay-or-join-the-head choice) remains. Team thrones (T5)
+      follow as the next priority.
 - [ ] **Watching it**: an uptime check on `/api/health` and the API's `/health`; a look at the
       server's logs and load with a dozen clients connected.
 - [ ] **Somewhere to report bugs** (a Discord server or an email address; Tom's choice).
@@ -283,3 +283,7 @@ _Done when_ the checklist is clean. This build is the release candidate.
 - **2026-10-05** — Tom set the direction for throne launches: per-type launch queues with a
   floor of five, replacing the Stage 6 throne-count item (Lobbies doc §13). Opening numbers
   stay 15 thrones, 5 of each type.
+- **2026-10-06** — Throne launch lines decided (L16-L28) and built on the server: the registry
+  runs one line per type with a floor of five, counts down only the head, puts a kept seat
+  second, and retires surplus empty thrones. An unanswered winner's window now keeps the
+  winner on the seat. The client work and team thrones (T5) are next.

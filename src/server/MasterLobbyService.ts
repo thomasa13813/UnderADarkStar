@@ -106,25 +106,31 @@ export interface MasterLobbyServiceOptions {
  */
 export const QUEUED_LOBBIES_PER_TYPE = 6;
 
-// Under a Dark Star: the throne pool from the environment
-// (docs/DarkStar-Lobbies.md §9), or null when the server runs upstream's
-// per-type queues instead (PUBLIC_LOBBIES=queue). FFA and special thrones;
-// team thrones wait for T5.
+// Under a Dark Star: the throne lines from the environment
+// (docs/DarkStar-Lobbies.md §9, L16), or null when the server runs upstream's
+// per-type queues instead (PUBLIC_LOBBIES=queue). An FFA line and a special
+// line; the team line waits for T5.
 export function throneRegistryFromEnv(): ThroneRegistry | null {
   if (ServerEnv.publicLobbyMode() !== "thrones") return null;
-  const count = ServerEnv.throneCount();
-  const special = Math.min(count, ServerEnv.throneSpecialCount());
+  const floor = ServerEnv.throneFloor();
   return new ThroneRegistry({
     names: throneNames,
-    count,
-    mix: { ffa: count - special, team: 0, special },
+    floor: { ffa: floor, team: 0, special: floor },
     minPlayers: ServerEnv.throneMinPlayers(),
     countdownMs: ServerEnv.throneCountdownMs(),
     windowMs: ServerEnv.throneWindowMs(),
     vanishGraceMs: DEFAULT_VANISH_GRACE_MS,
+    cullGraceMs: ServerEnv.throneCullGraceMs(),
     mintGameID: () => ServerEnv.generateGameId(),
   });
 }
+
+// The order the lines are advertised in when two thrones hold the same place.
+const THRONE_TYPE_ORDER: Record<string, number> = {
+  ffa: 0,
+  team: 1,
+  special: 2,
+};
 
 export class MasterLobbyService {
   private readonly workers = new Map<number, Worker>();
@@ -406,24 +412,35 @@ export class MasterLobbyService {
     // reporting a finished round while its players sit on the win screen,
     // and that round's successor is already listed in its place.
     if (this.thrones !== null) {
-      const current = this.thrones.currentGameIDs();
-      result.throne = result.throne.filter((l) => current.has(l.gameID));
+      const thrones = this.thrones;
+      const current = thrones.currentGameIDs();
+      // Each entry carries its throne's place in line (L16-L19), which only
+      // the registry knows.
+      result.throne = result.throne
+        .filter((l) => current.has(l.gameID))
+        .map((l) => {
+          const throne = thrones.byGame(l.gameID);
+          const place =
+            throne === undefined ? undefined : thrones.placeOf(throne);
+          return l.throne === undefined || place === undefined
+            ? l
+            : { ...l, throne: { ...l.throne, place } };
+        });
     }
-    // Soonest to start first (L13): counting down by startsAt, then open
-    // lobbies by how many are waiting, then by name so the order is stable;
-    // running rounds last.
+    // Launch order (L13, L16-L19): the head of each line first, then the
+    // seconds, and so on, FFA before team before special at the same place;
+    // thrones whose winner is still choosing next; running rounds last. The
+    // name keeps the order stable.
     result.throne.sort((a, b) => {
       const aRunning = a.throne?.running === true ? 1 : 0;
       const bRunning = b.throne?.running === true ? 1 : 0;
       if (aRunning !== bRunning) return aRunning - bRunning;
-      if (a.startsAt !== undefined || b.startsAt !== undefined) {
-        if (a.startsAt === undefined) return 1;
-        if (b.startsAt === undefined) return -1;
-        if (a.startsAt !== b.startsAt) return a.startsAt - b.startsAt;
-      }
-      const aPlayers = a.numPlayers ?? a.numClients;
-      const bPlayers = b.numPlayers ?? b.numClients;
-      if (aPlayers !== bPlayers) return bPlayers - aPlayers;
+      const aPlace = a.throne?.place ?? Number.MAX_SAFE_INTEGER;
+      const bPlace = b.throne?.place ?? Number.MAX_SAFE_INTEGER;
+      if (aPlace !== bPlace) return aPlace - bPlace;
+      const aType = THRONE_TYPE_ORDER[a.throne?.type ?? "ffa"] ?? 0;
+      const bType = THRONE_TYPE_ORDER[b.throne?.type ?? "ffa"] ?? 0;
+      if (aType !== bType) return aType - bType;
       return (a.throne?.name ?? "").localeCompare(b.throne?.name ?? "");
     });
 
@@ -776,15 +793,19 @@ export class MasterLobbyService {
           } satisfies MasterUpdateGame);
           break;
         }
-        case "expire":
-          this.log.info("winner's window expired, throne open", {
+        case "retire":
+          this.log.info("retiring a surplus empty throne", {
+            throneID: action.throneID,
             gameID: action.gameID,
           });
-          this.sendMessageToWorker({
-            type: "updateLobby",
-            gameID: action.gameID,
-            throne: { heir: null, reign: 0 },
-          } satisfies MasterUpdateGame);
+          if (action.gameID !== null) {
+            this.throneConfigs.delete(action.gameID);
+            this.sendMessageToWorker({
+              type: "updateLobby",
+              gameID: action.gameID,
+              retire: true,
+            } satisfies MasterUpdateGame);
+          }
           break;
       }
     }

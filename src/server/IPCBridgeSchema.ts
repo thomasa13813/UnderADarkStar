@@ -137,6 +137,9 @@ const MasterUpdateGameSchema = z.object({
       reign: z.number().int().min(0),
     })
     .optional(),
+  // Under a Dark Star: a surplus throne nobody is in was retired (L20). The
+  // worker closes its lobby.
+  retire: z.boolean().optional(),
 });
 
 // Under a Dark Star: the throne a public lobby runs for. The worker keeps it

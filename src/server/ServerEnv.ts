@@ -136,20 +136,22 @@ export class ServerEnv {
   static publicLobbyMode(): "thrones" | "queue" {
     return process.env.PUBLIC_LOBBIES === "queue" ? "queue" : "thrones";
   }
-  // Thrones in the pool (L1). 15 at launch, 3 in dev; THRONE_COUNT overrides
-  // both (the opening count is a few, raised with the population).
-  static throneCount(): number {
+  // Thrones each type's launch line keeps open (L16): 5 at launch, 2 in dev
+  // so the line is visible with a couple of tabs. THRONE_FLOOR overrides.
+  static throneFloor(): number {
     return ServerEnv.positiveIntEnv(
-      "THRONE_COUNT",
-      ServerEnv.gameEnv === GameEnv.Dev ? 3 : 15,
+      "THRONE_FLOOR",
+      ServerEnv.gameEnv === GameEnv.Dev ? 2 : 5,
     );
   }
-  // Special thrones in the pool (L2): 3 at launch, 1 in dev; the rest are
-  // FFA until T5 adds team thrones. THRONE_SPECIAL_COUNT overrides.
-  static throneSpecialCount(): number {
-    return ServerEnv.nonNegativeIntEnv(
-      "THRONE_SPECIAL_COUNT",
-      ServerEnv.gameEnv === GameEnv.Dev ? 1 : 3,
+  // How long a surplus throne must have had nobody in it before it is
+  // retired (L20): a minute, 15 s in dev. Longer than the vanish grace
+  // because the players of the round that just ended are still on its win
+  // screen. THRONE_CULL_GRACE_MS overrides.
+  static throneCullGraceMs(): number {
+    return ServerEnv.positiveIntEnv(
+      "THRONE_CULL_GRACE_MS",
+      ServerEnv.gameEnv === GameEnv.Dev ? 15 * 1000 : 60 * 1000,
     );
   }
   // Humans (spectators excluded) a throne needs before its countdown runs

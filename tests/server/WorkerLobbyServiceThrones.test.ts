@@ -132,6 +132,20 @@ describe("WorkerLobbyService thrones", () => {
     expect(game.phase()).toBe(GamePhase.Lobby);
   });
 
+  it("closes a retired throne's lobby on updateLobby retire, but never a started round (L20)", () => {
+    const lobby = makeThroneGame("g01");
+    expect(lobby.phase()).toBe(GamePhase.Lobby);
+    dispatch({ type: "updateLobby", gameID: "g01", retire: true });
+    expect(lobby.phase()).toBe(GamePhase.Finished);
+
+    const round = makeThroneGame("g02");
+    round.joinClient(makeClient());
+    round.joinClient(makeClient());
+    startGame(round);
+    dispatch({ type: "updateLobby", gameID: "g02", retire: true });
+    expect(round.phase()).not.toBe(GamePhase.Finished);
+  });
+
   it("announces the successor to the finished game as new_lobby", () => {
     const game = makeThroneGame("g01");
     const a = makeClient();

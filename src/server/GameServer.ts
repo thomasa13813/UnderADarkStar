@@ -1710,6 +1710,16 @@ export class GameServer {
     this.hegemonHeir = throne.heir?.persistentID ?? null;
   }
 
+  // The master retired this throne (L20): a surplus lobby nobody was in.
+  // Ending it reports Finished, so the manager prunes it; anyone who slipped
+  // in during the grace period is disconnected and rejoins from the lobby
+  // list. A round that has started is never retired.
+  public retire() {
+    if (this.hasStarted()) return;
+    this.log.info("throne retired, closing its lobby", { gameID: this.id });
+    void this.end();
+  }
+
   // The winner's pick for this lobby (§5.5): the map and the cap the master
   // rolled for it, and on a special throne the whole rebuilt modifier set
   // (§5.4). Every key the patch carries is taken, an explicit undefined

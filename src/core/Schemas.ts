@@ -352,6 +352,10 @@ export const ThroneInfoSchema = z.object({
   // While the seat is reserved: when the winner's window closes (L4), so the
   // lobby can show "the Hegemon is choosing" with a bar.
   reservationUntil: zb.uint().optional(),
+  // The throne's place in its type's launch line, 1 for the next to launch
+  // (L16-L19). Absent while the winner is choosing or the round is running.
+  // Set by the master on the public lobby list.
+  place: zb.uint().optional(),
 });
 export type ThroneInfo = z.infer<typeof ThroneInfoSchema>;
 

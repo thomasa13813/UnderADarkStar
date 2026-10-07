@@ -166,6 +166,10 @@ export class WorkerLobbyService {
         if (msg.throne !== undefined) {
           game.updateThrone(msg.throne);
         }
+        // A retired throne's lobby closes (L20).
+        if (msg.retire === true) {
+          game.retire();
+        }
         break;
       }
       case "successorCreated": {

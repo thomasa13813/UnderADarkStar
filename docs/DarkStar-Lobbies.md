@@ -26,23 +26,36 @@ a server restart, ranked or skill-based matching, private lobbies (unchanged fro
 
 Numbered so the code and tests can cite them.
 
-| #   | Decision                                                                                                                                                                                                                                                 |
-| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| L1  | **Fixed pool.** The server keeps a fixed number of persistent public lobbies, **thrones**, each running rounds back to back. Launch count **15**; the number is config, with a scaling rule available later (§9).                                        |
-| L2  | **Fixed type per throne.** A throne is an FFA, team or special throne for its whole life. The mix is config (launch: 9 FFA, 3 team, 3 special). The winner chooses within the type, never the type.                                                      |
-| L3  | **No account needed.** The seat is keyed on the browser's `persistentID` (the localStorage UUID, or the JWT subject once P5 exists). Clearing storage or switching browsers loses a reservation. Bots are not a concern for now.                         |
-| L4  | **The winner's window.** On the win screen the winner has **30 s** (config) to pick the next map (and rules on a special throne) and to say whether they **stay** on the throne or **vacate** it. No answer: random map, seat opens.                     |
-| L5  | **Vacating is allowed.** A winner may set the map and rules and then decline the seat.                                                                                                                                                                   |
-| L6  | **An open seat is first come, first served.** Any non-spectator in the lobby may claim an open seat, and may give it up again before the round starts. A seat nobody holds at start goes to the AI Hegemon (R6, already built).                          |
-| L7  | **What the winner may set.** The map, from the full list. On a special throne, up to **two** modifiers from a whitelist (§5.4). Timer stays 20 minutes (R5), player cap is the map's, team count is the playlist's.                                      |
-| L8  | **Team thrones: the slayer takes the seat.** Not a team victory. The challenger who lands the killing blow (R3) holds the reservation; on a timer win the human Hegemon keeps it. Teammates get nothing beyond the win screen.                           |
-| L9  | **Minimum to fire: two humans**, the seated Hegemon included, spectators excluded. A throne with fewer holds at zero and keeps its seat and map pick. A bot-held throne with one challenger does not start either.                                       |
-| L10 | **Countdown.** A throne's lobby opens the moment its round ends (during the winner's window, so players can gather). The countdown, **2 minutes** (5 s in dev), starts when the minimum is met and does not reset when it is met again after a dip.      |
-| L11 | **No reign cap.** A Hegemon may hold a throne indefinitely; losing on the timer is the intended fiction.                                                                                                                                                 |
-| L12 | **Restart opens every seat.** The registry lives in the master's memory. A deploy or crash reopens all thrones with the AI seated and reign counts at zero. Accepted because restarts will be rare once live; revisit with P5's database (§9).           |
-| L13 | **Front page.** The existing three cards show the three thrones closest to starting. A **Thrones** tab lists every throne with its name, type, holder, reign count, player count, and a **Watch** button while a round runs (spectators, already built). |
-| L14 | **Named thrones.** Each throne has a fixed sci-fi name from a resource list, shown on its card, in the lobby and on the Dark Star panel. Cheap now, and the hook for reign identity later (F13).                                                         |
-| L15 | **Private lobbies unchanged.** The P0 flow (creator seats the throne, "New lobby" succession by hand, §6.22) stays as is. Thrones are public only.                                                                                                       |
+| #   | Decision                                                                                                                                                                                                                                                                                                                                                                        |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| L1  | **Fixed pool.** The server keeps a fixed number of persistent public lobbies, **thrones**, each running rounds back to back. Launch count **15**; the number is config, with a scaling rule available later (§9). **[Revised 2026-10-06 by L16: a floor of five per type, with thrones created and retired.]**                                                                  |
+| L2  | **Fixed type per throne.** A throne is an FFA, team or special throne for its whole life. The mix is config (launch: 9 FFA, 3 team, 3 special). The winner chooses within the type, never the type.                                                                                                                                                                             |
+| L3  | **No account needed.** The seat is keyed on the browser's `persistentID` (the localStorage UUID, or the JWT subject once P5 exists). Clearing storage or switching browsers loses a reservation. Bots are not a concern for now.                                                                                                                                                |
+| L4  | **The winner's window.** On the win screen the winner has **30 s** (config) to pick the next map (and rules on a special throne) and to say whether they **stay** on the throne or **vacate** it. No answer: random map, seat opens. **[Revised 2026-10-06 by L23: no answer keeps the winner on the seat; only the map falls to random.]**                                     |
+| L5  | **Vacating is allowed.** A winner may set the map and rules and then decline the seat.                                                                                                                                                                                                                                                                                          |
+| L6  | **An open seat is first come, first served.** Any non-spectator in the lobby may claim an open seat, and may give it up again before the round starts. A seat nobody holds at start goes to the AI Hegemon (R6, already built).                                                                                                                                                 |
+| L7  | **What the winner may set.** The map, from the full list. On a special throne, up to **two** modifiers from a whitelist (§5.4). Timer stays 20 minutes (R5), player cap is the map's, team count is the playlist's.                                                                                                                                                             |
+| L8  | **Team thrones: the slayer takes the seat.** Not a team victory. The challenger who lands the killing blow (R3) holds the reservation; on a timer win the human Hegemon keeps it. Teammates get nothing beyond the win screen.                                                                                                                                                  |
+| L9  | **Minimum to fire: two humans**, the seated Hegemon included, spectators excluded. A throne with fewer holds at zero and keeps its seat and map pick. A bot-held throne with one challenger does not start either.                                                                                                                                                              |
+| L10 | **Countdown.** A throne's lobby opens the moment its round ends (during the winner's window, so players can gather). The countdown, **2 minutes** (5 s in dev), starts when the minimum is met and does not reset when it is met again after a dip.                                                                                                                             |
+| L11 | **No reign cap.** A Hegemon may hold a throne indefinitely; losing on the timer is the intended fiction.                                                                                                                                                                                                                                                                        |
+| L12 | **Restart opens every seat.** The registry lives in the master's memory. A deploy or crash reopens all thrones with the AI seated and reign counts at zero. Accepted because restarts will be rare once live; revisit with P5's database (§9).                                                                                                                                  |
+| L13 | **Front page.** The existing three cards show the three thrones closest to starting. A **Thrones** tab lists every throne with its name, type, holder, reign count, player count, and a **Watch** button while a round runs (spectators, already built). **[Revised 2026-10-06 by L25: one card per line head.]**                                                               |
+| L14 | **Named thrones.** Each throne has a fixed sci-fi name from a resource list, shown on its card, in the lobby and on the Dark Star panel. Cheap now, and the hook for reign identity later (F13).                                                                                                                                                                                |
+| L15 | **Private lobbies unchanged.** The P0 flow (creator seats the throne, "New lobby" succession by hand, §6.22) stays as is. Thrones are public only.                                                                                                                                                                                                                              |
+| L16 | **One launch line per type** (FFA, team, special), so players can seek the mode they prefer. Each line keeps a **floor of five** thrones gathering: when one launches, a new throne is created at the back. No ceiling: a line grows as rounds end and shrinks by culling (L20). Replaces L1's fixed pool. [2026-10-06]                                                         |
+| L17 | **One countdown per line.** Only the head counts down: 2 minutes, started when the head has the minimum (not when it becomes head), held on a dip as in L10. A lobby that fills to the map's capacity fires at once wherever it stands. [2026-10-06]                                                                                                                            |
+| L18 | **The head is the first throne in line that has met the minimum.** A throne with fewer humans keeps its place while the countdown passes it by. [2026-10-06]                                                                                                                                                                                                                    |
+| L19 | **Order of the line.** The counting throne; then thrones that returned from a round with a human on the seat, by arrival (so a returning winner stands second behind a running countdown, and at the head when nothing is counting); then everything else by arrival. A round that ends for the AI, with no winner, or whose winner steps down joins the **back**. [2026-10-06] |
+| L20 | **Culling.** When a line holds more than its floor and a throne in it has had no humans for the cull grace (60 s, see §10.5), that throne is retired and its lobby closed, last in line first. A throne with nobody in it holds no reign, so nothing is lost. [2026-10-06]                                                                                                      |
+| L21 | **Joining a throne that is not the head is allowed**; the client shows its place in line. [2026-10-06]                                                                                                                                                                                                                                                                          |
+| L22 | **The minimum stays two humans** (L9). It is the knob to raise once there is a population. [2026-10-06]                                                                                                                                                                                                                                                                         |
+| L23 | **The window and the line.** A throne is out of line while its winner chooses; it enters when the choice is made or the window expires. **L4 is revised:** no answer means a random map and the winner **keeps the seat** by default; they may still give it up in the lobby before the round starts (L6). [2026-10-06]                                                         |
+| L24 | **A throne's place is fixed when it enters the line.** Claiming or leaving a seat afterwards does not move it. Open to revision if it would help the flow of games. [2026-10-06]                                                                                                                                                                                                |
+| L25 | **Launch with two lines, FFA and special.** The team line needs T5 (§5.9), which becomes the priority after this work. The home page shows one card per line head: two at launch. A line with nobody in it shows its first throne as waiting for players. [2026-10-06]                                                                                                          |
+| L26 | **A running countdown is never interrupted.** A throne ahead of the head that regains the minimum is simply head next, with a full 2 minutes. A held throne's remaining time (L10) is its own only until another throne takes the countdown. [2026-10-06]                                                                                                                       |
+| L27 | **After a round, the players who did not win choose:** stay with their throne, shown its place in line, or join the head of the line. [2026-10-06]                                                                                                                                                                                                                              |
+| L28 | **Open thrones overtaken repeatedly by returning winners** is accepted for launch and watched; it needs a real population to occur. [2026-10-06]                                                                                                                                                                                                                                |
 
 ## 3. The throne model
 
@@ -299,19 +312,17 @@ subject replaces the UUID in the same field with no registry change (L3).
 
 ## 9. Configuration
 
-| Constant               | Launch value               | Dev value | Notes                                    |
-| ---------------------- | -------------------------- | --------- | ---------------------------------------- |
-| `THRONE_COUNT`         | 15                         | 3         | L1; the floor once scaling exists        |
-| `THRONE_COUNT_MAX`     | 60                         | 3         | ceiling for the scaling rule             |
-| `THRONE_MIX`           | 9 FFA / 3 team / 3 special | 1 / 1 / 1 | team thrones 0 until T5                  |
-| `PLAYERS_PER_THRONE`   | 8                          | —         | scaling rule: open ≈ online / 8, clamped |
-| `THRONE_COUNTDOWN_MS`  | 120 000                    | 5 000     | L10                                      |
-| `THRONE_MIN_PLAYERS`   | 2                          | 2         | L9 (humans, spectators excluded)         |
-| `WINNER_WINDOW_MS`     | 30 000                     | 30 000    | L4                                       |
-| `THRONE_MAX_MODIFIERS` | 2                          | 2         | L7                                       |
-| Round timer            | 20 min                     | —         | R5, not choosable                        |
+| Constant               | Launch value | Dev value | Notes                                                                        |
+| ---------------------- | ------------ | --------- | ---------------------------------------------------------------------------- |
+| `THRONE_FLOOR`         | 5            | 2         | L16; thrones each line keeps open (FFA and special lines; team waits for T5) |
+| `THRONE_CULL_GRACE_MS` | 60 000       | 15 000    | L20; how long a surplus throne must be empty before it is retired            |
+| `THRONE_COUNTDOWN_MS`  | 120 000      | 5 000     | L10                                                                          |
+| `THRONE_MIN_PLAYERS`   | 2            | 2         | L9 (humans, spectators excluded)                                             |
+| `WINNER_WINDOW_MS`     | 30 000       | 30 000    | L4                                                                           |
+| `THRONE_MAX_MODIFIERS` | 2            | 2         | L7                                                                           |
+| Round timer            | 20 min       | —         | R5, not choosable                                                            |
 
-**Scaling rule (later):** `open = clamp(floor(online / PLAYERS_PER_THRONE), THRONE_COUNT,
+**Scaling rule [superseded 2026-10-05 by the launch lines, L16-L20]:** `open = clamp(floor(online / PLAYERS_PER_THRONE), THRONE_COUNT,
 THRONE_COUNT_MAX)` where `online` is home-page lobby-socket clients plus in-game clients (workers
 already report `liveGames`; add a client count). Thrones beyond `open` go dormant after their
 current round ends and wake in name order when needed. Off at launch: the count is simply 15.
@@ -477,6 +488,45 @@ Special thrones: the pool has them, and their winners set up to two modifiers.
 - **Tests.** `tests/server/ThroneModifiers.test.ts` (10), and special-throne cases added to the
   master, worker and seat tests.
 
+### 10.5 As built: the launch lines, server side (2026-10-06)
+
+L16-L20, L23, L24 and L26 in the master; the client (L21, L25, L27) is not built yet.
+
+- **Registry.** `ThroneRegistry` keeps a dynamic set of thrones instead of a fixed pool. A
+  throne is in line while `gathering` or `countdown`; `line(type)` orders them (the counting
+  throne, then `priority` thrones by `enteredSeq`, then the rest) and `placeOf` gives the
+  1-based place. `observe` runs four steps: each throne's window, lobby and report; each
+  line's one countdown; the floor (`addThrone` + `create` at the back); the cull (`retire`
+  action). Options: `floor` per type replaces `count` and `mix`; `cullGraceMs` is new.
+  Throne ids count up and are never reused; names are handed out in list order and reused
+  once the thrones that carried them are gone.
+- **The window (L23).** `resolveWindow` serves both the winner's answer and the expiry, which
+  is now the same as "keep the throne" with no map: the `expire` action is gone and the
+  master sends the ordinary pick update with the heir kept. Staying enters the line with
+  `priority`; stepping down, an AI round and a vanished game enter at the back. A lobby that
+  vanishes while its throne is in line is recreated in place.
+- **The meter (L26).** A new countdown clears every other throne's held `remainingMs` in that
+  line, so two launches cannot follow each other on leftover time.
+- **Culling (L20).** A throne's `emptySince` is tracked while in line. Tom agreed to reuse the
+  vanish grace, but 10 s would retire a returned throne while its players are still on the
+  win screen, so culling has its own grace: `THRONE_CULL_GRACE_MS`, 60 s (15 s in dev). The
+  master forwards `retire` as `updateLobby { retire: true }`; `GameServer.retire()` ends an
+  unstarted lobby, which the manager then prunes. A started round is never retired.
+- **Capacity (L17).** Nothing to build: a worker's lobby already leaves the lobby phase when
+  it reaches `maxPlayers`, with or without a countdown.
+- **The public list.** `ThroneInfo` gains `place` (optional, wire-compatible). The master sets
+  it on each advertised throne from the registry and sorts by it: each line's head first, FFA
+  before special at the same place, deciding thrones next, running rounds last.
+- **Config.** `THRONE_FLOOR` (5, dev 2) replaces `THRONE_COUNT` and `THRONE_SPECIAL_COUNT`.
+- **Tests.** `ThroneRegistry.test.ts` rewritten (33: the earlier behaviour plus the head, the
+  order, the floor, the cull, names); `MasterLobbyServiceThrones.test.ts` (18: launch order
+  with places, the retire message, the expiry keeping the heir);
+  `WorkerLobbyServiceThrones.test.ts` gains the retire case.
+- **Still to build (client).** Two home cards, one per line head, with "next" or "N ahead";
+  the Thrones tab in line order; the lobby's own place display; the win screen's "stay with
+  this throne (Nth in line)" and "join the head" buttons (L27); sending a player whose
+  throne was retired under them to the head; the rulebook's line about launches.
+
 ## 11. Tests
 
 - `tests/server/ThroneRegistry.test.ts`: every transition of §3.2; reservation expiry; vacate;
@@ -501,7 +551,7 @@ Special thrones: the pool has them, and their winners set up to two modifiers.
 - **Q4 — Persisting seats** once P5's database exists: reservations and reign counts survive a
   restart (L12 revisited).
 
-## 13. Direction (2026-10-05): launch queues per type [Proposed, L16 onward tomorrow]
+## 13. Direction (2026-10-05): launch queues per type [Decided 2026-10-06 as L16-L28; server side built, §10.5]
 
 Tom's notes from the evening of 2026-10-05, written up so the decisions can be numbered next
 session. Nothing here is built; §2 still describes what runs today.
@@ -590,3 +640,12 @@ over the existing gathering state, plus `create` / `retire` actions).
   the minimum, returning rounds with a seated human enter second, open or AI rounds go to the
   back, surplus empty thrones are culled with the vanish grace. Supersedes L1's fixed pool,
   §9's scaling rule and Q1. Decisions to be numbered L16 onward.
+- **2026-10-06** — **Launch lines decided (L16-L28) and built on the server** (§10.5). Tom's
+  answers of the day: joining a throne that is not the head is allowed; the countdown starts
+  when the head has the minimum; the minimum stays two; launch with FFA and special lines,
+  team thrones next; a throne enters the line only when the winner's window resolves, and an
+  unanswered window now keeps the winner on the seat (L4 revised); place is fixed at entry; a
+  running countdown is never interrupted; players who did not win may stay with their throne
+  or join the head; repeated overtaking of open thrones is accepted for now; one home card per
+  line head. One deviation recorded in §10.5: culling uses its own 60-second grace, not the
+  10-second vanish grace.
