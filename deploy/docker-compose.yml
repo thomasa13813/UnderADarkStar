@@ -1,0 +1,61 @@
+# Under a Dark Star: the one-server deployment (docs/DarkStar-Launch.md, stage
+# 3b). Two containers: the game (nginx, the game server and the account API
+# in one image, built from this repository) and cloudflared, which holds the
+# tunnel to Cloudflare. Nothing is published on the host: players reach the
+# game only through the tunnel, so the server's firewall needs SSH alone.
+#
+# Run from the server's checkout by deploy/deploy.sh:
+#   docker compose -f deploy/docker-compose.yml --env-file /opt/darkstar/.env up -d --build
+# The env file (H3) holds the production settings and secrets and is never in
+# the repository; deploy/env.example lists its keys.
+
+services:
+  game:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        GIT_COMMIT: ${GIT_COMMIT:-unknown}
+    image: darkstar:latest
+    restart: unless-stopped
+    env_file:
+      - ${DARKSTAR_ENV_FILE:-/opt/darkstar/.env}
+    volumes:
+      # The account database and the signing key (Accounts doc §8, §10).
+      - darkstar-data:/data
+    expose:
+      - "80"
+      - "8787"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      # The tunnel's token from the Cloudflare dashboard (Zero Trust >
+      # Networks > Tunnels). The hostnames and where they go are configured
+      # there too: both darkstar.january-games.com and
+      # darkstar-api.january-games.com point at http://game:80, and nginx in
+      # the game container tells them apart by hostname.
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN}
+    depends_on:
+      - game
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  darkstar-data:

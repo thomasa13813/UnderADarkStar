@@ -113,25 +113,43 @@ join path is identical).
 
 **3b. First deployment (M)**
 
-- [ ] **H1** Accounts and purchases: ~~the domain, on Cloudflare~~ (done 2026-10-06,
+- [x] **H1** Accounts and purchases: ~~the domain, on Cloudflare~~ (done 2026-10-06,
       `january-games.com`, Cloudflare account on an address outside the domain with Email Routing);
-      the server (about 4 cores) and its provider remain.
+      the server: done 2026-10-07, a DigitalOcean Droplet named `darkstar`, Basic Premium AMD,
+      2 vCPU / 4 GB / 80 GB, New York (NYC1), $28 a month, image "Docker on Ubuntu 22.04",
+      `<server>`, root over SSH with the key `~/.ssh/<key>`. Two cores
+      rather than four: the simulation runs in the browsers, the server only relays; resize
+      later if a launch day needs it. The DigitalOcean account is on a studio-controlled Google
+      account, not `hello@` (a departure from the 10-06 rule; move or accept at leisure).
 - [ ] **H2** The server set up: Docker, a compose file with two containers (the game, and
       `cloudflared` for the tunnel), a `/data` volume, the two hostnames
       (`darkstar.january-games.com` and `darkstar-api.january-games.com`) routed through the
       tunnel. Also at H2: the production redirect
       `https://darkstar-api.january-games.com/auth/callback/discord` added to the Discord
-      application.
+      application. **In progress 2026-10-07.** Done on the server: 2 GB swap (the image build
+      peaks above 4 GB), the Docker API ports closed in ufw (SSH alone stays open; players
+      arrive through the tunnel), `/opt/darkstar`, a read-only deploy key for GitHub. In the
+      repository: `deploy/docker-compose.yml` (the game image built from the checkout, the
+      `darkstar-data` volume, nothing published on the host; `cloudflared` with its token).
+      Waiting on Tom: the tunnel and its token, the deploy key added to GitHub (or the
+      repository made public), the branch pushed, the Discord redirect.
 - [ ] **H3** The environment file with the production settings and secrets (Accounts §11), kept
-      off the repository. Known so far: `GAME_ENV=prod`, `DOMAIN=darkstar.january-games.com`,
+      off the repository. `deploy/push-env.sh` writes it to `/opt/darkstar/.env` from the
+      developer's local `.env` and a freshly generated `API_KEY`, printing nothing;
+      `deploy/env.example` lists every key. Known so far: `GAME_ENV=prod`, `DOMAIN=darkstar.january-games.com`,
       `API_DOMAIN=darkstar-api.january-games.com`, `NUM_WORKERS` (about the core count),
       `INSTANCE_LETTER=a`, `API_KEY` (a long random secret shared by the two programs),
       `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` (Tom's, from `.env`), `DISCORD_CLIENT_ID`
       and `DISCORD_CLIENT_SECRET`, `DATA_DIR=/data`. `CDN_BASE` stays unset (assets come from the
       game server); `RANKED_MATCHMAKING` stays unset (off).
-- [ ] **H4** A deploy script of our own (pull, build, restart), replacing upstream's `deploy.sh`,
+- [x] **H4** A deploy script of our own (pull, build, restart), replacing upstream's `deploy.sh`,
       `update.sh`, `build.sh`, `build-deploy.sh`, `setup.sh` and GitHub workflows, which target
-      OpenFront's infrastructure.
+      OpenFront's infrastructure. Built 2026-10-07: `deploy/deploy.sh` runs on the server
+      (`ssh root@<server> /opt/darkstar/repo/deploy/deploy.sh`): fetch the deploy branch, build
+      the image, restart the game container (the tunnel never drops), wait for the health check,
+      prune old images. Upstream's five scripts and their tests are removed; the workflows under
+      `.github/workflows/` that target OpenFront's infrastructure (deploy, release, PR and issue
+      bots, the Claude review) are for Tom to delete, keeping `ci.yml`.
 - [ ] **H5** Smoke test: a public round over the internet from two different networks; sign in
       with Discord on the real domain.
 
@@ -240,6 +258,13 @@ _Done when_ the checklist is clean. This build is the release candidate.
 
 ## 7. Changelog
 
+- **2026-10-07** — **H1 done, H2 begun, H4 built.** Tom bought the server (DigitalOcean, NYC1,
+  2 vCPU / 4 GB Premium AMD, $28/month). Server prepared over SSH (swap, firewall, folders,
+  deploy key); `deploy/` gains the compose file, the deploy script and the env pusher;
+  upstream's deploy scripts and their tests are gone. Remaining for Tom before the first deploy:
+  the Cloudflare tunnel token into the local `.env`, the deploy key on GitHub (or a public
+  repository), `git push`, the Discord production redirect. Then: push the env, run the deploy,
+  H5 smoke test.
 - **2026-10-07** — **B3 built and Stage 3a passed** (Accounts doc §12.3). The production-mode
   container, built and run on Tom's PC through Docker Desktop, served the page, verified an
   account's token, passed a guest through the Turnstile check (test keys), and ran a game with
