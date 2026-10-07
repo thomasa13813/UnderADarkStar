@@ -10,6 +10,7 @@ import { z } from "zod";
 import { CloseCode, CloseReason } from "../core/CloseCodes";
 import { GameEnv } from "../core/configuration/Config";
 import { GameType } from "../core/game/Game";
+import { guestName } from "../core/GuestName";
 import {
   ClientMessage,
   ID,
@@ -601,6 +602,16 @@ export async function startWorker() {
           } else {
             verifySkipped = true;
           }
+        }
+
+        // Under a Dark Star (docs/DarkStar-Accounts.md A21): a guest does not
+        // choose a name. Whatever the browser sent, screened or not, is
+        // replaced by the name derived from the guest's browser ID, so it is
+        // stable between games and cannot be forged by editing the page.
+        // Applied after the screening so the API's verdict on the typed name
+        // (the bot check is the part that matters) still stands.
+        if (claims === null) {
+          username = guestName(persistentId);
         }
 
         // Try to reconnect an existing client (e.g., page refresh) with the

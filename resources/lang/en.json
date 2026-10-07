@@ -1,4 +1,21 @@
 {
+  "account": {
+    "banned": "This account is banned.",
+    "dev_name_prompt": "Developer sign-in: which name?",
+    "guest_hint": "Your name as a guest. Sign in to choose one.",
+    "numbers_soon": "Your reigns and longest reign will appear here when the leaderboard is live.",
+    "panel_title": "Your account",
+    "provider_dev": "Developer sign-in",
+    "provider_discord": "Discord",
+    "sign_in": "Sign in",
+    "sign_in_failed": "Sign-in did not complete. Please try again.",
+    "sign_in_why": "Choose your name and have your reigns recorded on the leaderboard. Guests are welcome to play without signing in.",
+    "sign_in_with": "Sign in with",
+    "sign_out": "Sign out",
+    "sign_out_everywhere": "Sign out everywhere",
+    "sign_out_everywhere_hint": "Ends your session in every browser you signed in from.",
+    "signed_in_with": "Signed in with {provider}"
+  },
   "account_modal": {
     "change_tier": "Change Tier",
     "username_claim_heading": "Claim your username",
@@ -628,6 +645,8 @@
     "build_shield_array_desc": "Projects a shield 35 tiles around it. No other player's missile can harm anything inside the shield, the Hegemon's included; a blast still clears everything around it. The Hegemon's strikes pass through. One level only, no upgrades.",
     "build_stargate_desc": "Fires troops (your attack ratio) at any tile in range that is not yours. The shot lands and fights like a transport landing, and the land is kept; it may land on the Dark Star. Also the launcher for warheads. Costs {cost} gold, new or per upgrade, with no level cap: {base} tiles of range at level 1 and +{per} per level. One shot, then a {reload} second reload.",
     "build_warship_desc": "Patrols an area, capturing enemy freighters and destroying their transports and Destroyers. Launches from the harbour of your nearest Spaceport on that body of space and patrols the area you first clicked. Control Destroyers by attack-clicking them (see Attack under Hotkeys), then attack-clicking where they should go. They level up (max level 3) by capturing freighters and destroying transports and Destroyers; each level adds damage and health.",
+    "community_desc": "Found a bug, or something troubleshooting did not fix? Tell us on the Discord server, or write to us.",
+    "community_discord": "Join the Discord",
     "drag": "drag",
     "exit_confirmation": "Are you sure you want to exit the game?",
     "game_id_tooltip": "Game ID",

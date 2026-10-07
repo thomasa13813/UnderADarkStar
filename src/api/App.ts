@@ -1,13 +1,16 @@
 import express, { Express, NextFunction, Request, Response } from "express";
 import { DatabaseSync } from "node:sqlite";
+import { mountAuthRoutes } from "./AuthRoutes";
 import { allowedOrigin, ApiConfig } from "./Config";
 import { jwksDocument, SigningKey } from "./Keys";
+import { FetchLike } from "./Providers";
 
 // Under a Dark Star: the account API (docs/DarkStar-Accounts.md §3, §7), the
 // small service that replaces OpenFront's closed one. B1 is the skeleton: it
 // serves its signing key, answers the health check, and tells the client
 // there is no cluster list (which the client reads as "reachable, one
-// server"). Sign-in, the join path, results and the board follow (B2–B5).
+// server"). B2 adds sign-in, sessions and /users/@me (AuthRoutes.ts). The
+// join path, results and the board follow (B3–B5).
 //
 // Built as a factory so tests mount it on an ephemeral port; Server.ts is the
 // one place that reads the environment and listens.
@@ -17,6 +20,10 @@ export interface ApiDeps {
   db: DatabaseSync;
   key: SigningKey;
   log: Pick<Console, "info" | "warn" | "error">;
+  // Outbound HTTP (the providers' token exchange); tests stub it.
+  fetch?: FetchLike;
+  // The clock; tests move it.
+  now?: () => number;
 }
 
 export function createApiApp(deps: ApiDeps): Express {
@@ -55,6 +62,8 @@ export function createApiApp(deps: ApiDeps): Express {
   app.get("/cluster.json", (_req, res) => {
     res.status(404).json({ error: "no cluster list: single server" });
   });
+
+  mountAuthRoutes(app, deps);
 
   app.use((_req, res) => {
     res.status(404).json({ error: "not found" });

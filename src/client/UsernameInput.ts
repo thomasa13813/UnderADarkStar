@@ -2,6 +2,7 @@ import { html, LitElement } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { translateText } from "../client/Utils";
 import { UserMeResponse } from "../core/ApiSchemas";
+import { guestName, isGuestName } from "../core/GuestName";
 import { sanitizeClanTag } from "../core/Util";
 import {
   MAX_CLAN_TAG_LENGTH,
@@ -12,6 +13,7 @@ import {
   validateUsername,
 } from "../core/validations/username";
 import { getUserMe, invalidateUserMe } from "./Api";
+import { getPersistentID } from "./Auth";
 import { checkClanTagOwnership } from "./ClanApi";
 import { verifiedBadge } from "./components/ui/VerifiedBadge";
 import { showInGameAlert, showInGameConfirm } from "./InGameModal";
@@ -196,7 +198,40 @@ export class UsernameInput extends LitElement {
     document.addEventListener("userMeResponse", (event: Event) => {
       this.userMe = (event as CustomEvent).detail as UserMeResponse | false;
       this.applyVerifiedPreference();
+      this.adoptAccountName();
+      // userMe is not reactive state; the guest chip and the name box swap
+      // on it (Under a Dark Star, A21), so ask for a render.
+      this.requestUpdate();
     });
+  }
+
+  // Under a Dark Star (docs/DarkStar-Accounts.md §4.4, A21): signed out, the
+  // player is a guest and plays under the name the server derives from their
+  // browser ID. `null` is "not yet known" and keeps the box, so a signed-in
+  // player's page does not flash the guest chip before the profile arrives.
+  private isGuest(): boolean {
+    return this.userMe === false;
+  }
+
+  private guestDisplayName(): string {
+    return guestName(getPersistentID());
+  }
+
+  // Under a Dark Star (§4.5): a signed-in player's name box starts with the
+  // account name. Only over a name that is ours (generated, a guest name, or
+  // nothing): a name the player typed is theirs to keep.
+  private adoptAccountName() {
+    if (this.userMe === null || this.userMe === false) return;
+    const accountName = this.userMe.player.usernameBase ?? "";
+    if (accountName === "") return;
+    const current = this.baseUsername.trim();
+    if (current !== "" && !this.usernameIsGenerated && !isGuestName(current)) {
+      return;
+    }
+    if (current === accountName) return;
+    this.baseUsername = accountName;
+    this.usernameIsGenerated = false;
+    this.validateAndStore();
   }
 
   // The clans this player belongs to, for the tag picker. Empty when signed
@@ -247,6 +282,8 @@ export class UsernameInput extends LitElement {
       if (me === false) return false;
       this.userMe = me;
       this.applyVerifiedPreference();
+      this.adoptAccountName();
+      this.requestUpdate();
       return true;
     });
   }
@@ -473,6 +510,15 @@ export class UsernameInput extends LitElement {
    * (see applyVerifiedPreference), so it is the opt-in the resolver wants.
    */
   public resolvedName(): ResolvedPlayerName {
+    if (this.isGuest()) {
+      // The server assigns this name whatever is sent (Worker.ts, A21); the
+      // client shows the same one so the lobby matches the identity row.
+      return {
+        name: this.guestDisplayName(),
+        source: "generated",
+        verified: false,
+      };
+    }
     return resolvePlayerName({
       verifiedName: this.verifiedName(),
       verifiedOptIn: this.verifiedActive,
@@ -587,6 +633,8 @@ export class UsernameInput extends LitElement {
       if (this.userMe !== null) return;
       this.userMe = me;
       this.applyVerifiedPreference();
+      this.adoptAccountName();
+      this.requestUpdate();
     });
     // Captured before loadStoredUsername(), which — when nothing is stored —
     // fills in a fresh anon username AND persists it immediately. Checking
@@ -677,14 +725,16 @@ export class UsernameInput extends LitElement {
       <!-- The name field takes whatever the tag picker and trailing button
            leave, so the row always fills the strip. -->
       <div class="flex items-center w-full h-full gap-1.5 sm:gap-2">
-        ${this.renderClanControl()} ${this.renderNameControl()}
+        ${this.isGuest() ? null : this.renderClanControl()}
+        ${this.renderNameControl()}
       </div>
       <!-- One positioned slot, stacked. An error and the reservation reminder
            are not alternatives: the error is transient and self-inflicted
            (mid-edit on a free-form name), while the reminder is a 30-day
            countdown the player cannot recover once it lapses. Hiding the
            second behind the first put the time-critical one last. -->
-      ${this.validationError || this.clanTagOwnershipError || this.claimGrace
+      ${!this.isGuest() &&
+      (this.validationError || this.clanTagOwnershipError || this.claimGrace)
         ? html`<div
             class="absolute top-full left-0 z-50 w-full mt-1 flex flex-col gap-1"
           >
@@ -884,6 +934,11 @@ export class UsernameInput extends LitElement {
   // Name field. Verified play swaps the free-text input for a badge-led chip so
   // the state reads as "this is my account name", not "the input broke".
   private renderNameControl() {
+    if (this.isGuest()) return this.renderGuestChip();
+    // The verified-name toggle is upstream's subscription feature; it shows
+    // only for an account that is eligible, which none are here until the
+    // leaderboard's names exist.
+    const verifiedEligible = this.verifiedName() !== null;
     return html`
       ${this.verifiedActive
         ? this.renderVerifiedChip()
@@ -891,10 +946,32 @@ export class UsernameInput extends LitElement {
       <!-- The buttons differ in width, so this resizes the name field — which
            is transparent and left-aligned, so only its invisible right edge
            moves. -->
-      <div class="no-crazygames shrink-0 h-full max-h-[44px]">
-        ${this.verifiedActive
-          ? this.renderUseCustomButton()
-          : this.renderUseVerifiedButton()}
+      ${this.verifiedActive || verifiedEligible
+        ? html`<div class="no-crazygames shrink-0 h-full max-h-[44px]">
+            ${this.verifiedActive
+              ? this.renderUseCustomButton()
+              : this.renderUseVerifiedButton()}
+          </div>`
+        : null}
+    `;
+  }
+
+  // A guest's assigned name where the box would be, with the reason it is
+  // not a box (Under a Dark Star, A21). The Sign in button sits beside it.
+  private renderGuestChip() {
+    return html`
+      <div
+        id="guest-name"
+        class="flex items-center gap-3 ${NAME_BOX}"
+        title=${translateText("account.guest_hint")}
+      >
+        <span class="min-w-0 truncate text-white/85 ${NAME_TEXT}"
+          >${this.guestDisplayName()}</span
+        >
+        <span
+          class="hidden md:inline min-w-0 truncate text-xs text-white/45 whitespace-nowrap"
+          >${translateText("account.guest_hint")}</span
+        >
       </div>
     `;
   }
@@ -1119,6 +1196,8 @@ export class UsernameInput extends LitElement {
 
   // Play-eligibility: syntax-valid and not blocked by clan membership.
   public canPlay(): boolean {
+    // A guest has nothing to get wrong: the name is assigned (A21).
+    if (this.isGuest()) return true;
     return (
       this._isValid && this.clanTagOwnershipError !== "username.tag_not_member"
     );

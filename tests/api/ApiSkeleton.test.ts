@@ -52,6 +52,8 @@ describe("api config", () => {
       dataDir: ".data",
       domain: "localhost",
       apiKey: "test-key",
+      siteOrigin: "http://localhost:9000",
+      discord: null,
     });
     expect(issuerFor(config)).toBe("http://localhost:8787");
   });
@@ -245,7 +247,7 @@ describe("api app", () => {
   });
 
   it("answers unknown routes with a JSON 404", async () => {
-    const res = await fetch(`${base}/users/@me`);
+    const res = await fetch(`${base}/nothing-here`);
     expect(res.status).toBe(404);
     expect(await res.json()).toEqual({ error: "not found" });
   });

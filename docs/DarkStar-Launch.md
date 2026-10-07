@@ -57,10 +57,15 @@ Sizes as in the roadmap: S is a session, M a few, L a week or more of sessions.
 - [x] Confirm the hosting shape: one rented server (VPS) running our Docker container, Cloudflare's
       free plan in front through a named tunnel. Confirmed 2026-10-01, "for now"; the provider is
       chosen at H1.
-- [ ] Choose the domain name (needed by 3b).
+- [x] Choose the domain name (needed by 3b). **Done 2026-10-06:** `january-games.com`, a studio
+      domain, registered at Cloudflare (at cost, already the DNS host); .io ruled out (price,
+      repeated wholesale rises, Chagos sovereignty risk, and it would echo openfront.io).
+      Studio email is Cloudflare Email Routing: `hello@january-games.com` forwards to Tom's
+      personal Gmail. The game's hostname under it is still to pick (see §6.2).
 - [x] Set the launch map count: at least six new maps (2026-10-01). Which of the 13 inherited
       maps stay is still open.
-- [ ] Commit the uncommitted work (the 09-30 balance pass, the documents of 10-01).
+- [x] Commit the uncommitted work (the 09-30 balance pass, the documents of 10-01). Done; the
+      tree was clean at 2026-10-06 (`LobbyWork`).
 
 ### Stage 1 — Unblock the content track (S)
 
@@ -94,8 +99,9 @@ that this testing could hit.)
 
 - [x] **B1** The API skeleton, running under `npm run dev` (built 2026-10-03, Accounts doc §12.1).
       The container part waits for 3b.
-- [ ] **B2** Sign-in (the dev provider and Discord first), sessions, the account panel; guests
-      accepted in production.
+- [x] **B2** Sign-in (the dev provider and Discord first), sessions, the account panel; guests
+      accepted in production. Built 2026-10-07 (Accounts doc §12.2); the Discord round trip runs
+      for real at H5, once the production redirect URI exists.
 - [ ] **B3** The production join path: bot check, name filter, stub endpoints, and the audit.
 
 _Done when_ a container built on Tom's PC in production mode plays a public round with a guest and
@@ -103,7 +109,9 @@ a signed-in account, with no call to OpenFront's API.
 
 **3b. First deployment (M)**
 
-- [ ] **H1** Accounts and purchases: the domain, on Cloudflare; the server (about 4 cores).
+- [ ] **H1** Accounts and purchases: ~~the domain, on Cloudflare~~ (done 2026-10-06,
+      `january-games.com`, Cloudflare account on an address outside the domain with Email Routing);
+      the server (about 4 cores) and its provider remain.
 - [ ] **H2** The server set up: Docker, a compose file with two containers (the game, and
       `cloudflared` for the tunnel), a `/data` volume, the two hostnames (`<domain>` and
       `api.<domain>`) routed through the tunnel.
@@ -160,7 +168,11 @@ _Done when_ nothing a player sees or hears is a placeholder.
       follow as the next priority.
 - [ ] **Watching it**: an uptime check on `/api/health` and the API's `/health`; a look at the
       server's logs and load with a dozen clients connected.
-- [ ] **Somewhere to report bugs** (a Discord server or an email address; Tom's choice).
+- [x] **Somewhere to report bugs** (a Discord server or an email address; Tom's choice). Done
+      2026-10-07: the Discord server "Under a Dark Star" (invite `https://discord.gg/vTjcPKadD`,
+      five channels: welcome, announcements, general, bug-reports, suggestions), owned by the
+      `hello@` account, plus `hello@january-games.com`. Roles and channel permissions are still
+      default; Tom tidies them before the friends test. The link goes on the help page in B2.
 - [ ] Walk the launch checklist in roadmap P8.
 
 _Done when_ the checklist is clean. This build is the release candidate.
@@ -180,26 +192,29 @@ _Done when_ the checklist is clean. This build is the release candidate.
 
 ## 5. Things only Tom can do
 
-| What                                              | Needed by | Notes                                                             |
-| ------------------------------------------------- | --------- | ----------------------------------------------------------------- |
-| The decisions of Stage 0                          | Stage 0   |                                                                   |
-| Maps                                              | Stage 5   | Starts after Stage 1's kit.                                       |
-| Sound and music                                   | Stage 5   | Tom's plan; each file needs a licence that permits this use.      |
-| Logo, wordmark, font                              | Stage 5   | The text wordmark and Overpass stay until then.                   |
-| A Discord developer application                   | B2        | Free. Gives the client ID and secret for Discord sign-in.         |
-| A domain name                                     | 3b        | About $10–15 a year.                                              |
-| A Cloudflare account, with the domain on it       | 3b        | Free plan. Also issues the Turnstile keys.                        |
-| A server (VPS) account                            | 3b        | About $10–30 a month from this point.                             |
-| A Google Cloud OAuth client                       | Stage 6   | Free. Cannot go public before the privacy policy is live.         |
-| A contact address and a place for bug reports     | Stage 6   |                                                                   |
-| Reading and approving the Terms and Privacy pages | Stage 6   | Claude can draft them; they are Tom's undertakings, not Claude's. |
-| The go or no-go                                   | Stage 8   |                                                                   |
+| What                                              | Needed by | Notes                                                                   |
+| ------------------------------------------------- | --------- | ----------------------------------------------------------------------- |
+| The decisions of Stage 0                          | Stage 0   |                                                                         |
+| Maps                                              | Stage 5   | Starts after Stage 1's kit.                                             |
+| Sound and music                                   | Stage 5   | Tom's plan; each file needs a licence that permits this use.            |
+| Logo, wordmark, font                              | Stage 5   | The text wordmark and Overpass stay until then.                         |
+| ~~A Discord developer application~~               | B2        | Done 2026-10-07 on `hello@`; keys go in the git-ignored `.env`.         |
+| ~~A domain name~~                                 | 3b        | Done 2026-10-06: `january-games.com` at Cloudflare.                     |
+| ~~A Cloudflare account, with the domain on it~~   | 3b        | Done 2026-10-06. Free plan. Also issues the Turnstile keys.             |
+| A server (VPS) account                            | 3b        | About $10–30 a month from this point.                                   |
+| A Google Cloud OAuth client                       | Stage 6   | Free. Cannot go public before the privacy policy is live.               |
+| ~~A contact address and a place for bug reports~~ | Stage 6   | Done: `hello@january-games.com` (10-06) and the Discord server (10-07). |
+| Reading and approving the Terms and Privacy pages | Stage 6   | Claude can draft them; they are Tom's undertakings, not Claude's.       |
+| The go or no-go                                   | Stage 8   |                                                                         |
 
 ## 6. Open questions
 
 1. ~~Hosting shape.~~ Confirmed 2026-10-01: one VPS behind Cloudflare. Which provider is still
    open (decide at H1).
-2. The domain name.
+2. ~~The domain name.~~ Bought 2026-10-06: `january-games.com` at Cloudflare. Still open: the
+   game's hostname. Options: the bare domain (`january-games.com`) with `api.january-games.com`,
+   or a subdomain for the game (`darkstar.january-games.com`, `play.january-games.com`) with
+   the studio page at the root. Needed at H2, when the tunnel's hostnames are set.
 3. ~~The launch map count~~ (at least six new maps, 2026-10-01); which of the 13 inherited maps
    stay is still open.
 4. How many thrones to open with (suggest 3 to 5).
@@ -209,6 +224,23 @@ _Done when_ the checklist is clean. This build is the release candidate.
 
 ## 7. Changelog
 
+- **2026-10-07** — **Discord developer application created** by Tom on the studio Discord account
+  (`hello@january-games.com`), with the dev redirect `http://localhost:8787/auth/callback/discord`
+  registered; the production redirect waits for the hostname decision (§6.2). The client ID and
+  secret live in the root `.env` (git-ignored, read by the API through dotenv at boot), never in
+  the chat or the repository. Tom also chose a Discord server for bug reports (Stage 6) and
+  created it the same day: `https://discord.gg/vTjcPKadD`.
+- **2026-10-07** — **B2 built** (Accounts doc §12.2): sign-in with the dev provider and Discord,
+  sessions, `/users/@me`, guests as `Anon#####` everywhere, the Sign in button and account
+  panel, the help page's Discord and email links. Checked in the browser with the dev provider:
+  sign in, reload, host a lobby, a guest joins it, sign out. Next: B3, the production join path.
+- **2026-10-06** — **Domain bought:** `january-games.com` at Cloudflare, with Email Routing
+  forwarding `hello@january-games.com` to a mailbox outside the domain; .io ruled out. Order of operations agreed: the Cloudflare account on a studio-controlled
+  Gmail (never on an address at the domain, or a lockout would also cut off the recovery mail),
+  then the domain, then Cloudflare Email Routing (free forwarding, no mailbox) so that
+  `hello@january-games.com` lands in that Gmail. The VPS, Discord developer, itch.io and Google
+  Cloud accounts are then opened on `hello@` so they belong to the studio. Replies as `hello@`
+  go through Gmail's "Send mail as"; Google Workspace only if proper outbound mail is ever needed.
 - **2026-10-01** — Created. Scope of the minimum public release fixed from Tom's decisions of the
   day; the friends playtest moved from 2026-10-04 to Stage 7 as the go/no-go gate; stages 0–8
   ordered; hosting recorded as proposed, not confirmed.

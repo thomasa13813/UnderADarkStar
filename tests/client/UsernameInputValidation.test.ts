@@ -24,9 +24,21 @@ vi.mock("../../src/client/Utils", async (importOriginal) => ({
 import "../../src/client/UsernameInput";
 import type { UsernameInput as UsernameInputEl } from "../../src/client/UsernameInput";
 
+// Signed in: a guest has no name box at all (Under a Dark Star, A21), so the
+// free-form validation only applies to an account. No account name, so the
+// box starts from the stored or generated name as before.
 async function mount(): Promise<UsernameInputEl> {
   const el = document.createElement("username-input") as UsernameInputEl;
   document.body.appendChild(el);
+  await el.updateComplete;
+  document.dispatchEvent(
+    new CustomEvent("userMeResponse", {
+      detail: {
+        user: {},
+        player: { publicId: "p", username: null, usernameBase: null },
+      },
+    }),
+  );
   await el.updateComplete;
   return el;
 }

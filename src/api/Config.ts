@@ -2,7 +2,14 @@ import { GameEnv, parseGameEnv } from "../core/configuration/Config";
 
 // Under a Dark Star: the account API's settings (docs/DarkStar-Accounts.md
 // §11). Read once at boot from the environment; nothing here is secret except
-// API_KEY, which the game server shares for server-to-API calls.
+// API_KEY, which the game server shares for server-to-API calls, and the
+// sign-in providers' client secrets. In dev those come from the root `.env`
+// (git-ignored), which Server.ts loads through dotenv.
+
+export interface ProviderCredentials {
+  clientId: string;
+  clientSecret: string;
+}
 
 export interface ApiConfig {
   env: GameEnv;
@@ -17,6 +24,14 @@ export interface ApiConfig {
   domain: string;
   // Shared secret for server-to-API calls (x-api-key).
   apiKey: string;
+  // The page's origin, where a sign-in sends the browser back when the login
+  // link names nowhere (or somewhere that is not ours). SITE_ORIGIN overrides
+  // it; the default is the Vite page in dev and https://<DOMAIN> otherwise.
+  siteOrigin: string;
+  // Discord sign-in (§4.2). Null when the keys are not set: the provider is
+  // then not offered, which is how a fresh checkout runs with the dev
+  // provider alone.
+  discord: ProviderCredentials | null;
 }
 
 export function apiConfigFromEnv(
@@ -38,7 +53,43 @@ export function apiConfigFromEnv(
       : gameEnv === GameEnv.Dev
         ? ".data"
         : "/data";
-  return { env: gameEnv, port, dataDir, domain, apiKey };
+  const siteOrigin =
+    env.SITE_ORIGIN && env.SITE_ORIGIN.length > 0
+      ? env.SITE_ORIGIN.replace(/\/+$/, "")
+      : domain === "localhost"
+        ? "http://localhost:9000"
+        : `https://${domain}`;
+  return {
+    env: gameEnv,
+    port,
+    dataDir,
+    domain,
+    apiKey,
+    siteOrigin,
+    discord: providerCredentials(
+      "DISCORD",
+      env.DISCORD_CLIENT_ID,
+      env.DISCORD_CLIENT_SECRET,
+    ),
+  };
+}
+
+// Both keys or neither: one without the other is a misconfiguration worth
+// failing loudly on, not a provider that half works.
+function providerCredentials(
+  name: string,
+  clientId: string | undefined,
+  clientSecret: string | undefined,
+): ProviderCredentials | null {
+  const id = clientId?.trim() ?? "";
+  const secret = clientSecret?.trim() ?? "";
+  if (id === "" && secret === "") return null;
+  if (id === "" || secret === "") {
+    throw new Error(
+      `${name}_CLIENT_ID and ${name}_CLIENT_SECRET must be set together`,
+    );
+  }
+  return { clientId: id, clientSecret: secret };
 }
 
 // The token issuer, as the game server and the client derive it from the

@@ -1,5 +1,6 @@
 import { LitElement, html } from "lit";
 import { customElement } from "lit/decorators.js";
+import "./AccountButton";
 import "./NavUtilityIcons";
 
 @customElement("play-page")
@@ -69,16 +70,20 @@ export class PlayPage extends LitElement {
             class="lg:hidden h-[calc(env(safe-area-inset-top)+56px)] -mb-4"
           ></div>
           <div class="flex flex-col gap-2 min-w-0">
-            <!-- Identity row: the username. -->
+            <!-- Identity row: the username, and the account (sign in, or
+                 the account name and its panel; Accounts doc §9). -->
             <div
               class="relative bg-surface border-y border-white/10 overflow-visible flex items-center sm:min-h-[60px] sm:flex-1 sm:z-20 sm:border-y-0 sm:rounded-xl"
             >
               <div
-                class="relative z-10 flex h-full w-full min-w-0 items-center bg-surface/80 p-1 sm:rounded-xl"
+                class="relative z-10 flex h-full w-full min-w-0 items-center gap-1.5 sm:gap-2 bg-surface/80 p-1 sm:rounded-xl"
               >
                 <username-input
                   class="flex-1 min-w-0 h-10 sm:h-[50px]"
                 ></username-input>
+                <account-button
+                  class="shrink-0 h-10 sm:h-[50px]"
+                ></account-button>
               </div>
             </div>
           </div>

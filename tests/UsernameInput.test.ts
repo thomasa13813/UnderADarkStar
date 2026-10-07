@@ -66,14 +66,12 @@ function premiumUser(
   } as unknown as UserMeResponse;
 }
 
-function heldNameUser(): UserMeResponse {
+// Signed in, but with no account name to prefill: the box starts from the
+// stored or generated name, as it did for everyone before accounts.
+function noAccountName(): UserMeResponse {
   return {
-    player: {
-      username: "RyanTheGreat.2222",
-      usernameBase: "RyanTheGreat",
-      usernameStatus: "premium",
-      clans: [],
-    },
+    user: {},
+    player: { publicId: "p", username: null, usernameBase: null },
   } as unknown as UserMeResponse;
 }
 
@@ -117,6 +115,7 @@ const settle = () => new Promise((r) => setTimeout(r, 0));
 describe("UsernameInput clan tag picker", () => {
   it("shows the tag placeholder and no menu until opened", async () => {
     const el = await mount();
+    await signIn(el, premiumUser());
     expect(q(el, "#clan-tag-button")?.textContent).toContain("username.tag");
     expect(q(el, "#clan-tag-menu")).toBeNull();
   });
@@ -472,7 +471,13 @@ describe("UsernameInput clan tag picker", () => {
     await el.updateComplete;
 
     expect(el.isVerified()).toBe(false);
-    expect(el.getUsername()).toBe("MyCoolName");
+    // Under a Dark Star (A21): signed out, the player is a guest and plays
+    // under the assigned name; the typed name waits in storage for the next
+    // sign-in.
+    expect(el.getUsername()).toMatch(/^Anon\d{5}$/);
+    expect(q(el, "#guest-name")).not.toBeNull();
+    expect(q(el, 'input[aria-label="username.enter_username"]')).toBeNull();
+    expect(localStorage.getItem("username")).toBe("MyCoolName");
   });
 
   it("bypasses the cached profile when the picker is opened", async () => {
@@ -553,6 +558,7 @@ describe("UsernameInput name length", () => {
     localStorage.setItem("username", long);
 
     const el = await mount();
+    await signIn(el, noAccountName());
 
     expect(el.getUsername()).toBe("a".repeat(MAX_USERNAME_LENGTH));
     expect(el.canPlay()).toBe(true);
@@ -560,6 +566,7 @@ describe("UsernameInput name length", () => {
 
   it("caps what can be typed into the field", async () => {
     const el = await mount();
+    await signIn(el, noAccountName());
     expect(
       q<HTMLInputElement>(el, 'input[aria-label="username.enter_username"]')!
         .maxLength,
@@ -660,14 +667,17 @@ describe("UsernameInput verified name", () => {
     expect(el.isVerified()).toBe(false);
   });
 
-  it("renders the free-text field and an off-state toggle when ineligible", async () => {
+  it("renders the free-text field and no toggle when ineligible", async () => {
     const el = await mount();
     await signIn(el, {
       player: { username: null, usernameBase: null, usernameStatus: "none" },
     } as unknown as UserMeResponse);
 
     expect(el.isVerified()).toBe(false);
-    expect(q(el, TOGGLE)).not.toBeNull();
+    expect(q(el, 'input[aria-label="username.enter_username"]')).not.toBeNull();
+    // Under a Dark Star: the verified toggle shows only to an eligible
+    // account, not as a dead button beside the Sign in control.
+    expect(q(el, TOGGLE)).toBeNull();
     expect(q(el, CHANGE)).toBeNull();
   });
 
@@ -1007,42 +1017,3 @@ describe("UsernameInput claim grace, live behaviour", () => {
 
 // Spec (10 Sept 2026): a subscriber whose bare name someone else holds is not
 // eligible, and the button says why instead of silently doing nothing.
-describe("UsernameInput held bare name", () => {
-  it("does not lock the box to a suffixed account name", async () => {
-    localStorage.setItem("username", "MyCoolName");
-    const el = await mount();
-    await signIn(el, heldNameUser());
-    expect(el.isVerified()).toBe(false);
-    expect(el.getUsername()).toBe("MyCoolName");
-    expect(q(el, TOGGLE)).not.toBeNull();
-  });
-
-  it("explains the held name and offers the rename form", async () => {
-    const el = await mount();
-    await signIn(el, heldNameUser());
-    expect(q(el, TOGGLE)!.getAttribute("title")).toContain(
-      "username.verified_held_hint",
-    );
-
-    showInGameConfirm.mockResolvedValueOnce(true);
-    q(el, TOGGLE)!.click();
-    await settle();
-
-    expect(showInGameConfirm).toHaveBeenCalledTimes(1);
-    expect(showInGameConfirm.mock.calls[0][0]).toContain(
-      'username.verified_held_body:{"name":"RyanTheGreat"}',
-    );
-    expect(window.location.hash).toBe("#modal=change-username");
-    expect(el.isVerified()).toBe(false);
-  });
-
-  it("stays put when the player declines the rename", async () => {
-    const el = await mount();
-    await signIn(el, heldNameUser());
-    window.location.hash = "";
-    q(el, TOGGLE)!.click();
-    await settle();
-    expect(window.location.hash).toBe("");
-    expect(el.isVerified()).toBe(false);
-  });
-});

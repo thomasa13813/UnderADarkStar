@@ -6,7 +6,6 @@ import {
   UserMeResponse,
   UserMeResponseSchema,
 } from "../core/ApiSchemas";
-import { GameEnv } from "../core/configuration/Config";
 import { PersistentIdSchema } from "../core/Schemas";
 import { ServerEnv } from "./ServerEnv";
 
@@ -21,15 +20,13 @@ type TokenVerificationResult =
 export async function verifyClientToken(
   token: string,
 ): Promise<TokenVerificationResult> {
+  // Under a Dark Star (docs/DarkStar-Accounts.md A10): a guest's anonymous
+  // browser ID is accepted in every environment, as a guest (no claims).
+  // Upstream refused it outside dev because every player had an account;
+  // here guests are welcome, get the bot check like anyone else, and play
+  // under an assigned name (A21, Worker.ts).
   if (PersistentIdSchema.safeParse(token).success) {
-    if (ServerEnv.env() === GameEnv.Dev) {
-      return { type: "success", persistentId: token, claims: null };
-    } else {
-      return {
-        type: "error",
-        message: "persistent ID not allowed in production",
-      };
-    }
+    return { type: "success", persistentId: token, claims: null };
   }
   try {
     const issuer = ServerEnv.jwtIssuer();

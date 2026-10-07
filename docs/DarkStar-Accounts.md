@@ -5,7 +5,7 @@
 > decisions of that day; rows marked **Proposed** are recommendations waiting for his review (§15).
 > Companion to `DarkStar-Roadmap.md` phase P5, which this document expands and supersedes, and to
 > `DarkStar-Lobbies.md` (thrones, seats, reigns). Where it sits in the order of work is in
-> `DarkStar-Launch.md`. B1 is built as code (2026-10-03, §12.1); B2–B7 are not. Changelog at the end.
+> `DarkStar-Launch.md`. B1 (2026-10-03, §12.1) and B2 (2026-10-07, §12.2) are built as code; B3–B7 are not. Changelog at the end.
 
 ## 1. Goals
 
@@ -374,6 +374,63 @@ deployment (Launch 3b) and the providers for B2.
   "Done when" of B1 is met by the test that verifies a signed token with the served JWKS, and by
   the client's health check.
 
+### 12.2 As built: B2 (2026-10-07)
+
+Sign-in, sessions and the account's own view, as code, verified in the browser the same day
+(the dev provider: sign in, reload and stay signed in, host a lobby as `Tom.4413`, a guest
+joins it as `Anon04113`, sign out). The Discord keys are in Tom's `.env`; the Discord round
+trip itself is exercised against a stubbed Discord in the tests and for real at H5.
+
+- **`src/api/`**: `Config.ts` gains `siteOrigin` (where a sign-in sends the browser back;
+  `SITE_ORIGIN`, default the Vite page in dev and `https://<DOMAIN>` otherwise) and
+  `discord` (both `DISCORD_CLIENT_*` keys or neither; one alone fails the boot). `Sessions.ts`:
+  the refresh cookie `ds_refresh` (HttpOnly, SameSite=Lax, `Path=/auth`, 30 days, Secure
+  outside dev), SHA-256 of the secret in `sessions.token_hash`, rotation on every refresh,
+  revoke one or all. `Accounts.ts`: find-or-create by `(provider, provider_user_id)`; the
+  account name is the provider's display name reduced to the account alphabet (spaces to
+  underscores), clamped to 20, through the name filter, else `Player`; a random four-digit
+  tag; a random public ID; the ban → `role: "banned"` rule; and `/users/@me` in the shape
+  the client and the game server parse today (the upstream fields carry their empty
+  values until the schema is cut down with their last users; `adfree: true`,
+  `trustTier: "trusted"`). `Providers.ts`: `dev` (GAME_ENV=dev only; `?name=` is the
+  sign-in; the same name is the same account) and `discord` (authorization code, scope
+  `identify`, exchange server to server; `global_name` else `username` as the display
+  name). `AuthRoutes.ts`: `GET /auth/login/:provider` (a `redirect` on our origin is
+  honoured, anything else goes to the page; a state cookie `ds_oauth` carries the one-time
+  value and the return URL), `GET /auth/callback/:provider` (state checked, failures send
+  the browser back to the page with `#signin=failed`), `POST /auth/refresh` (rotates,
+  issues a 15-minute token with `provider` and `role`; a 401 clears the cookie),
+  `/auth/logout`, `/auth/revoke`, `GET /users/@me` (Bearer, verified as `jwt.ts` does).
+  `App.ts` mounts them; its deps take an injectable `fetch` and clock for the tests.
+- **Game server**: `jwt.ts` accepts the anonymous browser ID in every environment as a
+  guest (A10). `Worker.ts` replaces a guest's name with `guestName(persistentId)` after the
+  screening and before the rejoin (A21). `src/core/GuestName.ts`: `Anon` + five digits,
+  FNV-1a over the ID, shared with the client.
+- **Client**: `components/AccountButton.ts` (`<account-button>`, in the identity row
+  beside the name): signed out, a Sign in button with Discord and, in dev, the developer
+  sign-in (a name prompt); signed in, `Name.1234` and a panel with the provider, a note
+  that the numbers come with the leaderboard, Sign out and Sign out everywhere (both
+  through `Auth.logOut`, then `invalidateUserMe`). It notices `#signin=failed` once.
+  `UsernameInput.ts`: signed out (`userMe === false`) the box, the tag picker and the
+  errors give way to the guest chip (the assigned name and a hint); `resolvedName()`
+  returns the guest name and `canPlay()` is true; signed in, the box starts with the
+  account name when the stored one was generated, a guest name or empty, and the upstream
+  verified-name toggle shows only to an eligible account (none here). `HelpModal.ts`:
+  the Discord invite and `hello@` at the foot of Troubleshooting (`CommunityLinks.ts`).
+  New strings under `account.*` and `help_modal.community_*`.
+- **Tests**: `tests/api/Auth.test.ts` (dev provider end to end; rotation and the refused
+  old cookie; logout; revoke; expiry on an injected clock; same login same account;
+  redirect safety; `/users/@me` 401s; bans in token and profile; the Discord round trip
+  against a stubbed Discord, state mismatch, denial, a refused code; providers offered
+  per environment; Secure cookies in prod; half a provider refused), `tests/GuestName.test.ts`,
+  `tests/server/GuestToken.test.ts`. `tests/UsernameInput.test.ts` and
+  `UsernameInputValidation.test.ts` seed a signed-in profile where they test the box;
+  the "held bare name" cases and `UsernameVerifiedRoute.test.ts` were removed (names
+  need not be unique here, A13, and the route led to a modal removed in P1).
+- **Not yet**: rename and delete (B6, with the panel's buttons for them), rate limits
+  (B6), the Google provider (after the privacy policy), the schema cut-down, and the
+  production redirect URI in the Discord application (needs the hostname, Launch §6.2).
+
 ## 13. Tests
 
 API tests run against an in-memory database, under `tests/api/`, added to `npm test`.
@@ -421,6 +478,11 @@ API tests run against an in-memory database, under `tests/api/`, added to `npm t
 
 ## 16. Changelog
 
+- **2026-10-07** — **B2 built as code** (§12.2): the dev and Discord providers, sessions
+  with a rotating refresh cookie, refresh/logout/revoke, `/users/@me`, guests accepted in
+  every environment with the assigned `Anon#####` name, the Sign in button and account
+  panel, the guest chip in the identity row, and the help page's Discord and email links.
+  Verified in the browser with the dev provider; Discord against a stub until H5.
 - **2026-10-03** — **B1 built as code** (§12.1): `src/api/` skeleton on SQLite with the signing
   key and the JWKS, started by `npm run dev`. Container wiring and the sign-in providers are
   deferred with the first deployment at Tom's request.

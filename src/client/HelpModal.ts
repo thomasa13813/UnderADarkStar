@@ -8,6 +8,7 @@ import {
   STARGATE_DEFAULTS,
 } from "../core/configuration/Config";
 import { UserSettings } from "../core/game/UserSettings";
+import { CONTACT_EMAIL, DISCORD_INVITE_URL } from "./CommunityLinks";
 import { BaseModal } from "./components/BaseModal";
 import "./components/Difficulties";
 import { modalHeader } from "./components/ui/ModalHeader";
@@ -1282,6 +1283,29 @@ export class HelpModal extends BaseModal {
                   data-i18n="main.go_to_troubleshooting"
                 ></span>
               </button>
+              <!-- Where to report what troubleshooting does not fix
+                   (Launch doc, Stage 6): the Discord server, or email. -->
+              <p class="mt-8 mb-4 text-white/70 text-sm">
+                ${translateText("help_modal.community_desc")}
+              </p>
+              <div class="flex flex-wrap items-center justify-center gap-3">
+                <a
+                  id="help-discord-link"
+                  href=${DISCORD_INVITE_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="hover:bg-white/5 px-6 py-2 text-xs font-bold transition-all duration-200 rounded-lg uppercase tracking-widest bg-malibu-blue/20 text-aquarius border border-malibu-blue/30 shadow-[var(--shadow-malibu-blue)]"
+                >
+                  ${translateText("help_modal.community_discord")}
+                </a>
+                <a
+                  id="help-contact-link"
+                  href="mailto:${CONTACT_EMAIL}"
+                  class="hover:bg-white/5 px-6 py-2 text-xs font-bold transition-all duration-200 rounded-lg uppercase tracking-widest text-white/70 border border-white/15"
+                >
+                  ${CONTACT_EMAIL}
+                </a>
+              </div>
             </div>
           </section>
         </div>
