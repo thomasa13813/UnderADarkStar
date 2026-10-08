@@ -74,9 +74,9 @@ export class MobileNavBar extends LitElement {
           class="flex flex-col text-malibu-blue mb-4 ml-[clamp(0.2rem,0.4vw,0.4vh)]"
         >
           <div class="flex flex-col items-center gap-1">
-            <!-- Text wordmark until the logo lands (P1 decision). -->
+            <!-- Text wordmark in the display face (P1 step E). -->
             <div
-              class="font-display font-bold uppercase tracking-[0.2em] text-lg text-center max-w-[220px]"
+              class="font-display font-bold uppercase tracking-[0.12em] text-lg text-center max-w-[220px]"
               data-i18n="main.title"
             ></div>
             <div

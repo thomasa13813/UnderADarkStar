@@ -49,7 +49,7 @@ export class PlayPage extends LitElement {
 
             <!-- Text wordmark until the logo lands (P1 decision). -->
             <div
-              class="col-start-2 flex items-center justify-center text-malibu-blue min-w-0 font-display font-bold uppercase tracking-[0.2em] text-sm whitespace-nowrap"
+              class="col-start-2 flex items-center justify-center text-malibu-blue min-w-0 font-display font-bold uppercase tracking-[0.12em] text-sm whitespace-nowrap"
               data-i18n="main.title"
             ></div>
             <!-- Right slot: help and settings. -->

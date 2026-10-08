@@ -1,7 +1,10 @@
 import version from "resources/version.txt?raw";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { ClientEnv } from "../../../src/client/ClientEnv";
-import { composeGameVersion } from "../../../src/client/GameVersion";
+import {
+  composeGameVersion,
+  taggedGameVersion,
+} from "../../../src/client/GameVersion";
 import { Footer } from "../../../src/client/components/Footer";
 
 const SHA = "bf739f86c4e1d2a3b5c6d7e8f90123456789abcd";
@@ -12,7 +15,7 @@ const SHA = "bf739f86c4e1d2a3b5c6d7e8f90123456789abcd";
 // commit to fall back to and returns the file's value -- which keeps this
 // the right expectation for the mounted component below. The choice itself is
 // covered in tests/client/GameVersion.test.ts.
-const gameVersion = `v${version.trim().replace(/^v/, "")}`;
+const gameVersion = taggedGameVersion(version);
 
 describe("page-footer version line", () => {
   let footer: Footer;

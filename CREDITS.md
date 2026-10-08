@@ -34,8 +34,12 @@ open licence and are not in this repository. See [LICENSING.md](LICENSING.md).
   and `missile.mp3` (a missile leaving a stargate) were made by January Games
   for this game and are released with the rest of `resources/` under
   CC BY-SA 4.0.
-- **Fonts:** Overpass (`resources/fonts/`), by Delve Withrington, Dave Bailey
-  and Thomas Jockin, under the [SIL Open Font License 1.1](https://openfontlicense.org/).
+- **Fonts** (`resources/fonts/`), both under the
+  [SIL Open Font License 1.1](https://openfontlicense.org/): Tektur, the
+  display face, © 2023 The Tektur Project Authors
+  (<https://github.com/hyvyys/Tektur>, licence in `Tektur-OFL.txt`); and
+  Overpass, used in the game and as the fallback, by Delve Withrington, Dave
+  Bailey and Thomas Jockin.
 
 ## Map data
 

@@ -9,7 +9,10 @@ import { ClientEnv } from "./ClientEnv";
 // the tree. So the nav bar and footer read "vx.xx.xx" on every nightly, every
 // staging deploy and every Steam depot build -- a label naming no build at
 // all, and the one thing a player is asked to quote in a bug report.
-const VERSION_RE = /^v?\d+\.\d+\.\d+/;
+// Two or three numeric parts, so "V0.01" (the pre-release label chosen
+// 2026-10-07) counts as a version alongside "v0.33.18". A leading V or v is
+// kept as written; one is added when the file has none.
+const VERSION_RE = /^[vV]?\d+\.\d+(\.\d+)?/;
 const SHA_RE = /^[0-9a-f]{7,40}$/i;
 const SHORT_COMMIT_LENGTH = 7;
 
@@ -30,7 +33,7 @@ export function composeGameVersion(
   gitCommit: string,
 ): string {
   const trimmed = rawVersion.trim();
-  const withV = trimmed.startsWith("v") ? trimmed : `v${trimmed}`;
+  const withV = withVersionPrefix(trimmed);
   if (VERSION_RE.test(trimmed)) return withV;
 
   // Untagged, so the commit is the only thing identifying this build.
@@ -70,8 +73,11 @@ export function currentGameVersion(): string {
  * is not the first thing on the main menu.
  */
 export function taggedGameVersion(rawVersion: string): string {
-  const trimmed = rawVersion.trim();
-  return trimmed.startsWith("v") ? trimmed : `v${trimmed}`;
+  return withVersionPrefix(rawVersion.trim());
+}
+
+function withVersionPrefix(trimmed: string): string {
+  return /^[vV]/.test(trimmed) ? trimmed : `v${trimmed}`;
 }
 
 /** The nav bar's version elements, in both the mobile and desktop nav bars. */

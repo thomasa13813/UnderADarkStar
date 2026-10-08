@@ -50,9 +50,9 @@ export class DesktopNavBar extends LitElement {
         class="hidden lg:flex w-full bg-zinc-900/90 backdrop-blur-md items-center justify-center gap-8 py-4 shrink-0 z-50 relative"
       >
         <div class="flex flex-col items-center justify-center">
-          <!-- Text wordmark until the logo lands (P1 decision). -->
+          <!-- Text wordmark in the display face (P1 step E). -->
           <div
-            class="h-8 flex items-center text-malibu-blue font-display font-bold uppercase tracking-[0.25em] text-xl whitespace-nowrap"
+            class="h-8 flex items-center text-malibu-blue font-display font-bold uppercase tracking-[0.15em] text-xl whitespace-nowrap"
             data-i18n="main.title"
           ></div>
           <div

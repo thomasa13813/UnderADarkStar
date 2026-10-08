@@ -8,9 +8,9 @@
 @theme {
   --default-ring-width: 3px;
   --default-ring-color: var(--color-malibu-blue);
-  /* Placeholder display face until the DarkStar wordmark font is chosen
-     (P1 decision): Overpass Bold from resources/fonts/, loaded in Main.ts. */
-  --font-display: "Overpass", Inter, Arial, sans-serif;
+  /* The display face: Tektur (P1 step E, chosen 2026-10-07), with Overpass
+     Bold as the fallback. Both come from resources/fonts/, loaded in Main.ts. */
+  --font-display: "Tektur", "Overpass", Inter, Arial, sans-serif;
 
   /* Palette inherited from upstream; P2 replaces it with the deep-space set. */
   --color-malibu-blue: #0084d1;

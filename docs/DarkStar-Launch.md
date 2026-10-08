@@ -121,7 +121,7 @@ join path is identical).
       rather than four: the simulation runs in the browsers, the server only relays; resize
       later if a launch day needs it. The DigitalOcean account is on a studio-controlled Google
       account, not `hello@` (a departure from the 10-06 rule; move or accept at leisure).
-- [ ] **H2** The server set up: Docker, a compose file with two containers (the game, and
+- [x] **H2** The server set up: Docker, a compose file with two containers (the game, and
       `cloudflared` for the tunnel), a `/data` volume, the two hostnames
       (`darkstar.january-games.com` and `darkstar-api.january-games.com`) routed through the
       tunnel. Also at H2: the production redirect
@@ -131,10 +131,12 @@ join path is identical).
       arrive through the tunnel), `/opt/darkstar`, a read-only deploy key for GitHub. In the
       repository: `deploy/docker-compose.yml` (the game image built from the checkout, the
       `darkstar-data` volume, nothing published on the host; `cloudflared` with its token).
-      Waiting on Tom: the tunnel and its token, the deploy key added to GitHub (or the
-      repository made public), the branch pushed, the Discord redirect.
-- [ ] **H3** The environment file with the production settings and secrets (Accounts §11), kept
-      off the repository. `deploy/push-env.sh` writes it to `/opt/darkstar/.env` from the
+      **Done 2026-10-07:** Tom created the tunnel `darkstar` with both public hostnames
+      pointing at `http://game:80`, added the deploy key (read-only) and the Discord redirect;
+      the repository is cloned at `/opt/darkstar/repo`; the first deploy ran and both
+      containers are up, the tunnel connected.
+- [x] **H3** The environment file with the production settings and secrets (Accounts §11), kept
+      off the repository. Written 2026-10-07. `deploy/push-env.sh` writes it to `/opt/darkstar/.env` from the
       developer's local `.env` and a freshly generated `API_KEY`, printing nothing;
       `deploy/env.example` lists every key. Known so far: `GAME_ENV=prod`, `DOMAIN=darkstar.january-games.com`,
       `API_DOMAIN=darkstar-api.january-games.com`, `NUM_WORKERS` (about the core count),
@@ -151,9 +153,28 @@ join path is identical).
       `.github/workflows/` that target OpenFront's infrastructure (deploy, release, PR and issue
       bots, the Claude review) are for Tom to delete, keeping `ci.yml`.
 - [ ] **H5** Smoke test: a public round over the internet from two different networks; sign in
-      with Discord on the real domain.
+      with Discord on the real domain. **Automated half passed 2026-10-07:** over the internet,
+      the page serves at `https://darkstar.january-games.com` (production build, commit
+      `72e9fe4`, the right API origin in its bootstrap), the API answers health and JWKS at
+      `https://darkstar-api.january-games.com`, the Discord login route sends the browser to
+      Discord with the production redirect, the master opened its ten throne lobbies, and the
+      home page shows them with the guest name and the Sign in button. Cloudflare's bot check
+      showed its "Verify you are human" box to the headless browser and refused it, as it
+      should, so the join itself could not be automated. **Tom's half:** two real browsers on
+      two networks (a PC and a phone on mobile data will do): sign in with Discord on one, join
+      the same throne or a hosted lobby from both, play into the round, check the account
+      panel and the guest's `Anon` name.
 
 _Done when_ Tom deploys a new commit with one command and a round completes on the public address.
+The command, from any machine with the key:
+
+```
+ssh -i ~/.ssh/<key> root@<server> /opt/darkstar/repo/deploy/deploy.sh
+```
+
+It deploys whatever `DEPLOY_BRANCH` in the server's env file names (`feat/hegemon-toolkit` for
+now; change it to `main` once the branch is merged). The server's firewall rate-limits SSH to six
+connections per thirty seconds; a "connection timed out" means wait half a minute.
 The site is live but unannounced from here on. This is the earliest point an informal test with
 friends is possible.
 
@@ -174,7 +195,10 @@ _Done when_ a reign won on the live server appears on the live board.
       decides.
 - [ ] **Sound** (P4): the menu theme and gameplay music replacing the silent placeholders, the new
       cues wired, the four orphan files resolved, every sound credited.
-- [ ] **Brand** (P1 step E): logo, wordmark, font, favicon and the home-screen title.
+- [ ] **Brand** (P1 step E): ~~font~~ (Tektur, 2026-10-07), logo, wordmark, favicon and the
+      home-screen title. Decided 2026-10-07: the January Games wreath wordmark stays as the
+      studio mark; the game's working mark is the black disc with a purple border (the
+      Hegemon). The title treatment around the font is still to design.
 
 _Done when_ nothing a player sees or hears is a placeholder.
 
@@ -258,6 +282,21 @@ _Done when_ the checklist is clean. This build is the release candidate.
 
 ## 7. Changelog
 
+- **2026-10-07** — **Tektur is the display font** (Google Fonts, OFL): the Latin and Latin-extended
+  variable subsets in `resources/fonts/`, loaded in `Main.ts` ahead of Overpass, `--font-display`
+  updated, the title's letterspacing tightened, credited in `CREDITS.md`. The version label is
+  now `V0.01` (`resources/version.txt`; the version helper accepts two-part labels and keeps a
+  capital V). Tom's priorities for the friends test set the same day: H5 by hand, commit the
+  tree, the throne lines client, the uptime check; soundtrack deferred to a free weekend.
+- **2026-10-07** — `DarkStar-Services.md` created: the guide to the third-party services (Cloudflare,
+  DigitalOcean, GitHub, Discord, Gmail), who owns each, the secrets inventory, and what to check
+  when the site misbehaves.
+- **2026-10-07** — **The site is live, unannounced.** First deploy to the DigitalOcean server
+  through the Cloudflare tunnel; the build took about six minutes on two cores; the game
+  container uses about 470 MB and the tunnel 22 MB. H2, H3 and H4 done; H5's automated checks
+  pass (page, API, JWKS, Discord redirect, thrones open); the two-network round with a real
+  Discord sign-in is Tom's. Observed on the way: the SSH rate limit, and that the headless
+  browser cannot pass the real Turnstile check (by design).
 - **2026-10-07** — **H1 done, H2 begun, H4 built.** Tom bought the server (DigitalOcean, NYC1,
   2 vCPU / 4 GB Premium AMD, $28/month). Server prepared over SSH (swap, firewall, folders,
   deploy key); `deploy/` gains the compose file, the deploy script and the env pusher;

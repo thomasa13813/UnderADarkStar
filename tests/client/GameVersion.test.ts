@@ -31,6 +31,13 @@ describe("composeGameVersion", () => {
     expect(composeGameVersion("v0.33.18-rc1", SHA)).toBe("v0.33.18-rc1");
   });
 
+  // The pre-release label (2026-10-07): two parts and a capital V, kept as
+  // written in version.txt rather than rewritten to "vV0.01".
+  it("accepts the two-part V0.01 label as a version", () => {
+    expect(composeGameVersion("V0.01", SHA)).toBe("V0.01");
+    expect(composeGameVersion("0.01", SHA)).toBe("v0.01");
+  });
+
   // The placeholder an untagged deploy leaves in the tree. This is the case
   // the whole change exists for.
   it("shows the 7-char commit instead of the placeholder", () => {
@@ -106,6 +113,10 @@ describe("taggedGameVersion", () => {
     expect(taggedGameVersion("  v0.33.18\n")).toBe("v0.33.18");
   });
 
+  it("keeps a capital V as written", () => {
+    expect(taggedGameVersion("V0.01\n")).toBe("V0.01");
+  });
+
   // The original untagged rendering, kept deliberately. The footer is the half
   // that names the commit instead -- see composeGameVersion above, which turns
   // this same input into "bf739f8".
@@ -157,7 +168,7 @@ describe("renderNavVersion", () => {
       expect(el.textContent).toBe(taggedGameVersion(version));
       // Always a version, whatever version.txt holds when this runs: the
       // commit form has no leading v and this one always does.
-      expect(el.textContent).toMatch(/^v/);
+      expect(el.textContent).toMatch(/^[vV]/);
     }
   });
 
