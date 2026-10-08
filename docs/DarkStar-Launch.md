@@ -152,8 +152,10 @@ join path is identical).
       prune old images. Upstream's five scripts and their tests are removed; the workflows under
       `.github/workflows/` that target OpenFront's infrastructure (deploy, release, PR and issue
       bots, the Claude review) are for Tom to delete, keeping `ci.yml`.
-- [ ] **H5** Smoke test: a public round over the internet from two different networks; sign in
-      with Discord on the real domain. **Automated half passed 2026-10-07:** over the internet,
+- [x] **H5** Smoke test: a public round over the internet from two different networks; sign in
+      with Discord on the real domain. **Passed 2026-10-07:** two real browsers on the live
+      domain with a Discord sign-in (the studio account), then a phone on mobile data joined the
+      PC's round (the second network). **Automated half passed 2026-10-07:** over the internet,
       the page serves at `https://darkstar.january-games.com` (production build, commit
       `72e9fe4`, the right API origin in its bootstrap), the API answers health and JWKS at
       `https://darkstar-api.january-games.com`, the Discord login route sends the browser to
@@ -166,14 +168,17 @@ join path is identical).
       panel and the guest's `Anon` name.
 
 _Done when_ Tom deploys a new commit with one command and a round completes on the public address.
+**Stage 3 passed 2026-10-07.** The per-deploy check from here is the two-minute one (page, both
+health endpoints, one round starts); the two-network and sign-in checks are repeated only when a
+change touches the server, the join path, accounts or the lobbies.
 The command, from any machine with the key:
 
 ```
 ssh -i ~/.ssh/<key> root@<server> /opt/darkstar/repo/deploy/deploy.sh
 ```
 
-It deploys whatever `DEPLOY_BRANCH` in the server's env file names (`feat/hegemon-toolkit` for
-now; change it to `main` once the branch is merged). The server's firewall rate-limits SSH to six
+It deploys whatever `DEPLOY_BRANCH` in the server's env file names: `main` since 2026-10-07,
+when the feature branch was merged (fast-forward) and the server switched over. The server's firewall rate-limits SSH to six
 connections per thirty seconds; a "connection timed out" means wait half a minute.
 The site is live but unannounced from here on. This is the earliest point an informal test with
 friends is possible.
@@ -282,6 +287,13 @@ _Done when_ the checklist is clean. This build is the release candidate.
 
 ## 7. Changelog
 
+- **2026-10-07** — **Main is the live branch.** `feat/hegemon-toolkit` fast-forwarded into `main`
+  (commit `d4371c2`, "ItsAlive"), `DEPLOY_BRANCH=main` on the server and in the local `.env`, and
+  Tom redeployed: 18-second build from cache, healthy, the page serves Tektur and `V0.01`, both
+  health endpoints answer. Workflow from here: branches for new work, merge to `main` when
+  finished, deploy as a separate command. Observed: `compose up` recreated the `cloudflared`
+  container as well as the game, so the tunnel did drop for a few seconds. Its only input is
+  `TUNNEL_TOKEN`, which did not change, so the cause is open; watch the next deploy.
 - **2026-10-07** — **Tektur is the display font** (Google Fonts, OFL): the Latin and Latin-extended
   variable subsets in `resources/fonts/`, loaded in `Main.ts` ahead of Overpass, `--font-display`
   updated, the title's letterspacing tightened, credited in `CREDITS.md`. The version label is
