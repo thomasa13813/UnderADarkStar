@@ -194,7 +194,7 @@ _Done when_ a reign won on the live server appears on the live board.
 
 ### Stage 5 — Content lands (Track B merges)
 
-- [x] **Maps**: at least six new ones, each run once in `HegemonSim` (nation count, nations
+- [x] **Maps**: at least six new ones, each run once in `HegemonSim` (Lord count, Lords
       reach the moat) and played once by Tom. Accepted by Tom 2026-10-04 with the map kit (Stage
       1). Still open: which inherited maps to remove (Stage 0 / §6.3); one config edit when he
       decides.
@@ -287,6 +287,8 @@ _Done when_ the checklist is clean. This build is the release candidate.
 
 ## 7. Changelog
 
+- **2026-10-07** — **Nomenclature:** Nations are Lords and Tribes are Barons in all player-facing
+  text and the docs; code identifiers unchanged (design doc §1, glossary).
 - **2026-10-07** — **Main is the live branch.** `feat/hegemon-toolkit` fast-forwarded into `main`
   (commit `d4371c2`, "ItsAlive"), `DEPLOY_BRANCH=main` on the server and in the local `.env`, and
   Tom redeployed: 18-second build from cache, healthy, the page serves Tektur and `V0.01`, both

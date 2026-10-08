@@ -252,7 +252,7 @@ is deep space; **pure black** is void (impassable, drawn as background); **anyth
 with the blue channel setting elevation (blue below 159 is plains). Shores are computed. Islands under
 30 px and lakes under 200 px are deleted. Recommended area 2–3M px (1800 × 1800 is what Event
 Horizon uses); width and height are cropped to multiples of 4. `info.json` names the map, its
-categories, its nations (`name`, optional `coordinates`, optional `flag`) and the Dark Star geometry
+categories, its Lords (`info.json`'s `nations`: `name`, optional `coordinates`, optional `flag`) and the Dark Star geometry
 (`hegemon: {center, radius, moat}`; omitted means a centred disc sized from the map). The generator
 writes `map.bin`, the 4x and 16x versions, the manifest, `thumbnail.webp`, `Maps.gen.ts` and the
 `en.json` map names. `scripts/generateGalaxyMap.ts` makes procedural galaxies (Event Horizon is one).
@@ -261,15 +261,15 @@ Only Event Horizon is ours; Milky Way and Sol are upstream (CC BY-SA); everythin
 **Work.**
 
 - **An authoring kit for Tom:** a one-page guide and a small script that takes an MS Paint PNG in a
-  friendly palette (e.g. white = land, blue = space, black = void, red dots = nation spawns, a
+  friendly palette (e.g. white = land, blue = space, black = void, red dots = Lord spawns, a
   yellow circle = the Dark Star) and writes the generator's exact encoding plus the `info.json`.
   Then `npm run gen-maps`. Thumbnails come free; the picker needs no hand-made art.
-- **The pool itself:** 10–20 maps (S9), each played once in `HegemonSim` for a sanity check (nation
-  count, whether nations reach the moat, exclaves F18) and once by Tom.
+- **The pool itself:** 10–20 maps (S9), each played once in `HegemonSim` for a sanity check (Lord
+  count, whether Lords reach the moat, exclaves F18) and once by Tom.
 - **Remove the inherited maps** (F17, map by map, Tom's call; the `GameMapType` enum is wire format
   but nothing outside this fork depends on it) and their `map-generator/assets` sources, and take the
   Earth entries out of `CREDITS.md`.
-- **Nation names per map** with the `space` theme for Tribes; per-map palette (P2).
+- **Lord names per map** with the `space` theme for Barons; per-map palette (P2).
 - The map picker and lobby map lists (`MapPicker`, `MapPlaylist` frequencies) rebuilt around the new
   categories.
 
@@ -300,9 +300,9 @@ about 20 in total).
 **As built, step 2 (2026-10-01): the authoring kit.** `npm run map` (`src/scripts/makeMap.ts`,
 guide in `docs/MapMaking.md`). Tom draws `map-generator/drawings/<Map Name>.png` in MS Paint from
 seven of Paint's default swatches: indigo space, black void, white plains, light grey highland,
-mid grey mountain, red nation dots, one yellow circle for the Dark Star. The file name is the
+mid grey mountain, red Lord dots, one yellow circle for the Dark Star. The file name is the
 map's name. `npm run map "<Name>"` converts it to the generator's encoding, writes `info.json`
-(the Dark Star from the circle or the engine's default, nations at the dots' centres clockwise
+(the Dark Star from the circle or the engine's default, Lords at the dots' centres clockwise
 from north, a sci-fi name each, `cosmic` / `space` / frequency 4), runs the Go generator on that
 one map, and reports in plain words what will be deleted or ignored; errors (a dot in space, two
 Dark Stars, a Dark Star off the edge) write nothing. `new` makes a template, `check` reports
@@ -310,14 +310,14 @@ only, `remove` takes a map out (it also prunes the `en.json` key the generator n
 Paint's smoothed edges are handled: a pixel within 40 RGB of a palette colour is that colour, the
 rest take their nearest neighbour's terrain, and high ground under three pixels thick is dropped
 (the greys between white land and black void would otherwise read as elevation). Rebuilding keeps
-hand-edited nation names (dots within 40 tiles) and any other field in `info.json`. The PNG reader
+hand-edited Lord names (dots within 40 tiles) and any other field in `info.json`. The PNG reader
 is hand-written because `canvas` has no native build under `npm ci --ignore-scripts`. Verified on a
 1200 x 1200 drawing made with GDI+ (what Paint draws with): built, passed `MapConsistency` and the
 wire snapshot, and `HegemonSim` played a full round on it; then removed. Tests:
 `tests/MapKit.test.ts` (26). Not built: scaling a small sketch up, painting over a generated
 galaxy, relief noise within an elevation band (every plains tile is one shade).
 
-**Done when** the pool reaches launch size, each map has a thumbnail and nations, and the sim runs
+**Done when** the pool reaches launch size, each map has a thumbnail and Lords, and the sim runs
 on every one.
 
 ## P4. Audio (M)

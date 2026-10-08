@@ -249,7 +249,7 @@ mode otherwise, the playlist's `hegemon: mode === FFA`). A team throne needs, in
   only round ends (R1), so the ordinary team-tile win is disabled under a Dark Star.
 - Team donation toggles (gold and troops on by default in team games) do not touch the throne: H9
   governs its donations both ways (troops to and from the Hegemon ignore the toggle; gold is closed).
-- Nation and Tribe behaviour toward the Hegemon is team-agnostic already (design doc §3.2 H11: the nation target search passes over the Hegemon).
+- Lord and Baron behaviour toward the Hegemon is team-agnostic already (design doc §3.2 H11: the Lord target search passes over the Hegemon).
 
 This is the largest engineering item and ships last (§10, T5). Until then team thrones are not in
 the mix.
@@ -363,7 +363,7 @@ What exists, and where it departs from the plan above:
   `numClients`; the master counts the former.
 - **Round end.** `archiveGame` calls the new `GameServerDeps.throneRound` hook, which the
   `GameManager` routes to `WorkerLobbyService` and on to the master as `throneRound`. Outcomes are
-  `timer` (the seated player won), `overthrown` (another player won), **`ai`** (a nation won; the
+  `timer` (the seated player won), `overthrown` (another player won), **`ai`** (a Lord won; the
   server cannot tell an AI Hegemon holding the timer from an AI slayer, and T1 needs no
   distinction) and `void` (no winner). The master opens the successor at once and sends
   `successorCreated` to the finished game's worker, which broadcasts the existing `new_lobby`.

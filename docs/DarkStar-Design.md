@@ -19,6 +19,10 @@ DarkStar's differentiator is one asymmetric role, the **Hegemon**:
 - The Hegemon begins each round in a position of **extreme strength** but **cannot grow further**.
 - Every other player (a **challenger**) starts small, expands across the galaxy, and competes to
   **overthrow** the Hegemon.
+- The galaxy is feudal. Below the Hegemon stand the **Lords**, the map-defined AI players
+  ("Nations" in the code), and beneath them the **Barons**, the simple bots ("Tribes" in the
+  code). [Decided 2026-10-07] Player-facing text and these documents use the feudal names; the
+  code identifiers keep the old ones.
 - The round ends when the Hegemon is overthrown, **or** when a preset timer expires — in which case
   the reigning Hegemon wins.
 - **The winner of a round is the Hegemon of the next round.**
@@ -179,9 +183,9 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   Hegemon goes all in — every second, everything above a **5% reserve** of its ceiling is sent
   after the invader, its leveller strike already recalled — and stays in until the invader is
   evicted. No button for a human Hegemon: recall and counter-attack already exist by hand.
-  **Nations never nuke the Dark Star** [Decided 2026-09-27]: a warhead there does nothing (H7), yet
+  **Lords never nuke the Dark Star** [Decided 2026-09-27]: a warhead there does nothing (H7), yet
   the AI kept throwing them (the throne being the incoming attacker, the most hated and the crown
-  by turns); every rule in the nation's target search now passes over the Hegemon.
+  by turns); every rule in the Lord's target search now passes over the Hegemon.
 - **H12 — Claiming and releasing the invasion slot.** The slot is claimed **when an invasion transport
   lands** on the domain (not at launch). It is held for as long as the invader holds **any** domain
   tile, and passes on only once they hold none — an invasion cannot simply "end" while the invader
@@ -231,7 +235,7 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   you keep your city. When the strike ends (troops spent, target at the tyranny floor, nothing left in
   reach, recalled, or the throne fallen) the bubble **pops**: whatever it still holds reverts to neutral
   for anyone to scramble over. Strikes are exempt from the engine's troop-for-troop cancelling. AI
-  nations need no special rule: the engine's retaliation against an attacker already fights the bubble.
+  Lords need no special rule: the engine's retaliation against an attacker already fights the bubble.
 - **H18 — Gifts: the Hegemon builds in its vassals' lands.** [Decided 2026-09-24] The Hegemon may
   place **any structure a challenger could build** — city, port, factory, defence post, SAM, silo,
   stargate — on **any challenger's territory**, paying the cost from its own gold (H4). The structure
@@ -242,7 +246,7 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   string of defence posts along the border of a player being overrun by an upstart, a city for a
   rival who is falling behind. [Built 2026-09-25, §6.14] Placement runs through the host's own
   rules with the throne as payer; a gift may also upgrade the host's existing structure; every
-  challenger can receive one, Tribes included; the host is told; the Gift takes the ally slot of the
+  challenger can receive one, Barons included; the host is told; the Gift takes the ally slot of the
   Hegemon's radial menu on a challenger's tile.
 - **H19 — Missile launches invite a punitive strike.** [Decided 2026-09-26; built the same day,
   §6.16] A challenger who fires a
@@ -257,7 +261,7 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
     Punish slot). The throne **may decline**: it pays
     nothing, so declining is how it shows favour (H15) or leaves an intimidating power alone.
   - **The levy.** The strike's troops are **not the Hegemon's**. When it is ordered, every living
-    challenger, Tribes included and the nuke's victim too, is levied a share of the troops it has at
+    challenger, Barons included and the nuke's victim too, is levied a share of the troops it has at
     home: `punitiveLevyPercentNuclear` (10%) for a Nuclear flag, `punitiveLevyPercentAntimatter` (25%)
     for Antimatter (tunable; F20). Troops away on attacks and fleets are not levied. The levied total
     flies from the Dark Star's centre as a strike projectile (§6.9) and lands on the silo's tile, so
@@ -297,8 +301,8 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
 - **C3 — Launch from the core.** At round start all challengers visibly **launch from the Dark Star to
   their starting territory** (an arc animation like the engine's nuke trajectories). [Built
   2026-09-24, §6.12] Presentation only, on the same projectile flight as strikes and stargate shots:
-  when the spawn phase ends every human and nation launches from the Dark Star's centre to its spawn
-  tile (Tribes are on the map from the start), the camera pulls out to the whole map, a territory's
+  when the spawn phase ends every human and Lord launches from the Dark Star's centre to its spawn
+  tile (Barons are on the map from the start), the camera pulls out to the whole map, a territory's
   fill and name stay hidden until its projectile lands (its border shows from the start), and **the
   round begins when the last one has landed**: the opening is a phase of the sim between the spawn
   phase and play — nothing runs, nothing is earned, the clock holds at 20:00, orders queue — lasting
@@ -306,7 +310,7 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   immunity starts at the landing, as in vanilla. The flights themselves are the client's alone (no
   units in the sim, nothing on the wire), so a reconnecting client and a replay skip them. The
   Hegemon watches its subjects scatter from the wide view. [Decided 2026-09-24 after Tom's first
-  look] No landing rings; Tribes do not fly (acceptable for now, not a decision).
+  look] No landing rings; Barons do not fly (acceptable for now, not a decision).
 - **C4 — Stargates.** [Decided 2026-09-22; plan in §6.8] A challenger **structure** that launches a
   **strike-style projectile** carrying troops at any tile within its **range**: the shot flies an arc
   like a nuke and, on landing, **conquers** the tile and fights outward from it exactly as a transport
@@ -323,10 +327,10 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   the Dark Star is refused at launch during the cooldown or while the slot is taken, and turns back
   (troops home at once) if the slot is claimed in flight; only the struck player may land on a strike's
   bubble; a shot in flight can be recalled, troops home whole.
-  [Built 2026-09-24, §6.11] **Nations build and fire gates** like silos: every nation, by a per-city
-  ratio the difficulty sets, a first gate early, at most three; a nation ready for the throne wants a
+  [Built 2026-09-24, §6.11] **Lords build and fire gates** like silos: every Lord, by a per-city
+  ratio the difficulty sets, a first gate early, at most three; a Lord ready for the throne wants a
   gate that reaches the moat and upgrades or builds towards it; a ready gate in range of the rim fires
-  the invasion instead of a fleet; otherwise gates shoot at rivals beyond the nation's land, at neutral
+  the invasion instead of a fleet; otherwise gates shoot at rivals beyond the Lord's land, at neutral
   land across water, and last at a land neighbour's far side — never at friends, never a second shot on
   a pocket already fighting, never while holding the slot.
   [2026-09-26] With spaceports anywhere (S7) nobody is landlocked for trade: the gate is a **purely
@@ -335,12 +339,12 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   Nuclear or Antimatter Warhead launches from the **nearest ready gate whose range covers the
   target** and spends the gate's one charge (the reload, shared with shots): a missile reaches
   only as far as a gate does — 180 at level 1, +75 per level — so range upgrades buy reach for
-  warheads too, and a gate that has just fired one cannot shoot troops until it reloads. Nations
+  warheads too, and a gate that has just fired one cannot shoot troops until it reloads. Lords
   fire the same way. Rationale (Tom): missiles were too oppressive once SAMs went, and a gate was
   too easy to ignore; tying the two makes both matter.
   [Revised 2026-09-30] Tom's balance pass: a gate costs a **flat 500k** (was 1M), new or per
   upgrade; the reload is **5 s** (was 60); and there is **no level cap** (was 5) — like a city, a
-  gate upgrades for as long as the gold lasts, each level adding 75 to its range. Nations still
+  gate upgrades for as long as the gold lasts, each level adding 75 to its range. Lords still
   stop at level 5 when upgrading a gate towards the moat (their own limit, not a rule), so their
   behaviour is unchanged apart from the cheaper price and the faster reload.
 - **C5 — Shield arrays.** [Decided 2026-09-28; built the same day, §6.23; revised 2026-09-29,
@@ -355,7 +359,7 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   Tom 2026-09-29); its **strikes** (H8, H19) still pass through. An array under construction
   protects nothing; a captured array shields its new owner; the owner's own missiles are not kept
   out. Gate shots are troops, not missiles, and land inside. The array shelters itself, so short
-  of the throne's strike only conquest removes one — hence the price (Tom's baseline; F21). Nations
+  of the throne's strike only conquest removes one — hence the price (Tom's baseline; F21). Lords
   do not build arrays yet (F21). Icon: a crenelated generator under a dashed dome (the silhouette
   of the Echo Base shield generator, not its name).
 
@@ -438,19 +442,19 @@ decided; the disc's sizes are confirmed and its look built; raids dropped; nothi
 Dark Star; troop donations from the throne only; the toolkit is strikes, troop donations, gifts,
 destroyers and the challenger table). The playtest checks left over from them are collected in F19.
 
-| #   | Question                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| F1  | **Calibrating Hegemon strength (H4).** [Direction decided 2026-09-24] Regeneration is cut severely, the ceiling may rise to compensate, gold becomes a shadow tax on the challengers' combined income; the last stand (an AI rule: everything into the Dark Star's defence once the throne is truly threatened) rides with it. **Target [Decided 2026-09-20]:** roughly a third to a half of AI-only rounds end in an overthrow. **[First pass built 2026-09-27, §6.21]** `HEGEMON_DEFAULTS` now: ceiling = **125%** of what one player owning every land tile could field (`2·(L^0.6·1000+50000)`; Milky Way ≈ 6.2M), a **flat refill** of the ceiling over `refillMinutes` = **20** (~312k/min on Milky Way, a tenth of the old half-full rate), gold = a **3% shadow tax** on everything the challengers earn, the last stand at 40% of the domain with a 5% reserve, the leveller's bar at 75%. Before the change, with everything in: 0 of 6 overthrows; after: **3 of 6** at refill 10, 20 and 40 minutes alike (the AI throne's waves, not the refill, decide what it has when it matters), in the target band. Tom playtests the default with 10 and 40 minutes as the forgiving and harsh alternatives. Still open: the tax share (3% is a first guess at "a mid-table challenger's income"), whether one refill time fits all map sizes, the AI's other strike thresholds (H11) and the gate numbers (F15), and the nations that stall on the last few percent of the domain. |
-| F15 | **Stargate numbers (C4).** Rules and starting numbers are decided (range 180 +75 per level to level 5 — raised 2026-09-26 from 120 +60, which underperformed, 1M gold, 10 s build, 60 s reload, upgrades buy range only, nearest ready gate fires; nations by difficulty ratio, cap 3 — details in C4 and `STARGATE_DEFAULTS`). [Revised 2026-09-30] Now a flat 500k, a 5 s reload and no level cap (+75 per level without end). [Closed 2026-09-24] A shot on the Dark Star does nothing to a fleet already bound for it. Still open: whether the gate numbers survive F1.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| F12 | **Edge cases.** Hegemon disconnects mid-round (AI takes over?); the invader disconnects; an AI challenger (Nation/Tribe) lands the killing blow (next round gets an AI Hegemon per R6?); team modes (probably out of scope at first).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| F13 | **Hegemon identity across rounds.** Beyond the high-score table (S5): titles, reign counter in the lobby, anything inherited besides the seat.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| F14 | **Names and icons.** Sci-fi names for units, structures, Tribes/Nations and resources (rename surface in §5.4; display strings only). [Decided 2026-09-24] Event Horizon's 24 nations carry sci-fi polity names and its Tribes draw on the `space` theme; Nuclear Warhead / Antimatter Warhead (S6); Destroyer with a spaceship icon and "spaceport" for the port (S7, low priority). Still open: the rest of the unit and structure names, resources, and whether Tribe/Nation naming goes sci-fi on every map.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| F16 | **Multiple invaders (H6, H12). [Open 2026-09-24]** The single-invader slot keeps the win condition simple (R3: the killing blow is unambiguous) but feels restrictive in play. Tom is not yet committed to opening the Dark Star to several invaders at once; the cooldown is already gone. To weigh if it opens: who wins when two invaders share the conquest (R3), whom H13 routes the counter-attack at, whether donations to an invader return (H9), the turn-back rule for fleets and shots, and the panel (F19).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| F17 | **The map library (S9).** Which existing maps stay — Tom decides map by map, instinct: most or all go, geography first (the `GameMapType` enum is wire format, but this fork has no replays or archive to keep compatible); whether every map's Dark Star is central (H1) or a map may place it elsewhere via `info.json`; how many nations a galaxy map wants (24 on Event Horizon, to be judged in play); what the generator needs to produce 10–20 distinct maps (seeds and parameters, or hand-authored variants).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| F18 | **Exclaves from gate landings (§6.10, §6.11).** A landlocked beachhead pocket stands until its landing tile is retaken. Measured: World ends with 4–23 such pockets, Milky Way 1–3, Event Horizon 0–1. Whether a cap or decay is needed — likely moot once the geography maps go (F17); decide after Tom has seen the pockets on a galaxy map.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| F19 | **Playtest checks outstanding.** On Event Horizon: the disc and moat by eye (radius 162, moat 18 — the computed default written into `info.json`); 24 nations as a count; the 15 s opening cap; Tribes not flying. From the throne: should a human Hegemon get the AI's landing wave, or is active defence the point (a passive throne kept 5% of the domain on World seed a); the 5 s stall threshold (H13). The HUD merge: [Closed 2026-09-25 — **dropped**] built as columns in the player table with the panel cut to a strip, played, and discarded: seen missing, the panel's fields (the throne's troop bar, domain held, the invasion status, the bubble, the challenger board with its strike status) justify a panel of their own. The panel stays as built (§6.3, §6.6); its only change is that the challenger board starts **collapsed**, with the throne's show/hide toggle to unfold it. Clean-up later if it earns it.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| F20 | **Punitive strike numbers (H19). [Open 2026-09-26]** The levy shares (10% / 25%, raised from 5% / 15% after the first look), the flag window (30 s), the halt (5 s), the radius (34, a quarter more area than the first 30) and the AI's land-share threshold are starting points. Because the levy taxes every challenger's troops, it moves the invasion curve, so H19 is built **before** the F1 sweep and its numbers ride with it. To judge in `HegemonSim` and in play: how often nations nuke on a galaxy map (and so how often the galaxy is levied); whether a 15% levy in a radius-30 pocket is so dense that the halt is never disturbed; whether the pocket should follow the warhead that was fired (Antimatter's 100) rather than one radius for both.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| F21 | **Missiles on gates, shields and the throne's warheads (C4, C5, H2). [Open 2026-09-28]** The shield radius (35) is the cap Tom set, not a tuned number; the throne's missiles have no reload — gold-limited only — and may want a cadence once the shadow tax is tuned (F1); nations do not build shield arrays and the AI Hegemon fires no missiles; a shield refusing gate shots was considered and left as no (gates are meant to matter more, not less). [2026-09-29] The array now shelters its zone from every missile, the throne's included, and costs 5M — Tom's baseline, not a tuned number. To judge in play: whether a level-1 gate's 180 leaves a warhead any target worth 1M, whether a 5M array around a capital is worth it or unanswerable (the throne's strike and conquest are the only answers), and whether a hole in the blast reads clearly on screen. [2026-09-30] The array drops to 2M and the gate to a flat 500k with a 5 s reload and no level cap: the same questions, at the new prices — plus whether warheads at a 5 s cadence and unbounded reach bring back the oppression that tying them to gates was meant to end.                                                                                                                                                                                                                                                                                                                               |
+| #   | Question                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| F1  | **Calibrating Hegemon strength (H4).** [Direction decided 2026-09-24] Regeneration is cut severely, the ceiling may rise to compensate, gold becomes a shadow tax on the challengers' combined income; the last stand (an AI rule: everything into the Dark Star's defence once the throne is truly threatened) rides with it. **Target [Decided 2026-09-20]:** roughly a third to a half of AI-only rounds end in an overthrow. **[First pass built 2026-09-27, §6.21]** `HEGEMON_DEFAULTS` now: ceiling = **125%** of what one player owning every land tile could field (`2·(L^0.6·1000+50000)`; Milky Way ≈ 6.2M), a **flat refill** of the ceiling over `refillMinutes` = **20** (~312k/min on Milky Way, a tenth of the old half-full rate), gold = a **3% shadow tax** on everything the challengers earn, the last stand at 40% of the domain with a 5% reserve, the leveller's bar at 75%. Before the change, with everything in: 0 of 6 overthrows; after: **3 of 6** at refill 10, 20 and 40 minutes alike (the AI throne's waves, not the refill, decide what it has when it matters), in the target band. Tom playtests the default with 10 and 40 minutes as the forgiving and harsh alternatives. Still open: the tax share (3% is a first guess at "a mid-table challenger's income"), whether one refill time fits all map sizes, the AI's other strike thresholds (H11) and the gate numbers (F15), and the Lords that stall on the last few percent of the domain. |
+| F15 | **Stargate numbers (C4).** Rules and starting numbers are decided (range 180 +75 per level to level 5 — raised 2026-09-26 from 120 +60, which underperformed, 1M gold, 10 s build, 60 s reload, upgrades buy range only, nearest ready gate fires; Lords by difficulty ratio, cap 3 — details in C4 and `STARGATE_DEFAULTS`). [Revised 2026-09-30] Now a flat 500k, a 5 s reload and no level cap (+75 per level without end). [Closed 2026-09-24] A shot on the Dark Star does nothing to a fleet already bound for it. Still open: whether the gate numbers survive F1.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| F12 | **Edge cases.** Hegemon disconnects mid-round (AI takes over?); the invader disconnects; an AI challenger (Lord/Baron) lands the killing blow (next round gets an AI Hegemon per R6?); team modes (probably out of scope at first).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| F13 | **Hegemon identity across rounds.** Beyond the high-score table (S5): titles, reign counter in the lobby, anything inherited besides the seat.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| F14 | **Names and icons.** Sci-fi names for units, structures, Barons/Lords and resources (rename surface in §5.4; display strings only). [Decided 2026-09-24] Event Horizon's 24 Lords carry sci-fi polity names and its Barons draw on the `space` theme; Nuclear Warhead / Antimatter Warhead (S6); Destroyer with a spaceship icon and "spaceport" for the port (S7, low priority). Still open: the rest of the unit and structure names, resources, and whether Baron/Lord naming goes sci-fi on every map.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| F16 | **Multiple invaders (H6, H12). [Open 2026-09-24]** The single-invader slot keeps the win condition simple (R3: the killing blow is unambiguous) but feels restrictive in play. Tom is not yet committed to opening the Dark Star to several invaders at once; the cooldown is already gone. To weigh if it opens: who wins when two invaders share the conquest (R3), whom H13 routes the counter-attack at, whether donations to an invader return (H9), the turn-back rule for fleets and shots, and the panel (F19).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| F17 | **The map library (S9).** Which existing maps stay — Tom decides map by map, instinct: most or all go, geography first (the `GameMapType` enum is wire format, but this fork has no replays or archive to keep compatible); whether every map's Dark Star is central (H1) or a map may place it elsewhere via `info.json`; how many Lords a galaxy map wants (24 on Event Horizon, to be judged in play); what the generator needs to produce 10–20 distinct maps (seeds and parameters, or hand-authored variants).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| F18 | **Exclaves from gate landings (§6.10, §6.11).** A landlocked beachhead pocket stands until its landing tile is retaken. Measured: World ends with 4–23 such pockets, Milky Way 1–3, Event Horizon 0–1. Whether a cap or decay is needed — likely moot once the geography maps go (F17); decide after Tom has seen the pockets on a galaxy map.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| F19 | **Playtest checks outstanding.** On Event Horizon: the disc and moat by eye (radius 162, moat 18 — the computed default written into `info.json`); 24 Lords as a count; the 15 s opening cap; Barons not flying. From the throne: should a human Hegemon get the AI's landing wave, or is active defence the point (a passive throne kept 5% of the domain on World seed a); the 5 s stall threshold (H13). The HUD merge: [Closed 2026-09-25 — **dropped**] built as columns in the player table with the panel cut to a strip, played, and discarded: seen missing, the panel's fields (the throne's troop bar, domain held, the invasion status, the bubble, the challenger board with its strike status) justify a panel of their own. The panel stays as built (§6.3, §6.6); its only change is that the challenger board starts **collapsed**, with the throne's show/hide toggle to unfold it. Clean-up later if it earns it.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| F20 | **Punitive strike numbers (H19). [Open 2026-09-26]** The levy shares (10% / 25%, raised from 5% / 15% after the first look), the flag window (30 s), the halt (5 s), the radius (34, a quarter more area than the first 30) and the AI's land-share threshold are starting points. Because the levy taxes every challenger's troops, it moves the invasion curve, so H19 is built **before** the F1 sweep and its numbers ride with it. To judge in `HegemonSim` and in play: how often Lords nuke on a galaxy map (and so how often the galaxy is levied); whether a 15% levy in a radius-30 pocket is so dense that the halt is never disturbed; whether the pocket should follow the warhead that was fired (Antimatter's 100) rather than one radius for both.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| F21 | **Missiles on gates, shields and the throne's warheads (C4, C5, H2). [Open 2026-09-28]** The shield radius (35) is the cap Tom set, not a tuned number; the throne's missiles have no reload — gold-limited only — and may want a cadence once the shadow tax is tuned (F1); Lords do not build shield arrays and the AI Hegemon fires no missiles; a shield refusing gate shots was considered and left as no (gates are meant to matter more, not less). [2026-09-29] The array now shelters its zone from every missile, the throne's included, and costs 5M — Tom's baseline, not a tuned number. To judge in play: whether a level-1 gate's 180 leaves a warhead any target worth 1M, whether a 5M array around a capital is worth it or unanswerable (the throne's strike and conquest are the only answers), and whether a hole in the blast reads clearly on screen. [2026-09-30] The array drops to 2M and the gate to a flat 500k with a 5 s reload and no level cap: the same questions, at the new prices — plus whether warheads at a 5 s cadence and unbounded reach bring back the oppression that tying them to gates was meant to end.                                                                                                                                                                                                                                                                                                                               |
 
 ## 5. Engine foundation — what we reuse
 
@@ -476,8 +480,9 @@ below are the parts of OpenFront that matter specifically for DarkStar.
 - **Spawning:** `src/core/execution/SpawnExecution.ts` + `getSpawnTiles` in
   `src/core/execution/Util.ts` give every player a radius-4 disc (~45 tiles). The Hegemon needs a
   different path that grants a whole domain.
-- **AI:** Bots are called **Tribes** (`TribeExecution.ts`); **Nations** are the smarter AI
-  (`NationExecution.ts` + `src/core/execution/nation/*`, shared `utils/AiAttackBehavior.ts`), spawned
+- **AI:** Bots are **Barons** to players (`TribeExecution.ts`, "Tribes" in the code); **Lords** are the
+  smarter AI (`NationExecution.ts` + `src/core/execution/nation/*`, "Nations" in the code, shared
+  `utils/AiAttackBehavior.ts`), spawned
   from per-map manifests via `src/core/game/NationCreation.ts`. The AI Hegemon (R6, H11) would be a new
   behaviour built from these parts.
 
@@ -532,20 +537,20 @@ persistence was OpenFront's closed-source API, which we do not have.
 - Only the **blue channel** matters: blue = 106 or transparent → water (deep space); blue 140–200 →
   land with rising elevation (plains → highland → mountain); `#000000` → impassable void.
 - Already shipped: a `cosmic` map category with `milkyway`, `sol`, `mars`, and others — useful
-  references. `info.json` supports free-text nation names with no flag, `"themes": ["space"]` for
-  Tribe names, and `custom_tribes`.
+  references. `info.json` supports free-text Lord names with no flag, `"themes": ["space"]` for
+  Baron names, and `custom_tribes`.
 - **A map's own Dark Star [Built 2026-09-24, §6.12]:** `info.json` may carry
   `hegemon: { center: [x, y], radius, moat? }`; the Go generator passes it through to `manifest.json`
   untouched, `loadTerrainMap` validates and halves it for a compact map, and both the sim and the
   client build the disc from it (a centred disc sized from the map when absent, as before).
 - **Event Horizon** (`map-generator/assets/maps/eventhorizon/`, category `cosmic`, 1800×1800,
-  ~450k land tiles, 24 nations) is the first galaxy map authored around the Dark Star: three spiral
+  ~450k land tiles, 24 Lords) is the first galaxy map authored around the Dark Star: three spiral
   arms of star clusters in an annulus around an open centre, spiral lanes of deep space between the
-  sectors, void at the corners, the nations in a ring at about 400 tiles from the centre. It is
+  sectors, void at the corners, the Lords in a ring at about 400 tiles from the centre. It is
   written by `scripts/generateGalaxyMap.ts` (deterministic for its seed; `--seed`, `--size`,
   `--land`) — `image.png` and `info.json` — and then `npm run gen-maps` as for any map. The Go
   toolchain lives at `<home>\go-sdk\go\bin` on Tom's machine (the official zip, no installer).
-- **No Moon** (`map-generator/assets/maps/nomoon/`, 1800×1800, ~530k land tiles, 19 nations) [Built
+- **No Moon** (`map-generator/assets/maps/nomoon/`, 1800×1800, ~530k land tiles, 19 Lords) [Built
   2026-10-03] is the first map made from one of Tom's Paint sketches (`MapImages/NoMoon.png`): the
   Dark Star in the bottom-right corner, a beam of land running from it to the top left, where it
   has cratered and cracked a moon; the moon's debris is flung out to either flank. The beam is the
@@ -555,58 +560,58 @@ persistence was OpenFront's closed-source API, which we do not have.
   is generated, not painted: `npx tsx src/scripts/drawings/NoMoon.ts` writes
   `map-generator/drawings/No Moon.png` from a description of the parts, then `npm run map "No Moon"`
   builds it as for any drawing. First `HegemonSim` look: 2 overthrows in 3 seeds (one by the
-  mid-beam nation by gate, one by the largest debris fragment by fleet), the third to the timer.
+  mid-beam Lord by gate, one by the largest debris fragment by fleet), the third to the timer.
   The drawing scripts share `src/scripts/drawings/Drawing.ts` (palette canvas, seeded noise,
-  blobs, strokes, a nation placer that works from the pieces of land, the PNG writer).
+  blobs, strokes, a Lord placer that works from the pieces of land, the PNG writer).
 - **Nucleic Acid** (`map-generator/assets/maps/nucleicacid/`, 1800×1800, ~440k land tiles, 18
-  nations) [Built 2026-10-03] from Tom's second sketch: a double helix of land top to bottom with
+  Lords) [Built 2026-10-03] from Tom's second sketch: a double helix of land top to bottom with
   the Dark Star at its centre crossing. The two strands are 54-tile walls (plains with a highland
   rim) that end on the moat from the four diagonals, so armies can march at the throne along them;
   at the other two crossings one strand passes behind the other with a short gap, so each strand is
   three pieces and a crossing costs a fleet hop. Each bulge holds a row of four round base-pair
-  islands that almost bridge the strands; the two rows nearest the throne get no nations (staging
+  islands that almost bridge the strands; the two rows nearest the throne get no Lords (staging
   islands for whoever takes them): with the outer island of each seated, one of those four
-  overthrew the throne in all three AI rounds, so the nation exclusion was raised from 380 to 500
-  tiles and the strands carry more nations instead. Void strips frame the helix.
+  overthrew the throne in all three AI rounds, so the Lord exclusion was raised from 380 to 500
+  tiles and the strands carry more Lords instead. Void strips frame the helix.
   `src/scripts/drawings/NucleicAcid.ts`.
-- **Nucleus** (`map-generator/assets/maps/nucleus/`, 1800×1800, ~470k land tiles, 12 nations)
+- **Nucleus** (`map-generator/assets/maps/nucleus/`, 1800×1800, ~470k land tiles, 12 Lords)
   [Built 2026-10-03] from Tom's third sketch: a Bohr atom. Eight round particles (highland and
-  mountain cores) ring the Dark Star at 300 tiles, hugging the moat. They are Tribe land: a first
-  build seated nations on every other particle, and a particle nation overthrew the throne in all
+  mountain cores) ring the Dark Star at 300 tiles, hugging the moat. They are Baron land: a first
+  build seated Lords on every other particle, and a particle Lord overthrew the throne in all
   three AI rounds, twice inside 15 minutes (`NUCLEUS_SEATS` in the script turns them back on).
   Three elliptical orbits (800×200, at 90°, 30° and 150°) are cut where they pass behind the
   nucleus, giving six long arcs that run from near the particles out to the rim and back, each
-  carrying one solid electron where its first nation sits. Void outside a 1150-tile circle frames
+  carrying one solid electron where its first Lord sits. Void outside a 1150-tile circle frames
   the atom. `src/scripts/drawings/Nucleus.ts`.
 - **Jovian System** (`map-generator/assets/maps/joviansystem/`, 1800×1800, ~595k land tiles, 21
-  nations) [Built 2026-10-03] from Tom's sketch of Jupiter and the Galilean moons. The planet is a
+  Lords) [Built 2026-10-03] from Tom's sketch of Jupiter and the Galilean moons. The planet is a
   500-tile disc of land, leaning 7°, whose five dark belts are open space, so it is six zones of
   cloud (plains with streaks of highland and the white ovals as storms of high ground). The Great
-  Red Spot is the Dark Star, low on the planet and left of centre, so the zones round it are Tribe
-  land and the nations sit on the zones' far ends and on the moons: Io (volcanoes), Europa
+  Red Spot is the Dark Star, low on the planet and left of centre, so the zones round it are Baron
+  land and the Lords sit on the zones' far ends and on the moons: Io (volcanoes), Europa
   (cracks), Ganymede (grooves) and Callisto (craters and the Valhalla rings) on the diagonals at
   gaps of 110, 150, 200 and 240 tiles, with small irregular moons as stepping stones. The ring runs
   from the equatorial belt out to both edges of the map as a strip of land with the four inner
   moons on it. First `HegemonSim` look: overthrown in 3 of 3 seeds, all after 18 minutes and
   mostly by fleet. `src/scripts/drawings/JovianSystem.ts`.
-- **Bullseye** (`map-generator/assets/maps/bullseye/`, 1800×1800, ~540k land tiles, 20 nations)
+- **Bullseye** (`map-generator/assets/maps/bullseye/`, 1800×1800, ~540k land tiles, 20 Lords)
   [Built 2026-10-03] from Tom's sketch: the Dark Star as the bull inside three concentric rings of
   land at 320–362, 505–562 and 715–780 tiles. Each ring is cracked into arcs (6, 8 and 12) whose
   cracks do not line up from one ring to the next, so every arc is its own piece of land; the two
-  outer rings seat one nation per arc, the inner ring is inside the 500-tile exclusion and is Tribe
+  outer rings seat one Lord per arc, the inner ring is inside the 500-tile exclusion and is Baron
   land, the last stepping stone before the moat. Each ring faces the star with a ridge of highland
   and mountain. Void frames the corners. First `HegemonSim` look: overthrown in 2 of 3 seeds (both
   by gate, at 16 and 20 minutes), the third to the timer. `src/scripts/drawings/Bullseye.ts`.
-- **Cube** (`map-generator/assets/maps/cube/`, 1800×1800, ~560k land tiles, 24 nations) [Built
+- **Cube** (`map-generator/assets/maps/cube/`, 1800×1800, ~560k land tiles, 24 Lords) [Built
   2026-10-03] from Tom's sketch: a cube drawn corner on, with the Dark Star at the near vertex
   where the three faces meet. Solid faces would be about 1.8M tiles, three times the budget, so
   each 760-tile face is a four-by-four grid of parallelogram cells with 67-tile lanes between them
   (100 along the three edges that meet at the star), an archipelago in the shape of a cube. The
   faces are told apart by their light: the top face is plains, the right face has highland rims,
   the left face is in shadow with highland and mountain. The outer row of cells on each face seats
-  a nation, as does the third cell in on each face's diagonal (just past 500 tiles); the cells
-  nearer the star are Tribe land. First `HegemonSim` look: with the outer rows alone (21 nations)
-  the throne held in 3 of 3 seeds; with those three seated as well, overthrown in 3 of 3 (at 14½, 18 and 19 minutes; the fast one by an inner-diagonal nation, the other two from the outer rows). `src/scripts/drawings/Cube.ts`.
+  a Lord, as does the third cell in on each face's diagonal (just past 500 tiles); the cells
+  nearer the star are Baron land. First `HegemonSim` look: with the outer rows alone (21 Lords)
+  the throne held in 3 of 3 seeds; with those three seated as well, overthrown in 3 of 3 (at 14½, 18 and 19 minutes; the fast one by an inner-diagonal Lord, the other two from the outer rows). `src/scripts/drawings/Cube.ts`.
 - **Gap:** terrain colours are global, not per-map, and map thumbnails are hard-coded
   blue-sea/green-land in `map-generator/map_generator.go` (`getThumbnailColor`).
 
@@ -634,7 +639,7 @@ persistence was OpenFront's closed-source API, which we do not have.
   carry real-world/military flavour (`unit_type`, `build_menu`, `events_display`, `help_modal`, …).
   **Rename display strings, never enum values** (`UnitType`, `GameMapType`, `PlayerType` values are
   wire/replay format).
-- **Names:** Tribe names from `resources/tribeNameThemes.json` (a `space` theme exists); anonymised
+- **Names:** Baron names from `resources/tribeNameThemes.json` (a `space` theme exists); anonymised
   player names in `src/core/AnonNames.ts` (guarded by a word-distance test).
 - **Audio:** Howler; effects in `resources/sounds/`, registry in `src/client/sound/Sounds.ts`. Music is
   in `proprietary/` and must be replaced (§8).
@@ -650,7 +655,7 @@ persistence was OpenFront's closed-source API, which we do not have.
 | Rules engine  | new `src/core/execution/HegemonExecution.ts`                                                                 | Enforce caps, track damage/killing blow, drive role state and events.                                                                                                                                                                                      |
 | Win           | `src/core/execution/WinCheckExecution.ts`, `GameImpl.ts` (`conquerPlayer`, `setWinner`)                      | R1–R4: remove the 80% rule; Hegemon immune to cluster capture and mop-up hand-offs (H7).                                                                                                                                                                   |
 | Client sync   | `src/core/game/GameUpdates.ts`, `GameUpdateUtils.ts`                                                         | Carry the Hegemon flag/state in `PlayerUpdate`.                                                                                                                                                                                                            |
-| AI            | new behaviour under `src/core/execution/nation/` or alongside `NationExecution.ts`                           | AI Hegemon (R6, H11); teach Nations/Tribes to treat the Hegemon as the objective.                                                                                                                                                                          |
+| AI            | new behaviour under `src/core/execution/nation/` or alongside `NationExecution.ts`                           | AI Hegemon (R6, H11); teach Lords/Barons to treat the Hegemon as the objective.                                                                                                                                                                            |
 | Server        | `src/server/GameServer.ts` (`start()`), `Worker.ts`, `GameManager.ts`                                        | Stamp `isHegemon` into `GameStartInfo.players`; successor-lobby hand-off of the winner.                                                                                                                                                                    |
 | Singleplayer  | `src/client/LocalServer.ts`, `SinglePlayerModal.ts`                                                          | Persist/reload the throne locally.                                                                                                                                                                                                                         |
 | HUD           | `hud/layers/WinModal.ts`, `GameRightSidebar.ts`, `PlayerStats.ts`, `hud/PlayerIcons.ts`, `HostLobbyModal.ts` | Victory screen ("The Hegemon has fallen" / "The Hegemon endures"), themed countdown, Hegemon marker + leaderboard emphasis, lobby options.                                                                                                                 |
@@ -694,8 +699,8 @@ it on). With it off the sim is bit-identical to before: no extra player, no PRNG
   tile bit, nothing on the wire.
 - **The seat:** a human flagged `isHegemon` (`PlayerSchema` → `PlayerInfo` → `Player.isHegemon()` →
   `PlayerUpdate` → `PlayerView`), else an AI seat made inside `GameImpl`: `PlayerType.Nation`, id
-  `HEGEMON0`, name "The Hegemon", **not** in the nation list, so no `NationExecution` drives it. It owns
-  the whole domain and full troops from tick 0. Map nations placed on the Dark Star (Milky Way's
+  `HEGEMON0`, name "The Hegemon", **not** in the Lord list, so no `NationExecution` drives it. It owns
+  the whole domain and full troops from tick 0. Map Lords placed on the Dark Star (Milky Way's
   "Sagittarius A\*") lose their cell and spawn at random. `HegemonExecution` (the future rules engine)
   registers the seat's `PlayerExecution`. Server-side stamping of `isHegemon` is succession work (M5).
 - **Strength:** `Config.hegemonMaxTroops()` / `hegemonGoldPerTick()` from the map's land tiles **as
@@ -746,7 +751,7 @@ it on). With it off the sim is bit-identical to before: no extra player, no PRNG
   Hegemon wins on the timer.
 - **Still missing:** HUD for the slot/stall/cooldown (F2, M2); the invader gains nothing from domain tiles
   (H5); an all-in last stand (the Hegemon still dies with ~2M troops unspent, since waves are a share of
-  what is left); AI nations rarely invade before minute ~13.
+  what is left); AI Lords rarely invade before minute ~13.
 
 ### 6.3 As built — invasion economics and the first HUD (2026-09-20)
 
@@ -782,12 +787,12 @@ it on). With it off the sim is bit-identical to before: no extra player, no PRNG
   raze strike when merging attacks on the same player nor counts one as a defence of the domain.
 - **Leveller strikes (H11), `HegemonExecution.punish`**, AI Hegemon only; tunables `leveller*` (renamed from `punitive*` on 2026-09-26, when H19 took the name) in
   `HEGEMON_DEFAULTS`. Two findings from `HegemonSim` shaped it: (1) "most troops right now" flips every
-  few seconds as nations spend their armies, so strength is **capacity** (`Config.maxTroops`); (2) with
+  few seconds as Lords spend their armies, so strength is **capacity** (`Config.maxTroops`); (2) with
   close leaders a single razed city ended every strike within a second, so the recall has hysteresis
   (`punitiveRecallPercentOfRival`), and the aim is the target's **highest-level city** (nearest border
   tile as fallback) because razed land is resettled almost immediately.
 - **Measured (AI-only, 20 min).** World: 8 strikes from minute ~4, most 6–60 s, razing 4–16k tiles and
-  3–4 cities and costing the Hegemon 0.1–1.5M troops; they fall on four different nations and nobody
+  3–4 cities and costing the Hegemon 0.1–1.5M troops; they fall on four different Lords and nobody
   invades (previously Benin invaded at 16:25 and won at 18:43) — the Hegemon wins on the timer. Milky
   Way: 4 strikes; Predators, struck twice, invade at ~minute 15 and are evicted. Against a strong
   target with few neighbours a strike can burn all its troops for almost no net land.
@@ -795,11 +800,11 @@ it on). With it off the sim is bit-identical to before: no extra player, no PRNG
 
 ### 6.5 As built — AI challengers go for the throne (2026-09-20)
 
-- **Before:** a nation only ever landed on the Dark Star by accident — a random boat (which skips
+- **Before:** a Lord only ever landed on the Dark Star by accident — a random boat (which skips
   targets stronger than itself) or retaliation for a strike — and with a fifth of its army.
 - **`NationHegemonBehavior`** (`src/core/execution/nation/`), asked by `NationExecution` before
-  `maybeAttack()`; if it acts, the nation leaves its other wars alone that turn. Nations only — Tribes
-  never invade [Decided]. Nations stay **self-interested**: nothing helps another invader [Decided].
+  `maybeAttack()`; if it acts, the Lord leaves its other wars alone that turn. Lords only — Barons
+  never invade [Decided]. Lords stay **self-interested**: nothing helps another invader [Decided].
   - **Launch:** the slot is free for it (`canInvadeDarkStar`), no fleet of its own is already bound for
     the Dark Star, and its troops reach a share of the Hegemon's **current** troops that falls linearly
     over the round (`aiInvadeTroopPercentAtStart` 100 → `aiInvadeTroopPercentAtEnd` 50): bolder as the
@@ -809,7 +814,7 @@ it on). With it off the sim is bit-identical to before: no extra player, no PRNG
     `aiInvasionReservePercent` (20% of its capacity) into the land attack.
 - **Measured (AI-only, 20 min, 3 seeds per map; `HegemonSim` now prints a round summary).** Invasions
   begin at minute ~10 (was ~13–16 on World, almost never on Milky Way), 3–5 per round by different
-  nations in succession. At the current F1 placeholder the throne holds every time: **0 of 6 overthrown**,
+  Lords in succession. At the current F1 placeholder the throne holds every time: **0 of 6 overthrown**,
   domain never below 68%, Hegemon troops down to 1.3–2.9M. With `--ceiling 70`: 1 of 6 (and one round to
   1% of the domain); `--ceiling 50`: **3 of 6**. Target agreed with Tom: roughly a third to a half of
   AI-only rounds end in an overthrow — so F1 lands near 50–60% of today's ceiling _for AI challengers_;
@@ -874,8 +879,8 @@ Narrow by design: the seat in one game, nothing about who holds the throne betwe
   existed (`GameImpl.seatHegemon` takes a flagged human over creating the AI, `SpawnExecution` refuses
   its spawn, `HegemonExecution` skips the AI's response waves and punitive strikes for a human). Two
   things did not: a singleplayer spawn phase only ended when the human spawned, so a seated human waited
-  forever — `HegemonExecution.maybeEndSpawnPhase` now ends it once every nation has taken its place (or
-  after 10 s); and the win modal treated an enduring Hegemon as an AI "nation" win.
+  forever — `HegemonExecution.maybeEndSpawnPhase` now ends it once every Lord has taken its place (or
+  after 10 s); and the win modal treated an enduring Hegemon as an AI "Lord" win.
 - **The strike order.** A new `strike` intent (`tile`, `troops`; appended to the wire union) replaces
   the boat piggyback — the Dark Star sends no fleets, and the schema now says so. The radial menu's boat
   slot becomes **Strike** for the Hegemon (any challenger tile beyond the Dark Star, sized by the troop
@@ -893,7 +898,7 @@ Narrow by design: the seat in one game, nothing about who holds the throne betwe
   the target's inbound row shows the countdown and hides Counter-attack until it lands; clicking either
   jumps to the aim tile. `dark-star-panel` from the throne: the H13 line reads "your income is being sent
   against the invader", a "Your strikes hold N tiles" line, and a **sortable challenger table**
-  (nations and humans, never Tribes): troops, capacity (`Config.maxTroops`), cities, land share, and
+  (Lords and humans, never Barons): troops, capacity (`Config.maxTroops`), cities, land share, and
   strike status (Free / ×N / Immune / Striking / Invading). Win modal: "The Hegemon Reigns Supreme"
   (a win from the throne, a loss for everyone else) and "Overthrown by X" for a fallen human Hegemon.
 - **Sim.** `HegemonSim --human` seats a passive human (no waves, no punitive strikes; stall routing
@@ -902,7 +907,7 @@ Narrow by design: the seat in one game, nothing about who holds the throne betwe
   fires on a stall and an advancing invader is otherwise unopposed. A human Hegemon must defend by
   attacking the invader's domain tiles; whether it should also get the AI's landing wave is a playtest
   question. AI-only rounds are unchanged (4 strikes, all fought, 5 landings, throne holds).
-- **Verified in the browser** (Playwright, World, 50 Tribes): toggle → seated with the whole domain and
+- **Verified in the browser** (Playwright, World, 50 Barons): toggle → seated with the whole domain and
   full troops at tick 14, no spawn prompt, table populated; at minute ~0.6 Russia crossed the tyranny
   floor, tooltip "Strike Russia with 1.25M troops / Tyranny: ×11.8", strike row "Landing in 4s", landed
   with a 211-tile bubble and "Razing", recall returned the survivors (troops 5.29M → 6.18M).
@@ -954,7 +959,7 @@ Decisions taken 2026-09-22 are in C4. What the engine offers, then the stages.
 4. **Build-menu growth (medium, parallel with 3). [Dropped 2026-09-24]** The gate fit as a seventh
    radial slice and raids (the next slice) were abandoned with C2; MIRVs go (S6), so the menu shrinks.
    Revisit only if a new structure type arrives.
-5. **AI gates (medium). [Built 2026-09-24, §6.11]** Nations build gates (`NationStructureBehavior` ratio table) and shoot at
+5. **AI gates (medium). [Built 2026-09-24, §6.11]** Lords build gates (`NationStructureBehavior` ratio table) and shoot at
    neighbours they cannot reach over land, and at the throne when `NationHegemonBehavior` would invade.
    Without this, gates are a human-only edge and the sim's numbers mislead.
 6. **The opening, C3 (medium, M2). [Built 2026-09-24, §6.12]** Presentation only: during the spawn-immunity window after the
@@ -1003,7 +1008,7 @@ Stages 1 and 2 of §6.8, narrow by design: no stargate structure, no menu change
   minute 2.8, then the rounds diverge on timing (a flight is now the arc ÷ 10 tiles/tick, 5–8 s on World
   rather than 3 s + distance); both end with the throne holding on the timer (before: 4 strikes,
   5 landings, domain low 16%; after: 3 strikes, 2 landings, domain low 36% — one seed, not a trend).
-  Browser (Playwright, World, 50 Tribes, human throne): a strike on Russia launched at tick 390 landed
+  Browser (Playwright, World, 50 Barons, human throne): a strike on Russia launched at tick 390 landed
   at tick 447 exactly as the HUD announced, trail and impact ring visible, bubble grew from 6 to 155
   tiles in 3 s; a second strike recalled in flight vanished and its troops came home.
 - **Deferred.** Own art and sounds for the projectile; an aim preview (no hover phase to draw it in);
@@ -1011,7 +1016,7 @@ Stages 1 and 2 of §6.8, narrow by design: no stargate structure, no menu change
 
 ### 6.10 As built — stargates for human players (2026-09-24)
 
-Stage 3 of §6.8. Humans only (nations neither build nor fire gates, stage 5), no build-menu redesign
+Stage 3 of §6.8. Humans only (Lords neither build nor fire gates, stage 5), no build-menu redesign
 (a seventh structure slice fits the generated radial submenu), no raids.
 
 - **`UnitType.Stargate`** (appended; in `Structures`, so the build menu, upgrades, capture and
@@ -1060,16 +1065,16 @@ Stage 3 of §6.8. Humans only (nations neither build nor fire gates, stage 5), n
   invader's foothold therefore falls to the throne's reconquest (the landing wave, or the H13 counter-
   attack once the invasion stalls), never by fiat. Known consequences, accepted: the rule is invisible
   (a marker for the owner is a later nicety); the landing tile is a single hidden weak point of a
-  landlocked pocket; exclaves accumulate with shots, to be revisited once nations fire gates (stage 5).
+  landlocked pocket; exclaves accumulate with shots, to be revisited once Lords fire gates (stage 5).
   Boats are unchanged (a shore landing was never absorbable).
 - **Tests.** `tests/Stargate.test.ts` (15): build/cost/level cap, `stargateFor` and ranges, refusals,
   flight and beachhead on neutral and enemy land, the intent, recall, a Dark Star landing claiming the
   slot, refusal while the slot is taken, the mid-flight turn-back, the bubble rule, and the enclave
-  rule against a beachhead inside a nation and inside the Dark Star (with real combat and the players'
+  rule against a beachhead inside a Lord and inside the Dark Star (with real combat and the players'
   own `PlayerExecution`s, which `setup()` does not add): the pocket outlives its attack, falls when the
   landing tile is retaken, and the Dark Star foothold falls to the H13 counter-attack.
 - **Measured.** World seed a, AI-only: byte-identical to the previous build (no AI gates). Browser
-  (Playwright, World, 30 Tribes, a human spawned 155 tiles from the centre with infinite gold): two
+  (Playwright, World, 30 Barons, a human spawned 155 tiles from the centre with infinite gold): two
   gates built, placement ring 120 tiles wide reaching the moat, aim ring and the submenu slice with its
   tooltip, a shot at Madagascar 105 tiles away in the air ~10 ticks with its HUD row, a shot on the
   domain that landed, claimed the slot and was evicted by the landing wave — the panel then showed the
@@ -1078,9 +1083,9 @@ Stage 3 of §6.8. Humans only (nations neither build nor fire gates, stage 5), n
   the Dark Star should turn back a fleet already bound there; the menu list (stage 4) once more slices
   arrive. AI gates followed as §6.11.
 
-### 6.11 As built — nations build and fire stargates (2026-09-24)
+### 6.11 As built — Lords build and fire stargates (2026-09-24)
 
-Stage 5 of §6.8. Decided with Tom before building: every nation gets gates under the silo's
+Stage 5 of §6.8. Decided with Tom before building: every Lord gets gates under the silo's
 affordability logic, with the difficulty setting how many and how eagerly; a gate sits before the silo
 in the build order; far-side shots into a land neighbour are allowed at the lowest priority; the gate
 fires the invasion ahead of the fleet and never reinforces its own foothold. No new gate rules or
@@ -1090,9 +1095,9 @@ numbers for humans, no menu work, no balance change.
   Easy 0.10, Medium 0.15, Hard 0.20, Impossible 0.25; perceived cost +100% per gate owned, so the
   nuke save-up still applies), the first gate at 0.4 per city like the first silo, a hard cap of
   three, in the build order Port → Factory → SAM → **Stargate** → Silo. Hegemon mode only (the
-  behaviour is handed the nation's `NationHegemonBehavior` and asks `game.darkStar()`). **The throne
+  behaviour is handed the Lord's `NationHegemonBehavior` and asks `game.darkStar()`). **The throne
   want:** while `wantsThrone()` holds (slot free for it, troops at the falling bar of §6.5) and no gate
-  reaches the rim, the nation upgrades the gate that falls least short if its levels left would close
+  reaches the rim, the Lord upgrades the gate that falls least short if its levels left would close
   the gap (`gateReaches()`: gate, the rim tile it would aim at, shortfall), else builds a first gate —
   before any other structure. **Placement** (`stargateValue`): interior and spaced like a silo, minus a
   third of a point per tile from the aim: the Dark Star's edge in the throne state, else the centre of
@@ -1101,7 +1106,7 @@ numbers for humans, no menu work, no balance change.
   a ready gate whose range reaches the rim (`rimTileToward(gate)`: where the line to the centre enters
   the disc) shoots the same `aiInvasionSendPercent` share of the army at that rim tile through
   `GateShotExecution`, and the transport is the fallback. A shot bound for the Dark Star counts as a
-  fleet under way; while holding the slot the nation pushes by land only.
+  fleet under way; while holding the slot the Lord pushes by land only.
 - **Shots at rivals (`NationStargateBehavior`, new, asked after the throne check and before the land
   attack; a shot ends the turn like a random boat).** With a ready gate, and by difficulty (Easy one
   turn in four, Medium one in two, Hard and Impossible every turn), in order: **a hostile player whose
@@ -1123,7 +1128,7 @@ numbers for humans, no menu work, no balance change.
   landing at 17.9 min)** — the rate is unchanged, the rounds that fall are different ones (the same
   timing noise as every earlier change). **Landings on the Dark Star: 21 before, all by fleet; 22 after,
   12 by gate and 10 by fleet** — more than half of all invasions now skip the moat. Gates: 236 built in
-  the six rounds (26–59 per round, by 13–32 nations), 31 upgrades; 780 shots, 776 landed, 4 turned
+  the six rounds (26–59 per round, by 13–32 Lords), 31 upgrades; 780 shots, 776 landed, 4 turned
   back (a slot claimed in flight), 13 on the Dark Star; the pocket still stood 30 s after landing in
   613 of 754 checked (81%). Domain low: World 36/45/0% → 0/93/93%, Milky Way 31/82/86% → 47/66/19%.
   **Landlocked beachhead pockets alive at the end: World 4, 9, 23; Milky Way 1, 0, 3** — from single
@@ -1131,7 +1136,7 @@ numbers for humans, no menu work, no balance change.
   inland conquests of thousands of tiles that only count because they touch no water. On World the
   map ends visibly pockmarked; on Milky Way hardly at all. That is the number Tom asked for to decide
   whether the beachhead rule needs a cap — the sim's per-round list names each pocket.
-- **Tests.** `tests/NationStargate.test.ts` (11): a throne-ready nation builds its first gate in the
+- **Tests.** `tests/NationStargate.test.ts` (11): a throne-ready Lord builds its first gate in the
   nearer half of its land and in range of the rim, no gate without the ratio, the upgrade closes a
   gap of two levels and stops; the invasion goes by gate and lands (then the land push, no second
   shot), by fleet when the gate is short, neither while another power holds the slot, by fleet when
@@ -1147,20 +1152,20 @@ Stage 6 of §6.8 and the map half of M2. Decided with Tom before building: the o
 **client-only** (no projectile units in the sim, nothing on the wire, skipped on a reconnect
 catch-up and in replays); **spawn immunity in Hegemon mode is extended to cover the longest flight,
 capped at 15 s**, and play starts the moment the last one lands; **fill and name are hidden** until the
-landing while borders, Tribes and the Hegemon show from the start, and only **humans and nations
-fly**; the map is **Milky Way sized with 24 nations in a ring**, the Dark Star **carved by the engine**
+landing while borders, Barons and the Hegemon show from the start, and only **humans and Lords
+fly**; the map is **Milky Way sized with 24 Lords in a ring**, the Dark Star **carved by the engine**
 from an `info.json` override, **sci-fi names on this map only**, and it is called **Event Horizon**.
 Go came from the official zip into the user profile, no installer.
 
 - **The window is a phase of the sim (`src/core/game/Opening.ts`, `GameImpl.endSpawnPhase`,
   `GameImpl.mayRun`).** When the spawn phase ends the sim measures, for every spawned human and
-  nation, the flight from the Dark Star's centre to its spawn tile on the projectile's own path
+  Lord, the flight from the Dark Star's centre to its spawn tile on the projectile's own path
   (`flightPath`: the Parabola stepper at `strikeSpeed`, exactly as `RazeExecution` and
   `GateShotExecution` step it; a flight takes `path.length` ticks), fixes the **opening window** at
   the longest, capped at `openingMaxSeconds` (15) in `HEGEMON_DEFAULTS`, and sets the round's
   **start tick to the end of that window**. Until then `inOpening()` holds: no execution runs or is
   initialised except a spawn already under way (`Execution.activeDuringOpening`, which only
-  `SpawnExecution` answers, so a nation's last hop still lands and a client's late pick is
+  `SpawnExecution` answers, so a Lord's last hop still lands and a client's late pick is
   refused), so there is no income, no expansion, no AI; orders sent meanwhile queue as intents do
   during the spawn phase and run on the first tick of play; `ticksSinceStart` is 0, so the round
   clock, the win check and spawn immunity all start at the landing — the ordinary 5 s immunity
@@ -1177,7 +1182,7 @@ Go came from the official zip into the user profile, no installer.
   telegraph pass rings every landing tile, and the landing is reported as a dead unit that reached its
   target, which plays the impact flash. The phantoms carry no target tile, so no telegraph ring is
   drawn (Tom found the rings clutter). A flight longer than the window samples its path over fewer
-  ticks and lands as the window ends. A nation that hops once more after the phase ends re-aims its
+  ticks and lands as the window ends. A Lord that hops once more after the phase ends re-aims its
   flight; a human who spawns inside the window gets a flight that still lands by its end; after it,
   players simply appear. Skipped when the config is a replay or when four ticks arrived within 150 ms
   (a catch-up).
@@ -1203,22 +1208,22 @@ Go came from the official zip into the user profile, no installer.
   1800×1800, 449,751 land tiles after generation (Milky Way: 442,979), void beyond a ragged rim at
   about r = 860, open deep space inside about r = 205 (the carved disc and moat end at 180), three
   logarithmic spiral arms of noisy star clusters with scattered clusters between them, five spiral
-  lanes of deep space, elevation rising towards the arm cores; 24 nations placed on land nearest an
+  lanes of deep space, elevation rising towards the arm cores; 24 Lords placed on land nearest an
   evenly spaced ring at r ≈ 400 ± 36 (jittered, at least 70 tiles apart, with room around each); flags
   empty; `themes: ["space"]`; `multiplayer_frequency: 4`; `hegemon: { center: [900, 900], radius:
 162, moat: 18 }`. In the map list under `cosmic` as "Event Horizon" (`GameMapType.EventHorizon`).
-- **Measured (`HegemonSim`, seeds a/b/c, 400 Tribes, Medium, 20 min).** No overthrow in three
+- **Measured (`HegemonSim`, seeds a/b/c, 400 Barons, Medium, 20 min).** No overthrow in three
   rounds (the Hegemon held on the timer each time); Dark Star landings 5, 5 and 3 — **13 in all, 9 by
-  gate and 4 by fleet**; domain low 63 %, 85 % and 71 %; gates built 20/19/19 by 10–13 nations with
+  gate and 4 by fleet**; domain low 63 %, 85 % and 71 %; gates built 20/19/19 by 10–13 Lords with
   5–7 upgrades; shots 25/23/29, all landed, pockets held after 30 s in 22/25, 20/23 and 23/29;
   landlocked pockets at the end 1, 0 and 0. Against §6.11 on the same build of the AI: World and
-  Milky Way ran 26–59 gates and ~130 shots a round with 72 and 18 nations; Event Horizon's 24 nations
+  Milky Way ran 26–59 gates and ~130 shots a round with 72 and 18 Lords; Event Horizon's 24 Lords
   fire far less, and the Dark Star is invaded about as often as on Milky Way. The opening window on
-  this map measured 79 ticks in the browser (25 flyers, 30 Tribes); the first landing at 3.2 s and the
+  this map measured 79 ticks in the browser (25 flyers, 30 Barons); the first landing at 3.2 s and the
   last at 7.9 s, the round beginning on that tick with the clock still at 20:00.
 - **Tests.** `tests/HegemonOpening.test.ts` (11): the window is the longest flight and the round
   begins as it ends; nothing runs during the opening and orders queue; a spawn under way lands while
-  a late pick is refused; the window is capped and the ordinary immunity follows the landing; Tribes
+  a late pick is refused; the window is capped and the ordinary immunity follows the landing; Barons
   do not lengthen it; none outside Hegemon mode; the override places the disc, the moat falls back, a disc that does not fit
   is refused, the manifest's entry reaches the loaded map halved on a compact map, a malformed entry
   is refused. `tests/client/OpeningFlights.test.ts` (6): a phantom launches at the start tick, follows
@@ -1227,7 +1232,7 @@ Go came from the official zip into the user profile, no installer.
   re-aiming and late spawners; the controller's pull-out, cues, return home and the Hegemon's wide
   view (no target tile on a phantom). `MapConsistency` covers the new map's files.
 - **Deferred.** Own art for the projectile and a launch sound of its own; the flights in replays;
-  decorative stars in the void and a per-map palette; per-map thumbnail colours; whether 24 nations is
+  decorative stars in the void and a per-map palette; per-map thumbnail colours; whether 24 Lords is
   the right count once Tom has played the map. [2026-10-04] The landing now plays Tom's `landing`
   cue, to the player whose flight came down only; the Hegemon and spectators hear none (S8).
 
@@ -1241,7 +1246,7 @@ being hidden (revisited with gifts, H18).
 
 - **Nothing on the Dark Star (H2).** `PlayerImpl.validStructureSpawnTiles` — the owner-tile flood
   every land structure and port site goes through, for humans, the build menu (`buildableUnits`) and
-  the nations (`NationStructureBehavior` asks `canBuild`) alike — skips domain tiles, so no one can
+  the Lords (`NationStructureBehavior` asks `canBuild`) alike — skips domain tiles, so no one can
   build on the Dark Star whoever holds the tile. `canBuildUnitType` refuses the Hegemon every
   `Structures` type outright (it used to refuse only the gate): none on the domain, none on a strike's
   bubble. This is what closes F8: a Hegemon silo is no longer possible. The AI Hegemon never built, so
@@ -1268,8 +1273,8 @@ being hidden (revisited with gifts, H18).
   tutorial; MIRV strings are left (they show only outside Hegemon mode).
 - **Sim baseline (`HegemonSim`, Event Horizon, seed a).** Identical to the pre-change run for the
   first six minutes, then diverging: `NationMIRVBehavior.considerMIRV` now returns before its
-  hesitation roll, so every nation's random stream shifts from the first tick a nation with a silo and
-  MIRV gold asks; the nations also stop saving for a MIRV. A control run with only the MIRV hard-off
+  hesitation roll, so every Lord's random stream shifts from the first tick a Lord with a silo and
+  MIRV gold asks; the Lords also stop saving for a MIRV. A control run with only the MIRV hard-off
   reverted matched the pre-change run tick for tick until 17.08 — right after the second gate landing
   on the Dark Star, with the first invader (evicted at ~15) no longer barred by a cooldown — and
   differed only in that invader's later shots: H12 (and H2, on the beachhead) acting as decided,
@@ -1288,7 +1293,7 @@ being hidden (revisited with gifts, H18).
 ### 6.14 As built — gifts (2026-09-25)
 
 M3 chunk 2, on `feat/hegemon-toolkit`. Sub-questions settled with Tom the same day: a gift may
-also **upgrade** the host's existing structure; **every challenger** can receive one, Tribes
+also **upgrade** the host's existing structure; **every challenger** can receive one, Barons
 included; the Gift **takes the ally slot** of the Hegemon's radial menu on a challenger's tile; the
 host gets **one event line**.
 
@@ -1327,7 +1332,7 @@ host gets **one event line**.
   host is told; a second gift of the same type upgrades the first; refused when not the Hegemon,
   when the named host does not hold the tile (with the throne's notice), on the Dark Star, when the
   throne cannot pay, to the throne itself, and for non-structures.
-- **Deferred.** Gifts from the keyboard build grid; AI use of gifts (nations neither give nor
+- **Deferred.** Gifts from the keyboard build grid; AI use of gifts (Lords neither give nor
   expect them); a per-gift refusal line beyond the changed-hands case (the others only warn).
 
 ### 6.15 As built — destroyers of the Dark Star (2026-09-25)
@@ -1388,7 +1393,7 @@ for both warheads, and **everyone is told** of the levy.
   `punitive_strike` intent, tile only, appended to the union and to the hand-written `Intent`
   type). `init` finds the owner's flagged silo on the tile (refused with
   `dark_star_punitive_none` otherwise), skips the tyranny refusal, keeps the one-strike-per-target
-  refusal, takes the **levy** — `levy()`: every living challenger in `players()`, Tribes included,
+  refusal, takes the **levy** — `levy()`: every living challenger in `players()`, Barons included,
   `floor(troops × percent ÷ 100)` each, told by `dark_star_levy` — clears the owner's other flags,
   and warns the owner with `dark_star_punitive_inbound`. The landed `Attack` is `markPunitive()`
   (which also marks it a strike, so `isStruckBy`, the bubble costing and the counter-attack rules
@@ -1432,7 +1437,7 @@ dark_star_levy / dark_star_punitive_*`.
   levies 430–690k troops, 9–199 s each, all but one fought; three popped 1.9–2.5k tiles, the rest
   0–90 — the target retook the whole pocket. Round: 10 landings, domain low 79%, the throne holds.
   **Milky Way:** 22 flagged launches, 6 punitive of 11 strikes, levies 400–640k, 9–60 s, all
-  fought, almost nothing popped (291 tiles from all 11 strikes). The pattern: a nation with a
+  fought, almost nothing popped (291 tiles from all 11 strikes). The pattern: a Lord with a
   large standing army retakes a fresh pocket faster than the strike razes it at the 3× raze slow
   rate, so a punitive strike against a strong power is beaten more often than not, while a
   smaller target loses the pocket. Whether that is the balance Tom wants is F20's question; the
@@ -1442,18 +1447,18 @@ dark_star_levy / dark_star_punitive_*`.
   builds a silo, fires a Nuclear Warhead at the Dark Star, and screenshots the badge on its own
   silo (a solid red ring, the sprite visible inside; the AI throne then rightly spares a 52-tile
   human, so the strike never comes). `punitive-throne.mjs` plays the human Hegemon: waits for a
-  nation's launch, screenshots the badge and the radial on that silo, clicks Punish, and follows
+  Lord's launch, screenshots the badge and the radial on that silo, clicks Punish, and follows
   the strike to its pop. Seen working end to end (Event Horizon, minute 8): the red ring on
   Polaris Order's silo, the radial with Punish in the attack slot, a 314k levy with the throne's
   own troops untouched, "Landing in 3s" then "Razing around the silo" with no Recall, a 201-tile
   bubble, Polaris counter-attacking it, and the strike over 18 s after landing with the silo
-  retaken — the target won the pocket, as the sim predicts for a strong nation. Both scripts
+  retaken — the target won the pocket, as the sim predicts for a strong Lord. Both scripts
   retry state reads across the client's own `/#refresh` reload, which also ended the first two
   attempts (not a sim error).
 - **Revised the same day, after Tom's first look.** A plain left click on a flagged silo orders the
   strike (`ClientGameRunner.inputEvent` checks `actions.punitiveStrike` before the attack/boat
   branches; the radial slot stays). Levy 10% / 25%, radius 34. SAMs are hard-off under a Dark Star
-  (`Config.isUnitDisabled`, the lobby's `hiddenUnits`; nations already skip disabled structures).
+  (`Config.isUnitDisabled`, the lobby's `hiddenUnits`; Lords already skip disabled structures).
   The Nuclear Warhead costs 1M gold in Hegemon mode. The inbound line is one sentence.
   **Tom then could not order one at all:** the option and the strike matched the clicked tile to
   the silo's one tile, while the icon and its ring are drawn several tiles wide, so nearly every
@@ -1499,12 +1504,12 @@ throttle is left alone; stargates stay purely offensive.
   (`port.level()` per harbour) and active healing are counted around it (`portAt` finds the port
   behind a harbour); passive healing applies within range of any harbour of the owner's. The
   Hegemon's moat branch (H10) is untouched.
-- **Nation AI.** `NationStructureBehavior`: a landlocked nation still tries a spaceport (the
+- **Lord AI.** `NationStructureBehavior`: a landlocked Lord still tries a spaceport (the
   build order no longer skips it; the crowded-map first structure stays a factory when
   landlocked, as before); with no
   coastal site, `randInlandPortTileArray` samples 5 territory tiles at most every 300 ticks and
   keeps those whose harbour reaches the ocean or a body of space shared with a trade partner.
-  Coastal nations place as before. `NationWarshipBehavior` centres its spawn search on the port's
+  Coastal Lords place as before. `NationWarshipBehavior` centres its spawn search on the port's
   harbour.
 - **Tests.** `tests/Spaceports.test.ts` (9): inland placement where clicked and the menu agrees; a
   coastal port's harbour is its adjacent water; an inland port's harbour is the nearest water with a
@@ -1562,8 +1567,8 @@ to it), so inland trade is slow but safe, as the trade-off intends.
   destroyer's target and, captured at sea, sails to the captor's inland port and pays it; beside
   the Dark Star two inland ports trade around the moat without entering the disc. The mocked
   `tests/core/executions/TradeShipExecution.test.ts` still passes on the port-to-port fallback.
-- **Not yet.** Nations still judge trade partners from their coastline (`SharedWaterCache`), so a
-  landlocked nation's inland port is placed by harbour reach but its partners are not weighed;
+- **Not yet.** Lords still judge trade partners from their coastline (`SharedWaterCache`), so a
+  landlocked Lord's inland port is placed by harbour reach but its partners are not weighed;
   fine for now. Freighters draw the naval sprite on land until the names and icons (steps 4, M6).
 
 ### 6.19 As built — straight trade lanes (2026-09-26)
@@ -1590,7 +1595,7 @@ straight lanes** to it rather than the old lane's kinked halves.
   `maxConnectionDistance` hops of it through lanes laid so far, and at the engine's 4 the first
   lane made the rest of its network reachable. Tried at **2** (a station skips only
   stations one or two hops away, so chains web up densely — train income two to three times the
-  old in the 20-minute nation economy snapshot, a balance note for M4 since trains pay per stop):
+  old in the 20-minute Lord economy snapshot, a balance note for M4 since trains pay per stop):
   too dense for Tom's eye. Now **3** (`RailNetworkImpl`): shortcuts only to stations four or
   more hops off. Tom will settle between 2 and 3 after seeing it.
 - **Trains** ride the same tile lists at two tiles a tick, so along a diagonal they cover √2 more
@@ -1611,7 +1616,7 @@ straight lanes** to it rather than the old lane's kinked halves.
   crossed and a wider river blocks; water costs six of the budget; void blocks; a factory and a
   city are joined by the straight lane the preview showed; a station two tiles off a lane snaps
   on with two straight lanes; no lane crosses the disc. The rail network, train, trade and preview
-  suites pass unchanged in substance (the cosmetics preview test reads the loop's lanes; the nation
+  suites pass unchanged in substance (the cosmetics preview test reads the loop's lanes; the Lord
   economy snapshot moved with the new geometry).
 - **Seen in the browser.** `lanes.mjs` (run-openfront): a factory and two cities on Event
   Horizon; screenshots of the lanes close, mid and far, the ghost lane, and trains riding them.
@@ -1631,7 +1636,7 @@ Step 4 of the space economy (S7), the last. Tom kept the straight lanes (hop thr
   the rest). The tutorial's port and warship steps now say a spaceport goes anywhere in the
   territory and a destroyer is launched into deep space near it; the no-coast step explains that
   spaceports work inland but their freighters crawl until they reach deep space.
-- **Not renamed.** The "Warship Warship" map title (a map, not the unit); Nation chat lines
+- **Not renamed.** The "Warship Warship" map title (a map, not the unit); Lord chat lines
   ("Please let me get a coastline"); the debug effect editor's labels. Icons stay naval until
   M6.
 - **Tests.** `EnJsonSorted` (keys untouched), the client and tutorial suites unchanged: nothing
@@ -1649,7 +1654,7 @@ and well above an emptied one's, so a slow roll is the losing choice); ceiling *
 as proposed, **no button** for a human Hegemon (recall and counter-attack already exist by hand); the
 shadow tax in; the leveller's bar down to **75%** (it need not strike at full strength, but never
 below three quarters — punitive strikes are how it engages the galaxy without spending its own
-troops); and, a bonus, **nations must stop nuking the Dark Star**.
+troops); and, a bonus, **Lords must stop nuking the Dark Star**.
 
 - **The pool (H4).** `troopIncreaseRate` for a Hegemon is `hegemonTroopsPerTick()` = the ceiling ÷
   (`refillMinutes` × 600), the same every tick, capped at the ceiling; `regenPercent` is gone.
@@ -1677,7 +1682,7 @@ troops); and, a bonus, **nations must stop nuking the Dark Star**.
   leveller strikes a round beside 4–10 punitive ones.
 - **No nukes at the Dark Star.** `NationNukeBehavior.findBestNukeTarget` passes over a Hegemon at
   every rule (the two-player rule, retaliation, the dense target, the crown, an ally's targets, the
-  most hated, the FFA crown, the strongest team) and keeps searching, so a nation under a strike still
+  most hated, the FFA crown, the strongest team) and keeps searching, so a Lord under a strike still
   nukes its hostile neighbour. Human players may still waste a warhead on the disc (H7).
 - **`HegemonSim`.** Prints the refill and tax share in its header, the throne's gold and income a
   minute and the challengers' combined income in the minute lines, and a `last stand @m.mm` line
@@ -1699,8 +1704,8 @@ change: **0 of 6** overthrown, the throne never below 1.7M troops, 10–15 strik
 11–20M troops. After: the AI throne spends its pool in the first two minutes of an invasion through
 its 20% waves and the fight is then a grind against the fortress with the refill trickling in; the
 last stand therefore triggers late (minute 12–19, the throne already at 130–600k) and matters mostly
-when an invasion advances faster than the waves drain the pool. Nations that reach the last 1–7% of
-the domain sometimes stall there and the throne wins on the timer (a nation pushes only what is above
+when an invasion advances faster than the waves drain the pool. Lords that reach the last 1–7% of
+the domain sometimes stall there and the throne wins on the timer (a Lord pushes only what is above
 its 20% reserve; the fortress triples its losses).
 
 | Setting (refill, ceiling)  | Overthrows | Milky Way | Event Horizon | Notes                                                 |
@@ -1745,7 +1750,7 @@ Hegemon's timer win leaves it open again.
 - **Succession by hand.** "New Lobby" from the win screen (`create_game?previous=`) now makes a
   successor that **inherits the round's settings** (`SuccessorLobby.successorConfig`: everything but
   the old lobby's name reveals and seat) and carries the round's **winner as heir**
-  (`GameServer.winnerPersistentID()` from the winner vote; a nation's win — the AI Hegemon on the
+  (`GameServer.winnerPersistentID()` from the winner vote; a Lord's win — the AI Hegemon on the
   timer, or an AI slayer — names nobody). The heir is **seated as they arrive** (`seatHeir`, on
   join, unless the creator has already seated someone or the throne is off), and a seated player who
   leaves is **unseated** in the next lobby info (`reconcileHegemonSeat`; a returning heir is seated
@@ -1757,7 +1762,7 @@ Hegemon's timer win leaves it open again.
   Browser scripts `.claude/skills/run-openfront/throne-lobby.mjs` (host + joiner, seat, start: the
   joiner is the human Hegemon with the full pool) and `throne-successor.mjs` (a 1-minute round on
   Event Horizon won by the throne on the timer; New Lobby; the successor shows Event Horizon / 30
-  tribes / throne / 1 min, and the winner hops over already seated).
+  Barons / throne / 1 min, and the winner hops over already seated).
 - **After Tom's first lobby round (same day).** Three changes. (1) **The throne is always on** —
   it is the game, not a feature: the Dark Star toggle is gone from the host and singleplayer
   modals, `ConfigPatch` forces `hegemon.enabled` true whatever a patch says (only the seat is the
@@ -1796,7 +1801,7 @@ the same price. Rules in C4 (revised), C5, H2 (revised), H19 (revised), S6; numb
   lookups (`RazeExecution.flaggedSiloNear`, the flag clearing, `HegemonExecution.punishLaunches`)
   and `HegemonSim` walk the launcher group instead of silos, so the **flag lands on the gate** and
   the gate's `launch()` starts the 60 s reload `StargateExecution` already runs. `AiAttackBehavior`'s
-  "nuked territory" check and the nations' save-up logic (`NationStructureBehavior.
+  "nuked territory" check and the Lords' save-up logic (`NationStructureBehavior.
 missileLaunchersEnabled`) count a gate as a launcher; `NationNukeBehavior.maybeSendNuke` asks
   for launchers and lets `canBuild` enforce the range; the tile score values a gate as it did a
   silo.
@@ -1833,7 +1838,7 @@ build_shield_array*`; the warhead help text and the gate's description say where
   launch, the owner's exemption, the throne's missile and strike passing, capture, gate shots
   landing, no protection under construction. `PunitiveStrikes`, `HegemonToolkit` and `HegemonWin`
   build gates where they built silos.
-- **Seen, left for later (F21).** Nations build no shield arrays; the AI Hegemon fires no missiles;
+- **Seen, left for later (F21).** Lords build no shield arrays; the AI Hegemon fires no missiles;
   the tutorial's silo steps are skipped (silos off) rather than rewritten (P8).
 
 ### 6.24 As built — shield arrays shelter the blast, not the launch (2026-09-29)
@@ -1865,8 +1870,8 @@ missileShieldAt` and the gate in `nukeSpawn` are gone: a warhead may be aimed an
   off an ally angers no one. `NukeExecution.maybeBreakAlliances` passes them; the client's SAM
   preview and the fresh-ally safety check (`BuildPreviewController`) pass the same, so what the
   preview flags is what the sim will do.
-- **Nations.** `NationNukeBehavior.nukeTileScore` values a structure inside another player's array
-  at nothing, so a nation does not spend a warhead on a sheltered city. Nations still build no
+- **Lords.** `NationNukeBehavior.nukeTileScore` values a structure inside another player's array
+  at nothing, so a Lord does not spend a warhead on a sheltered city. Lords still build no
   arrays (F21).
 - **Cost.** `SHIELD_ARRAY_DEFAULTS.costGold` 1M → 5M.
 - **Client.** Nothing structural: the ring and ghost preview are unchanged and the crater follows
@@ -1910,7 +1915,7 @@ for the throne by proxy.
   standing counter-attack. Stalled or not, AI or human throne: donated troops fight at once. With no
   invader they join the pool. `HegemonExecution` is untouched.
 - **Not done.** The invader may donate to the throne (its troops would be thrown back at it;
-  harmless, not worth a rule). No AI donor: nations only donate to teammates in team games, and the
+  harmless, not worth a rule). No AI donor: Lords only donate to teammates in team games, and the
   throne is on no team. Donations to the invader stay shelved. An event line when a donation lands
   in the counter-attack, if the playtest wants it.
 - **The control (same day, Tom's ask: the panel's Troops button was buried).** Right-clicking the
@@ -1980,7 +1985,7 @@ public thrones, the store, release); M5–M9 below are kept as the earlier sketc
 
 | Milestone | Goal                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Status                                                                                                                                                                                                                                                                              |
 | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **M1**    | Hegemon core in the sim, with tests: role flag, central domain (H1–H3), map-scaled strength decoupled from tiles (H4–H5), single-invader rule (H6–H7), razing strikes with tyranny and the bubble (H8, H16, H17), no alliances (H9), win logic (R1–R5), the AI Hegemon (H11), nations that go for the throne, playing the Hegemon in singleplayer.                                                                                                                                                                      | **Built** (§6.1–§6.7). Donations moved to M3, the last stand and calibration to M4, the private-lobby toggle to M5.                                                                                                                                                                 |
+| **M1**    | Hegemon core in the sim, with tests: role flag, central domain (H1–H3), map-scaled strength decoupled from tiles (H4–H5), single-invader rule (H6–H7), razing strikes with tyranny and the bubble (H8, H16, H17), no alliances (H9), win logic (R1–R5), the AI Hegemon (H11), Lords that go for the throne, playing the Hegemon in singleplayer.                                                                                                                                                                        | **Built** (§6.1–§6.7). Donations moved to M3, the last stand and calibration to M4, the private-lobby toggle to M5.                                                                                                                                                                 |
 | **M1.5**  | Challenger systems: atlas tooling → the strike as a projectile → stargates (C4) → AI gates.                                                                                                                                                                                                                                                                                                                                                                                                                             | **Built** (§6.9–§6.11). Build-menu growth and raids dropped (C2, §6.8 stage 4); warships moved to M3.                                                                                                                                                                               |
 | **M2**    | Event Horizon, the first galaxy map with its `info.json` Dark Star; the launch-from-the-core opening (C3); HUD: Hegemon marker, Dark Star panel, victory screens.                                                                                                                                                                                                                                                                                                                                                       | **Built** (§6.12, §6.3, §6.7). Awaiting Tom's playtest — the checks are F19.                                                                                                                                                                                                        |
 | **M3**    | **The throne's toolkit and the 2026-09-24 rules review.** Nothing buildable on the Dark Star by anyone (H2); the invasion cooldown removed (H12); the Hegemon donates troops (H9); gifted structures on challengers' land (H18); destroyers spawning in the moat (H10); MIRVs off and the warhead renames (S6); the player table gains the Dark Star's fields for the throne and the separate Dark Star panel goes if the table carries it (F19). Small, mostly-sim pieces first (H2, H12, H9, S6), then H18, then H10. | **In progress** — chunk 1 (H2, H12, H9, S6) built 2026-09-25, §6.13; chunk 2 (H18 gifts) built 2026-09-25, §6.14; chunk 3 (H10 destroyers) built 2026-09-25, §6.15; the HUD merge tried and dropped the same day (F19: the panel stays, its board collapsed by default). **Built.** |
@@ -2020,12 +2025,15 @@ hydrogen-bomb removal (closed by S6).
 | **Overthrow**                 | Eliminating the Hegemon (zero tiles).                                                                                                                                                              |
 | **Killing blow**              | The conquest that eliminates the Hegemon; its owner wins the round.                                                                                                                                |
 | **Round / Reign**             | One game / the consecutive rounds a player holds the throne.                                                                                                                                       |
-| **Tribe**                     | Engine term for a simple bot (`PlayerType.Bot`).                                                                                                                                                   |
-| **Nation**                    | Engine term for the smarter, map-defined AI (`PlayerType.Nation`).                                                                                                                                 |
+| **Baron**                     | Player-facing name for a simple bot (`PlayerType.Bot`; "Tribe" in the code).                                                                                                                       |
+| **Lord**                      | Player-facing name for the smarter, map-defined AI (`PlayerType.Nation`; "Nation" in the code).                                                                                                    |
 | **Intent / Turn / Execution** | Player action → server-bundled tick of intents → deterministic sim object that applies it.                                                                                                         |
 
 ## 11. Changelog
 
+- **2026-10-07** — **Nomenclature:** Nations are **Lords** and Tribes are **Barons** in all
+  player-facing text and the docs (a feudal galaxy with the Hegemon at its head); code identifiers
+  unchanged. §1, §5.1 and the glossary carry the mapping.
 - **2026-09-20** — Document created from the initial design Q&A; roadmap proposed.
 - **2026-09-26** — **Stargate range raised (C4/F15).** Tom judged the range slightly underperforming: base
   range +50% (120 → 180) and the per-upgrade step +25% (60 → 75), so levels 1–5 now reach
