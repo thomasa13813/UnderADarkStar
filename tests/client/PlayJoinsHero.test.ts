@@ -5,6 +5,7 @@ import type {
   GameConfig,
   PublicGameInfo,
   PublicGames,
+  ThroneType,
 } from "../../src/core/Schemas";
 
 // Same socket stand-in as TrustedJoinGate: keep the update callback so a
@@ -42,7 +43,11 @@ globalThis.ResizeObserver ??= class {
 
 type Mountable = HTMLElement & { updateComplete: Promise<unknown> };
 
-function throne(gameID: string, running = false): PublicGameInfo {
+function throne(
+  gameID: string,
+  running = false,
+  type: ThroneType = "ffa",
+): PublicGameInfo {
   return {
     gameID,
     numClients: 3,
@@ -50,7 +55,7 @@ function throne(gameID: string, running = false): PublicGameInfo {
     throne: {
       throneID: gameID,
       name: gameID,
-      type: "ffa",
+      type,
       reign: 0,
       seat: "open",
       running,
@@ -128,6 +133,20 @@ describe("GameModeSelector.joinHeroLobby", () => {
   });
 
   it("does nothing before any throne is on screen", () => {
+    expect(selector.joinHeroLobby()).toBe(false);
+    expect(joinLobby).not.toHaveBeenCalled();
+  });
+
+  it("takes the FFA line's head, not whichever throne the master lists first", async () => {
+    // The hero card is the FFA head (L25, L29); a special throne ahead of it
+    // in the master's order belongs to the special card.
+    await pushThrones(throne("spec", false, "special"), throne("ffa-head"));
+    expect(selector.joinHeroLobby()).toBe(true);
+    expect(joinedGameId()).toBe("ffa-head");
+  });
+
+  it("has no hero while the FFA line is empty", async () => {
+    await pushThrones(throne("spec", false, "special"));
     expect(selector.joinHeroLobby()).toBe(false);
     expect(joinLobby).not.toHaveBeenCalled();
   });

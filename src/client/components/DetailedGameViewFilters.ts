@@ -5,7 +5,11 @@ import {
   Quads,
   Trios,
 } from "../../core/game/Game";
-import { PublicGameInfo, PublicGames } from "../../core/Schemas";
+import {
+  PublicGameInfo,
+  PublicGames,
+  PublicGameType,
+} from "../../core/Schemas";
 
 /**
  * Filtering, ordering and saved-profile logic for the Detailed View lobby
@@ -146,6 +150,33 @@ export function flattenLobbies(games: PublicGames["games"] | undefined) {
   return Object.values(games)
     .flat()
     .filter((lobby): lobby is PublicGameInfo => lobby !== undefined);
+}
+
+/**
+ * The bucket a lobby is listed under in the lobby browser and picked for on
+ * the home page: one of the three modes, or hosted.
+ *
+ * Under a Dark Star a throne lobby is filed by its throne's type (an FFA,
+ * team or special throne for life, L2), so players choose between the modes
+ * rather than face one "Thrones" pile beside three empty queues
+ * (docs/DarkStar-Lobbies.md L29). Queue and hosted lobbies keep their own
+ * type.
+ */
+export type LobbyPane = Exclude<PublicGameType, "throne">;
+export type ScheduledLobbyPane = Exclude<LobbyPane, "hosted">;
+
+/** The scheduled panes in the order the browser lays them out. */
+export const SCHEDULED_PANES: readonly ScheduledLobbyPane[] = [
+  "ffa",
+  "team",
+  "special",
+];
+
+export function lobbyPane(lobby: PublicGameInfo): LobbyPane {
+  if (lobby.publicGameType !== "throne") return lobby.publicGameType;
+  // A throne entry without its throne info is a server fault; FFA is the
+  // plainest reading, rather than a pane of its own.
+  return lobby.throne?.type ?? "ffa";
 }
 
 function withinRange(

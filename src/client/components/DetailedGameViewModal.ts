@@ -28,10 +28,13 @@ import {
   LOBBY_SOURCES,
   LobbyFilters,
   LobbyModeFilter,
+  lobbyPane,
   LobbySourceFilter,
   NAMED_TEAM_CONFIGS,
   NUMERIC_TEAM_CONFIGS,
   saveFilterProfile,
+  SCHEDULED_PANES,
+  ScheduledLobbyPane,
 } from "./DetailedGameViewFilters";
 import {
   canJoinTrustedLobby,
@@ -46,29 +49,61 @@ import { modalHeader } from "./ui/ModalHeader";
 import { styledSelect } from "./ui/StyledSelect";
 
 /**
- * The scheduled buckets, in the order their panes are laid out. Thrones
- * (Under a Dark Star) replace the three queues; those stay for the queue
- * fallback and read "No lobbies" otherwise.
- */
-const SCHEDULED_PANES = ["throne", "ffa", "team", "special"] as const;
-
-/**
- * Slots a pane always renders, matching QUEUED_LOBBIES_PER_TYPE on the master:
- * the lobby counting down plus the queue behind it. Holding the slot count
- * fixed keeps the pane's height steady while a started lobby is replaced.
+ * Slots a queue pane always renders, matching QUEUED_LOBBIES_PER_TYPE on the
+ * master: the lobby counting down plus the queue behind it. Holding the slot
+ * count fixed keeps the pane's height steady while a started lobby is
+ * replaced.
  */
 const PANE_SLOTS = 6;
 
-/** Tab key for the overview: every bucket at once, as three panes. */
+/** Tab key for the overview: every pane at once, side by side. */
 const ALL_TAB = "all";
 
 /**
- * Placeholder slots a bucket pads itself to. The queues always refill to
- * PANE_SLOTS; the throne pool is a fixed number of lobbies, so it shows
- * exactly what exists.
+ * Overview columns by pane count. Tailwind only ships a class it can read in
+ * the source, so the three widths are spelled out.
  */
-function paneSlots(type: string): number {
-  return type === "throne" ? 0 : PANE_SLOTS;
+const PANE_COLUMNS: Record<number, string> = {
+  1: "sm:grid-cols-1",
+  2: "sm:grid-cols-2",
+  3: "sm:grid-cols-3",
+};
+
+/**
+ * One pane of the browser: a mode (SCHEDULED_PANES), the lobbies filed under
+ * it after the filters, and the "spawning" placeholders it pads itself with.
+ *
+ * Under a Dark Star every public lobby is a throne filed by its type (L29);
+ * with upstream's per-type queues on instead (PUBLIC_LOBBIES=queue), a pane
+ * is that type's queue. A pane with nothing in it, filtered or not, is not
+ * drawn and has no tab: an empty column reads as a fault, and the team line
+ * waits for T5.
+ */
+interface PaneView {
+  type: ScheduledLobbyPane;
+  shown: PublicGameInfo[];
+  /** Unfiltered count, so a filter hides cards rather than adding placeholders. */
+  total: number;
+  placeholders: number;
+}
+
+function paneViews(all: PublicGameInfo[], shown: PublicGameInfo[]): PaneView[] {
+  // The queues refill to PANE_SLOTS, so a queued type pads itself while the
+  // master creates the next lobby. Thrones are only ever created to restore a
+  // line's floor (L16), so a throne pane shows exactly what exists.
+  const queued = all.some(
+    (lobby) =>
+      lobby.publicGameType !== "throne" && lobby.publicGameType !== "hosted",
+  );
+  return SCHEDULED_PANES.map((type) => {
+    const total = all.filter((lobby) => lobbyPane(lobby) === type).length;
+    return {
+      type,
+      shown: shown.filter((lobby) => lobbyPane(lobby) === type),
+      total,
+      placeholders: queued ? Math.max(0, PANE_SLOTS - total) : 0,
+    };
+  }).filter((pane) => pane.total > 0 || pane.placeholders > 0);
 }
 
 /** Slot height; cards and the spawning placeholder both fill it exactly. */
@@ -148,11 +183,13 @@ export class DetailedGameViewModal extends BaseModal {
   }
 
   protected override modalConfig() {
+    // One tab per pane that has something in it, so no tab opens on nothing.
+    const all = flattenLobbies(this.lobbies?.games);
     return {
       tabs: [
-        ...SCHEDULED_PANES.map((type) => ({
-          key: type,
-          label: translateText(`detailed_view.pane_${type}`),
+        ...paneViews(all, all).map((pane) => ({
+          key: pane.type,
+          label: translateText(`detailed_view.pane_${pane.type}`),
         })),
         { key: ALL_TAB, label: translateText("detailed_view.tab_all") },
       ],
@@ -264,8 +301,39 @@ export class DetailedGameViewModal extends BaseModal {
 
     const all = flattenLobbies(this.lobbies.games);
     const shown = filterAndSortLobbies(all, this.filters);
-    const ofType = (lobbies: PublicGameInfo[], type: string) =>
-      lobbies.filter((lobby) => lobby.publicGameType === type);
+    const panes = paneViews(all, shown);
+    const hosted = shown.filter((lobby) => lobbyPane(lobby) === "hosted");
+    // The tab's pane may have emptied since it was chosen (its last throne
+    // retired, L20); fall back to the overview rather than a blank page.
+    const current = panes.find((pane) => pane.type === tab);
+
+    let body: TemplateResult;
+    if (all.length === 0) {
+      // Nothing advertised at all: say so plainly, not "match your filters".
+      body = html`<p class="py-12 text-center text-sm text-white/50">
+        ${translateText("detailed_view.pane_empty")}
+      </p>`;
+    } else if (shown.length === 0) {
+      body = html`<p class="py-12 text-center text-sm text-white/50">
+        ${translateText("detailed_view.no_lobbies")}
+      </p>`;
+    } else if (current !== undefined) {
+      body = this.renderTypeTab(current);
+    } else {
+      // One pane per mode with lobbies, cards stacked within it; hosted
+      // lobbies alone (no thrones advertised) get just their own row.
+      body = html`
+        ${panes.length > 0
+          ? html`<div
+              class="grid grid-cols-1 ${PANE_COLUMNS[panes.length] ??
+              ""} gap-4 items-start"
+            >
+              ${panes.map((pane) => this.renderPane(pane))}
+            </div>`
+          : nothing}
+        ${this.renderHostedPane(hosted)}
+      `;
+    }
 
     return html`
       <div class="custom-scrollbar p-4 lg:p-6 flex flex-col gap-4">
@@ -275,53 +343,24 @@ export class DetailedGameViewModal extends BaseModal {
               () => (this.showTrustRequired = false),
             )
           : nothing}
-        ${this.showFilters ? this.renderFilterPanel() : nothing}
-        ${shown.length === 0
-          ? html`<p class="py-12 text-center text-sm text-white/50">
-              ${translateText("detailed_view.no_lobbies")}
-            </p>`
-          : tab === ALL_TAB
-            ? html`
-                <!-- One pane per scheduled bucket, cards stacked within it. -->
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-start">
-                  ${SCHEDULED_PANES.map((type) =>
-                    this.renderPane(
-                      translateText(`detailed_view.pane_${type}`),
-                      ofType(shown, type),
-                      ofType(all, type).length,
-                      paneSlots(type),
-                    ),
-                  )}
-                </div>
-                ${this.renderHostedPane(ofType(shown, "hosted"))}
-              `
-            : this.renderTypeTab(
-                ofType(shown, tab),
-                ofType(all, tab).length,
-                paneSlots(tab),
-              )}
+        ${this.showFilters ? this.renderFilterPanel() : nothing} ${body}
       </div>
     `;
   }
 
   /**
-   * A single bucket's tab: the same slots as its pane in the overview, two
+   * A single mode's tab: the same slots as its pane in the overview, two
    * across instead of the one narrow column it gets there.
    */
-  private renderTypeTab(
-    lobbies: PublicGameInfo[],
-    bucketTotal: number,
-    slots: number,
-  ) {
-    const placeholders = Math.max(0, slots - bucketTotal);
-    if (lobbies.length === 0 && placeholders === 0) {
+  private renderTypeTab(pane: PaneView) {
+    if (pane.shown.length === 0 && pane.placeholders === 0) {
       return html`<p class="py-12 text-center text-sm text-white/50">
         ${translateText("detailed_view.pane_empty")}
       </p>`;
     }
     return html`
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        ${this.renderSlots(lobbies, placeholders)}
+        ${this.renderSlots(pane.shown, pane.placeholders)}
       </div>
     `;
   }
@@ -334,33 +373,32 @@ export class DetailedGameViewModal extends BaseModal {
   }
 
   /**
-   * A pane always fills PANE_SLOTS, so its height never changes as lobbies
-   * come and go: the queued lobby slides up into the started one's slot and a
-   * "spawning" placeholder holds the slot until the master creates its
-   * replacement. `bucketTotal` is the unfiltered count, so hiding a lobby with
-   * a filter shows one fewer card rather than a placeholder that lies.
+   * A queue pane always fills PANE_SLOTS, so its height never changes as
+   * lobbies come and go: the queued lobby slides up into the started one's
+   * slot and a "spawning" placeholder holds the slot until the master creates
+   * its replacement. A throne pane has no placeholders and lists what exists.
+   * The dashed box only appears when a filter hid every card: a pane with
+   * nothing in it at all is not drawn (paneViews).
    */
-  private renderPane(
-    name: string,
-    lobbies: PublicGameInfo[],
-    bucketTotal: number,
-    slots: number,
-  ) {
-    const placeholders = Math.max(0, slots - bucketTotal);
+  private renderPane(pane: PaneView) {
+    const { shown, placeholders } = pane;
     return html`
-      <section class="flex flex-col gap-2 min-w-0">
+      <section class="flex flex-col gap-2 min-w-0" data-pane=${pane.type}>
         <h3 class="${PANE_HEADING}">
-          ${this.paneHeading(name, lobbies.length)}
+          ${this.paneHeading(
+            translateText(`detailed_view.pane_${pane.type}`),
+            shown.length,
+          )}
         </h3>
         <div class="flex flex-col gap-4">
-          ${lobbies.length === 0 && placeholders === 0
+          ${shown.length === 0 && placeholders === 0
             ? html`<p
                 class="py-6 text-center text-xs text-white/30 rounded-xl border border-dashed border-white/10"
               >
                 ${translateText("detailed_view.pane_empty")}
               </p>`
             : nothing}
-          ${this.renderSlots(lobbies, placeholders)}
+          ${this.renderSlots(shown, placeholders)}
         </div>
       </section>
     `;
@@ -398,8 +436,8 @@ export class DetailedGameViewModal extends BaseModal {
   }
 
   /**
-   * Subscriber-hosted lobbies don't belong to any scheduled bucket, so they get
-   * their own row below the three panes — and only when some exist.
+   * Subscriber-hosted lobbies don't belong to any mode's pane, so they get
+   * their own row below the panes — and only when some exist.
    */
   private renderHostedPane(lobbies: PublicGameInfo[]) {
     if (lobbies.length === 0) return nothing;

@@ -12,6 +12,10 @@ import {
   Trios,
 } from "../core/game/Game";
 import { PublicGameInfo, PublicGames } from "../core/Schemas";
+import {
+  lobbyPane,
+  ScheduledLobbyPane,
+} from "./components/DetailedGameViewFilters";
 import "./components/IOSAddToHomeScreenBanner";
 import {
   canJoinTrustedLobby,
@@ -444,10 +448,13 @@ export class GameModeSelector extends LitElement {
   /**
    * The lobbies the three homepage cards show, hero first.
    *
-   * Under a Dark Star: thrones replace the per-type queues, so the cards show
-   * the three thrones closest to starting (L13; the master sorts them).
-   * Rounds in progress are not joinable from here (Watch is T3). The
-   * ffa/team/special lookups stay for the queue fallback.
+   * Under a Dark Star: thrones replace the per-type queues, and each card is
+   * the head of one line (L25, L29): the FFA throne closest to starting is
+   * the hero, with the team and special heads beside it. The master lists
+   * each line head first. Rounds in progress are not joinable from here
+   * (Watch lives in the lobby browser). A line with no throne has no card,
+   * so until the team line exists (T5) the special card takes the column.
+   * The ffa/team/special queue lookups stay for the queue fallback.
    */
   private cardLobbies(): {
     hero: PublicGameInfo | undefined;
@@ -457,10 +464,13 @@ export class GameModeSelector extends LitElement {
     const thrones = (this.lobbies?.games?.["throne"] ?? []).filter(
       (lobby) => lobby.throne?.running !== true,
     );
+    const head = (type: ScheduledLobbyPane) =>
+      this.lobbies?.games?.[type]?.[0] ??
+      thrones.find((lobby) => lobbyPane(lobby) === type);
     return {
-      hero: this.lobbies?.games?.["ffa"]?.[0] ?? thrones[0],
-      teams: this.lobbies?.games?.["team"]?.[0] ?? thrones[1],
-      special: this.lobbies?.games?.["special"]?.[0] ?? thrones[2],
+      hero: head("ffa"),
+      teams: head("team"),
+      special: head("special"),
     };
   }
 

@@ -27,7 +27,7 @@ import { ThroneRoundOutcome } from "./IPCBridgeSchema";
 //                withdrawn. The time is kept only until another throne of
 //                the type starts counting.
 //   running    — the game started. The worker reports it until it is
-//                reaped, so the Thrones tab can list it (T3).
+//                reaped, so the lobby browser can list it (T3).
 //
 // The launch queue (L16-L22). Thrones of one type that are gathering or
 // counting down form a line, ordered: the counting throne, then the thrones

@@ -346,7 +346,7 @@ export const ThroneInfoSchema = z.object({
   reign: zb.uint(),
   holderName: z.string().optional(),
   seat: ThroneSeatStateSchema,
-  // The round is in progress (the Thrones tab lists it with a Watch button).
+  // The round is in progress (the lobby browser lists it with a Watch button).
   running: z.boolean().optional(),
   startedAt: zb.uint().optional(),
   // While the seat is reserved: when the winner's window closes (L4), so the

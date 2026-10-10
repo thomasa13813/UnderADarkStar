@@ -9,6 +9,7 @@ import {
   loadFilterProfiles,
   lobbyFacts,
   LobbyFilters,
+  lobbyPane,
   MAX_FILTER_PROFILES,
   normalizeFilters,
   saveFilterProfile,
@@ -56,6 +57,31 @@ function lobby(overrides: Partial<PublicGameInfo> = {}): PublicGameInfo {
 function filters(overrides: Partial<LobbyFilters> = {}): LobbyFilters {
   return { ...DEFAULT_FILTERS, ...overrides };
 }
+
+describe("lobbyPane", () => {
+  const throne = (type: "ffa" | "team" | "special") =>
+    lobby({
+      publicGameType: "throne",
+      throne: { throneID: "t", name: "t", type, reign: 0, seat: "open" },
+    });
+
+  it("files a throne under its throne's type (L29)", () => {
+    expect(lobbyPane(throne("ffa"))).toBe("ffa");
+    expect(lobbyPane(throne("team"))).toBe("team");
+    expect(lobbyPane(throne("special"))).toBe("special");
+  });
+
+  it("keeps a queue or hosted lobby under its own type", () => {
+    expect(lobbyPane(lobby({ publicGameType: "ffa" }))).toBe("ffa");
+    expect(lobbyPane(lobby({ publicGameType: "team" }))).toBe("team");
+    expect(lobbyPane(lobby({ publicGameType: "special" }))).toBe("special");
+    expect(lobbyPane(lobby({ publicGameType: "hosted" }))).toBe("hosted");
+  });
+
+  it("reads a throne entry missing its throne info as FFA", () => {
+    expect(lobbyPane(lobby({ publicGameType: "throne" }))).toBe("ffa");
+  });
+});
 
 describe("lobbyFacts", () => {
   it("reports FFA lobbies with no team layout", () => {
