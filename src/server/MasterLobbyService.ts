@@ -108,14 +108,14 @@ export const QUEUED_LOBBIES_PER_TYPE = 6;
 
 // Under a Dark Star: the throne lines from the environment
 // (docs/DarkStar-Lobbies.md §9, L16), or null when the server runs upstream's
-// per-type queues instead (PUBLIC_LOBBIES=queue). An FFA line and a special
-// line; the team line waits for T5.
+// per-type queues instead (PUBLIC_LOBBIES=queue). Three lines, FFA, team and
+// special, each at the same floor (T5 opened the team line).
 export function throneRegistryFromEnv(): ThroneRegistry | null {
   if (ServerEnv.publicLobbyMode() !== "thrones") return null;
   const floor = ServerEnv.throneFloor();
   return new ThroneRegistry({
     names: throneNames,
-    floor: { ffa: floor, team: 0, special: floor },
+    floor: { ffa: floor, team: floor, special: floor },
     minPlayers: ServerEnv.throneMinPlayers(),
     countdownMs: ServerEnv.throneCountdownMs(),
     windowMs: ServerEnv.throneWindowMs(),
@@ -859,9 +859,12 @@ export class MasterLobbyService {
   // (map rotation, player cap, the throne enabled), never trusted-only (a
   // throne is open to everyone, L3). T2 merges the winner's pick on top.
   private async throneGameConfig(throne: Throne): Promise<GameConfig> {
-    // A special throne rolls a special game, FFA (the Hegemon is FFA only).
+    // A special throne rolls a special game pinned to FFA (the modifier
+    // picker is FFA's, §5.4); a team throne rolls a team game with the Lords
+    // kept and the Hegemon as a team of one (§5.9).
     const config = await this.playlist.gameConfig(throne.type, {
-      mode: GameMode.FFA,
+      throne: true,
+      ...(throne.type === "special" ? { mode: GameMode.FFA } : {}),
     });
     delete config.trusted;
     config.hegemon = { ...config.hegemon, enabled: true };

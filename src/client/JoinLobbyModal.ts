@@ -831,7 +831,7 @@ export class JoinLobbyModal extends BaseModal {
       });
     // Under a Dark Star: the throne and who holds it (a name once the roster
     // is known, "AI" when nobody is seated, plain "enabled" pre-join).
-    if (c.hegemon?.enabled && c.gameMode === GameMode.FFA) {
+    if (c.hegemon?.enabled) {
       const seated = c.hegemon.seat
         ? this.players.find((p) => p.clientID === c.hegemon?.seat)
         : undefined;

@@ -1170,13 +1170,11 @@ export class GameServer {
     delete config.nameRevealPublicIds;
 
     // The throne (Under a Dark Star): the lobby creator's seat choice becomes
-    // the one isHegemon player. FFA only (Config disables the mode
-    // otherwise); a seated client who left the lobby leaves the AI holding
+    // the one isHegemon player, in FFA and team games alike (a team of one,
+    // Lobbies §5.9); a seated client who left the lobby leaves the AI holding
     // it. The seat's clientID stays in the config for the record.
     const hegemonSeat =
-      config.hegemon?.enabled === true && config.gameMode === GameMode.FFA
-        ? config.hegemon.seat
-        : undefined;
+      config.hegemon?.enabled === true ? config.hegemon.seat : undefined;
 
     const result = GameStartInfoSchema.safeParse({
       gameID: this.id,

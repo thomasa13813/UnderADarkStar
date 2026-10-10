@@ -4,7 +4,7 @@
 > lobbies ("thrones") whose seat is the reward for winning. Decided with Tom on 2026-09-29.
 > Companion to `DarkStar-Design.md` (§2 round loop, §3 rules R1–R6, §5.2 continuity) and
 > `DarkStar-Roadmap.md` phase P6, which this document expands and supersedes.
-> T1–T4 are built (2026-10-03, §10.1–§10.4); T5 and T6 are not. Changelog at the end.
+> T1–T5 are built (T1–T4 2026-10-03, §10.1–§10.4; T5 2026-10-10, §10.6); T6 is not. Changelog at the end.
 
 ## 1. Goals
 
@@ -52,7 +52,7 @@ Numbered so the code and tests can cite them.
 | L22 | **The minimum stays two humans** (L9). It is the knob to raise once there is a population. [2026-10-06]                                                                                                                                                                                                                                                                                                                                                                                                         |
 | L23 | **The window and the line.** A throne is out of line while its winner chooses; it enters when the choice is made or the window expires. **L4 is revised:** no answer means a random map and the winner **keeps the seat** by default; they may still give it up in the lobby before the round starts (L6). [2026-10-06]                                                                                                                                                                                         |
 | L24 | **A throne's place is fixed when it enters the line.** Claiming or leaving a seat afterwards does not move it. Open to revision if it would help the flow of games. [2026-10-06]                                                                                                                                                                                                                                                                                                                                |
-| L25 | **Launch with two lines, FFA and special.** The team line needs T5 (§5.9), which becomes the priority after this work. The home page shows one card per line head: two at launch. A line with nobody in it shows its first throne as waiting for players. [2026-10-06]                                                                                                                                                                                                                                          |
+| L25 | **Launch with two lines, FFA and special.** The team line needs T5 (§5.9), which becomes the priority after this work. [Team line opened 2026-10-10 with T5, §10.6: three lines.] The home page shows one card per line head: two at launch. A line with nobody in it shows its first throne as waiting for players. [2026-10-06]                                                                                                                                                                               |
 | L26 | **A running countdown is never interrupted.** A throne ahead of the head that regains the minimum is simply head next, with a full 2 minutes. A held throne's remaining time (L10) is its own only until another throne takes the countdown. [2026-10-06]                                                                                                                                                                                                                                                       |
 | L27 | **After a round, the players who did not win choose:** stay with their throne, shown its place in line, or join the head of the line. [2026-10-06]                                                                                                                                                                                                                                                                                                                                                              |
 | L28 | **Open thrones overtaken repeatedly by returning winners** is accepted for launch and watched; it needs a real population to occur. [2026-10-06]                                                                                                                                                                                                                                                                                                                                                                |
@@ -240,10 +240,11 @@ two before start. `GameServer.setStartsAt(undefined)` returns the game to `GameP
    gets the jump prompt.
 4. The pick or the expiry lands as `updateLobby` on the new lobby.
 
-### 5.9 Team thrones (core work)
+### 5.9 Team thrones (core work) [Built 2026-10-10, §10.6]
 
-The sim gates the throne on FFA (`hegemonSeat` in `GameServer.start()`, `Config` disabling the
-mode otherwise, the playlist's `hegemon: mode === FFA`). A team throne needs, in `src/core`:
+The sim gated the throne on FFA (`hegemonSeat` in `GameServer.start()`, `Config` disabling the
+mode otherwise, the playlist's `hegemon: mode === FFA`); all three gates are gone. A team
+throne needs, in `src/core`:
 
 - The Hegemon is its **own one-player team** (no allies, H9 already), placed outside the
   `playerTeams` count so team assignment ignores it.
@@ -254,7 +255,9 @@ mode otherwise, the playlist's `hegemon: mode === FFA`). A team throne needs, in
 - Lord and Baron behaviour toward the Hegemon is team-agnostic already (design doc §3.2 H11: the Lord target search passes over the Hegemon).
 
 This is the largest engineering item and ships last (§10, T5). Until then team thrones are not in
-the mix.
+the mix. [As built, §10.6: the Hegemon is `ColoredTeams.Hegemon`, a team of one; the win check
+runs through the throne in every mode; the donation rules needed no change; a team throne's
+round keeps the Lords and never rolls Humans vs Nations.]
 
 ### 5.10 Identity
 
@@ -314,15 +317,15 @@ subject replaces the UUID in the same field with no registry change (L3).
 
 ## 9. Configuration
 
-| Constant               | Launch value | Dev value | Notes                                                                        |
-| ---------------------- | ------------ | --------- | ---------------------------------------------------------------------------- |
-| `THRONE_FLOOR`         | 5            | 2         | L16; thrones each line keeps open (FFA and special lines; team waits for T5) |
-| `THRONE_CULL_GRACE_MS` | 60 000       | 15 000    | L20; how long a surplus throne must be empty before it is retired            |
-| `THRONE_COUNTDOWN_MS`  | 120 000      | 5 000     | L10                                                                          |
-| `THRONE_MIN_PLAYERS`   | 2            | 2         | L9 (humans, spectators excluded)                                             |
-| `WINNER_WINDOW_MS`     | 30 000       | 30 000    | L4                                                                           |
-| `THRONE_MAX_MODIFIERS` | 2            | 2         | L7                                                                           |
-| Round timer            | 20 min       | —         | R5, not choosable                                                            |
+| Constant               | Launch value | Dev value | Notes                                                                    |
+| ---------------------- | ------------ | --------- | ------------------------------------------------------------------------ |
+| `THRONE_FLOOR`         | 5            | 2         | L16; thrones each line keeps open (FFA, team and special lines since T5) |
+| `THRONE_CULL_GRACE_MS` | 60 000       | 15 000    | L20; how long a surplus throne must be empty before it is retired        |
+| `THRONE_COUNTDOWN_MS`  | 120 000      | 5 000     | L10                                                                      |
+| `THRONE_MIN_PLAYERS`   | 2            | 2         | L9 (humans, spectators excluded)                                         |
+| `WINNER_WINDOW_MS`     | 30 000       | 30 000    | L4                                                                       |
+| `THRONE_MAX_MODIFIERS` | 2            | 2         | L7                                                                       |
+| Round timer            | 20 min       | —         | R5, not choosable                                                        |
 
 **Scaling rule [superseded 2026-10-05 by the launch lines, L16-L20]:** `open = clamp(floor(online / PLAYERS_PER_THRONE), THRONE_COUNT,
 THRONE_COUNT_MAX)` where `online` is home-page lobby-socket clients plus in-game clients (workers
@@ -337,7 +340,7 @@ current round ends and wake in name order when needed. Off at launch: the count 
 | T2   | The seat: `throneRound` from `archiveGame`, reservation and window, `throne_pick` (map, stay / step down), `claim_seat` / `leave_seat`, heir seating, `successorCreated`. | M    |
 | T3   | Client: throne cards, Thrones tab with Watch, lobby seat buttons and states, win-screen Next-round panel, Dark Star panel name and reign.                                 | M    |
 | T4   | Special thrones: whitelist, modifier picker, validation tests.                                                                                                            | S    |
-| T5   | Team thrones: core changes of §5.9 with tests, then add them to the mix.                                                                                                  | L    |
+| T5   | Team thrones: core changes of §5.9 with tests, then add them to the mix. Built 2026-10-10 (§10.6).                                                                        | L    |
 | T6   | Scaling rule and telemetry (launches per minute, mean wait, hold time, seats claimed vs AI).                                                                              | S    |
 
 T1–T4 can ship to the private playtest server; T5 gates team thrones only.
@@ -531,6 +534,42 @@ L16-L20, L23, L24 and L26 in the master; the client (L21, L25, L27) is not built
   this throne (Nth in line)" and "join the head" buttons (L27); sending a player whose
   throne was retired under them to the head; the rulebook's line about launches.
 
+### 10.6 As built: T5, team thrones (2026-10-10)
+
+The team line is open: `throneRegistryFromEnv` gives all three lines the same floor, and the
+lobby browser's Teams pane (L29) and the third home card (L25) appear on their own.
+
+- **Core.** `ColoredTeams.Hegemon` is the throne's team in a team game, assigned in
+  `GameImpl.maybeAssignTeam` (the AI seat) and `addPlayers` (a seated human, added first);
+  `populateTeams` and the `assignTeams` input see only the challengers, so the team count and
+  the split ignore the throne, and `game.teams()` does not list it. `Config.hegemonConfig` no
+  longer turns the mode off outside FFA. `WinCheckExecution.tick` runs the Hegemon check
+  whenever the throne is on, before the FFA or team land-share check, so a team holding nearly
+  all the land wins nothing (R1) and the killing blow is the slayer's alone (L8). Donations and
+  alliances needed no change: `canDonateTroops` / `canDonateGold` / `canSendAllianceRequest`
+  already special-case the throne before the team and toggle checks (H9).
+- **Server.** `GameServer.start()` stamps the seat in any mode. `MapPlaylist.gameConfig` takes
+  `throne: true`: the Hegemon on, the Lords kept in a team round (upstream disables nations in
+  team games; the Hegemon round is paced around Lords reaching the moat), and Humans vs
+  Nations never rolled (a throne is a third side to neither). `throneGameConfig` passes it for
+  every throne and pins only the special throne to FFA. The winner's map pick already
+  re-derives the cap for teams (`maxPlayersForMap`); the team count is the roll's (L7).
+- **Client.** The throne's dark-star look is its team colour (`PlayerView.computeColors`; the
+  themes carry a `Hegemon` team colour for tags and the sidebar). The lobby roster shows the
+  throne row and the seat badge in team mode and files only the challengers into the team
+  preview, re-filing when the seat changes hands. The host, singleplayer and join modals no
+  longer drop the seat or the timer outside FFA. The win screen tells the slayer's teammates
+  "Your team won!" (L8: the win screen, not the seat). New string `throne.name_line_team`.
+- **Sim.** `HegemonSim --teams N` runs a team round.
+- **Tests.** `tests/HegemonTeamMode.test.ts` (9: the team of one, the split, Humans vs
+  Nations, donations and alliances, the three round ends); `tests/server/HegemonSeat.test.ts`
+  (the seat in a team game); `tests/server/MasterLobbyServiceThrones.test.ts` (a team line
+  rolls team games); `tests/server/MapPlaylistThrone.test.ts` (the throne roll vs the queue
+  fallback's); `tests/client/LobbyPlayerViewTeamThrone.test.ts`; `PlayerView.test.ts` updated.
+- **Open.** Private team lobbies now carry a throne too (G4; the host seats a player or the
+  AI holds it). Team spawn areas on maps that define them ignore the throne, which never
+  spawns. Lords are a judgment call Tom may reverse (`nations: "default"` in the throne roll).
+
 ## 11. Tests
 
 - `tests/server/ThroneRegistry.test.ts`: every transition of §3.2; reservation expiry; vacate;
@@ -543,7 +582,8 @@ L16-L20, L23, L24 and L26 in the master; the client (L21, L25, L27) is not built
   `start()` stamps `isHegemon` from a claimed seat.
 - `tests/server/WorkerLobbyServiceThrones.test.ts`: running thrones reported with throne fields.
 - Schema round-trips for the new messages (`GameServerWire` pattern).
-- Core (T5): team-mode Hegemon as its own team; win check under a Dark Star in team mode.
+- `tests/HegemonTeamMode.test.ts` (T5): the Hegemon as its own team; the win check under a Dark
+  Star in team mode; donations and alliances with the team toggles on.
 
 ## 12. Open questions
 
@@ -659,3 +699,8 @@ over the existing gathering state, plus `create` / `retire` actions).
   nothing in it is not drawn, and the home page's cards are each line's head rather than the
   first three thrones in master order. No server change: every throne already carries its
   type.
+- **2026-10-10** — **T5 built: team thrones** (§10.6). The throne is a team of one in a team
+  game, the round ends only through it, the seat holds in any mode, a team throne's round
+  keeps the Lords and never rolls Humans vs Nations, and the team line opens at the same
+  floor as the others. Decisions taken in the build, for Tom to confirm: Lords stay in team
+  rounds; the slayer's teammates get the win screen, not the seat (L8 as written).

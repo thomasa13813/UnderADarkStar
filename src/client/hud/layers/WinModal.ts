@@ -416,6 +416,15 @@ export class WinModal extends LitElement implements Controller {
             player: winner.displayName(),
           });
           this.isWin = false;
+        } else if (
+          !winner.isHegemon() &&
+          me?.team() !== null &&
+          me?.team() === winner.team()
+        ) {
+          // A team throne (L8): the slayer's teammates share the win screen,
+          // not the seat.
+          this._title = translateText("win_modal.your_team");
+          this.isWin = true;
         } else {
           this._title = winner.isHegemon()
             ? translateText("win_modal.hegemon_reigns")

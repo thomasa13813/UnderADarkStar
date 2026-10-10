@@ -7,7 +7,6 @@ import { DoomsdayClockSpeed } from "../game/DoomsdayClock";
 import {
   Difficulty,
   Game,
-  GameMode,
   GameType,
   Gold,
   Player,
@@ -504,15 +503,14 @@ export class Config {
       dropPercentPerMinute: d.dropPercentPerMinute,
     };
   }
-  // Hegemon config, resolved against defaults. FFA only: team modes are out of
-  // scope for the role (F12).
+  // Hegemon config, resolved against defaults. Any mode: in a team game the
+  // throne is a team of one (docs/DarkStar-Lobbies.md §5.9, T5).
   hegemonConfig(): typeof HEGEMON_DEFAULTS {
     const c = this._gameConfig.hegemon;
     const d = HEGEMON_DEFAULTS;
     return {
       ...d,
-      enabled:
-        (c?.enabled ?? d.enabled) && this._gameConfig.gameMode === GameMode.FFA,
+      enabled: c?.enabled ?? d.enabled,
     };
   }
   stargateConfig(): typeof STARGATE_DEFAULTS {

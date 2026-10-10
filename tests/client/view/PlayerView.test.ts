@@ -91,10 +91,14 @@ describe("Hegemon default look", () => {
     expect(p.rimColor()?.isEqual(h.rim)).toBe(true);
   });
 
-  it("lets the team colour win in team games", () => {
-    const p = makePlayerView({ data: { isHegemon: true, team: "Blue" } });
-    expect(p.territoryColor().isEqual(hegemonColors().territory)).toBe(false);
-    expect(p.rimColor()).toBeNull();
+  // T5 (Lobbies §5.9): in a team game the throne is a team of one, and the
+  // dark-star look is its team colour.
+  it("keeps the Hegemon look in team games", () => {
+    const p = makePlayerView({ data: { isHegemon: true, team: "Hegemon" } });
+    const h = hegemonColors();
+    expect(p.territoryColor().isEqual(h.territory)).toBe(true);
+    expect(p.borderColor().isEqual(h.border)).toBe(true);
+    expect(p.rimColor()?.isEqual(h.rim)).toBe(true);
   });
 });
 

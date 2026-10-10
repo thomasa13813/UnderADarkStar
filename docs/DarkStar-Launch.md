@@ -225,7 +225,7 @@ _Done when_ nothing a player sees or hears is a placeholder.
       L16-L28 in `DarkStar-Lobbies.md`: per-type lines with a floor of five, one countdown per
       line. The server side is built (Lobbies §10.5); the client (home cards per line head,
       place in line, the win screen's stay-or-join-the-head choice) remains. Team thrones (T5)
-      follow as the next priority.
+      built 2026-10-10 on `feat/team-thrones` (Lobbies §10.6), not yet deployed.
 - [ ] **Watching it**: an uptime check on `/api/health` and the API's `/health`; a look at the
       server's logs and load with a dozen clients connected.
 - [x] **Somewhere to report bugs** (a Discord server or an email address; Tom's choice). Done
@@ -287,6 +287,8 @@ _Done when_ the checklist is clean. This build is the release candidate.
 
 ## 7. Changelog
 
+- **2026-10-10** — **Team thrones built (T5)** on `feat/team-thrones`, not merged: the team
+  line opens at the same floor as the FFA and special lines once deployed (Lobbies §10.6).
 - **2026-10-10** — **Second deploy.** `feat/nomenclature` fast-forwarded into `main` (commit
   `e3cf93a`, "LobbyUpdates": the tutorial line, the feudal nomenclature, the fleet icons, the
   stacked title, the PLAY nav item, the range-hover controller, the lobby browser panes L29)

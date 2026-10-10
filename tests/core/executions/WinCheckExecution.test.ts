@@ -38,6 +38,8 @@ describe("WinCheckExecution", () => {
         maxTimerValue: 5,
         gameMode: GameMode.Team,
       })),
+      // No throne: with one, the Hegemon check runs in every mode (T5).
+      hegemonConfig: vi.fn(() => ({ enabled: false })),
       percentageTilesOwnedToWin: vi.fn(() => 50),
     }));
     winCheck.init(mg, 0);

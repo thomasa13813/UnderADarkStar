@@ -407,8 +407,14 @@ export class GameImpl implements Game {
     }
   }
 
+  // Under a Dark Star: a human on the throne is a team of one (§5.9), so the
+  // team count and the assignment see only the challengers.
+  private challengers(): PlayerInfo[] {
+    return this._humans.filter((p) => !p.isHegemon);
+  }
+
   private populateTeams() {
-    const totalPlayers = this._humans.length + this._nations.length;
+    const totalPlayers = this.challengers().length + this._nations.length;
     this.playerTeams = resolveTeamsList(
       this._config.playerTeams(),
       totalPlayers,
@@ -422,8 +428,14 @@ export class GameImpl implements Game {
       return;
     }
 
+    // The throne first: a seated human takes the Hegemon team, whatever the
+    // team preset (maybeAssignTeam).
+    this._humans
+      .filter((p) => p.isHegemon)
+      .forEach((p) => this.addPlayer(p, ColoredTeams.Hegemon));
+
     if (this._config.playerTeams() === HumansVsNations) {
-      this._humans.forEach((p) => this.addPlayer(p, ColoredTeams.Humans));
+      this.challengers().forEach((p) => this.addPlayer(p, ColoredTeams.Humans));
       this._nations.forEach((n) =>
         this.addPlayer(n.playerInfo, ColoredTeams.Nations),
       );
@@ -432,7 +444,7 @@ export class GameImpl implements Game {
 
     // Team mode
     const allPlayers = [
-      ...this._humans,
+      ...this.challengers(),
       ...this._nations.map((n) => n.playerInfo),
     ];
     const pt = this._config.playerTeams();
@@ -998,6 +1010,11 @@ export class GameImpl implements Game {
   private maybeAssignTeam(player: PlayerInfo): Team | null {
     if (this._config.gameConfig().gameMode !== GameMode.Team) {
       return null;
+    }
+    // The throne is a team of one (§5.9): the AI seat made in seatHegemon
+    // lands here, a seated human through addPlayers.
+    if (player.isHegemon) {
+      return ColoredTeams.Hegemon;
     }
     if (player.playerType === PlayerType.Bot) {
       return this.botTeam;

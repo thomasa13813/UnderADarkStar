@@ -210,13 +210,14 @@ export class PlayerView {
 
     // The Hegemon seat defaults to the theme's dark-star look (near-black
     // fill, purple band, pale rim) instead of an allocated colour — but only
-    // as a default: a chosen colour or a pattern with its own palette wins,
-    // and in team games the team colour still applies.
+    // as a default: a chosen colour or a pattern with its own palette wins.
+    // In a team game the throne is a team of one (Lobbies §5.9) and the look
+    // is its team colour, as cosmetics never apply to team games.
     const pattern = this.cosmetics.pattern;
     const hasOwnColors =
       this.cosmetics.color !== undefined || pattern?.colorPalette !== undefined;
     const useHegemonLook =
-      this.isHegemon() && this.team() === null && !hasOwnColors;
+      this.isHegemon() && (this.team() !== null || !hasOwnColors);
     if (useHegemonLook) {
       const hegemon = theme.hegemonColors();
       defaultTerritoryColor = hegemon.territory;

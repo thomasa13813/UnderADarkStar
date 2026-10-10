@@ -127,6 +127,44 @@ describe("MasterLobbyService thrones", () => {
     vi.useRealTimers();
   });
 
+  // T5 (§5.9): a team line's thrones roll team games, nothing pinned.
+  it("rolls a team throne's round as a team game", async () => {
+    vi.mocked(startPolling).mockClear();
+    let n = 0;
+    const teamRegistry = new ThroneRegistry({
+      names: NAMES,
+      floor: { ffa: 0, team: 2, special: 0 },
+      minPlayers: 2,
+      countdownMs: COUNTDOWN,
+      windowMs: WINDOW,
+      vanishGraceMs: 10_000,
+      cullGraceMs: CULL,
+      mintGameID: () => `t${String(++n).padStart(2, "0")}`,
+    });
+    const log = { info: vi.fn(), error: vi.fn(), warn: vi.fn() } as any;
+    const teamService = new MasterLobbyService(
+      playlist as any,
+      log,
+      false,
+      teamRegistry,
+    );
+    const teamWorker = createMockWorker();
+    teamService.registerWorker(0, teamWorker as any);
+    teamWorker.emit("message", { type: "workerReady", workerId: 0 });
+    await schedulerTask()();
+    const creates = sent(teamWorker, "createGame");
+    expect(creates.map((m) => m.throne.type)).toEqual(["team", "team"]);
+    expect(playlist.gameConfig).toHaveBeenCalledWith("team", { throne: true });
+    expect(playlist.gameConfig).not.toHaveBeenCalledWith(
+      "team",
+      expect.objectContaining({ mode: expect.anything() }),
+    );
+    expect(creates[0].gameConfig).toEqual({
+      gameMap: "map-for-team",
+      hegemon: { enabled: true },
+    });
+  });
+
   it("opens one lobby per throne at boot and no queue lobbies", async () => {
     await schedulerTask()();
     const creates = sent(worker, "createGame");
@@ -159,12 +197,12 @@ describe("MasterLobbyService thrones", () => {
         minPlayers: 2,
       },
     ]);
-    // The playlist rolls an FFA config, or an FFA special game for a special
-    // throne; a throne is never trusted-only (L3).
-    expect(playlist.gameConfig).toHaveBeenCalledWith("ffa", {
-      mode: "Free For All",
-    });
+    // The playlist rolls the throne's type, marked as a throne round (the
+    // Hegemon on, the Lords kept); a special throne is pinned to FFA; a
+    // throne is never trusted-only (L3).
+    expect(playlist.gameConfig).toHaveBeenCalledWith("ffa", { throne: true });
     expect(playlist.gameConfig).toHaveBeenCalledWith("special", {
+      throne: true,
       mode: "Free For All",
     });
     expect(creates[2].gameConfig.gameMap).toBe("map-for-special");

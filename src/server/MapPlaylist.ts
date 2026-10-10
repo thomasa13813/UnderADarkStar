@@ -135,15 +135,22 @@ export class MapPlaylist {
   // Scheduled public games handed out so far, across all types.
   private scheduled = 0;
 
-  // `mode` pins a special game's mode (a throne is FFA only, Config
-  // disables the Hegemon otherwise); ffa and team ignore it.
+  // `mode` pins a special game's mode (a special throne is FFA); ffa and
+  // team ignore it. `throne` marks a throne round (docs/DarkStar-Lobbies.md
+  // §5.9): the Hegemon is on, and a team round keeps the Lords and never
+  // rolls Humans vs Nations, since the throne is a third side to neither.
   public async gameConfig(
     type: ScheduledPublicGameType,
-    opts: { mode?: GameMode } = {},
+    opts: { mode?: GameMode; throne?: boolean } = {},
   ): Promise<GameConfig> {
     this.scheduled++;
     const trusted = this.scheduled % TRUSTED_PUBLIC_EVERY === 0;
-    const config = await this.rollConfig(type, trusted, opts.mode);
+    const config = await this.rollConfig(
+      type,
+      trusted,
+      opts.mode,
+      opts.throne === true,
+    );
     if (trusted) {
       config.trusted = true;
     }
@@ -170,6 +177,7 @@ export class MapPlaylist {
     type: ScheduledPublicGameType,
     trusted: boolean,
     forcedMode?: GameMode,
+    throne = false,
   ): Promise<GameConfig> {
     if (type === "special") {
       return this.getSpecialConfig(trusted, { mode: forcedMode });
@@ -179,7 +187,7 @@ export class MapPlaylist {
     const map = this.getNextMap(type);
 
     let playerTeams =
-      mode === GameMode.Team ? this.getTeamCount(map) : undefined;
+      mode === GameMode.Team ? this.getTeamCount(map, throne) : undefined;
 
     let isCompact: boolean | undefined =
       this.playlists[type].length % 3 === 0 || undefined;
@@ -220,8 +228,10 @@ export class MapPlaylist {
       maxTimerValue: undefined,
       instantBuild: false,
       randomSpawn: false,
+      // Lords sit out upstream's team games; a throne round keeps them in
+      // every mode (the Hegemon round is paced around them, design doc §3.3).
       nations:
-        mode === GameMode.Team && playerTeams !== HumansVsNations
+        mode === GameMode.Team && playerTeams !== HumansVsNations && !throne
           ? "disabled"
           : "default",
       gameMode: mode,
@@ -231,8 +241,8 @@ export class MapPlaylist {
       disabledUnits: [],
       disableClanTags: mode === GameMode.FFA ? true : undefined,
       // Under a Dark Star: every public FFA round has a throne (the AI holds
-      // it until P6 seats a player).
-      hegemon: mode === GameMode.FFA ? { enabled: true } : undefined,
+      // it until P6 seats a player), and so does every throne round.
+      hegemon: mode === GameMode.FFA || throne ? { enabled: true } : undefined,
       // Overtime (the win threshold sinking after 30 minutes) is the default
       // for every public FFA game, so it carries no lobby modifier badge.
       overtime: mode === GameMode.FFA ? { enabled: true } : undefined,
@@ -700,27 +710,32 @@ export class MapPlaylist {
     return maps;
   }
 
-  private getTeamCount(map: GameMapType): TeamCountConfig {
+  // `throne`: a throne round never rolls Humans vs Nations (§5.9).
+  private getTeamCount(map: GameMapType, throne = false): TeamCountConfig {
     // Override team count for specific maps
     const forcedTeamCount = SPECIAL_TEAM_MAPS.get(map);
     if (
       forcedTeamCount !== undefined &&
+      !(throne && forcedTeamCount === HumansVsNations) &&
       Math.random() < SPECIAL_TEAM_FORCE_CHANCE
     ) {
       return forcedTeamCount;
     }
 
-    const totalWeight = TEAM_WEIGHTS.reduce((sum, w) => sum + w.weight, 0);
+    const weights = throne
+      ? TEAM_WEIGHTS.filter((w) => w.config !== HumansVsNations)
+      : TEAM_WEIGHTS;
+    const totalWeight = weights.reduce((sum, w) => sum + w.weight, 0);
     const roll = Math.random() * totalWeight;
 
     let cumulativeWeight = 0;
-    for (const { config, weight } of TEAM_WEIGHTS) {
+    for (const { config, weight } of weights) {
       cumulativeWeight += weight;
       if (roll < cumulativeWeight) {
         return config;
       }
     }
-    return TEAM_WEIGHTS[0].config;
+    return weights[0].config;
   }
 
   private getRandomSpecialGameModifiers(

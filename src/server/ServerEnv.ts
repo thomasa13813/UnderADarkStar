@@ -160,8 +160,9 @@ export class ServerEnv {
   static publicLobbyMode(): "thrones" | "queue" {
     return process.env.PUBLIC_LOBBIES === "queue" ? "queue" : "thrones";
   }
-  // Thrones each type's launch line keeps open (L16): 5 at launch, 2 in dev
-  // so the line is visible with a couple of tabs. THRONE_FLOOR overrides.
+  // Thrones each type's launch line (FFA, team, special) keeps open (L16):
+  // 5 at launch, 2 in dev so the line is visible with a couple of tabs.
+  // THRONE_FLOOR overrides.
   static throneFloor(): number {
     return ServerEnv.positiveIntEnv(
       "THRONE_FLOOR",

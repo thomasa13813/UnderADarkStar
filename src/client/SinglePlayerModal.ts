@@ -503,7 +503,7 @@ export class SinglePlayerModal extends BaseModal {
                     labelKey: "game_settings.play_as_hegemon",
                     descriptionKey: "game_settings.play_as_hegemon_desc",
                     checked: this.playAsHegemon,
-                    hidden: !this.hegemon || this.gameMode !== GameMode.FFA,
+                    hidden: !this.hegemon,
                   },
                   {
                     labelKey: "game_settings.instant_build",
@@ -1090,9 +1090,7 @@ export class SinglePlayerModal extends BaseModal {
                   cosmetics,
                   // The seat (isHegemon) is the only thing the sim needs to
                   // know; the throne between rounds is not modelled yet.
-                  ...(this.hegemon &&
-                  this.gameMode === GameMode.FFA &&
-                  this.playAsHegemon
+                  ...(this.hegemon && this.playAsHegemon
                     ? { isHegemon: true }
                     : {}),
                 },
@@ -1153,8 +1151,9 @@ export class SinglePlayerModal extends BaseModal {
                     }
                   : {}),
                 // A Hegemon round is always timed (R5); stating the default
-                // here also gives the HUD its countdown. FFA only.
-                ...(this.hegemon && this.gameMode === GameMode.FFA
+                // here also gives the HUD its countdown. Any mode: in a team
+                // game the throne is a team of one (Lobbies §5.9).
+                ...(this.hegemon
                   ? {
                       hegemon: { enabled: true },
                       maxTimerValue: finalMaxTimerValue ?? 20,

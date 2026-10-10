@@ -112,6 +112,10 @@ export const ColoredTeams: Record<string, Team> = {
   Bot: "Bot",
   Humans: "Humans",
   Nations: "Nations",
+  // Under a Dark Star: in a team game the Hegemon is a team of one, outside
+  // the playerTeams count (docs/DarkStar-Lobbies.md §5.9). Never assigned to
+  // anyone else; null in FFA, as every team is.
+  Hegemon: "Hegemon",
 } as const;
 
 // GameMapType and the maps list are generated from

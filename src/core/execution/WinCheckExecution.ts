@@ -41,6 +41,12 @@ export class WinCheckExecution implements Execution {
       return;
     }
 
+    // Under a Dark Star the round ends only through the throne (R1): the
+    // land-share win, FFA or team, is off while a Hegemon sits.
+    if (this.mg.config().hegemonConfig().enabled) {
+      this.checkWinnerHegemon();
+      return;
+    }
     if (this.mg.config().gameConfig().gameMode === GameMode.FFA) {
       this.checkWinnerFFA();
     } else {
@@ -83,10 +89,6 @@ export class WinCheckExecution implements Execution {
 
   checkWinnerFFA(): void {
     if (this.mg === null) throw new Error("Not initialized");
-    if (this.mg.config().gameConfig().hegemon?.enabled === true) {
-      this.checkWinnerHegemon();
-      return;
-    }
     const sorted = this.mg
       .players()
       .sort((a, b) => b.numTilesOwned() - a.numTilesOwned());

@@ -61,11 +61,18 @@ describe("GameServer - the Hegemon seat", () => {
     }
   });
 
-  it("ignores the seat when the throne is off or the mode is not FFA", () => {
+  it("ignores the seat when the throne is off", () => {
     const a = cid("a");
     const b = cid("b");
     const off = startPlayers({ hegemon: { enabled: false, seat: a } }, [a, b]);
     expect(off.every((p) => p.isHegemon !== true)).toBe(true);
+  });
+
+  // T5 (Lobbies §5.9): in a team game the throne is a team of one, so the
+  // seat carries into the start info exactly as in FFA.
+  it("seats the chosen client in a team game too", () => {
+    const a = cid("a");
+    const b = cid("b");
     const team = startPlayers(
       {
         hegemon: { enabled: true, seat: a },
@@ -74,6 +81,9 @@ describe("GameServer - the Hegemon seat", () => {
       },
       [a, b],
     );
-    expect(team.every((p) => p.isHegemon !== true)).toBe(true);
+    expect(team.map((p) => [p.clientID, p.isHegemon ?? false])).toEqual([
+      [a, true],
+      [b, false],
+    ]);
   });
 });

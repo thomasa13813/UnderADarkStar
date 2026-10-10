@@ -614,14 +614,11 @@ export class HostLobbyModal extends BaseModal {
                 titleKey: "game_settings.disable_units",
                 disabledUnits: this.disabledUnits,
                 // Off under a Dark Star (S6, H19), as in the singleplayer modal.
-                hiddenUnits:
-                  this.gameMode === GameMode.FFA
-                    ? [
-                        UnitType.MIRV,
-                        UnitType.SAMLauncher,
-                        UnitType.MissileSilo,
-                      ]
-                    : [],
+                hiddenUnits: [
+                  UnitType.MIRV,
+                  UnitType.SAMLauncher,
+                  UnitType.MissileSilo,
+                ],
               },
             }}
             @map-selected=${this.handleConfigMapSelected}
@@ -650,12 +647,8 @@ export class HostLobbyModal extends BaseModal {
             .onKickPlayer=${this.publiclyListed
               ? undefined
               : (clientID: string) => this.kickPlayer(clientID)}
-            .hegemonSeat=${this.gameMode === GameMode.FFA
-              ? this.hegemonSeat
-              : null}
-            .onSeatHegemon=${this.gameMode === GameMode.FFA
-              ? (clientID: string) => this.seatHegemon(clientID)
-              : undefined}
+            .hegemonSeat=${this.hegemonSeat}
+            .onSeatHegemon=${(clientID: string) => this.seatHegemon(clientID)}
             .onToggleNameReveal=${(clientID: string) =>
               this.toggleNameReveal(clientID)}
             .nameReveals=${this.nameReveals}
@@ -1423,8 +1416,6 @@ export class HostLobbyModal extends BaseModal {
     if (this.gameMode === GameMode.Team) {
       this.donateGold = true;
       this.donateTroops = true;
-      // The throne is FFA only (Config.hegemonConfig).
-      this.hegemonSeat = null;
     } else {
       this.donateGold = false;
       this.donateTroops = false;
@@ -1555,9 +1546,7 @@ export class HostLobbyModal extends BaseModal {
             // Always on (the server enforces it); only the seat is ours.
             hegemon: {
               enabled: true,
-              ...(this.hegemonSeat !== null && this.gameMode === GameMode.FFA
-                ? { seat: this.hegemonSeat }
-                : {}),
+              ...(this.hegemonSeat !== null ? { seat: this.hegemonSeat } : {}),
             },
             allowedPublicIds: this.whitelistEnabled
               ? (this.parseAllowedPublicIds() ?? [])

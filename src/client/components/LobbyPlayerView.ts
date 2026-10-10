@@ -109,7 +109,9 @@ export class LobbyTeamView extends LitElement {
       changedProperties.has("clients") ||
       changedProperties.has("teamCount") ||
       changedProperties.has("nationCount") ||
-      changedProperties.has("isPublicGame")
+      changedProperties.has("isPublicGame") ||
+      // The seated player leaves the preview (a seat claim changes no client).
+      changedProperties.has("hegemonSeat")
     ) {
       const teamsList = this.getTeamList();
       this.computeTeamPreview(teamsList);
@@ -230,6 +232,7 @@ export class LobbyTeamView extends LitElement {
             >
               ${displayName} ${this.renderVerifiedBadge(client)}
               ${this.renderFriendBadge(client)}
+              ${this.renderThrone(client, displayName)}
             </div>`;
           },
         )}
@@ -281,10 +284,9 @@ export class LobbyTeamView extends LitElement {
   }
 
   // Who holds the throne this round, above the roster: the seated player, or
-  // the AI — and, for the creator, how to change it. FFA only (the throne is
-  // not a team-mode thing).
+  // the AI — and, for the creator, how to change it. In a team game the
+  // throne is a team of one (Lobbies §5.9), so the row shows there too.
   private renderThroneStatus() {
-    if (this.gameMode !== GameMode.FFA) return html``;
     const seated = this.activePlayers.find(
       (c) => c.clientID === this.hegemonSeat,
     );
@@ -310,7 +312,9 @@ export class LobbyTeamView extends LitElement {
             >${translateText(
               throne.type === "special"
                 ? "throne.name_line_special"
-                : "throne.name_line",
+                : throne.type === "team"
+                  ? "throne.name_line_team"
+                  : "throne.name_line",
               { name: throne.name },
             )}</span
           >`
@@ -589,18 +593,24 @@ export class LobbyTeamView extends LitElement {
       return;
     }
 
+    // The seated player is the throne, a team of one above the roster
+    // (renderThroneStatus), not a member of any previewed team.
+    const challengers = this.activePlayers.filter(
+      (c) => c.clientID !== this.hegemonSeat,
+    );
+
     // HumansVsNations: show all clients under Humans initially
     if (this.teamCount === HumansVsNations) {
-      this.teamMaxSize = this.activePlayers.length;
+      this.teamMaxSize = challengers.length;
       this.teamPreview = [
-        { team: ColoredTeams.Humans, players: [...this.activePlayers] },
+        { team: ColoredTeams.Humans, players: [...challengers] },
         { team: ColoredTeams.Nations, players: [] },
       ];
       this.triggerClanUpdate();
       return;
     }
 
-    const players = this.activePlayers.map(
+    const players = challengers.map(
       (c) =>
         new PlayerInfo(
           c.username,

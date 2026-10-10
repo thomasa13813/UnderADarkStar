@@ -11,6 +11,7 @@
  *                                             [--loss 100] [--slow 100] [--ceiling 100]
  *                                             [--set key=value,...] [--human]
  *                                             [--difficulty easy|medium|hard|impossible]
+ *                                             [--teams N]
  *
  * Troop figures are the sim's; the HUD shows them divided by 10.
  */
@@ -75,16 +76,20 @@ async function main(): Promise<void> {
   const log = console.log;
   console.log = () => {}; // the sim is chatty
   const minutes = Number(arg("minutes", "20"));
+  // --teams N: a team round (Lobbies §5.9), the Lords spread over N teams
+  // and the throne a team of one, donations open as in a public team game.
+  const teams = Number(arg("teams", "0"));
 
   const gameConfig: GameConfig = {
     gameMap: resolveMap(arg("map", "milkyway")),
     gameMapSize: GameMapSize.Normal,
-    gameMode: GameMode.FFA,
+    gameMode: teams > 0 ? GameMode.Team : GameMode.FFA,
+    ...(teams > 0 ? { playerTeams: teams } : {}),
     gameType: GameType.Public,
     difficulty: resolveDifficulty(arg("difficulty", "medium")),
     nations: "default",
-    donateGold: false,
-    donateTroops: false,
+    donateGold: teams > 0,
+    donateTroops: teams > 0,
     bots: Number(arg("bots", "400")),
     infiniteGold: false,
     infiniteTroops: false,
