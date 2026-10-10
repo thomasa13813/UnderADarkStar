@@ -19,6 +19,7 @@ import type {
   ConquestFx,
   DeadUnitFx,
   GhostPreviewData,
+  HoverRangeCircle,
   NameEntry,
   NukeTelegraphData,
   NukeTrajectoryData,
@@ -1106,6 +1107,11 @@ export class GPURenderer {
   /** DarkStar: the range ring drawn while aiming a stargate shot. */
   updateAimRange(circle: { x: number; y: number; r: number } | null): void {
     this.rangeCirclePass.setAimRange(circle);
+  }
+
+  /** DarkStar: the footprint of the stargate / shield array under the cursor. */
+  updateHoverRange(circle: HoverRangeCircle | null): void {
+    this.rangeCirclePass.setHoverRange(circle);
   }
 
   updateNukeTrajectory(data: NukeTrajectoryData | null): void {

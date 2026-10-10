@@ -1,5 +1,6 @@
 import { html, LitElement } from "lit";
 import { customElement } from "lit/decorators.js";
+import { assetUrl } from "../../core/AssetUrls";
 
 const MOBILE_ITEM =
   "nav-menu-item block w-full text-left font-bold uppercase tracking-[0.05em] " +
@@ -74,21 +75,24 @@ export class MobileNavBar extends LitElement {
           class="flex flex-col text-malibu-blue mb-4 ml-[clamp(0.2rem,0.4vw,0.4vh)]"
         >
           <div class="flex flex-col items-center gap-1">
-            <!-- Text wordmark in the display face (P1 step E). -->
-            <div
-              class="font-display font-bold uppercase tracking-[0.12em] text-lg text-center max-w-[220px]"
-              data-i18n="main.title"
-            ></div>
-            <div
-              id="game-version"
-              class="l-header__highlightText text-center"
-            ></div>
+            <!-- Stacked pixel-art title (Tom's title-stacked.svg, 2026-10-08).
+                 No version under it: the footer names the build. -->
+            <img
+              src=${assetUrl("images/TitleStacked.svg")}
+              alt="Under a Dark Star"
+              data-i18n-alt="main.title"
+              class="h-12 w-auto max-w-[220px] object-contain select-none pointer-events-none"
+              draggable="false"
+            />
           </div>
         </div>
         <!-- Mobile Navigation Menu Items (same order as the desktop bar) -->
+        <!-- Play routes home, then hops into the throne shown first on the
+             page (data-join-hero; see Navigation.ts). -->
         <button
           class="${MOBILE_ITEM} ${currentPage === "page-play" ? "active" : ""}"
           data-page="page-play"
+          data-join-hero
           data-i18n="main.play"
         ></button>
         <div

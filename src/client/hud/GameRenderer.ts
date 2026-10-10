@@ -10,6 +10,7 @@ import { MapLayerController } from "../controllers/MapLayerController";
 import { OpeningController } from "../controllers/OpeningController";
 import { SoundEffectController } from "../controllers/SoundEffectController";
 import { StructureHighlightController } from "../controllers/StructureHighlightController";
+import { StructureRangeHoverController } from "../controllers/StructureRangeHoverController";
 import { ViewModeController } from "../controllers/ViewModeController";
 import { WarshipSelectionController } from "../controllers/WarshipSelectionController";
 import { GameStartingModal } from "../GameStartingModal";
@@ -310,6 +311,7 @@ export function createRenderer(
     new HoverHighlightController(game, eventBus, transformHandler, view),
     new LiveStatsController(game, eventBus),
     new StructureHighlightController(eventBus, view),
+    new StructureRangeHoverController(game, eventBus, transformHandler, view),
     new ViewModeController(eventBus, view),
     new AttackingTroopsController(game, eventBus, userSettings, view),
     new SoundEffectController(game, eventBus),

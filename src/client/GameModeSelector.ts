@@ -441,17 +441,44 @@ export class GameModeSelector extends LitElement {
     }
   }
 
-  render() {
-    // Under a Dark Star: thrones replace the per-type queues, so the three
-    // cards show the three thrones closest to starting (L13; the master sorts
-    // them). Rounds in progress are not joinable from here (Watch is T3).
-    // The ffa/team/special lookups stay for the queue fallback.
+  /**
+   * The lobbies the three homepage cards show, hero first.
+   *
+   * Under a Dark Star: thrones replace the per-type queues, so the cards show
+   * the three thrones closest to starting (L13; the master sorts them).
+   * Rounds in progress are not joinable from here (Watch is T3). The
+   * ffa/team/special lookups stay for the queue fallback.
+   */
+  private cardLobbies(): {
+    hero: PublicGameInfo | undefined;
+    teams: PublicGameInfo | undefined;
+    special: PublicGameInfo | undefined;
+  } {
     const thrones = (this.lobbies?.games?.["throne"] ?? []).filter(
       (lobby) => lobby.throne?.running !== true,
     );
-    const ffa = this.lobbies?.games?.["ffa"]?.[0] ?? thrones[0];
-    const teams = this.lobbies?.games?.["team"]?.[0] ?? thrones[1];
-    const special = this.lobbies?.games?.["special"]?.[0] ?? thrones[2];
+    return {
+      hero: this.lobbies?.games?.["ffa"]?.[0] ?? thrones[0],
+      teams: this.lobbies?.games?.["team"]?.[0] ?? thrones[1],
+      special: this.lobbies?.games?.["special"]?.[0] ?? thrones[2],
+    };
+  }
+
+  /**
+   * Join the throne the hero card shows, exactly as clicking that card would
+   * (name check and trust gate included). The nav bar's Play item calls this
+   * (2026-10-08): a second way into the top game. False when no joinable
+   * throne is on screen yet, in which case nothing happens.
+   */
+  public joinHeroLobby(): boolean {
+    const { hero } = this.cardLobbies();
+    if (hero === undefined) return false;
+    this.validateAndJoin(hero);
+    return true;
+  }
+
+  render() {
+    const { hero: ffa, teams, special } = this.cardLobbies();
     // The hero slot holds the spinner, then the FFA card; loaded without one
     // it goes and the upcoming column takes the whole row.
     const heroSlot = this.lobbies === null || ffa !== undefined;

@@ -30,7 +30,7 @@ import {
   SendUpgradeStructureIntentEvent,
 } from "../../Transport";
 const allianceIcon = assetUrl("images/AllianceIconWhite.svg");
-const boatIcon = assetUrl("images/BoatIconWhite.svg");
+const fleetIcon = assetUrl("images/FleetIconWhite.svg");
 const stargateIcon = assetUrl("images/StargateIconWhite.svg");
 const buildIcon = assetUrl("images/BuildIconWhite.svg");
 const chatIcon = assetUrl("images/ChatIconWhite.svg");
@@ -610,9 +610,10 @@ function createMenuElements(
     });
 }
 
-// A stargate shot (C4) at the clicked tile, offered in the attack submenu
+// A stargate shot (C4) at the clicked tile, offered in the stargate submenu
 // whenever one of the player's gates has the tile in range; sized by the
-// troop slider like a boat. The sim refuses what the tooltip cannot know
+// troop slider like a fleet. It carries the sword: the one entry in that
+// menu that sends troops. The sim refuses what the tooltip cannot know
 // (the Dark Star's slot and cooldown, a strike's bubble).
 function gateShotMenuElement(params: MenuElementParams): MenuElement | null {
   const option = params.playerActions?.gateShot;
@@ -647,7 +648,7 @@ function gateShotMenuElement(params: MenuElementParams): MenuElement | null {
   return {
     id: "attack_gate_shot",
     name: "gate_shot",
-    icon: stargateIcon,
+    icon: swordIcon,
     color: COLORS.attack,
     tooltipItems,
     disabled: () =>
@@ -663,11 +664,15 @@ function gateShotMenuElement(params: MenuElementParams): MenuElement | null {
   };
 }
 
+// The stargate menu (Tom, 2026-10-09): everything in it is fired from a
+// gate (or, for the Hegemon, from the Dark Star itself), so the slot wears
+// the gate and the gate shot inside wears the sword. The centre button
+// keeps the sword for the ground attack.
 export const attackMenuElement: MenuElement = {
   id: Slot.Attack,
   name: "radial_attack",
   disabled: (params: MenuElementParams) => params.game.inSpawnPhase(),
-  icon: swordIcon,
+  icon: stargateIcon,
   color: COLORS.attack,
 
   subMenu: (params: MenuElementParams) => {
@@ -896,7 +901,7 @@ export const boatMenuElement: MenuElement = {
     !params.playerActions.buildableUnits.some(
       (unit) => unit.type === UnitType.TransportShip && unit.canBuild,
     ),
-  icon: boatIcon,
+  icon: fleetIcon,
   color: COLORS.boat,
 
   action: async (params: MenuElementParams) => {

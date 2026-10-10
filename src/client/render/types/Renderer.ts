@@ -232,6 +232,17 @@ export interface PlayerStatusData {
   allianceRemainingTicks: number;
 }
 
+/**
+ * DarkStar: the footprint of the stargate or shield array under the cursor
+ * (centre tile, radius in tiles, RGB in 0..1), drawn by RangeCirclePass.
+ */
+export interface HoverRangeCircle {
+  x: number;
+  y: number;
+  r: number;
+  color: readonly [number, number, number];
+}
+
 /** Ghost structure preview data for build-mode visualization. */
 export interface GhostPreviewData {
   ghostType: string; // UnitType string ("City", "Port", etc.)

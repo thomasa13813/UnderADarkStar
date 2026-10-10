@@ -716,7 +716,7 @@ export class HelpModal extends BaseModal {
                   </li>
                   <li class="flex items-center gap-3">
                     <img
-                      src=${assetUrl("images/BoatIconWhite.svg")}
+                      src=${assetUrl("images/FleetIconWhite.svg")}
                       class="w-8 h-8 scale-75 origin-left"
                     />
                     <span>${translateText("help_modal.radial_boat")}</span>

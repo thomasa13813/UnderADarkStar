@@ -1,3 +1,4 @@
+import { DarkStarGeometry } from "../../core/game/DarkStar";
 import { Cell, Game, NameViewData, Player } from "../../core/game/Game";
 import { calculateBoundingBox } from "../../core/Util";
 
@@ -45,6 +46,10 @@ export function placeSpawnName(game: Game, player: Player): NameViewData {
 }
 
 export function placeName(game: Game, player: Player): NameViewData {
+  if (player.isHegemon()) {
+    const darkStar = game.darkStar();
+    if (darkStar !== null) return placeHegemonName(darkStar, player);
+  }
   const boundingBox =
     player.largestClusterBoundingBox ??
     calculateBoundingBox(game, player.borderTiles());
@@ -89,6 +94,27 @@ export function placeName(game: Game, player: Player): NameViewData {
   return {
     x: Math.ceil(center.x),
     y: Math.ceil(center.y),
+    size: fontSize,
+  };
+}
+
+// The Hegemon's name rests on the Dark Star (Tom, 2026-10-09). Its largest
+// cluster by tile count is sometimes a strike's bubble beyond the moat, which
+// would drag the name and troop count out there; the disc is the throne
+// whoever holds its tiles, so the name sits on its centre, sized to the
+// square the disc inscribes (side r·√2).
+function placeHegemonName(
+  darkStar: DarkStarGeometry,
+  player: Player,
+): NameViewData {
+  const side = Math.floor(darkStar.radius * 1.4142);
+  const fontSize = calculateFontSize(
+    { x: 0, y: 0, width: side, height: side },
+    player.displayName(),
+  );
+  return {
+    x: Math.ceil(darkStar.cx),
+    y: Math.ceil(darkStar.cy - fontSize / 3),
     size: fontSize,
   };
 }

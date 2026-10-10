@@ -63,14 +63,12 @@ export function currentGameVersion(): string {
 }
 
 /**
- * The version alone, never a commit -- what the nav bar under the logo shows.
+ * The version alone, never a commit (OPE-387).
  *
- * The commit is deliberately not substituted here (OPE-387). A sha under the
- * logo reads as a broken label to a player who is not debugging a build, and
- * that spot is the front door of the game rather than a place anyone is asked
- * to quote from. The footer is where the build's real identity belongs, and it
- * still names the commit on an untagged build, so nothing is lost -- it just
- * is not the first thing on the main menu.
+ * The nav bar showed this under the logo until 2026-10-08; it now shows the
+ * title alone, and the footer is the one place naming the build. Kept as the
+ * footer's "what version is this" half, where a sha would still read as a
+ * broken label to a player who is not debugging a build.
  */
 export function taggedGameVersion(rawVersion: string): string {
   return withVersionPrefix(rawVersion.trim());
@@ -78,29 +76,6 @@ export function taggedGameVersion(rawVersion: string): string {
 
 function withVersionPrefix(trimmed: string): string {
   return /^[vV]/.test(trimmed) ? trimmed : `v${trimmed}`;
-}
-
-/** The nav bar's version elements, in both the mobile and desktop nav bars. */
-const NAV_VERSION_SELECTOR = "#game-version, .game-version-display";
-
-/**
- * Stamps the version onto the nav bar, and reports how many elements it found
- * so the caller can warn when the markup has moved out from under it.
- *
- * Lives here rather than inline in Main.ts so it can be tested without
- * importing Main.ts, which is a module of side effects.
- *
- * Uses taggedGameVersion, not currentGameVersion: the nav bar and the footer
- * answer different questions on an untagged build, by decision rather than by
- * drift (OPE-387).
- */
-export function renderNavVersion(root: ParentNode = document): number {
-  const elements = root.querySelectorAll(NAV_VERSION_SELECTOR);
-  const label = taggedGameVersion(version);
-  elements.forEach((el) => {
-    el.textContent = label;
-  });
-  return elements.length;
 }
 
 // ClientEnv.get() throws when BOOTSTRAP_CONFIG is missing. A cosmetic version

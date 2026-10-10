@@ -191,6 +191,17 @@ describe("RadialMenuElements", () => {
       expect(attackMenuElement.color).toBe(COLORS.attack);
     });
 
+    it("wears the stargate and gives the gate shot the sword (2026-10-09)", () => {
+      expect(attackMenuElement.icon).toContain("StargateIcon");
+      (mockPlayer as any).troops = vi.fn(() => 1000);
+      mockPlayerActions.gateShot = { readyInTicks: 0, level: 1, range: 180 };
+      const subMenu = attackMenuElement.subMenu!(mockParams);
+      const gateShot = subMenu.find((item) => item.id === "attack_gate_shot");
+      expect(gateShot).toBeDefined();
+      expect(gateShot!.icon).toContain("SwordIcon");
+      expect(gateShot!.icon).not.toContain("StargateIcon");
+    });
+
     it("should be disabled during spawn phase", () => {
       mockGame.inSpawnPhase = vi.fn(() => true);
       expect(attackMenuElement.disabled(mockParams)).toBe(true);
@@ -356,6 +367,8 @@ describe("RadialMenuElements", () => {
       expect(attackMenu).toBeDefined();
       expect(buildMenu).toBeUndefined();
       expect(boatMenu).toBeDefined();
+      // Boats are fleets to the player: a star fighter, not a hull.
+      expect(boatMenu!.icon).toContain("FleetIcon");
     });
 
     it("should include info menu in both cases", () => {

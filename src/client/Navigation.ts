@@ -1,3 +1,7 @@
+// Type-only: a value import would register <game-mode-selector> wherever
+// Navigation is imported, and the element boots a lobby socket on connect.
+import type { GameModeSelector } from "./GameModeSelector";
+
 export function closeMobileSidebar() {
   const sidebar = document.getElementById("sidebar-menu");
   const backdrop = document.getElementById("mobile-menu-backdrop");
@@ -108,6 +112,17 @@ export function initNavigation() {
       }
 
       showPage(pageId);
+
+      // The nav bar's Play item (data-join-hero) is a second way into the
+      // top game: once home, with any open page closed above, hop into the
+      // throne the hero card shows. After showPage, not before: the join
+      // opens the lobby page, which showPage("page-play") would close.
+      if (pageId === "page-play" && target.hasAttribute("data-join-hero")) {
+        const selector = document.querySelector(
+          "game-mode-selector",
+        ) as GameModeSelector | null;
+        selector?.joinHeroLobby();
+      }
     }
   });
 

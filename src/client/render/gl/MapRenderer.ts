@@ -20,6 +20,7 @@ import type {
   ConquestFx,
   DeadUnitFx,
   GhostPreviewData,
+  HoverRangeCircle,
   NameEntry,
   NukeTelegraphData,
   NukeTrajectoryData,
@@ -274,6 +275,11 @@ export class MapRenderer {
   /** DarkStar: the range ring drawn while aiming a stargate shot. null = clear. */
   updateAimRange(circle: { x: number; y: number; r: number } | null): void {
     this.renderer?.updateAimRange(circle);
+  }
+
+  /** DarkStar: the footprint of the stargate / shield array under the cursor. null = clear. */
+  updateHoverRange(circle: HoverRangeCircle | null): void {
+    this.renderer?.updateHoverRange(circle);
   }
 
   // ---- Nuke UI ----

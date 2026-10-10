@@ -23,6 +23,11 @@ DarkStar's differentiator is one asymmetric role, the **Hegemon**:
   ("Nations" in the code), and beneath them the **Barons**, the simple bots ("Tribes" in the
   code). [Decided 2026-10-07] Player-facing text and these documents use the feudal names; the
   code identifiers keep the old ones.
+- Deep space is crossed by **fleets** [Decided 2026-10-09]: the engine's transport ship ("boat"
+  in the code and the intents) is a fleet in every player-facing string, with a star-fighter icon
+  in the radial menu. The radial menu's warhead slot wears the stargate and its gate shot the
+  sword: everything in that menu launches from a gate (the Hegemon's from the Dark Star), and the
+  sword means troops.
 - The round ends when the Hegemon is overthrown, **or** when a preset timer expires — in which case
   the reigning Hegemon wins.
 - **The winner of a round is the Hegemon of the next round.**
@@ -1940,6 +1945,27 @@ for the throne by proxy.
   600 ticks, the domain whole again and the slot free. `HegemonInvasion` H13: a donation to a
   stalled throne is sent once and the pool is not drained below its pin.
 
+### 6.26 As built — hovering a gate or a shield shows its footprint (2026-10-09)
+
+Tom's call (2026-10-09): resting the cursor on a stargate or a shield array draws the area it
+covers, so a player can read a gate's reach and the ground a dome protects without opening the
+build menu. Any owner's structure counts: an enemy shield shows where a warhead cannot hurt, an
+enemy gate what it can hit; structures under construction show what they will cover.
+
+- **The disc (`RangeCirclePass.setHoverRange`).** The same translucent disc with a one-tile rim as
+  the placement and aim rings, in the aim ring's blue for a gate (`stargateRange(level)`) and a
+  soft green for a shield (`shieldArrayRadius()`), drawn after both so it never hides them. Pushed
+  through `MapRenderer.updateHoverRange`.
+- **The controller (`StructureRangeHoverController`).** Listens to `MouseMoveEvent` like
+  `HoverHighlightController`, hit-tests with `nearbyUnits` against the structure sprite's
+  on-screen half size (`structureHitRadius` mirrors `structure.vert.glsl`, floor two tiles), takes
+  the nearest active gate or shield, and pushes only on change. Its `tick` re-checks the hovered
+  structure so an upgrade grows the disc and a destroyed one clears it. Checked in the browser on a
+  solo game at three zooms, down to the dot-sized gate.
+- **Tests.** `tests/client/controllers/StructureRangeHoverController.test.ts`: the hit radius at
+  each zoom band; a gate hovered off-centre, held, and left; a shield in its colour; a city and an
+  off-map tile ignored; an upgrade and a deletion caught by `tick`.
+
 ## 7. Constraints (non-negotiable engineering rules)
 
 - `src/core/` must stay **deterministic** (seeded PRNG, no wall-clock, careful with floats) and
@@ -2026,11 +2052,21 @@ hydrogen-bomb removal (closed by S6).
 | **Killing blow**              | The conquest that eliminates the Hegemon; its owner wins the round.                                                                                                                                |
 | **Round / Reign**             | One game / the consecutive rounds a player holds the throne.                                                                                                                                       |
 | **Baron**                     | Player-facing name for a simple bot (`PlayerType.Bot`; "Tribe" in the code).                                                                                                                       |
+| **Fleet**                     | Player-facing name for the transport ship (`UnitType.TransportShip`; the `boat` intent): troops crossing deep space without a gate.                                                                |
 | **Lord**                      | Player-facing name for the smarter, map-defined AI (`PlayerType.Nation`; "Nation" in the code).                                                                                                    |
 | **Intent / Turn / Execution** | Player action → server-bundled tick of intents → deterministic sim object that applies it.                                                                                                         |
 
 ## 11. Changelog
 
+- **2026-10-09** — **The Hegemon's name stays home.** `placeName` pins the throne's name and troop
+  count to the Dark Star's centre; a strike's bubble that outgrew the domain used to drag it out
+  there, since the name follows the largest cluster by tile count. `tests/HegemonName.test.ts`.
+- **2026-10-09** — **Fleets and the stargate menu.** Boats are **fleets** in all player-facing
+  text, with a star-fighter icon (`FleetIconWhite.svg`); the radial menu's attack slot wears the
+  stargate and the gate shot inside it the sword (the centre button keeps the sword for the ground
+  attack). §1 and the glossary.
+- **2026-10-09** — **Hover footprints.** Resting the cursor on a stargate or a shield array draws
+  the area it covers, any owner's; §6.26.
 - **2026-10-07** — **Nomenclature:** Nations are **Lords** and Tribes are **Barons** in all
   player-facing text and the docs (a feudal galaxy with the Hegemon at its head); code identifiers
   unchanged. §1, §5.1 and the glossary carry the mapping.

@@ -13,6 +13,7 @@ export type {
   DeadUnitFx,
   EmojiData,
   GhostPreviewData,
+  HoverRangeCircle,
   NameEntry,
   NukeExplosionRenderParams,
   NukeTelegraphData,

@@ -4,7 +4,6 @@ import { ClientEnv } from "../../src/client/ClientEnv";
 import {
   composeGameVersion,
   currentGameVersion,
-  renderNavVersion,
   taggedGameVersion,
 } from "../../src/client/GameVersion";
 
@@ -125,57 +124,5 @@ describe("taggedGameVersion", () => {
     expect(composeGameVersion("x.xx.xx", SHA)).not.toBe(
       taggedGameVersion("x.xx.xx"),
     );
-  });
-});
-
-describe("renderNavVersion", () => {
-  beforeEach(() => {
-    ClientEnv.reset();
-    document.body.innerHTML = "";
-  });
-
-  afterEach(() => {
-    delete (window as { BOOTSTRAP_CONFIG?: unknown }).BOOTSTRAP_CONFIG;
-    ClientEnv.reset();
-    document.body.innerHTML = "";
-  });
-
-  const setBootstrap = () => {
-    (window as { BOOTSTRAP_CONFIG?: unknown }).BOOTSTRAP_CONFIG = {
-      gameEnv: "prod",
-      numWorkers: 1,
-      turnstileSiteKey: "1x00000000000000000000AA",
-      jwtAudience: "openfront.io",
-      instanceId: "test",
-      gitCommit: SHA,
-    };
-  };
-
-  // The regression this pins: with a real commit sitting in BOOTSTRAP_CONFIG
-  // and version.txt still the placeholder, the nav bar shows the version
-  // anyway. Swapping the helper back to currentGameVersion turns this red.
-  it("stamps the version, not the commit, onto both nav bars", () => {
-    setBootstrap();
-    document.body.innerHTML = `
-      <span id="game-version"></span>
-      <span class="game-version-display"></span>
-    `;
-
-    expect(renderNavVersion()).toBe(2);
-    for (const el of document.querySelectorAll(
-      "#game-version, .game-version-display",
-    )) {
-      expect(el.textContent).toBe(taggedGameVersion(version));
-      // Always a version, whatever version.txt holds when this runs: the
-      // commit form has no leading v and this one always does.
-      expect(el.textContent).toMatch(/^[vV]/);
-    }
-  });
-
-  it("reports zero when the markup carries no version element", () => {
-    setBootstrap();
-    document.body.innerHTML = '<span id="something-else"></span>';
-
-    expect(renderNavVersion()).toBe(0);
   });
 });

@@ -1,5 +1,4 @@
 import { ClientEnv } from "src/client/ClientEnv";
-import { renderNavVersion } from "src/client/GameVersion";
 import { UserMeResponse } from "../core/ApiSchemas";
 import { assetUrl } from "../core/AssetUrls";
 import { EventBus } from "../core/EventBus";
@@ -306,15 +305,6 @@ class Client {
     for (const font of displayFonts) {
       document.fonts.add(font);
       font.load().catch(() => {});
-    }
-
-    // The tagged version only, so a player's version reads the same across web
-    // and Steam. The build's full identity -- the commit on an untagged build,
-    // and the shell version on Steam -- is in page-footer instead, where it
-    // can be quoted in a bug report without a sha sitting under the logo on
-    // the main menu. See renderNavVersion / taggedGameVersion (OPE-387).
-    if (renderNavVersion() === 0) {
-      console.warn("Game version element not found");
     }
 
     const langSelector = document.querySelector(

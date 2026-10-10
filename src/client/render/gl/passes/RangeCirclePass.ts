@@ -7,7 +7,7 @@
  * Active only when a ghost preview with rangeRadius > 0 is set.
  */
 
-import type { GhostPreviewData } from "../../types";
+import type { GhostPreviewData, HoverRangeCircle } from "../../types";
 import { createProgram } from "../utils/GlUtils";
 
 import fragSrc from "../shaders/range-circle/range-circle.frag.glsl?raw";
@@ -30,6 +30,9 @@ export class RangeCirclePass {
   // DarkStar: a second ring while aiming a stargate shot (the firing gate's
   // range), independent of the ghost preview.
   private aim: { x: number; y: number; r: number } | null = null;
+  // DarkStar: the footprint of the stargate or shield array under the
+  // cursor (StructureRangeHoverController), in that structure's colour.
+  private hover: HoverRangeCircle | null = null;
 
   constructor(gl: WebGL2RenderingContext) {
     this.gl = gl;
@@ -71,8 +74,12 @@ export class RangeCirclePass {
     this.aim = circle;
   }
 
+  setHoverRange(circle: HoverRangeCircle | null): void {
+    this.hover = circle;
+  }
+
   draw(cameraMatrix: Float32Array): void {
-    if (this.radius <= 0 && this.aim === null) return;
+    if (this.radius <= 0 && this.aim === null && this.hover === null) return;
 
     const gl = this.gl;
     gl.useProgram(this.program);
@@ -93,6 +100,13 @@ export class RangeCirclePass {
       gl.uniform2f(this.uCenter, this.aim.x, this.aim.y);
       gl.uniform1f(this.uRadius, this.aim.r);
       gl.uniform3f(this.uColor, 0.6, 0.85, 1.0);
+      gl.drawArrays(gl.TRIANGLES, 0, 6);
+    }
+    if (this.hover !== null) {
+      const h = this.hover;
+      gl.uniform2f(this.uCenter, h.x, h.y);
+      gl.uniform1f(this.uRadius, h.r);
+      gl.uniform3f(this.uColor, h.color[0], h.color[1], h.color[2]);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
     }
   }

@@ -44,13 +44,6 @@ vi.mock("../../src/client/Api", async (importOriginal) => {
   };
 });
 
-// Deterministic "version element not found" (Main.ts line 411) regardless of
-// whether the Lit nav bars have rendered their version spans yet.
-vi.mock("../../src/client/GameVersion", async (importOriginal) => {
-  const actual = await importOriginal<Record<string, unknown>>();
-  return { ...actual, renderNavVersion: () => 0 };
-});
-
 // Main is the only importer. Stubbing it keeps onUserMe's boot-interrupt tail
 // deterministic (no confirm dialogs, no reward popups).
 vi.mock("../../src/client/BootInterrupts", () => ({
@@ -80,11 +73,10 @@ vi.mock("../../src/client/ClientGameRunner", () => ({
 }));
 
 describe("Client.initialize() booted from Main.ts module scope", () => {
-  let warnSpy: ReturnType<typeof vi.spyOn>;
   let logSpy: ReturnType<typeof vi.spyOn>;
 
   beforeAll(async () => {
-    warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    vi.spyOn(console, "warn").mockImplementation(() => {});
     logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
     vi.spyOn(console, "info").mockImplementation(() => {});
     vi.spyOn(console, "error").mockImplementation(() => {});
@@ -188,11 +180,6 @@ describe("Client.initialize() booted from Main.ts module scope", () => {
     await vi.waitFor(() => expect(mocks.userAuth).toHaveBeenCalled());
     await new Promise((resolve) => setTimeout(resolve, 25));
   }, 20_000);
-
-  it("runs the signed-out boot: the missing-version warn", () => {
-    // renderNavVersion() === 0 branch.
-    expect(warnSpy).toHaveBeenCalledWith("Game version element not found");
-  });
 
   it("routes a hashchange through onHashUpdate", async () => {
     const joinModal = document.querySelector("join-lobby-modal") as unknown as {
