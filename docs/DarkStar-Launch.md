@@ -287,6 +287,13 @@ _Done when_ the checklist is clean. This build is the release candidate.
 
 ## 7. Changelog
 
+- **2026-10-10** — **Second deploy.** `feat/nomenclature` fast-forwarded into `main` (commit
+  `e3cf93a`, "LobbyUpdates": the tutorial line, the feudal nomenclature, the fleet icons, the
+  stacked title, the PLAY nav item, the range-hover controller, the lobby browser panes L29)
+  and deployed: build from cache, healthy, the page serves `e3cf93a`, both health endpoints
+  answer. `compose up` left `cloudflared` running this time, so the 10-07 tunnel blip did
+  not repeat. Routine from here: merge, push `main`, run the deploy command, the two-minute
+  check.
 - **2026-10-07** — **Nomenclature:** Nations are Lords and Tribes are Barons in all player-facing
   text and the docs; code identifiers unchanged (design doc §1, glossary).
 - **2026-10-07** — **Main is the live branch.** `feat/hegemon-toolkit` fast-forwarded into `main`
