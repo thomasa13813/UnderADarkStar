@@ -329,6 +329,18 @@ describe("GameServer - the winner's pick", () => {
     expect(picks).toEqual([]);
   });
 
+  // L30: the team split rides the pick like the modifiers do; the master
+  // decides whether the throne may set it.
+  it("forwards the team split of a team pick", async () => {
+    const { winner, picks } = await finishedRound();
+    await mockWsOf(winner).emit({
+      type: "throne_pick",
+      playerTeams: "Duos",
+      stay: true,
+    });
+    expect(picks[0]).toMatchObject({ playerTeams: "Duos", stay: true });
+  });
+
   it("forwards the modifiers of a special pick", async () => {
     const { winner, picks } = await finishedRound();
     await mockWsOf(winner).emit({

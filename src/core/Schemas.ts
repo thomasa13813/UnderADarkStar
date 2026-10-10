@@ -1329,6 +1329,9 @@ export const ClientThronePickSchema = z.object({
     .array(z.enum(THRONE_MODIFIER_WHITELIST))
     .max(THRONE_MAX_MODIFIERS)
     .optional(),
+  // Team thrones only (L30): the next round's team split, one of
+  // THRONE_TEAM_SPLITS (the master checks). Absent keeps the split rolled.
+  playerTeams: TeamCountConfigSchema.optional(),
   stay: z.boolean(),
 });
 

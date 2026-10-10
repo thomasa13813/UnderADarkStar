@@ -165,6 +165,113 @@ describe("MasterLobbyService thrones", () => {
     });
   });
 
+  // L30: a team throne's winner sets the split; the master recomputes the
+  // cap for it on the next round's map. An FFA throne's pick may not.
+  it("applies a team throne winner's split with the cap for it", async () => {
+    vi.mocked(startPolling).mockClear();
+    let n = 0;
+    const teamRegistry = new ThroneRegistry({
+      names: NAMES,
+      floor: { ffa: 0, team: 1, special: 0 },
+      minPlayers: 2,
+      countdownMs: COUNTDOWN,
+      windowMs: WINDOW,
+      vanishGraceMs: 10_000,
+      cullGraceMs: CULL,
+      mintGameID: () => `t${String(++n).padStart(2, "0")}`,
+    });
+    playlist.throneTeamSplit = vi.fn(
+      async (_map: string, _base: unknown, split: unknown) => ({
+        playerTeams: split,
+        maxPlayers: 36,
+      }),
+    );
+    const log = { info: vi.fn(), error: vi.fn(), warn: vi.fn() } as any;
+    const teamService = new MasterLobbyService(
+      playlist as any,
+      log,
+      false,
+      teamRegistry,
+    );
+    const teamWorker = createMockWorker();
+    teamService.registerWorker(0, teamWorker as any);
+    teamWorker.emit("message", { type: "workerReady", workerId: 0 });
+    await schedulerTask()();
+    const teamEntry = (gameID: string, running: boolean) =>
+      throneEntry(gameID, {
+        throne: {
+          throneID: "throne-01",
+          name: "Vega",
+          type: "team",
+          reign: 0,
+          seat: "open",
+          running,
+        },
+      });
+    teamWorker.emit("message", {
+      type: "lobbyList",
+      lobbies: [teamEntry("t01", true)],
+    });
+    await schedulerTask()();
+    teamWorker.emit("message", {
+      type: "throneRound",
+      throneID: "throne-01",
+      gameID: "t01",
+      outcome: "overthrown",
+      winner: ADA,
+    });
+    // t02 kept the floor when t01 started; t03 is the successor.
+    await vi.waitFor(() =>
+      expect(sent(teamWorker, "createGame")).toHaveLength(3),
+    );
+    teamWorker.emit("message", {
+      type: "thronePick",
+      throneID: "throne-01",
+      gameID: "t01",
+      persistentID: ADA.persistentID,
+      gameMap: "Event Horizon",
+      playerTeams: 3,
+      stay: true,
+    });
+    await vi.waitFor(() =>
+      expect(sent(teamWorker, "updateLobby").length).toBeGreaterThan(0),
+    );
+    expect(playlist.throneTeamSplit).toHaveBeenCalledWith(
+      "Event Horizon",
+      expect.objectContaining({ gameMap: "map-for-team" }),
+      3,
+    );
+    expect(sent(teamWorker, "updateLobby")[0]).toEqual({
+      type: "updateLobby",
+      gameID: "t03",
+      gameConfig: { gameMap: "Event Horizon", playerTeams: 3, maxPlayers: 36 },
+      throne: { heir: ADA, reign: 1 },
+    });
+  });
+
+  it("drops a split from an FFA throne's pick and one off the list", async () => {
+    playlist.maxPlayersForMap = vi.fn(async () => 42);
+    await winRound();
+    worker.emit("message", {
+      type: "thronePick",
+      throneID: "throne-01",
+      gameID: "g01",
+      persistentID: ADA.persistentID,
+      playerTeams: "Duos",
+      stay: true,
+    });
+    await vi.waitFor(() =>
+      expect(sent(worker, "updateLobby").length).toBeGreaterThan(0),
+    );
+    // Nothing else was chosen, so there is no patch at all.
+    expect(sent(worker, "updateLobby")[0]).toEqual({
+      type: "updateLobby",
+      gameID: "g05",
+      gameConfig: undefined,
+      throne: { heir: ADA, reign: 1 },
+    });
+  });
+
   it("opens one lobby per throne at boot and no queue lobbies", async () => {
     await schedulerTask()();
     const creates = sent(worker, "createGame");

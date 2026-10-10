@@ -1215,6 +1215,7 @@
     "panel_line_reign": "Throne of {name} · reign {reign}",
     "pick_hint": "Pick the next map, then keep the throne or step down. No answer in time: a random map, and you keep the throne.",
     "pick_modifiers": "Up to two modifiers. None chosen keeps the ones rolled for the lobby.",
+    "pick_teams": "The team split. Nothing chosen keeps the one rolled for the lobby.",
     "reign_line": "Reign {reign}",
     "reserved_for": "Reserved for {name}",
     "step_down": "Step down",

@@ -34,7 +34,7 @@ Numbered so the code and tests can cite them.
 | L4  | **The winner's window.** On the win screen the winner has **30 s** (config) to pick the next map (and rules on a special throne) and to say whether they **stay** on the throne or **vacate** it. No answer: random map, seat opens. **[Revised 2026-10-06 by L23: no answer keeps the winner on the seat; only the map falls to random.]**                                                                                                                                                                     |
 | L5  | **Vacating is allowed.** A winner may set the map and rules and then decline the seat.                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | L6  | **An open seat is first come, first served.** Any non-spectator in the lobby may claim an open seat, and may give it up again before the round starts. A seat nobody holds at start goes to the AI Hegemon (R6, already built).                                                                                                                                                                                                                                                                                 |
-| L7  | **What the winner may set.** The map, from the full list. On a special throne, up to **two** modifiers from a whitelist (§5.4). Timer stays 20 minutes (R5), player cap is the map's, team count is the playlist's.                                                                                                                                                                                                                                                                                             |
+| L7  | **What the winner may set.** The map, from the full list. On a special throne, up to **two** modifiers from a whitelist (§5.4). Timer stays 20 minutes (R5), player cap is the map's, team count is the playlist's. [Revised by L30: on a team throne the winner sets the split.]                                                                                                                                                                                                                               |
 | L8  | **Team thrones: the slayer takes the seat.** Not a team victory. The challenger who lands the killing blow (R3) holds the reservation; on a timer win the human Hegemon keeps it. Teammates get nothing beyond the win screen.                                                                                                                                                                                                                                                                                  |
 | L9  | **Minimum to fire: two humans**, the seated Hegemon included, spectators excluded. A throne with fewer holds at zero and keeps its seat and map pick. A bot-held throne with one challenger does not start either.                                                                                                                                                                                                                                                                                              |
 | L10 | **Countdown.** A throne's lobby opens the moment its round ends (during the winner's window, so players can gather). The countdown, **2 minutes** (5 s in dev), starts when the minimum is met and does not reset when it is met again after a dip.                                                                                                                                                                                                                                                             |
@@ -57,6 +57,7 @@ Numbered so the code and tests can cite them.
 | L27 | **After a round, the players who did not win choose:** stay with their throne, shown its place in line, or join the head of the line. [2026-10-06]                                                                                                                                                                                                                                                                                                                                                              |
 | L28 | **Open thrones overtaken repeatedly by returning winners** is accepted for launch and watched; it needs a real population to occur. [2026-10-06]                                                                                                                                                                                                                                                                                                                                                                |
 | L29 | **The lobby browser files thrones by type.** Its tabs are **Free for all**, **Teams** and **Special** (plus All), each listing that line's thrones head first, with Watch on a running round. There is no Thrones tab, and a line with nothing in it has no pane and no tab, so the team line appears by itself when T5 lands. The home page keeps one card per line head (L25). Reason: one Thrones pile mixed FFA and special rounds, and the three empty queue panes beside it read as a fault. [2026-10-09] |
+| L30 | **The team throne's winner sets the split.** With the map, the winner of a team throne may choose the next round's team split: a fixed count of 2 to 7 teams, or Duos, Trios or Quads; never Humans vs Lords (the throne is a third side to neither). The cap is recomputed for the split on the chosen map, and a count the map cannot give two players each falls back to as many teams as fill. Nothing chosen keeps the split the lobby rolled. Tom's ask, 2026-10-10. [2026-10-10]                         |
 
 ## 3. The throne model
 
@@ -207,8 +208,9 @@ first public playtests (new follow-up in the design doc's §4).
 The win screen stays connected to the finished game's socket (the `new_lobby` prompt relies on
 this today). The client sends a new `throne_pick` message on that socket; `GameServer` accepts it
 only from the client whose `persistentID` equals `winnerPersistentID()`, only once, only within
-the window, and forwards it to the master as `thronePick`. The master validates the map and
-modifiers against the whitelist, updates the registry, and sends `updateLobby` (config and, on
+the window, and forwards it to the master as `thronePick`. The master validates the map, the
+modifiers against the whitelist and, on a team throne, the team split against
+`THRONE_TEAM_SPLITS` (L30), updates the registry, and sends `updateLobby` (config and, on
 vacate, `heir: null`) to the successor's worker. The window timer runs in the master
 (`reservationUntil`); expiry sends the same `updateLobby` with a random map.
 
@@ -257,7 +259,7 @@ throne needs, in `src/core`:
 This is the largest engineering item and ships last (§10, T5). Until then team thrones are not in
 the mix. [As built, §10.6: the Hegemon is `ColoredTeams.Hegemon`, a team of one; the win check
 runs through the throne in every mode; the donation rules needed no change; a team throne's
-round keeps the Lords and never rolls Humans vs Nations.]
+round has no Lords, as every team game, and never rolls Humans vs Nations.]
 
 ### 5.10 Identity
 
@@ -549,26 +551,34 @@ lobby browser's Teams pane (L29) and the third home card (L25) appear on their o
   alliances needed no change: `canDonateTroops` / `canDonateGold` / `canSendAllianceRequest`
   already special-case the throne before the team and toggle checks (H9).
 - **Server.** `GameServer.start()` stamps the seat in any mode. `MapPlaylist.gameConfig` takes
-  `throne: true`: the Hegemon on, the Lords kept in a team round (upstream disables nations in
-  team games; the Hegemon round is paced around Lords reaching the moat), and Humans vs
-  Nations never rolled (a throne is a third side to neither). `throneGameConfig` passes it for
-  every throne and pins only the special throne to FFA. The winner's map pick already
-  re-derives the cap for teams (`maxPlayersForMap`); the team count is the roll's (L7).
+  `throne: true`: the Hegemon on, and Humans vs Nations never rolled (a throne is a third side
+  to neither). Lords sit out team rounds as they do in every team game (Tom's call, the same
+  day; the first build kept them, and the balance may bring them back). `throneGameConfig`
+  passes it for every throne and pins only the special throne to FFA. The winner's map pick
+  already re-derives the cap for teams (`maxPlayersForMap`).
+- **The split (L30, same day).** `throne_pick` carries `playerTeams`; the master accepts it on a
+  team throne when it is in `THRONE_TEAM_SPLITS` (`src/core/ThroneTeams.ts`, shared with the
+  client's chips) and rebuilds the patch with `MapPlaylist.throneTeamSplit` (the cap for the
+  split on the next round's map, the capacity rule applied). The win screen's panel shows one
+  chip per split on a team throne; none chosen keeps the roll. New string `throne.pick_teams`.
 - **Client.** The throne's dark-star look is its team colour (`PlayerView.computeColors`; the
   themes carry a `Hegemon` team colour for tags and the sidebar). The lobby roster shows the
   throne row and the seat badge in team mode and files only the challengers into the team
   preview, re-filing when the seat changes hands. The host, singleplayer and join modals no
   longer drop the seat or the timer outside FFA. The win screen tells the slayer's teammates
   "Your team won!" (L8: the win screen, not the seat). New string `throne.name_line_team`.
-- **Sim.** `HegemonSim --teams N` runs a team round.
+- **Sim.** `HegemonSim --teams N` runs a team round (Barons only, as in production).
 - **Tests.** `tests/HegemonTeamMode.test.ts` (9: the team of one, the split, Humans vs
   Nations, donations and alliances, the three round ends); `tests/server/HegemonSeat.test.ts`
   (the seat in a team game); `tests/server/MasterLobbyServiceThrones.test.ts` (a team line
-  rolls team games); `tests/server/MapPlaylistThrone.test.ts` (the throne roll vs the queue
-  fallback's); `tests/client/LobbyPlayerViewTeamThrone.test.ts`; `PlayerView.test.ts` updated.
+  rolls team games; the split applied with its cap, dropped on an FFA throne);
+  `tests/server/MapPlaylistThrone.test.ts` (the throne roll vs the queue fallback's; the cap
+  for a split); `tests/server/ThroneSeatClaim.test.ts` (the split forwarded);
+  `tests/ThroneTeams.test.ts`; `tests/client/LobbyPlayerViewTeamThrone.test.ts`;
+  `PlayerView.test.ts` updated.
 - **Open.** Private team lobbies now carry a throne too (G4; the host seats a player or the
   AI holds it). Team spawn areas on maps that define them ignore the throne, which never
-  spawns. Lords are a judgment call Tom may reverse (`nations: "default"` in the throne roll).
+  spawns. Lords in team rounds: off for now, revisited if the launch balance asks for them.
 
 ## 11. Tests
 
@@ -702,5 +712,7 @@ over the existing gathering state, plus `create` / `retire` actions).
 - **2026-10-10** — **T5 built: team thrones** (§10.6). The throne is a team of one in a team
   game, the round ends only through it, the seat holds in any mode, a team throne's round
   keeps the Lords and never rolls Humans vs Nations, and the team line opens at the same
-  floor as the others. Decisions taken in the build, for Tom to confirm: Lords stay in team
-  rounds; the slayer's teammates get the win screen, not the seat (L8 as written).
+  floor as the others. The slayer's teammates get the win screen, not the seat (L8 as written).
+  Tom, the same day: Lords sit out team rounds after all (the neater rule, revisited if the
+  launch balance asks), and the winner of a team throne sets the next round's team split
+  (**L30**): 2 to 7 teams or Duos, Trios, Quads, with the cap recomputed for it.

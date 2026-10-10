@@ -1,5 +1,10 @@
 import { GameMapType } from "../core/game/Game";
-import { ThroneInfo, ThroneSeatState, ThroneType } from "../core/Schemas";
+import {
+  TeamCountConfig,
+  ThroneInfo,
+  ThroneSeatState,
+  ThroneType,
+} from "../core/Schemas";
 import { ThroneModifier } from "../core/ThroneModifiers";
 import { ThroneRoundOutcome } from "./IPCBridgeSchema";
 
@@ -109,11 +114,12 @@ export interface ThroneObservation {
 }
 
 // The winner's answer (§5.5): the map, if they chose one, on a special
-// throne the modifiers, if they chose any (§5.4), and whether they keep the
-// seat.
+// throne the modifiers, if they chose any (§5.4), on a team throne the team
+// split, if they chose one (L30), and whether they keep the seat.
 export interface ThronePick {
   gameMap?: GameMapType;
   modifiers?: ThroneModifier[];
+  playerTeams?: TeamCountConfig;
   stay: boolean;
 }
 

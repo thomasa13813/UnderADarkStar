@@ -7,11 +7,13 @@ import {
   MAX_HOSTED_LOBBIES,
   PublicGameType,
   SCHEDULED_PUBLIC_GAME_TYPES,
+  TeamCountConfig,
 } from "../core/Schemas";
 import {
   ThroneModifier,
   validateThroneModifiers,
 } from "../core/ThroneModifiers";
+import { isThroneTeamSplit } from "../core/ThroneTeams";
 import {
   InternalGameInfo,
   InternalGameInfoSchema,
@@ -701,11 +703,26 @@ export class MasterLobbyService {
         });
       }
     }
+    // The team split is a team throne's to set (L30); elsewhere, or off the
+    // list, it is dropped and the rolled split stands.
+    let playerTeams: TeamCountConfig | undefined;
+    if (msg.playerTeams !== undefined) {
+      const team = this.thrones.get(msg.throneID)?.type === "team";
+      if (team && isThroneTeamSplit(msg.playerTeams)) {
+        playerTeams = msg.playerTeams;
+      } else {
+        this.log.warn("throne pick carried a team split it may not, dropping", {
+          throneID: msg.throneID,
+          playerTeams: msg.playerTeams,
+          team,
+        });
+      }
+    }
     const actions = this.thrones.pickReceived(
       msg.throneID,
       msg.gameID,
       msg.persistentID,
-      { gameMap, modifiers, stay: msg.stay },
+      { gameMap, modifiers, playerTeams, stay: msg.stay },
       Date.now(),
     );
     if (actions.length === 0) {
@@ -782,6 +799,7 @@ export class MasterLobbyService {
           this.log.info("throne pick applied", {
             gameID: action.gameID,
             gameMap: action.pick.gameMap,
+            playerTeams: action.pick.playerTeams,
             stay: action.pick.stay,
             reign: action.reign,
           });
@@ -814,18 +832,39 @@ export class MasterLobbyService {
   // The config patch for a pick. On an FFA throne: the map and the cap the
   // playlist would give it. On a special throne: the round rebuilt from the
   // map and the modifiers (the chosen ones, or the rolled ones kept when
-  // none were chosen). Nothing when nothing was chosen.
+  // none were chosen). On a team throne with a split chosen: the split and
+  // the cap for it on the map (chosen or kept). Nothing when nothing was
+  // chosen.
   private async pickedConfig(
     gameID: string,
     pick: ThronePick,
   ): Promise<Partial<GameConfig> | undefined> {
-    if (pick.gameMap === undefined && pick.modifiers === undefined) {
+    if (
+      pick.gameMap === undefined &&
+      pick.modifiers === undefined &&
+      pick.playerTeams === undefined
+    ) {
       return undefined;
     }
     const base = this.throneConfigs.get(gameID);
     const throne = this.thrones?.byGame(gameID);
     let patch: Partial<GameConfig>;
-    if (throne?.type === "special" && base !== undefined) {
+    if (
+      throne?.type === "team" &&
+      base !== undefined &&
+      pick.playerTeams !== undefined
+    ) {
+      const map = pick.gameMap ?? base.gameMap;
+      const split = await this.playlist.throneTeamSplit(
+        map,
+        base,
+        pick.playerTeams,
+      );
+      patch = {
+        ...(pick.gameMap !== undefined ? { gameMap: pick.gameMap } : {}),
+        ...split,
+      };
+    } else if (throne?.type === "special" && base !== undefined) {
       const map = pick.gameMap ?? base.gameMap;
       const modifiers =
         pick.modifiers ?? modifierKeysOf(base.publicGameModifiers);

@@ -102,6 +102,7 @@ const WorkerThronePickSchema = z.object({
   persistentID: z.string(),
   gameMap: z.string().optional(),
   modifiers: z.array(z.string()).optional(),
+  playerTeams: z.union([z.number(), z.string()]).optional(),
   stay: z.boolean(),
 });
 

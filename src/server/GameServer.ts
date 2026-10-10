@@ -1841,6 +1841,7 @@ export class GameServer {
       persistentID: client.persistentID,
       gameMap: msg.gameMap,
       modifiers: msg.modifiers,
+      playerTeams: msg.playerTeams,
       stay: msg.stay,
     });
   }

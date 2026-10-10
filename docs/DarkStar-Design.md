@@ -2061,9 +2061,9 @@ hydrogen-bomb removal (closed by S6).
 - **2026-10-10** — **Team thrones (T5).** The Hegemon round runs in team mode: the throne is a
   team of one (`ColoredTeams.Hegemon`) outside the team count, the round still ends only through
   it (R1, the team land-share win is off), the seat holds in any mode, and the Hegemon look is
-  the throne's team colour. The donation and alliance rules (H9) already held. Details and the
-  decisions taken in the build (Lords kept in team rounds, no Humans vs Nations) in the Lobbies
-  doc §10.6. `tests/HegemonTeamMode.test.ts`.
+  the throne's team colour. The donation and alliance rules (H9) already held. Lords sit out
+  team rounds as in every team game; no Humans vs Nations; the winner of a team throne sets
+  the next round's team split (Lobbies L30, §10.6). `tests/HegemonTeamMode.test.ts`.
 - **2026-10-09** — **The Hegemon's name stays home.** `placeName` pins the throne's name and troop
   count to the Dark Star's centre; a strike's bubble that outgrew the domain used to drag it out
   there, since the name follows the largest cluster by tile count. `tests/HegemonName.test.ts`.

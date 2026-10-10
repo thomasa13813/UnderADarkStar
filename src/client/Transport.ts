@@ -36,6 +36,7 @@ import {
   LiveStats,
   ReportReason,
   ServerMessage,
+  TeamCountConfig,
   Winner,
 } from "../core/Schemas";
 import { ThroneModifier } from "../core/ThroneModifiers";
@@ -247,6 +248,8 @@ export class SendThronePickEvent implements GameEvent {
     public readonly stay: boolean,
     // Special thrones only: the chosen modifiers; undefined keeps the rolled.
     public readonly modifiers?: ThroneModifier[],
+    // Team thrones only (L30): the chosen split; undefined keeps the rolled.
+    public readonly playerTeams?: TeamCountConfig,
   ) {}
 }
 
@@ -938,6 +941,7 @@ export class Transport {
       type: "throne_pick",
       gameMap: event.gameMap,
       modifiers: event.modifiers,
+      playerTeams: event.playerTeams,
       stay: event.stay,
     } satisfies ClientThronePickMessage);
   }

@@ -228,10 +228,10 @@ export class MapPlaylist {
       maxTimerValue: undefined,
       instantBuild: false,
       randomSpawn: false,
-      // Lords sit out upstream's team games; a throne round keeps them in
-      // every mode (the Hegemon round is paced around them, design doc §3.3).
+      // Lords sit out team games, throne rounds included (Tom, 2026-10-10:
+      // the neater rule; revisit if the balance feels off at launch).
       nations:
-        mode === GameMode.Team && playerTeams !== HumansVsNations && !throne
+        mode === GameMode.Team && playerTeams !== HumansVsNations
           ? "disabled"
           : "default",
       gameMode: mode,
@@ -895,6 +895,29 @@ export class MapPlaylist {
       config.gameMapSize === GameMapSize.Compact,
     );
     return this.adjustForTeams(cap, config.playerTeams);
+  }
+
+  // Under a Dark Star: a team throne winner's split (L30) on the map the
+  // next round will use, with the cap the playlist would roll for it. The
+  // capacity rule still applies: a fixed team count the map cannot give two
+  // players each falls back to as many teams as can be filled.
+  public async throneTeamSplit(
+    map: GameMapType,
+    config: GameConfig,
+    playerTeams: TeamCountConfig,
+  ): Promise<{ playerTeams: TeamCountConfig; maxPlayers: number }> {
+    const unadjusted = await this.lobbyMaxPlayers(
+      map,
+      GameMode.Team,
+      config.gameMapSize === GameMapSize.Compact,
+    );
+    const split =
+      this.adjustTeamCountForPlayerCapacity(playerTeams, unadjusted) ??
+      playerTeams;
+    return {
+      playerTeams: split,
+      maxPlayers: this.adjustForTeams(unadjusted, split),
+    };
   }
 
   private async lobbyMaxPlayers(

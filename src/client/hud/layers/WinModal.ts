@@ -8,12 +8,14 @@ import {
 import { EventBus } from "../../../core/EventBus";
 import { GameMapType } from "../../../core/game/Game";
 import { GameUpdateType } from "../../../core/game/GameUpdates";
+import { TeamCountConfig } from "../../../core/Schemas";
 import {
   THRONE_MAX_MODIFIERS,
   THRONE_MODIFIER_WHITELIST,
   ThroneModifier,
   throneModifiersConflict,
 } from "../../../core/ThroneModifiers";
+import { THRONE_TEAM_SPLITS } from "../../../core/ThroneTeams";
 import { ClientEnv } from "../../ClientEnv";
 import "../../components/map/MapPicker";
 import { Controller } from "../../Controller";
@@ -60,6 +62,8 @@ export class WinModal extends LitElement implements Controller {
   // Special thrones: the modifiers chosen so far (§5.4); none keeps the
   // lobby's rolled set.
   @state() private pickedModifiers: ThroneModifier[] = [];
+  // Team thrones: the split chosen (L30); undefined keeps the lobby's.
+  @state() private pickedTeams: TeamCountConfig | undefined = undefined;
   // Repaints the window bar once a second while the panel is up.
   @state() private windowTick = 0;
   private windowTimer: number | null = null;
@@ -164,6 +168,7 @@ export class WinModal extends LitElement implements Controller {
     };
     this.pickedMap = undefined;
     this.pickedModifiers = [];
+    this.pickedTeams = undefined;
     this.pickSent = false;
     this.windowTimer ??= window.setInterval(() => {
       this.windowTick++;
@@ -185,14 +190,15 @@ export class WinModal extends LitElement implements Controller {
   private answer(stay: boolean) {
     if (this.throne === null || this.pickSent) return;
     this.pickSent = true;
-    const special = currentThrone()?.type === "special";
+    const type = currentThrone()?.type;
     this.eventBus.emit(
       new SendThronePickEvent(
         this.pickedMap,
         stay,
-        special && this.pickedModifiers.length > 0
+        type === "special" && this.pickedModifiers.length > 0
           ? [...this.pickedModifiers]
           : undefined,
+        type === "team" ? this.pickedTeams : undefined,
       ),
     );
     // Give the socket a moment to flush the pick before the page unloads.
@@ -217,6 +223,40 @@ export class WinModal extends LitElement implements Controller {
     if (this.pickedModifiers.some((m) => throneModifiersConflict(m, modifier)))
       return;
     this.pickedModifiers = [...this.pickedModifiers, modifier];
+  }
+
+  // Team thrones only (L30): one chip per allowed split, one on at most;
+  // clicking the chosen one again keeps the lobby's roll.
+  private renderTeamChips() {
+    if (currentThrone()?.type !== "team") return nothing;
+    return html`
+      <div class="flex flex-col gap-1.5" data-throne-teams>
+        <span class="text-xs text-white/60"
+          >${translateText("throne.pick_teams")}</span
+        >
+        <div class="flex flex-wrap gap-1.5">
+          ${THRONE_TEAM_SPLITS.map((split) => {
+            const on = this.pickedTeams === split;
+            return html`<button
+              type="button"
+              class="rounded px-2 py-1 text-xs font-bold tracking-widest uppercase transition ${on
+                ? "bg-malibu-blue text-white"
+                : "bg-white/10 text-white/80 hover:bg-white/20"}"
+              ?disabled=${this.pickSent}
+              aria-pressed=${on ? "true" : "false"}
+              data-team-split=${String(split)}
+              @click=${() => {
+                this.pickedTeams = on ? undefined : split;
+              }}
+            >
+              ${typeof split === "number"
+                ? translateText("public_lobby.teams", { num: split })
+                : translateText(`host_modal.teams_${split}`)}
+            </button>`;
+          })}
+        </div>
+      </div>
+    `;
   }
 
   // Special thrones only: one chip per whitelisted modifier, up to two on,
@@ -302,7 +342,7 @@ export class WinModal extends LitElement implements Controller {
           : html`<p class="text-xs text-white/60">
                 ${translateText("throne.pick_hint")}
               </p>
-              ${this.renderModifierChips()}
+              ${this.renderModifierChips()} ${this.renderTeamChips()}
               <div class="max-h-[40vh] overflow-y-auto custom-scrollbar pr-1">
                 <map-picker
                   .selectedMap=${this.pickedMap ?? GameMapType.EventHorizon}
