@@ -183,6 +183,19 @@ export const UserMeResponseSchema = z.object({
     .optional(),
   player: z.object({
     publicId: z.string(),
+    // Under a Dark Star (docs/DarkStar-Accounts.md §5.4, §6): the account's
+    // numbers. `reigns` is every round won (thrones taken plus rounds held);
+    // `longestReign` the most consecutive wins on one throne. Optional so an
+    // API that predates the results ingest still parses.
+    reigns: z
+      .object({
+        reigns: z.number().int().min(0),
+        longestReign: z.number().int().min(0),
+        thronesTaken: z.number().int().min(0),
+        roundsHeld: z.number().int().min(0),
+        gamesPlayed: z.number().int().min(0),
+      })
+      .optional(),
     adfree: z.boolean(),
     // True when the player's active subscription tier exempts them from the
     // free-ranked-play limits.

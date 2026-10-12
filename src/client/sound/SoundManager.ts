@@ -1,5 +1,4 @@
 import { Howl } from "howler";
-import { assetUrl } from "../../core/AssetUrls";
 import { EventBus } from "../../core/EventBus";
 import { AudioMixer, PlayableCategory } from "./AudioMixer";
 import {
@@ -13,12 +12,12 @@ import {
 const AMBIENCE_FADE_MS = 500;
 
 /**
- * The audio a running game owns: the looping gameplay track and the structure
- * ambience. Cue playback, channel volumes and the concurrency budgets all live
- * in AudioMixer, which outlives any one game.
+ * The audio a running game owns: the structure ambience. Cue playback, channel
+ * volumes and the concurrency budgets all live in AudioMixer, and the music in
+ * Soundtrack; both outlive any one game, so a round starting or ending never
+ * cuts the music.
  */
 export class SoundManager {
-  private backgroundMusic: Howl | null = null;
   private ambienceTracks = new Map<AmbienceTrack, Howl>();
   private currentAmbience: AmbienceTrack | null = null;
   private fadingOut = new Set<Howl>();
@@ -31,23 +30,6 @@ export class SoundManager {
     private readonly eventBus: EventBus,
     private readonly mixer: AudioMixer,
   ) {
-    this.safely("initialize background music", () => {
-      // One track that keeps looping — including through the victory and
-      // defeat cues — so a game never hard-cuts to silence, per the sound
-      // designer's note. The menu theme (MenuMusic.ts) covers the home page.
-      this.backgroundMusic = new Howl({
-        src: [assetUrl("sounds/music/gameplay.mp3")],
-        loop: true,
-        volume: 0,
-        // Stream it. Howler's default Web Audio path XHRs the whole file and
-        // decodes it to PCM before the first note, and this track is 4.6 MB,
-        // so play() queued behind tens of seconds of silence at game start on
-        // a slow connection. Cues and ambience stay on Web Audio.
-        html5: true,
-      });
-      this.mixer.register(this.backgroundMusic, "music");
-    });
-
     this.onPlaySoundEffect = (e) => this.mixer.play(e.effect);
     this.onSetAmbience = (e) => this.setAmbience(e.track, e.gain);
     eventBus.on(PlaySoundEffectEvent, this.onPlaySoundEffect);
@@ -64,13 +46,6 @@ export class SoundManager {
     this.eventBus.off(PlaySoundEffectEvent, this.onPlaySoundEffect);
     this.eventBus.off(SetAmbienceEvent, this.onSetAmbience);
     this.stopFollowingVolume();
-    if (this.backgroundMusic !== null) {
-      const music = this.backgroundMusic;
-      this.mixer.unregister(music);
-      this.safely("stop background music", () => music.stop());
-      this.safely("unload background music", () => music.unload());
-      this.backgroundMusic = null;
-    }
     this.ambienceTracks.forEach((sound) => {
       this.safely("stop ambience track", () => sound.stop());
       this.safely("unload ambience track", () => sound.unload());
@@ -87,18 +62,6 @@ export class SoundManager {
     } catch (err) {
       console.error(`SoundManager: failed to ${action}`, err);
     }
-  }
-
-  public playBackgroundMusic(): void {
-    this.safely("play background music", () => {
-      if (this.backgroundMusic !== null && !this.backgroundMusic.playing()) {
-        this.backgroundMusic.play();
-      }
-    });
-  }
-
-  public stopBackgroundMusic(): void {
-    this.safely("stop background music", () => this.backgroundMusic?.stop());
   }
 
   /** Kept for callers that still reach for it; the mixer owns cue playback. */

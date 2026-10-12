@@ -12,6 +12,7 @@ import {
   PartialGameRecord,
   PlayerRecord,
   PlayerReport,
+  RecordThrone,
   Tribe,
   Turn,
   Winner,
@@ -306,6 +307,10 @@ export function createPartialGameRecord(
   // Player reports filed during the game (multiplayer only; see
   // GameServer.handleReport). The API ingests them for moderation.
   reports?: PlayerReport[],
+  // Under a Dark Star: the public throne the round was played for, if any
+  // (docs/DarkStar-Accounts.md §5.2). The API's results ingest records a
+  // round only when this is set.
+  throne?: RecordThrone,
 ): PartialGameRecord {
   const duration = Math.floor((end - start) / 1000);
   const num_turns = allTurns.length;
@@ -335,6 +340,8 @@ export function createPartialGameRecord(
       winner,
       tribes,
       reports,
+      // Added only when set, so records of non-throne games keep their shape.
+      ...(throne !== undefined ? { throne } : {}),
     },
     version: "v0.0.2",
     turns,

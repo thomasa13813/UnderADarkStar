@@ -185,8 +185,11 @@ friends is possible.
 
 ### Stage 4 — The leaderboard and special thrones
 
-- [ ] **B4** Results: the record additions, ingest, reigns and longest reign (M).
-- [ ] **B5** The leaderboard page, the account panel's numbers, the win-screen prompt (M).
+- [x] **B4** Results: the record additions, ingest, reigns and longest reign (M). Built
+      2026-10-11 (Accounts doc §12.4) on `feat/team-thrones`, with the account panel's numbers
+      from B5; live once that branch is deployed.
+- [ ] **B5** The leaderboard page, ~~the account panel's numbers~~ (with B4), the win-screen
+      prompt (M).
 - [x] **T4** Special thrones: the modifier whitelist and picker (S). Built 2026-10-03 (Lobbies doc
       §10.4), ahead of Stage 3 at Tom's request.
 
@@ -198,8 +201,9 @@ _Done when_ a reign won on the live server appears on the live board.
       reach the moat) and played once by Tom. Accepted by Tom 2026-10-04 with the map kit (Stage
       1). Still open: which inherited maps to remove (Stage 0 / §6.3); one config edit when he
       decides.
-- [ ] **Sound** (P4): the menu theme and gameplay music replacing the silent placeholders, the new
-      cues wired, the four orphan files resolved, every sound credited.
+- [ ] **Sound** (P4): ~~the menu theme and gameplay music replacing the silent placeholders~~
+      (Tom's five-track soundtrack, 2026-10-12), the new cues wired, the four orphan files
+      resolved, every sound credited (the soundtrack is).
 - [ ] **Brand** (P1 step E): ~~font~~ (Tektur, 2026-10-07), logo, wordmark, favicon and the
       home-screen title. Decided 2026-10-07: the January Games wreath wordmark stays as the
       studio mark; the game's working mark is the black disc with a purple border (the
@@ -288,6 +292,13 @@ _Done when_ the checklist is clean. This build is the release candidate.
 
 ## 7. Changelog
 
+- **2026-10-12** — **Soundtrack in** (Design §11): Tom's five AI-generated tracks replace the silent
+  placeholders and cycle with crossfades through the whole session (`Soundtrack.ts`). Stage 5's
+  sound item keeps only the new cues, the orphan files and the game-start alert.
+- **2026-10-11** — **B4 built** on `feat/team-thrones` (Accounts doc §12.4): a public throne
+  round's result now reaches the API and the winner's reigns and longest reign show in the
+  account panel. The Sign in menu's promise holds once the branch is deployed. The leaderboard
+  page and the win-screen prompt remain B5.
 - **2026-10-11** — **Launch-lines client built** on `feat/team-thrones` (Lobbies §10.7): the
   win screen's stay-or-join-the-head choice, the place in line in the lobby and the browser,
   the rulebook line. The branch type-checks again (the throne test's mock lacked

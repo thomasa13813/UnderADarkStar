@@ -69,7 +69,7 @@ import {
 } from "./Utils";
 import { isReplayShellHost } from "./VersionedReplay";
 import { initAudioMixer } from "./sound/AudioMixer";
-import { startMenuMusic } from "./sound/MenuMusic";
+import { initSoundtrack } from "./sound/Soundtrack";
 import {
   installCtrlWheelZoomBlocker,
   installDoubleTapZoomBlocker,
@@ -147,7 +147,6 @@ declare global {
     "session-cleared": CustomEvent;
     "leave-lobby": CustomEvent;
     "game-starting": CustomEvent;
-    "menu-restored": CustomEvent;
     "update-game-config": CustomEvent;
   }
 }
@@ -225,9 +224,10 @@ class Client {
 
     flushReloadToast();
 
-    // One mixer for the page: the menu theme here and the SoundManager a game
-    // creates later both route through it, so the volume sliders reach both.
-    startMenuMusic(initAudioMixer(this.userSettings));
+    // One mixer and one soundtrack for the page: the music plays on through
+    // the lobby and the game, and the SoundManager a game creates later
+    // routes through the same mixer, so the volume sliders reach everything.
+    initSoundtrack(initAudioMixer(this.userSettings));
 
     // Register modals with the URL router. Lobby modals (join/host) are
     // intentionally omitted — they own their own URL state (path-based).
@@ -904,11 +904,6 @@ class Client {
     if (menuChromeIsTornDown()) {
       this.gameModeSelector?.start();
       restoreMenuChrome();
-      // The counterpart to "game-starting", and the only signal that the home
-      // page is live again without a navigation. MenuMusic tore its gesture
-      // listeners down at prestart and needs them back, or the menu theme is
-      // silent for the rest of the session.
-      document.dispatchEvent(new CustomEvent("menu-restored"));
     }
 
     if (this.joinModal.isOpen()) {

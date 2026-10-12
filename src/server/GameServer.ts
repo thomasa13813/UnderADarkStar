@@ -40,6 +40,7 @@ import {
   PlayerRecord,
   PlayerReport,
   PublicGameType,
+  RecordThrone,
   ServerDesyncSchema,
   ServerErrorMessage,
   ServerLobbyInfoMessage,
@@ -2116,13 +2117,19 @@ export class GameServer {
         if (stats === undefined) {
           this.log.warn(`Unable to find stats for clientID ${player.clientID}`);
         }
+        const client = this.clients.get(player.clientID);
         return {
           clientID: player.clientID,
           username: player.username,
           clanTag: player.clanTag,
-          persistentID: this.clients.get(player.clientID)?.persistentID ?? "",
+          persistentID: client?.persistentID ?? "",
           stats,
           cosmetics: player.cosmetics,
+          // Under a Dark Star (Accounts §5.2): joined with a signed account
+          // token, so the results ingest may credit this persistentID. A
+          // guest's browser ID carries no claims, and the field is left
+          // out rather than written false, so older records read the same.
+          ...(client?.claims ? { verified: true } : {}),
           // Simulation inputs: teamIndex pins matchmade teams, friends bias
           // team grouping, isLobbyCreator gates host cheats, isHegemon seats
           // the Hegemon. Replays rebuild
@@ -2149,11 +2156,40 @@ export class GameServer {
         this.visibleAt,
         this.gameStartInfo.tribes,
         [...this.reports.values()],
+        this.recordThrone(),
       ),
     );
     if (this.throneAssignment !== null) {
       this.deps.throneRound(this.throneRoundReport(winner?.winner));
     }
+  }
+
+  // Under a Dark Star (Accounts §5.2): the throne block of a throne round's
+  // record. reignBefore is the reign the player seated as Hegemon brought
+  // in: the heir's reign when the heir took the seat, 0 when a claimant did
+  // (the heir never came, or stepped down) or when the AI held it. The
+  // registry applies the same distinction when it extends a reign
+  // (ThroneRegistry.roundEnded), so the board and the screen agree.
+  private recordThrone(): RecordThrone | undefined {
+    const t = this.throneAssignment;
+    if (t === null) return undefined;
+    const hegemon = this.gameStartInfo.players.find(
+      (p) => p.isHegemon === true,
+    );
+    const hegemonID =
+      hegemon === undefined
+        ? undefined
+        : this.clients.get(hegemon.clientID)?.persistentID;
+    const heirSeated =
+      hegemonID !== undefined &&
+      t.heir !== undefined &&
+      t.heir.persistentID === hegemonID;
+    return {
+      throneID: t.throneID,
+      name: t.name,
+      type: t.type,
+      reignBefore: heirSeated ? t.reign : 0,
+    };
   }
 
   // A player reporting another. The API resolves both clientIDs through this

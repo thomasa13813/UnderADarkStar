@@ -5,7 +5,7 @@
 > decisions of that day; rows marked **Proposed** are recommendations waiting for his review (§15).
 > Companion to `DarkStar-Roadmap.md` phase P5, which this document expands and supersedes, and to
 > `DarkStar-Lobbies.md` (thrones, seats, reigns). Where it sits in the order of work is in
-> `DarkStar-Launch.md`. B1 (2026-10-03, §12.1), B2 (2026-10-07, §12.2) and B3 (2026-10-07, §12.3) are built; B4–B7 are not. Changelog at the end.
+> `DarkStar-Launch.md`. B1 (2026-10-03, §12.1), B2 (2026-10-07, §12.2), B3 (2026-10-07, §12.3) and B4 (2026-10-11, §12.4, with the account panel's numbers from B5) are built; B5–B7 are not. Changelog at the end.
 
 ## 1. Goals
 
@@ -179,10 +179,17 @@ Both are optional fields, so old records and private games still parse.
 3. If the game is not a public throne round, stop. Private lobbies and solo games are not
    recorded.
 4. Work out the outcome: `overthrown` (the winner is a player who was not the Hegemon), `timer`
-   (the winner is the Hegemon), `void` (no winner).
+   (the winner is the Hegemon), `ai` (a nation won: the AI Hegemon held the round, or a nation
+   landed the killing blow), `void` (no winner). `ai` and `void` are recorded as rounds and credit
+   nobody; the registry reports the same four outcomes.
 5. Write one `rounds` row, and one `round_players` row per verified player.
 6. Update the winner's stats, if the winner is verified (§5.4). All of 5 and 6 happen in one
    transaction.
+
+A verified flag counts only while the account behind it exists and is not deleted; anything else
+is treated as a guest. The answer is 201 for a recorded round, 202 for a record kept without a
+round (private, solo, or no throne block), 200 for a repeat, 400 for a record that does not parse
+(the game server validated it before posting, so that is version skew, logged, never stored).
 
 ### 5.4 The numbers
 
@@ -484,6 +491,50 @@ in Tom's `.env` and are exercised at H5.
   server reaching the API by its public name from inside the container (an internal origin
   setting would save the round trip through Cloudflare; decide at H2).
 
+### 12.4 As built: B4 (2026-10-11)
+
+The results ingest, as code on `feat/team-thrones`, with the account panel's numbers pulled
+forward from B5 so the Sign in menu's promise ("have your reigns recorded") holds at the friends
+test. Tom confirmed the same day: only public throne rounds count; on a team throne the reign
+goes to the player who landed the killing blow and teammates get nothing; seats and reigns
+surviving a restart stay B7.
+
+- **`src/core/Reign.ts`**: `nextReign(outcome, reignBefore)` (§5.4), the one rule for the
+  number on screen and on the board; `ThroneRegistry.roundEnded` now calls it with the
+  holder's reign (0 for anyone but the sitting holder). Outcomes are the registry's four.
+- **Record (§5.2)**: `RecordThroneSchema` (`throneID`, `name`, `type`, `reignBefore`) as
+  `info.throne`, and `verified` on each player record, both optional and written only when
+  set, so the records of other games and the wire transcript are unchanged.
+  `GameServer.archiveGame` writes `verified: true` for a client whose token carried claims,
+  and `recordThrone()` sets `reignBefore` to the assignment's reign when the heir is the
+  seated Hegemon and 0 otherwise (a claimant, or the AI), the same distinction the registry
+  makes when it extends a reign.
+- **API**: `Records.ts` (`RecordStore`: one gzip file per game under `<DATA_DIR>/records`,
+  written PII-scrubbed, pruned past 30 days at boot and hourly by `Server.ts`; the game ID
+  is validated before it touches a path). `Results.ts` (`ingestRecord`: the steps of §5.3 in
+  one transaction, idempotent on the game ID, credit only to verified players whose account
+  exists; `statsFor`; `rebuildStats`, the §5.5 recompute, which also drops a deleted
+  account). `ResultRoutes.ts` (`POST /game/:id` with its own 64 MB body limit, since a
+  record carries every turn; `GET /game/:id` serving the kept record, cacheable for five
+  minutes, 404 after pruning). `npm run api:rebuild-stats` runs the recompute against the
+  configured `DATA_DIR`.
+- **Account panel**: `/users/@me` gains `player.reigns` (`reigns`, `longestReign`,
+  `thronesTaken`, `roundsHeld`, `gamesPlayed`; optional in `UserMeResponseSchema`), and
+  `AccountButton` shows reigns and longest reign with the split beneath, falling back to the
+  "numbers soon" line against an API without the field.
+- **Tests**: `tests/api/Ingest.test.ts` (refusals; a challenger overthrowing a signed-in
+  Hegemon; timer wins extending a reign and a loss leaving the longest reign standing; the
+  "done when" sequence of three rounds with a guest winner and a void round; an AI win; a
+  verified flag with no account behind it; the repeat post; private, solo and throne-less
+  records kept but not recorded; a 3 MB record; the scrubbed read-back; 404s for unknown, bad
+  and pruned IDs; the rebuild with a deleted account), `tests/core/NextReign.test.ts`,
+  `tests/server/ArchivePlayerRecord.test.ts` (the `verified` flag; `reignBefore` for the
+  heir, a claimant and the AI; no block on a non-throne game). The harness's `makeClient`
+  takes `claims`.
+- **Not yet**: the leaderboard endpoint and page and the win-screen prompt (B5); a retry
+  when the API is down at round end (§14); a `rounds` row for a round whose record never
+  arrived.
+
 ## 13. Tests
 
 API tests run against an in-memory database, under `tests/api/`, added to `npm test`.
@@ -492,9 +543,10 @@ API tests run against an in-memory database, under `tests/api/`, added to `npm t
   refused; logout and revoke; an expired session.
 - `Jwks.test.ts`: a token the API issues passes `verifyClientToken`; a guest ID passes in
   production as a guest; a forged token fails.
-- `Ingest.test.ts`: every row of §5.4; unverified winners; idempotent repeat; private and solo
-  records ignored; a wrong API key.
-- `NextReign.test.ts` (core): the three outcomes.
+- `Ingest.test.ts` (built, §12.4): every row of §5.4; unverified winners; idempotent repeat;
+  private and solo records kept but not recorded; a wrong API key; the read-back and the
+  pruning; the rebuild.
+- `NextReign.test.ts` (core, built): the four outcomes.
 - `Leaderboard.test.ts`: ordering and ties; banned and deleted accounts absent; the caller's own
   row.
 - `Account.test.ts`: rename rules and the wait; deletion erases sign-ins and sessions and
@@ -531,6 +583,12 @@ API tests run against an in-memory database, under `tests/api/`, added to `npm t
 
 ## 16. Changelog
 
+- **2026-10-11** — **B4 built** (§12.4): the throne block and `verified` on the record,
+  `nextReign` in core shared with the registry, the ingest into `rounds`, `round_players` and
+  `stats`, kept records with 30-day pruning, the rebuild script, and the account panel's numbers
+  (from B5). Tom confirmed: only public throne rounds count; team-throne reigns go to the
+  killing blow alone; persisting seats across restarts stays B7. §5.3 names the `ai` outcome
+  and the response codes.
 - **2026-10-07** — **B3 built and audited** (§12.3): `join_verify` with Turnstile and the name
   filter, the stub endpoints, A20 in the client, the API as a third program in the container
   with a `/data` volume. The production-mode container played a game with an account and a

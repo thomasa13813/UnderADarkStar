@@ -285,9 +285,7 @@ export class AccountButton extends LitElement {
               </div>`
             : nothing}
         </div>
-        <p class="px-3 pb-2 text-xs text-white/50">
-          ${translateText("account.numbers_soon")}
-        </p>
+        ${this.renderNumbers(me)}
         <div class="my-1 h-px bg-white/10"></div>
         <button
           type="button"
@@ -306,6 +304,47 @@ export class AccountButton extends LitElement {
         >
           ${translateText("account.sign_out_everywhere")}
         </button>
+      </div>
+    `;
+  }
+
+  // The account's numbers (Accounts §6): reigns and longest reign as the
+  // board shows them, the split beneath. An API without the results ingest
+  // sends none, and the panel says the numbers are still to come.
+  private renderNumbers(me: UserMeResponse): TemplateResult {
+    const n = me.player.reigns;
+    if (n === undefined) {
+      return html`<p class="px-3 pb-2 text-xs text-white/50">
+        ${translateText("account.numbers_soon")}
+      </p>`;
+    }
+    return html`
+      <div id="account-numbers" class="px-3 pb-2">
+        <div class="flex gap-4">
+          <div>
+            <div class="text-lg font-semibold leading-tight text-white">
+              ${n.reigns}
+            </div>
+            <div class="text-[11px] uppercase tracking-wider text-white/50">
+              ${translateText("account.reigns")}
+            </div>
+          </div>
+          <div>
+            <div class="text-lg font-semibold leading-tight text-white">
+              ${n.longestReign}
+            </div>
+            <div class="text-[11px] uppercase tracking-wider text-white/50">
+              ${translateText("account.longest_reign")}
+            </div>
+          </div>
+        </div>
+        <div class="mt-1 text-xs text-white/50">
+          ${translateText("account.numbers_split", {
+            taken: n.thronesTaken,
+            held: n.roundsHeld,
+            played: n.gamesPlayed,
+          })}
+        </div>
       </div>
     `;
   }

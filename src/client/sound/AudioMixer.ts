@@ -146,12 +146,13 @@ export class AudioMixer {
    * It covers the cue channels and ambience, and NOT the music. Howler has no
    * createMediaElementSource anywhere in it -- the only connection into the
    * graph is the Web Audio path -- so an html5 Howl plays straight out of its
-   * media element and past all of this. Both music tracks are html5 now, by
+   * media element and past all of this. The soundtrack's tracks are html5 by
    * design, so that they stream instead of decoding megabytes up front.
    *
    * That gap is acceptable and worth being explicit about rather than letting
    * the name imply otherwise. The music is a mastered stereo bounce already
-   * carrying a -1 dB trim and only ever one track plays at a time; the summing
+   * carrying a -1 dB trim, and the only time two tracks sound at once is the
+   * equal-power crossfade between them, which holds the sum flat; the summing
    * risk was always the cue layer, where the per-channel budgets allow up to
    * 16 voices at once with nothing holding the sum down.
    *

@@ -250,7 +250,7 @@ describe("stub routes", () => {
     expect(TribeSchema.array().safeParse(tribes.tribes).success).toBe(true);
   });
 
-  it("accepts and discards archives, and has no record to read back", async () => {
+  it("accepts and discards solo archives; game records need the key (the ingest is Ingest.test.ts)", async () => {
     const solo = await fetch(`${h.base}/archive_singleplayer_game`, {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -258,22 +258,12 @@ describe("stub routes", () => {
     });
     expect(solo.status).toBe(202);
 
-    const noKey = await fetch(`${h.base}/game/abc123`, {
+    const noKey = await fetch(`${h.base}/game/abc12345`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ info: { gameID: "abc123" } }),
+      body: JSON.stringify({ info: { gameID: "abc12345" } }),
     });
     expect(noKey.status).toBe(401);
-    const withKey = await fetch(`${h.base}/game/abc123`, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "x-api-key": "shared-key",
-      },
-      body: JSON.stringify({ info: { gameID: "abc123" } }),
-    });
-    expect(withKey.status).toBe(202);
-    expect(h.log.info).toHaveBeenCalledWith(expect.stringContaining("abc123"));
-    expect((await fetch(`${h.base}/game/abc123`)).status).toBe(404);
+    expect((await fetch(`${h.base}/game/abc12345`)).status).toBe(404);
   });
 });

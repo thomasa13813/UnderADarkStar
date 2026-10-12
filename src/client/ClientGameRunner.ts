@@ -91,6 +91,7 @@ import {
 import { ALL_UNIT_TYPES, UnitState } from "./render/types";
 import { audioMixer, initAudioMixer } from "./sound/AudioMixer";
 import { SoundManager } from "./sound/SoundManager";
+import { initSoundtrack, soundtrack } from "./sound/Soundtrack";
 import { themeProvider } from "./theme/ThemeProvider";
 import { GameView, PlayerView, UnitView } from "./view";
 
@@ -716,12 +717,11 @@ async function createClientGame(
   inputOverlay.style.touchAction = "none";
   document.body.appendChild(inputOverlay);
 
-  // Main.ts creates the mixer on page load; fall back for entry points that
-  // start a game without it (tests, embedded shells).
-  const soundManager = new SoundManager(
-    eventBus,
-    audioMixer() ?? initAudioMixer(userSettings),
-  );
+  // Main.ts creates the mixer and the soundtrack on page load; fall back for
+  // entry points that start a game without them (tests, embedded shells).
+  const mixer = audioMixer() ?? initAudioMixer(userSettings);
+  if (soundtrack() === null) initSoundtrack(mixer);
+  const soundManager = new SoundManager(eventBus, mixer);
   try {
     // Resolve render settings (defaults + user overrides) up front so the
     // renderer is built with the final values — no construct-with-defaults,
@@ -946,7 +946,9 @@ export class ClientGameRunner {
   }
 
   public start() {
-    this.soundManager.playBackgroundMusic();
+    // A no-op when the home page's first click already started it; a game
+    // opened by URL starts the soundtrack here instead.
+    soundtrack()?.play();
     console.log("starting client game");
 
     this.isActive = true;

@@ -428,10 +428,14 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   Star or a stargate — the opening, strikes and gate shots), `landing` (those troops coming down),
   `missile` (a nuke leaving a stargate; distinct from `launch` so the ear tells a missile from an
   invasion). The atom/hydrogen/MIRV launch cues are no longer played; the hit cues remain (§6.12
-  and §6.9 notes). **Before any public release:** the remaining effects verified (the repo carries
-  37 effect files that `Sounds.ts`
-  plays, so silence in play is a bug to diagnose, not missing assets) and a unique, legally
-  compliant soundtrack replacing the proprietary music (§8).
+  and §6.9 notes). **Soundtrack** [Built 2026-10-12]: five tracks of Tom's own (AI-generated,
+  shipped under `resources/`' CC BY-SA, credited in `CREDITS.md`) replace the silent placeholders.
+  They play as one cycle for the whole session, home page, lobby and game alike, each track
+  crossfading into the next over four seconds and the last wrapping to the first
+  (`src/client/sound/Soundtrack.ts`); the old split into a looping menu theme and a looping
+  gameplay track is gone, so nothing cuts when the map appears. **Before any public release:** the
+  remaining effects verified (the repo carries 37 effect files that `Sounds.ts` plays, so silence
+  in play is a bug to diagnose, not missing assets).
 - **S9 — Map library.** [Decided 2026-09-24] Launch with **10–20 galaxy maps** authored around the
   Dark Star; Event Horizon is the first and `scripts/generateGalaxyMap.ts` the tool. Most or all
   existing maps — the Earth-geography ones in particular — are removed, decided map by map (F17).
@@ -646,8 +650,8 @@ persistence was OpenFront's closed-source API, which we do not have.
   wire/replay format).
 - **Names:** Baron names from `resources/tribeNameThemes.json` (a `space` theme exists); anonymised
   player names in `src/core/AnonNames.ts` (guarded by a word-distance test).
-- **Audio:** Howler; effects in `resources/sounds/`, registry in `src/client/sound/Sounds.ts`. Music is
-  in `proprietary/` and must be replaced (§8).
+- **Audio:** Howler; effects in `resources/sounds/`, registry in `src/client/sound/Sounds.ts`; the
+  soundtrack's track list and player in `src/client/sound/Soundtrack.ts` (S8).
 
 ## 6. Likely touch points for the Hegemon role
 
@@ -2058,6 +2062,15 @@ hydrogen-bomb removal (closed by S6).
 
 ## 11. Changelog
 
+- **2026-10-12** — **The soundtrack (S8).** Tom supplied five AI-generated tracks (_The Hegemon_,
+  _Dark Expanse_, _Whispers of Rebellion_, _Throne of Stars_, _The Fall_); they live in
+  `resources/sounds/music/` under CC BY-SA with the rest of the folder and the silent placeholders
+  are gone. One player for the page (`Soundtrack.ts`) replaces `MenuMusic.ts` and the gameplay loop
+  in `SoundManager`: the tracks cycle in order with a four-second equal-power crossfade, the first
+  opens on the dB ramp the menu theme used, the next track buffers while the current one plays,
+  and the music runs on through the lobby and the game rather than fading at prestart. A track
+  that will not load is skipped; a blocked autoplay re-arms the gesture. OpenFront's own music was
+  never in the repository (§8), so there was nothing of theirs to remove.
 - **2026-10-10** — **"Water nukes" are "Void missiles"** in every player-facing label (lobby option and
   public-game badge, `resources/lang/en.json`). The mechanic is unchanged (land becomes deep space
   where the warhead lands); only the wording follows the setting. Code keys stay `waterNukes` /

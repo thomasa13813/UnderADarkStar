@@ -131,7 +131,7 @@ function makeRunner(overrides: {
     } as never,
     { start: vi.fn(), sendTurn: vi.fn(), cleanup: vi.fn() } as never,
     gameView as never,
-    { playBackgroundMusic: vi.fn(), dispose: vi.fn() } as never,
+    { dispose: vi.fn() } as never,
     { goToPlayer: () => false } as never,
   );
   runner.start();

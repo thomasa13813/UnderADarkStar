@@ -104,6 +104,9 @@ export function makeMockWs(): MockWs {
 export interface ClientOpts {
   clientID?: string;
   persistentID?: string;
+  // A signed account token's claims: a verified player. Null (the default)
+  // is a guest.
+  claims?: Client["claims"];
   role?: string | null;
   ip?: string;
   username?: string;
@@ -129,7 +132,7 @@ export function makeClient(opts: ClientOpts = {}): Client {
   return new Client(
     clientID,
     opts.persistentID ?? `${clientID}-pid`,
-    null,
+    opts.claims ?? null,
     opts.role ?? null,
     undefined,
     opts.ip ?? `10.0.${Math.floor(n / 256)}.${n % 256}`,

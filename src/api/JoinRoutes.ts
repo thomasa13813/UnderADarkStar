@@ -150,18 +150,8 @@ export function mountJoinRoutes(app: Express, deps: JoinDeps): void {
     res.status(202).json({ ok: true });
   });
 
-  // A finished multiplayer game from the game server (Archive.archive).
-  // Accepted and discarded until B4 ingests it into rounds; logged so the
-  // audit can see the call arrive. Nothing is stored, so GET answers 404
-  // (the preview route and the client's lookup both treat that as "no
-  // record").
-  app.post("/game/:id", requireApiKey, (req, res) => {
-    log.info(`game record received for ${req.params.id} (not stored until B4)`);
-    res.status(202).json({ ok: true });
-  });
-  app.get("/game/:id", (_req, res) => {
-    res.status(404).json({ error: "not found" });
-  });
+  // A finished multiplayer game from the game server (Archive.archive) is
+  // ResultRoutes.ts (B4).
 
   if (config.env !== GameEnv.Dev && config.turnstileSecret === null) {
     // Unreachable: Config.ts refuses the boot. Kept as a guard for a

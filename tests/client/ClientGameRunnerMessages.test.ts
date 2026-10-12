@@ -151,7 +151,7 @@ function makeStartedRunner(withStartInfo: boolean) {
     myPlayer: () => null,
     update: vi.fn(),
   };
-  const soundManager = { playBackgroundMusic: vi.fn(), dispose: vi.fn() };
+  const soundManager = { dispose: vi.fn() };
   const userSettings = { goToPlayer: () => false };
 
   const runner = new ClientGameRunner(

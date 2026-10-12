@@ -1,4 +1,5 @@
 import { GameMapType } from "../core/game/Game";
+import { nextReign } from "../core/Reign";
 import {
   TeamCountConfig,
   ThroneInfo,
@@ -398,12 +399,12 @@ export class ThroneRegistry {
       throne.phase = "deciding";
       throne.emptySince = null;
       // A timer win extends the sitting holder's reign; a slayer, or a
-      // claimant who held the timer, starts one (§3.1).
-      throne.pendingReign =
-        outcome === "timer" &&
-        previousHolder?.persistentID === winner.persistentID
-          ? throne.reign + 1
-          : 1;
+      // claimant who held the timer, starts one (§3.1). The rule itself is
+      // nextReign, shared with the results ingest (Accounts §5.4): the
+      // reign brought into the round is the holder's, or 0 for anyone else.
+      const reignBefore =
+        previousHolder?.persistentID === winner.persistentID ? throne.reign : 0;
+      throne.pendingReign = nextReign(outcome, reignBefore);
     } else {
       this.openSeat(throne);
       this.enterLine(throne, false);

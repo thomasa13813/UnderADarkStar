@@ -1356,8 +1356,26 @@ export const ClientMessageSchema = zb.discriminatedUnion("type", [
 export const PlayerRecordSchema = PlayerSchema.extend({
   persistentID: PersistentIdSchema.nullable(), // WARNING: PII
   stats: PlayerStatsSchema,
+  // Under a Dark Star (docs/DarkStar-Accounts.md §5.2): the player joined
+  // with a signed account token, so persistentID is an account the results
+  // ingest may credit. Absent or false is a guest. Optional so older records
+  // and private games still parse.
+  verified: z.boolean().optional(),
 });
 export type PlayerRecord = z.infer<typeof PlayerRecordSchema>;
+
+// Under a Dark Star (docs/DarkStar-Accounts.md §5.2): the public throne a
+// round was played for, on the record of a throne game only. reignBefore is
+// the reign the seated Hegemon brought into the round (0 for a claimant who
+// took an open seat, and for the AI); the ingest derives the winner's reign
+// from it with nextReign (src/core/Reign.ts).
+export const RecordThroneSchema = z.object({
+  throneID: z.string().min(1).max(64),
+  name: z.string().min(1).max(64),
+  type: ThroneTypeSchema,
+  reignBefore: z.number().int().min(0),
+});
+export type RecordThrone = z.infer<typeof RecordThroneSchema>;
 
 export const GameEndInfoSchema = GameStartInfoSchema.extend({
   players: PlayerRecordSchema.array(),
@@ -1370,6 +1388,8 @@ export const GameEndInfoSchema = GameStartInfoSchema.extend({
   // Absent on singleplayer records and on records read back from the API,
   // which scrubs them like persistentID.
   reports: PlayerReportSchema.array().optional(),
+  // Under a Dark Star: present on a public throne round's record (§5.2).
+  throne: RecordThroneSchema.optional(),
 });
 export type GameEndInfo = z.infer<typeof GameEndInfoSchema>;
 

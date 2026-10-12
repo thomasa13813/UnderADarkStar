@@ -339,10 +339,10 @@ gameplay loop, game-start alert. No credits file for any sound.
 
 **Work.**
 
-- **Soundtrack:** one menu theme and one or more gameplay loops. Options, cheapest first: CC0 /
-  CC BY music (Kevin MacLeod, Free Music Archive, OpenGameArt — attribution in `CREDITS.md`), a
-  commissioned track, or generated music with a licence that permits commercial use. Streamed via the
-  existing `SoundManager` / `MenuMusic` hooks; only the file paths change.
+- ~~**Soundtrack:** one menu theme and one or more gameplay loops.~~ **Done 2026-10-12:** five
+  AI-generated tracks of Tom's own in `resources/sounds/music/` (CC BY-SA, credited), played as one
+  crossfading cycle through the session by `src/client/sound/Soundtrack.ts`, which replaced
+  `MenuMusic.ts` and the gameplay loop in `SoundManager`.
 - **New cues:** strike inbound, strike landed, punitive levy, invasion landed on the Dark Star, the
   last stand, the Hegemon overthrown, timer victory, gate fired. Wire them where the events already
   exist (`events_display.*` in `en.json` marks the spots).

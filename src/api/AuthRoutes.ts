@@ -14,6 +14,7 @@ import {
 import { allowedOrigin, ApiConfig, issuerFor } from "./Config";
 import { SigningKey, signToken } from "./Keys";
 import { FetchLike, providersFor } from "./Providers";
+import { statsFor } from "./Results";
 import {
   clearedRefreshCookieHeader,
   cookieHeader,
@@ -241,7 +242,7 @@ export function mountAuthRoutes(app: Express, deps: AuthDeps): void {
         res.status(401).json({ error: "unauthorized" });
         return;
       }
-      res.json(userMeResponse(account, now()));
+      res.json(userMeResponse(account, now(), statsFor(db, account.id)));
     } catch (error) {
       next(error);
     }

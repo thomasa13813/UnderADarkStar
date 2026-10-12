@@ -26,9 +26,14 @@ open licence and are not in this repository. See [LICENSING.md](LICENSING.md).
   all rights reserved. See [branding/LICENSE](branding/LICENSE). The January
   Games wordmark in the footer (`branding/images/JanuaryGamesWordmark*.svg`)
   is an AI-generated placeholder mark, kept until a final studio logo is made.
-- **Placeholder audio:** `resources/sounds/music/*.mp3` and
-  `resources/sounds/effects/game-start-alert.mp3` are silent placeholders until
-  the soundtrack lands (roadmap P4).
+- **Soundtrack:** the five tracks in `resources/sounds/music/` (_The Hegemon_,
+  _Dark Expanse_, _Whispers of Rebellion_, _Throne of Stars_, _The Fall_) were
+  generated with an AI music tool by January Games for this game (2026-10-12)
+  and are released with the rest of `resources/` under CC BY-SA 4.0. No
+  third-party music is used; nothing from OpenFront's soundtrack was ever in
+  this repository.
+- **Placeholder audio:** `resources/sounds/effects/game-start-alert.mp3` is a
+  silent placeholder until a cue of our own lands (roadmap P4).
 - **Own sound effects:** `resources/sounds/effects/landing.mp3` (troops
   landing), `launch.mp3` (troops launched from the Dark Star or a stargate)
   and `missile.mp3` (a missile leaving a stargate) were made by January Games
