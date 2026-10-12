@@ -1,6 +1,7 @@
 import { html, LitElement, nothing, TemplateResult } from "lit";
 import { customElement, state } from "lit/decorators.js";
 import { UserMeResponse } from "../../core/ApiSchemas";
+import { assetUrl } from "../../core/AssetUrls";
 import { GameEnv } from "../../core/configuration/Config";
 import { invalidateUserMe } from "../Api";
 import { getApiBase } from "../ApiBase";
@@ -152,21 +153,30 @@ export class AccountButton extends LitElement {
     );
   }
 
+  // Tom's pixel-art Sign in button (branding/images/btn-sign-in.svg,
+  // 2026-10-10): the label is drawn into the image, so the translation is its
+  // alt text. 38px is an exact 2x of its 19-unit height. The signed-in
+  // trigger below keeps the plain style: it shows the account name.
   private renderSignInTrigger(): TemplateResult {
     return html`
       <button
         type="button"
         id="account-sign-in"
-        class=${this.triggerClass()}
+        class="relative flex h-full items-center cursor-pointer select-none rounded-sm transition-all duration-200 hover:brightness-[1.12] active:brightness-[0.95] hover:drop-shadow-[0_0_12px_rgba(168,85,247,0.45)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-malibu-blue/60 ${this
+          .open
+          ? "brightness-[1.12] drop-shadow-[0_0_12px_rgba(168,85,247,0.45)]"
+          : ""}"
         aria-haspopup="menu"
         aria-expanded=${this.open ? "true" : "false"}
         title=${translateText("account.sign_in")}
         @click=${this.toggle}
       >
-        ${userIcon()}
-        <span class="whitespace-nowrap"
-          >${translateText("account.sign_in")}</span
-        >
+        <img
+          src=${assetUrl("images/btn-sign-in.svg")}
+          alt=${translateText("account.sign_in")}
+          class="h-[38px] max-h-full w-auto object-contain"
+          draggable="false"
+        />
       </button>
     `;
   }

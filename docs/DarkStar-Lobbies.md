@@ -197,7 +197,7 @@ to the existing `MUTUALLY_EXCLUSIVE_MODIFIERS`:
 | Allowed at launch                                                                                                                                      | Held back pending a balance pass                                                                                                                   |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `isRandomSpawn`, `isCompact`, `isCrowded`, `isHardNations`, `startingGold1M`, `startingGold5M`, `goldMultiplier`, `isAlliancesDisabled`, `isPeaceTime` | `startingGold25M` (challenger rush), `isDoomsdayClock` (interacts with the round timer R4/R5), `isNukesDisabled` (removes the H19 punishment loop) |
-| _Moot under a Dark Star, never offered:_ `isSAMsDisabled`, `isWaterNukes` (SAMs and silos are off, S6)                                                 |                                                                                                                                                    |
+| _Moot under a Dark Star, never offered:_ `isSAMsDisabled`, `isWaterNukes` ("Void missiles"; SAMs and silos are off, S6)                                |                                                                                                                                                    |
 
 The whitelist is a constant next to the pool, with a test that every entry is in the pool. Tom's
 rule: nothing that tilts the round toward the throne; the held-back column is reviewed after the

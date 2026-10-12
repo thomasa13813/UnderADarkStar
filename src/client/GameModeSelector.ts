@@ -2,6 +2,7 @@ import { html, LitElement, nothing, type TemplateResult } from "lit";
 import { customElement, state } from "lit/decorators.js";
 import { ClientEnv } from "src/client/ClientEnv";
 import { UserMeResponse } from "../core/ApiSchemas";
+import { assetUrl } from "../core/AssetUrls";
 import {
   Duos,
   GameMapType,
@@ -53,14 +54,24 @@ import {
 } from "./Utils";
 import { isReplayShellHost } from "./VersionedReplay";
 
-const PRIMARY_ACTION =
-  "bg-malibu-blue hover:bg-aquarius active:bg-malibu-blue/80 hover:scale-y-105 hover:scale-x-[1.01]";
-const SECONDARY_ACTION =
-  "bg-surface hover:brightness-[1.08] active:brightness-[0.95] hover:scale-105 hover:shadow-[var(--shadow-action-card-hover)]";
+/**
+ * The home-screen action cards are Tom's pixel-art button images
+ * (branding/images/btn-*.svg, 2026-10-10): the text is drawn into the image,
+ * so the translated title is the alt text, as with the studio wordmark in the
+ * footer. Each is 19 units tall. From sm up they sit in two rows at an exact
+ * 3x (Solo:Tutorial is drawn 2:1 and Create:Join 1:1, matching the slots);
+ * on a phone the pair rows would shrink them to about 1x, so there they
+ * stack in one column at an exact 2x instead.
+ */
+const SOLO_BUTTON = "images/btn-solo.svg";
+const TUTORIAL_BUTTON = "images/btn-tutorial.svg";
+const CREATE_BUTTON = "images/btn-create-lobby.svg";
+const JOIN_BUTTON = "images/btn-join-lobby.svg";
+const ACTION_ROW_HEIGHT = "sm:h-[57px]";
+const ACTION_CARD_HEIGHT = "h-[38px] sm:h-full";
+const ACTION_CARD =
+  "hover:brightness-[1.12] active:brightness-[0.95] hover:scale-[1.03] hover:drop-shadow-[0_0_14px_rgba(168,85,247,0.45)]";
 const DISABLED = "opacity-50 cursor-not-allowed pointer-events-none";
-/** Tutorial card: the panel's gold, dark text for contrast. */
-const TUTORIAL_ACTION =
-  "bg-cyber-yellow hover:bg-yellow-300 active:bg-cyber-yellow/80 !text-gray-900 hover:scale-y-105 hover:scale-x-[1.01]";
 
 /** The Tutorial card shows beside Solo until the player has played this many games. */
 const TUTORIAL_CARD_MAX_GAMES = 5;
@@ -511,36 +522,40 @@ export class GameModeSelector extends LitElement {
           class="[&:empty]:hidden sm:col-span-2 sm:row-start-1"
         ></ios-add-to-home-screen-banner>
 
-        <div class="flex gap-4 h-14 sm:col-span-2 sm:row-start-3">
-          <div class="flex-[2]">
+        <div
+          class="flex flex-col gap-4 sm:flex-row ${ACTION_ROW_HEIGHT} sm:col-span-2 sm:row-start-3"
+        >
+          <div class="flex justify-center min-w-0 sm:flex-[2]">
             ${this.renderSmallActionCard(
               translateText("main.solo"),
+              SOLO_BUTTON,
               this.openSinglePlayerModal,
-              PRIMARY_ACTION,
             )}
           </div>
           ${getGamesPlayed() < TUTORIAL_CARD_MAX_GAMES
-            ? html`<div class="flex-1">
+            ? html`<div class="flex justify-center min-w-0 sm:flex-1">
                 ${this.renderSmallActionCard(
                   translateText("main.tutorial"),
+                  TUTORIAL_BUTTON,
                   this.startTutorial,
-                  TUTORIAL_ACTION,
                 )}
               </div>`
             : nothing}
         </div>
-        <div class="grid grid-cols-2 gap-4 h-14 sm:col-span-2 sm:row-start-4">
+        <div
+          class="grid grid-cols-1 gap-4 sm:grid-cols-2 ${ACTION_ROW_HEIGHT} justify-items-center sm:col-span-2 sm:row-start-4"
+        >
           ${this.renderSmallActionCard(
             translateText("main.create"),
+            CREATE_BUTTON,
             this.openHostLobby,
-            SECONDARY_ACTION,
             undefined,
             true,
           )}
           ${this.renderSmallActionCard(
             translateText("main.join"),
+            JOIN_BUTTON,
             this.openJoinLobby,
-            SECONDARY_ACTION,
             this.hostedLobbyCount(),
             true,
           )}
@@ -707,28 +722,37 @@ export class GameModeSelector extends LitElement {
 
   private renderSmallActionCard(
     title: string,
+    image: string,
     onClick: () => void,
-    bgClass: string = SECONDARY_ACTION,
     badge?: number,
-    // Only the three multiplayer action cards (create/ranked/join) pass this;
-    // the solo card is never gated (see openSinglePlayerModal) and must never
-    // show as disabled here.
+    // Only the multiplayer action cards (create/join) pass this; the solo
+    // card is never gated (see openSinglePlayerModal) and must never show as
+    // disabled here.
     gated: boolean = false,
   ) {
     const blocked = gated && shouldBlockMultiplayerAction(this.backendOutage);
+    // The button hugs its image (the card height, width from the aspect
+    // ratio) and is centred in its slot, so the pixel art is never stretched;
+    // a slot narrower than that shrinks it (max-w-full) instead.
     return html`
       <button
         @click=${onClick}
         ?disabled=${!this.inputValid}
         aria-disabled=${blocked}
-        class="relative flex items-center justify-center w-full h-full rounded-lg ${bgClass} transition-all duration-200 text-sm lg:text-base font-medium text-white uppercase tracking-wider text-center ${!this
+        title=${title}
+        class="relative inline-flex ${ACTION_CARD_HEIGHT} max-w-full items-center justify-center cursor-pointer select-none rounded-sm transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-malibu-blue/60 ${ACTION_CARD} ${!this
           .inputValid
           ? DISABLED
           : blocked
             ? "opacity-50 cursor-not-allowed"
             : ""}"
       >
-        ${title}
+        <img
+          src=${assetUrl(image)}
+          alt=${title}
+          class="h-full w-auto max-w-full object-contain"
+          draggable="false"
+        />
         ${badge
           ? html`<span
               class="absolute -top-2 -right-2 min-w-[1.375rem] h-[1.375rem] px-1.5 flex items-center justify-center rounded-full bg-red-500 text-white text-xs font-bold tracking-normal"

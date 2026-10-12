@@ -122,7 +122,14 @@ join) and is a commit of its own.
   Tom's January Games wordmark (pixel art, dark and light variants, an AI-generated placeholder
   for now) landed in `branding/images/` on 2026-10-04 and replaces the "Made by January Games"
   text in the footer, which stays as the image's alt text. The favicon stays the Dark Star. The
-  **game's** logo, title treatment and font remain open.
+  **game's** logo, title treatment and font remain open. The **play buttons** are in (2026-10-10):
+  Tom's six pixel-art button images (`branding/images/btn-*.svg`, 19 units tall, same drawing
+  unit as the stacked title) replace Play in both nav bars, Sign in in the identity row, and the
+  Solo / Tutorial / Create Lobby / Join Lobby cards. The label is drawn into each image, so the
+  translation is its alt text and the card title; the nav Play item uses `data-i18n-alt` since
+  `data-i18n` would overwrite the image on a language change. Sizes are integer pixel multiples:
+  2x (38px) for Play, Sign in and the phone column of cards, 3x (57px) for the two card rows from
+  `sm` up, where Solo:Tutorial is drawn 2:1 and Create:Join 1:1 to match the slots.
 
 **Decided 2026-09-27.** Tom supplies the logo and wordmark when ready (text wordmark until then);
 the font is revisited later (Overpass stays); no upstream community links; step D is in P1.

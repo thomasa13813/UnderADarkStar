@@ -2058,6 +2058,10 @@ hydrogen-bomb removal (closed by S6).
 
 ## 11. Changelog
 
+- **2026-10-10** — **"Water nukes" are "Void missiles"** in every player-facing label (lobby option and
+  public-game badge, `resources/lang/en.json`). The mechanic is unchanged (land becomes deep space
+  where the warhead lands); only the wording follows the setting. Code keys stay `waterNukes` /
+  `isWaterNukes`.
 - **2026-10-10** — **Team thrones (T5).** The Hegemon round runs in team mode: the throne is a
   team of one (`ColoredTeams.Hegemon`) outside the team count, the round still ends only through
   it (R1, the team land-share win is off), the seat holds in any mode, and the Hegemon look is

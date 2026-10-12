@@ -1,6 +1,7 @@
 import { html, LitElement } from "lit";
 import { customElement } from "lit/decorators.js";
 import { assetUrl } from "../../core/AssetUrls";
+import { translateText } from "../Utils";
 
 const MOBILE_ITEM =
   "nav-menu-item block w-full text-left font-bold uppercase tracking-[0.05em] " +
@@ -89,12 +90,24 @@ export class MobileNavBar extends LitElement {
         <!-- Mobile Navigation Menu Items (same order as the desktop bar) -->
         <!-- Play routes home, then hops into the throne shown first on the
              page (data-join-hero; see Navigation.ts). -->
+        <!-- Tom's pixel-art Play button (branding/images/btn-play.svg,
+             2026-10-10): the label is in the image, so the translation is
+             its alt text (data-i18n would replace the image with text). -->
         <button
           class="${MOBILE_ITEM} ${currentPage === "page-play" ? "active" : ""}"
           data-page="page-play"
           data-join-hero
-          data-i18n="main.play"
-        ></button>
+          title=${translateText("main.play")}
+          data-i18n-title="main.play"
+        >
+          <img
+            src=${assetUrl("images/btn-play.svg")}
+            alt=${translateText("main.play")}
+            data-i18n-alt="main.play"
+            class="h-[38px] w-auto object-contain"
+            draggable="false"
+          />
+        </button>
         <div
           class="flex flex-col w-full mt-auto [.in-game_&]:hidden items-end justify-end pt-4 border-t border-white/10"
         ></div>

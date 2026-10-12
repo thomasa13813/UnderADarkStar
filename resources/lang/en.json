@@ -452,7 +452,7 @@
     "start": "Start Game",
     "starting": "Starting…",
     "starting_gold": "Starting Gold (Millions)",
-    "water_nukes": "Water nukes"
+    "water_nukes": "Void missiles"
   },
   "game_starting_modal": {
     "code_license": "Code licensed under AGPL-3.0 (no warranty)",
@@ -1069,7 +1069,7 @@
     "sams_disabled_label": "SAMs",
     "starting_gold": "{amount}M Starting Gold",
     "starting_gold_label": "Starting Gold",
-    "water_nukes": "Water Nukes"
+    "water_nukes": "Void Missiles"
   },
   "public_lobby": {
     "connecting": "Connecting to lobby...",

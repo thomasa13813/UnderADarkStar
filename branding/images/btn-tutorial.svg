@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 98 19" width="784" height="152">
+  <defs>
+    <linearGradient id="ring" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#c084fc"/>
+      <stop offset="1" stop-color="#7c3aed"/>
+    </linearGradient>
+    <linearGradient id="bring" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a855f7"/>
+      <stop offset="1" stop-color="#6d28d9"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-50%" width="140%" height="200%">
+      <feGaussianBlur stdDeviation="1.2"/>
+    </filter>
+    <g id="txt">
+    <path d="M0 0h1v1h-1zM1 0h1v1h-1zM2 0h1v1h-1zM3 0h1v1h-1zM4 0h1v1h-1zM5 0h1v1h-1zM6 0h1v1h-1zM0 1h1v1h-1zM1 1h1v1h-1zM2 1h1v1h-1zM3 1h1v1h-1zM4 1h1v1h-1zM5 1h1v1h-1zM6 1h1v1h-1zM2 2h1v1h-1zM3 2h1v1h-1zM2 3h1v1h-1zM3 3h1v1h-1zM2 4h1v1h-1zM3 4h1v1h-1zM2 5h1v1h-1zM3 5h1v1h-1zM2 6h1v1h-1zM3 6h1v1h-1zM2 7h1v1h-1zM3 7h1v1h-1zM2 8h1v1h-1zM3 8h1v1h-1zM9 0h1v1h-1zM10 0h1v1h-1zM14 0h1v1h-1zM15 0h1v1h-1zM9 1h1v1h-1zM10 1h1v1h-1zM14 1h1v1h-1zM15 1h1v1h-1zM9 2h1v1h-1zM10 2h1v1h-1zM14 2h1v1h-1zM15 2h1v1h-1zM9 3h1v1h-1zM10 3h1v1h-1zM14 3h1v1h-1zM15 3h1v1h-1zM9 4h1v1h-1zM10 4h1v1h-1zM14 4h1v1h-1zM15 4h1v1h-1zM9 5h1v1h-1zM10 5h1v1h-1zM14 5h1v1h-1zM15 5h1v1h-1zM9 6h1v1h-1zM10 6h1v1h-1zM14 6h1v1h-1zM15 6h1v1h-1zM9 7h1v1h-1zM10 7h1v1h-1zM11 7h1v1h-1zM12 7h1v1h-1zM13 7h1v1h-1zM14 7h1v1h-1zM15 7h1v1h-1zM10 8h1v1h-1zM11 8h1v1h-1zM12 8h1v1h-1zM13 8h1v1h-1zM14 8h1v1h-1zM18 0h1v1h-1zM19 0h1v1h-1zM20 0h1v1h-1zM21 0h1v1h-1zM22 0h1v1h-1zM23 0h1v1h-1zM24 0h1v1h-1zM18 1h1v1h-1zM19 1h1v1h-1zM20 1h1v1h-1zM21 1h1v1h-1zM22 1h1v1h-1zM23 1h1v1h-1zM24 1h1v1h-1zM20 2h1v1h-1zM21 2h1v1h-1zM20 3h1v1h-1zM21 3h1v1h-1zM20 4h1v1h-1zM21 4h1v1h-1zM20 5h1v1h-1zM21 5h1v1h-1zM20 6h1v1h-1zM21 6h1v1h-1zM20 7h1v1h-1zM21 7h1v1h-1zM20 8h1v1h-1zM21 8h1v1h-1zM28 0h1v1h-1zM29 0h1v1h-1zM30 0h1v1h-1zM31 0h1v1h-1zM32 0h1v1h-1zM27 1h1v1h-1zM28 1h1v1h-1zM29 1h1v1h-1zM30 1h1v1h-1zM31 1h1v1h-1zM32 1h1v1h-1zM33 1h1v1h-1zM27 2h1v1h-1zM28 2h1v1h-1zM32 2h1v1h-1zM33 2h1v1h-1zM27 3h1v1h-1zM28 3h1v1h-1zM32 3h1v1h-1zM33 3h1v1h-1zM27 4h1v1h-1zM28 4h1v1h-1zM32 4h1v1h-1zM33 4h1v1h-1zM27 5h1v1h-1zM28 5h1v1h-1zM32 5h1v1h-1zM33 5h1v1h-1zM27 6h1v1h-1zM28 6h1v1h-1zM32 6h1v1h-1zM33 6h1v1h-1zM27 7h1v1h-1zM28 7h1v1h-1zM29 7h1v1h-1zM30 7h1v1h-1zM31 7h1v1h-1zM32 7h1v1h-1zM33 7h1v1h-1zM28 8h1v1h-1zM29 8h1v1h-1zM30 8h1v1h-1zM31 8h1v1h-1zM32 8h1v1h-1zM36 0h1v1h-1zM37 0h1v1h-1zM38 0h1v1h-1zM39 0h1v1h-1zM40 0h1v1h-1zM41 0h1v1h-1zM36 1h1v1h-1zM37 1h1v1h-1zM38 1h1v1h-1zM39 1h1v1h-1zM40 1h1v1h-1zM41 1h1v1h-1zM42 1h1v1h-1zM36 2h1v1h-1zM37 2h1v1h-1zM41 2h1v1h-1zM42 2h1v1h-1zM36 3h1v1h-1zM37 3h1v1h-1zM41 3h1v1h-1zM42 3h1v1h-1zM36 4h1v1h-1zM37 4h1v1h-1zM38 4h1v1h-1zM39 4h1v1h-1zM40 4h1v1h-1zM41 4h1v1h-1zM42 4h1v1h-1zM36 5h1v1h-1zM37 5h1v1h-1zM38 5h1v1h-1zM39 5h1v1h-1zM40 5h1v1h-1zM41 5h1v1h-1zM36 6h1v1h-1zM37 6h1v1h-1zM40 6h1v1h-1zM41 6h1v1h-1zM36 7h1v1h-1zM37 7h1v1h-1zM41 7h1v1h-1zM42 7h1v1h-1zM36 8h1v1h-1zM37 8h1v1h-1zM41 8h1v1h-1zM42 8h1v1h-1zM45 0h1v1h-1zM46 0h1v1h-1zM47 0h1v1h-1zM48 0h1v1h-1zM45 1h1v1h-1zM46 1h1v1h-1zM47 1h1v1h-1zM48 1h1v1h-1zM46 2h1v1h-1zM47 2h1v1h-1zM46 3h1v1h-1zM47 3h1v1h-1zM46 4h1v1h-1zM47 4h1v1h-1zM46 5h1v1h-1zM47 5h1v1h-1zM46 6h1v1h-1zM47 6h1v1h-1zM45 7h1v1h-1zM46 7h1v1h-1zM47 7h1v1h-1zM48 7h1v1h-1zM45 8h1v1h-1zM46 8h1v1h-1zM47 8h1v1h-1zM48 8h1v1h-1zM53 0h1v1h-1zM54 0h1v1h-1zM55 0h1v1h-1zM52 1h1v1h-1zM53 1h1v1h-1zM54 1h1v1h-1zM55 1h1v1h-1zM56 1h1v1h-1zM51 2h1v1h-1zM52 2h1v1h-1zM56 2h1v1h-1zM57 2h1v1h-1zM51 3h1v1h-1zM52 3h1v1h-1zM56 3h1v1h-1zM57 3h1v1h-1zM51 4h1v1h-1zM52 4h1v1h-1zM53 4h1v1h-1zM54 4h1v1h-1zM55 4h1v1h-1zM56 4h1v1h-1zM57 4h1v1h-1zM51 5h1v1h-1zM52 5h1v1h-1zM53 5h1v1h-1zM54 5h1v1h-1zM55 5h1v1h-1zM56 5h1v1h-1zM57 5h1v1h-1zM51 6h1v1h-1zM52 6h1v1h-1zM56 6h1v1h-1zM57 6h1v1h-1zM51 7h1v1h-1zM52 7h1v1h-1zM56 7h1v1h-1zM57 7h1v1h-1zM51 8h1v1h-1zM52 8h1v1h-1zM56 8h1v1h-1zM57 8h1v1h-1zM60 0h1v1h-1zM61 0h1v1h-1zM60 1h1v1h-1zM61 1h1v1h-1zM60 2h1v1h-1zM61 2h1v1h-1zM60 3h1v1h-1zM61 3h1v1h-1zM60 4h1v1h-1zM61 4h1v1h-1zM60 5h1v1h-1zM61 5h1v1h-1zM60 6h1v1h-1zM61 6h1v1h-1zM60 7h1v1h-1zM61 7h1v1h-1zM62 7h1v1h-1zM63 7h1v1h-1zM64 7h1v1h-1zM65 7h1v1h-1zM66 7h1v1h-1zM60 8h1v1h-1zM61 8h1v1h-1zM62 8h1v1h-1zM63 8h1v1h-1zM64 8h1v1h-1zM65 8h1v1h-1zM66 8h1v1h-1z" transform="translate(15.5 5)"/>
+    </g>
+  </defs>
+  <g fill="#1d0538" shape-rendering="crispEdges"><rect x="1" y="0" width="96" height="1"/><rect x="1" y="18" width="96" height="1"/><rect x="0" y="1" width="1" height="17"/><rect x="97" y="1" width="1" height="17"/></g>
+  <g fill="url(#bring)" shape-rendering="crispEdges"><rect x="2" y="1" width="94" height="1"/><rect x="2" y="17" width="94" height="1"/><rect x="1" y="2" width="1" height="15"/><rect x="96" y="2" width="1" height="15"/></g>
+  <rect x="2" y="2" width="94" height="15" fill="#ffd400" shape-rendering="crispEdges"/>
+  <rect x="3" y="2" width="92" height="1" fill="#ffe766" shape-rendering="crispEdges"/>
+  <rect x="3" y="16" width="92" height="1" fill="#d9a400" shape-rendering="crispEdges"/>
+  <use href="#txt" fill="#3b0764" stroke="#3b0764" stroke-width="1.8" stroke-linejoin="miter" shape-rendering="crispEdges"/>
+  <use href="#txt" fill="url(#ring)" stroke="url(#ring)" stroke-width="1" stroke-linejoin="miter" shape-rendering="crispEdges"/>
+  <use href="#txt" fill="#050308" shape-rendering="crispEdges"/>
+</svg>

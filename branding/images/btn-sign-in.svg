@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 71 19" width="568" height="152">
+  <defs>
+    <linearGradient id="ring" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#c084fc"/>
+      <stop offset="1" stop-color="#7c3aed"/>
+    </linearGradient>
+    <linearGradient id="bring" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a855f7"/>
+      <stop offset="1" stop-color="#6d28d9"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-50%" width="140%" height="200%">
+      <feGaussianBlur stdDeviation="1.2"/>
+    </filter>
+    <g id="txt">
+    <path d="M1 0h1v1h-1zM2 0h1v1h-1zM3 0h1v1h-1zM4 0h1v1h-1zM5 0h1v1h-1zM6 0h1v1h-1zM0 1h1v1h-1zM1 1h1v1h-1zM2 1h1v1h-1zM3 1h1v1h-1zM4 1h1v1h-1zM5 1h1v1h-1zM6 1h1v1h-1zM0 2h1v1h-1zM1 2h1v1h-1zM0 3h1v1h-1zM1 3h1v1h-1zM2 3h1v1h-1zM3 3h1v1h-1zM4 3h1v1h-1zM5 3h1v1h-1zM1 4h1v1h-1zM2 4h1v1h-1zM3 4h1v1h-1zM4 4h1v1h-1zM5 4h1v1h-1zM6 4h1v1h-1zM5 5h1v1h-1zM6 5h1v1h-1zM5 6h1v1h-1zM6 6h1v1h-1zM0 7h1v1h-1zM1 7h1v1h-1zM2 7h1v1h-1zM3 7h1v1h-1zM4 7h1v1h-1zM5 7h1v1h-1zM6 7h1v1h-1zM0 8h1v1h-1zM1 8h1v1h-1zM2 8h1v1h-1zM3 8h1v1h-1zM4 8h1v1h-1zM5 8h1v1h-1zM9 0h1v1h-1zM10 0h1v1h-1zM11 0h1v1h-1zM12 0h1v1h-1zM9 1h1v1h-1zM10 1h1v1h-1zM11 1h1v1h-1zM12 1h1v1h-1zM10 2h1v1h-1zM11 2h1v1h-1zM10 3h1v1h-1zM11 3h1v1h-1zM10 4h1v1h-1zM11 4h1v1h-1zM10 5h1v1h-1zM11 5h1v1h-1zM10 6h1v1h-1zM11 6h1v1h-1zM9 7h1v1h-1zM10 7h1v1h-1zM11 7h1v1h-1zM12 7h1v1h-1zM9 8h1v1h-1zM10 8h1v1h-1zM11 8h1v1h-1zM12 8h1v1h-1zM16 0h1v1h-1zM17 0h1v1h-1zM18 0h1v1h-1zM19 0h1v1h-1zM20 0h1v1h-1zM15 1h1v1h-1zM16 1h1v1h-1zM17 1h1v1h-1zM18 1h1v1h-1zM19 1h1v1h-1zM20 1h1v1h-1zM21 1h1v1h-1zM15 2h1v1h-1zM16 2h1v1h-1zM20 2h1v1h-1zM21 2h1v1h-1zM15 3h1v1h-1zM16 3h1v1h-1zM15 4h1v1h-1zM16 4h1v1h-1zM18 4h1v1h-1zM19 4h1v1h-1zM20 4h1v1h-1zM21 4h1v1h-1zM15 5h1v1h-1zM16 5h1v1h-1zM18 5h1v1h-1zM19 5h1v1h-1zM20 5h1v1h-1zM21 5h1v1h-1zM15 6h1v1h-1zM16 6h1v1h-1zM20 6h1v1h-1zM21 6h1v1h-1zM15 7h1v1h-1zM16 7h1v1h-1zM17 7h1v1h-1zM18 7h1v1h-1zM19 7h1v1h-1zM20 7h1v1h-1zM21 7h1v1h-1zM16 8h1v1h-1zM17 8h1v1h-1zM18 8h1v1h-1zM19 8h1v1h-1zM20 8h1v1h-1zM24 0h1v1h-1zM25 0h1v1h-1zM29 0h1v1h-1zM30 0h1v1h-1zM24 1h1v1h-1zM25 1h1v1h-1zM26 1h1v1h-1zM29 1h1v1h-1zM30 1h1v1h-1zM24 2h1v1h-1zM25 2h1v1h-1zM26 2h1v1h-1zM27 2h1v1h-1zM29 2h1v1h-1zM30 2h1v1h-1zM24 3h1v1h-1zM25 3h1v1h-1zM27 3h1v1h-1zM28 3h1v1h-1zM29 3h1v1h-1zM30 3h1v1h-1zM24 4h1v1h-1zM25 4h1v1h-1zM28 4h1v1h-1zM29 4h1v1h-1zM30 4h1v1h-1zM24 5h1v1h-1zM25 5h1v1h-1zM29 5h1v1h-1zM30 5h1v1h-1zM24 6h1v1h-1zM25 6h1v1h-1zM29 6h1v1h-1zM30 6h1v1h-1zM24 7h1v1h-1zM25 7h1v1h-1zM29 7h1v1h-1zM30 7h1v1h-1zM24 8h1v1h-1zM25 8h1v1h-1zM29 8h1v1h-1zM30 8h1v1h-1zM38 0h1v1h-1zM39 0h1v1h-1zM40 0h1v1h-1zM41 0h1v1h-1zM38 1h1v1h-1zM39 1h1v1h-1zM40 1h1v1h-1zM41 1h1v1h-1zM39 2h1v1h-1zM40 2h1v1h-1zM39 3h1v1h-1zM40 3h1v1h-1zM39 4h1v1h-1zM40 4h1v1h-1zM39 5h1v1h-1zM40 5h1v1h-1zM39 6h1v1h-1zM40 6h1v1h-1zM38 7h1v1h-1zM39 7h1v1h-1zM40 7h1v1h-1zM41 7h1v1h-1zM38 8h1v1h-1zM39 8h1v1h-1zM40 8h1v1h-1zM41 8h1v1h-1zM44 0h1v1h-1zM45 0h1v1h-1zM49 0h1v1h-1zM50 0h1v1h-1zM44 1h1v1h-1zM45 1h1v1h-1zM46 1h1v1h-1zM49 1h1v1h-1zM50 1h1v1h-1zM44 2h1v1h-1zM45 2h1v1h-1zM46 2h1v1h-1zM47 2h1v1h-1zM49 2h1v1h-1zM50 2h1v1h-1zM44 3h1v1h-1zM45 3h1v1h-1zM47 3h1v1h-1zM48 3h1v1h-1zM49 3h1v1h-1zM50 3h1v1h-1zM44 4h1v1h-1zM45 4h1v1h-1zM48 4h1v1h-1zM49 4h1v1h-1zM50 4h1v1h-1zM44 5h1v1h-1zM45 5h1v1h-1zM49 5h1v1h-1zM50 5h1v1h-1zM44 6h1v1h-1zM45 6h1v1h-1zM49 6h1v1h-1zM50 6h1v1h-1zM44 7h1v1h-1zM45 7h1v1h-1zM49 7h1v1h-1zM50 7h1v1h-1zM44 8h1v1h-1zM45 8h1v1h-1zM49 8h1v1h-1zM50 8h1v1h-1z" transform="translate(10.0 5)"/>
+    </g>
+  </defs>
+  <g fill="#1d0538" shape-rendering="crispEdges"><rect x="1" y="0" width="69" height="1"/><rect x="1" y="18" width="69" height="1"/><rect x="0" y="1" width="1" height="17"/><rect x="70" y="1" width="1" height="17"/></g>
+  <g fill="url(#bring)" shape-rendering="crispEdges"><rect x="2" y="1" width="67" height="1"/><rect x="2" y="17" width="67" height="1"/><rect x="1" y="2" width="1" height="15"/><rect x="69" y="2" width="1" height="15"/></g>
+  <rect x="2" y="2" width="67" height="15" fill="#0c1020" shape-rendering="crispEdges"/>
+  <rect x="3" y="2" width="65" height="1" fill="#1b1a38" shape-rendering="crispEdges"/>
+  <rect x="3" y="16" width="65" height="1" fill="#06070f" shape-rendering="crispEdges"/>
+  <use href="#txt" fill="#a855f7" stroke="#a855f7" stroke-width="2" opacity="0.6" filter="url(#glow)"/>
+  <use href="#txt" fill="#3b0764" stroke="#3b0764" stroke-width="1.8" stroke-linejoin="miter" shape-rendering="crispEdges"/>
+  <use href="#txt" fill="url(#ring)" stroke="url(#ring)" stroke-width="1" stroke-linejoin="miter" shape-rendering="crispEdges"/>
+  <use href="#txt" fill="#050308" shape-rendering="crispEdges"/>
+</svg>
