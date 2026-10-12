@@ -58,6 +58,7 @@ Numbered so the code and tests can cite them.
 | L28 | **Open thrones overtaken repeatedly by returning winners** is accepted for launch and watched; it needs a real population to occur. [2026-10-06]                                                                                                                                                                                                                                                                                                                                                                |
 | L29 | **The lobby browser files thrones by type.** Its tabs are **Free for all**, **Teams** and **Special** (plus All), each listing that line's thrones head first, with Watch on a running round. There is no Thrones tab, and a line with nothing in it has no pane and no tab, so the team line appears by itself when T5 lands. The home page keeps one card per line head (L25). Reason: one Thrones pile mixed FFA and special rounds, and the three empty queue panes beside it read as a fault. [2026-10-09] |
 | L30 | **The team throne's winner sets the split.** With the map, the winner of a team throne may choose the next round's team split: a fixed count of 2 to 7 teams, or Duos, Trios or Quads; never Humans vs Lords (the throne is a third side to neither). The cap is recomputed for the split on the chosen map, and a count the map cannot give two players each falls back to as many teams as fill. Nothing chosen keeps the split the lobby rolled. Tom's ask, 2026-10-10. [2026-10-10]                         |
+| L31 | **Eliminated before the round ends, a player may join the head of the line at once.** The death screen carries the win screen's line panel with the head alone: the throne's next round does not exist yet, and staying is Spectate. The dead pool into the next room instead of sitting idle for the rest of a 20-minute round or drifting to the home page. The full choice (L27) still comes when the round is over. [2026-10-12]                                                                            |
 
 ## 3. The throne model
 
@@ -597,6 +598,15 @@ list (the master stamps it there, §10.5), so every reader below takes it from t
   nothing moves an idle player. A successor that was listed and then vanished was retired
   (L20): the Stay button goes and the head is offered alone. The winner's Next-round panel
   is unchanged.
+- **The death screen (L31, 2026-10-12).** A player eliminated while the round goes on gets
+  the same panel on the "You died" screen in its head-only form: **Join the head of the
+  line: Y** beside Exit and Spectate, the hint saying the round goes on without them (or
+  that nothing of this mode is gathering yet). There is no Stay: the throne's next round
+  does not exist until the round ends, and staying is Spectate. The feed runs while the
+  screen is up and stops with Spectate. When the round ends and the successor arrives, the
+  panel grows into the full stay-or-head choice without reopening the feed. Private lobbies
+  and games that run for no throne keep the plain death screen. `WinModal.linePanelMode`
+  names the two forms (`successor`, `fallen`).
 - **The lobby (L21).** `JoinLobbyModal` keeps the whole snapshot its hosted-lobby feed
   already receives and reads its own lobby's place off it: the status line says "N ahead
   in line" behind the head, "Waiting for players" at it, and "The Hegemon is choosing…"
@@ -610,10 +620,12 @@ list (the master stamps it there, §10.5), so every reader below takes it from t
   screen, handled above.
 - **The rulebook.** `rules_throne_6` says how the lines launch and what the choice is.
 - **Strings.** `throne.line_title`, `line_hint`, `line_is_head`, `line_retired`,
-  `line_stay`, `line_head`, `line_place_next`, `line_place_ahead`, `place_ahead`.
+  `line_stay`, `line_head`, `line_place_next`, `line_place_ahead`, `place_ahead`;
+  `line_fallen`, `line_fallen_empty` (the death screen); `rules_throne_6` gained a sentence.
 - **Tests.** `tests/client/ThroneLine.test.ts` (4), `tests/client/graphics/layers/WinModalLine.test.ts`
-  (6: the live place and head, head-is-own, retired, the feed's life, the private Join, the
-  winner's panel), `tests/client/DetailedGameViewThronePill.test.ts` (2),
+  (11: the live place and head, head-is-own, retired, the feed's life, the private Join, the
+  winner's panel; the death screen's head-only panel live, nothing gathering, growing into
+  the full panel at the round's end, a death off a throne round, alive or unspawned), `tests/client/DetailedGameViewThronePill.test.ts` (2),
   `tests/client/JoinLobbyModal.test.ts` (the place, 2).
 
 ## 11. Tests
@@ -703,6 +715,10 @@ over the existing gathering state, plus `create` / `retire` actions).
 
 ## 14. Changelog
 
+- **2026-10-12** — **The dead may join the head of the line** (L31, §10.7): the "You died"
+  screen carries the line panel in a head-only form on a throne round, so eliminated players
+  pool into the next room instead of idling through the rest of the round. The full choice
+  still comes at the round's end.
 - **2026-10-11** — **The launch lines' client built** (§10.7): the win screen's stay-or-join-
   the-head choice with the place live, the lobby's own place, the browser pill's place,
   the rulebook line. Tom settled L27's open edges the same day: the head is the next round

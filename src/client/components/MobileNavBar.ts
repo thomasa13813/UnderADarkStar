@@ -108,6 +108,16 @@ export class MobileNavBar extends LitElement {
             draggable="false"
           />
         </button>
+        <!-- The leaderboard page (Accounts doc §6). -->
+        <button
+          class="${MOBILE_ITEM} ${currentPage === "page-leaderboard"
+            ? "active"
+            : ""}"
+          data-page="page-leaderboard"
+          data-i18n="main.leaderboard"
+        >
+          ${translateText("main.leaderboard")}
+        </button>
         <div
           class="flex flex-col w-full mt-auto [.in-game_&]:hidden items-end justify-end pt-4 border-t border-white/10"
         ></div>

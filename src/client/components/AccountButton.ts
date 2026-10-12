@@ -2,26 +2,30 @@ import { html, LitElement, nothing, TemplateResult } from "lit";
 import { customElement, state } from "lit/decorators.js";
 import { UserMeResponse } from "../../core/ApiSchemas";
 import { assetUrl } from "../../core/AssetUrls";
-import { GameEnv } from "../../core/configuration/Config";
 import { invalidateUserMe } from "../Api";
-import { getApiBase } from "../ApiBase";
 import { logOut, userAuth } from "../Auth";
-import { ClientEnv } from "../ClientEnv";
 import { showInGameAlert } from "../InGameModal";
+import {
+  providerIcon,
+  providerLabel,
+  signInProviders,
+  startSignInWith,
+  userIcon,
+} from "../SignIn";
 import { translateText } from "../Utils";
 
 /**
  * The Sign in button and the account panel (docs/DarkStar-Accounts.md §9,
  * accounts step B2). Signed out, it offers the providers; signed in, it shows
- * the account name and opens a small panel with sign out and sign out
- * everywhere. The numbers (reigns, longest reign) join the panel with the
- * leaderboard (B5); rename and delete with B6.
+ * the account name and opens a small panel with the numbers (reigns,
+ * longest reign, B4/B5), a link to the leaderboard page, sign out and sign
+ * out everywhere; rename and delete come with B6.
  *
- * Sign-in is a page navigation: the browser goes to the API's login route,
- * from there to the provider, and comes back to this page with the refresh
- * cookie set. Main then runs its normal startup path (userAuth, getUserMe)
- * and dispatches userMeResponse, which this listens for, so there is no
- * sign-in state of its own to keep.
+ * Sign-in is a page navigation (SignIn.ts): the browser goes to the API's
+ * login route, from there to the provider, and comes back to this page with
+ * the refresh cookie set. Main then runs its normal startup path (userAuth,
+ * getUserMe) and dispatches userMeResponse, which this listens for, so there
+ * is no sign-in state of its own to keep.
  */
 @customElement("account-button")
 export class AccountButton extends LitElement {
@@ -90,19 +94,11 @@ export class AccountButton extends LitElement {
     void showInGameAlert(translateText("account.sign_in_failed"));
   }
 
-  private signIn(provider: string, name?: string) {
-    const back = window.location.origin + window.location.pathname;
-    const params = new URLSearchParams({ redirect: back });
-    if (name !== undefined) params.set("name", name);
-    window.location.assign(
-      `${getApiBase()}/auth/login/${provider}?${params.toString()}`,
-    );
-  }
-
-  private signInDev() {
-    const name = window.prompt(translateText("account.dev_name_prompt"), "");
-    if (name === null) return;
-    this.signIn("dev", name.trim() === "" ? "Dev" : name.trim());
+  // The leaderboard page, from either menu (it reads with or without an
+  // account).
+  private openLeaderboard() {
+    this.open = false;
+    window.showPage?.("page-leaderboard");
   }
 
   private async signOut(everywhere: boolean) {
@@ -122,10 +118,6 @@ export class AccountButton extends LitElement {
   private toggle = () => {
     this.open = !this.open;
   };
-
-  private get isDev(): boolean {
-    return ClientEnv.env() === GameEnv.Dev;
-  }
 
   render(): TemplateResult {
     const signedIn = this.userMe !== false && this.userMe !== null;
@@ -226,29 +218,32 @@ export class AccountButton extends LitElement {
         >
           ${translateText("account.sign_in_with")}
         </div>
+        ${signInProviders().map(
+          (provider) =>
+            html`<button
+              type="button"
+              role="menuitem"
+              class=${this.itemClass()}
+              data-provider=${provider}
+              @click=${() => startSignInWith(provider)}
+            >
+              ${providerIcon(provider)}
+              <span>${providerLabel(provider)}</span>
+            </button>`,
+        )}
+        <p class="px-3 pt-2 pb-1 text-xs text-white/50">
+          ${translateText("account.sign_in_why")}
+        </p>
+        <div class="my-1 h-px bg-white/10"></div>
         <button
           type="button"
           role="menuitem"
           class=${this.itemClass()}
-          @click=${() => this.signIn("discord")}
+          data-leaderboard
+          @click=${() => this.openLeaderboard()}
         >
-          ${discordIcon()}
-          <span>${translateText("account.provider_discord")}</span>
+          ${translateText("account.view_leaderboard")}
         </button>
-        ${this.isDev
-          ? html`<button
-              type="button"
-              role="menuitem"
-              class=${this.itemClass()}
-              @click=${() => this.signInDev()}
-            >
-              ${userIcon()}
-              <span>${translateText("account.provider_dev")}</span>
-            </button>`
-          : nothing}
-        <p class="px-3 pt-2 pb-1 text-xs text-white/50">
-          ${translateText("account.sign_in_why")}
-        </p>
       </div>
     `;
   }
@@ -287,6 +282,14 @@ export class AccountButton extends LitElement {
         </div>
         ${this.renderNumbers(me)}
         <div class="my-1 h-px bg-white/10"></div>
+        <button
+          type="button"
+          class=${this.itemClass()}
+          data-leaderboard
+          @click=${() => this.openLeaderboard()}
+        >
+          ${translateText("account.view_leaderboard")}
+        </button>
         <button
           type="button"
           class=${this.itemClass()}
@@ -348,34 +351,4 @@ export class AccountButton extends LitElement {
       </div>
     `;
   }
-}
-
-function userIcon(): TemplateResult {
-  return html`<svg
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    stroke-width="1.8"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-    class="h-5 w-5 shrink-0 pointer-events-none"
-    aria-hidden="true"
-  >
-    <circle cx="12" cy="8" r="4"></circle>
-    <path d="M4 21a8 8 0 0 1 16 0"></path>
-  </svg>`;
-}
-
-// Discord's mark, simplified to one path so it inherits the text colour.
-function discordIcon(): TemplateResult {
-  return html`<svg
-    viewBox="0 0 24 24"
-    fill="currentColor"
-    class="h-5 w-5 shrink-0 pointer-events-none"
-    aria-hidden="true"
-  >
-    <path
-      d="M19.6 5.3A17 17 0 0 0 15.4 4l-.2.4a15.6 15.6 0 0 1 3.8 1.9 13.5 13.5 0 0 0-14 0A15.6 15.6 0 0 1 8.8 4.4L8.6 4a17 17 0 0 0-4.2 1.3C1.7 9.3 1 13.2 1.3 17a17 17 0 0 0 5.2 2.6l1.1-1.8a11 11 0 0 1-1.8-.9l.4-.3a12.2 12.2 0 0 0 11.6 0l.4.3c-.6.4-1.2.7-1.8.9l1.1 1.8a17 17 0 0 0 5.2-2.6c.4-4.4-.7-8.3-3.1-11.7ZM8.7 14.7c-1 0-1.9-1-1.9-2.1s.8-2.1 1.9-2.1 1.9 1 1.9 2.1-.8 2.1-1.9 2.1Zm6.6 0c-1 0-1.9-1-1.9-2.1s.8-2.1 1.9-2.1 1.9 1 1.9 2.1-.8 2.1-1.9 2.1Z"
-    ></path>
-  </svg>`;
 }

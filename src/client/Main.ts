@@ -25,6 +25,7 @@ import { HostLobbyModal as HostPrivateLobbyModal } from "./HostLobbyModal";
 import { showInGameAlert, showInGameConfirm } from "./InGameModal";
 import { JoinLobbyModal } from "./JoinLobbyModal";
 import "./LangSelector";
+import "./LeaderboardModal";
 import { LangSelector } from "./LangSelector";
 import { initLayout } from "./Layout";
 import {

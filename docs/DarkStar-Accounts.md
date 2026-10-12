@@ -221,12 +221,20 @@ winner. That is not launch work; it is the answer if farming or disputes become 
 
 - **`GET /leaderboard?board=reigns|longest`** returns the top 100: rank, public ID, name with
   tag, reigns, longest reign, and the split of reigns into thrones taken and rounds held. Public,
-  no sign-in, cached for a minute.
+  no sign-in, cached for a minute. A caller who sends their token also gets their own row
+  (`me`), read live: ranked when they are on the board, `rank: null` with their zeros when they
+  have no reign yet. An account is on a board once it has won a round; a rank is shared on a tie
+  of the board's number (1, 2, 2, 4), the other number and then the name settling display order.
+  Banned and deleted accounts are left off (§10); a lifted ban puts the account back.
 - **Client:** a **Leaderboard** page in the nav beside Play, two tabs (Reigns, Longest reign), the
-  signed-in player's own row pinned at the bottom when they are outside the top 100. The account
-  panel shows the same numbers.
-- **Win screen:** a guest who wins sees "Sign in to record your reigns" with the two provider
-  buttons. A signed-in winner sees the numbers that just changed.
+  signed-in player's own row highlighted in the list or pinned at the bottom when they are
+  outside the top 100; a player with no reign is told how to get one, a guest to sign in. The
+  account panel shows the same numbers and links to the page.
+- **Win screen:** the player a public throne round credits (the slayer, or the Hegemon holding to
+  the timer) gets the reign prompt. A guest sees "Sign in to record your reigns" with the
+  provider buttons (the sign-in lands on the home page: the round is over). A signed-in winner
+  sees the numbers that just changed: the record lands a few seconds after the winner vote, so
+  the account is polled until its reigns move, then shown with the gain marked.
 - **Thrones:** the holder's name on a throne card stays the name they are playing under; nothing on
   the card depends on an account.
 
@@ -535,6 +543,51 @@ surviving a restart stay B7.
   when the API is down at round end (§14); a `rounds` row for a round whose record never
   arrived.
 
+### 12.5 As built: B5 (2026-10-12)
+
+The leaderboard, as code on `feat/leaderboard`. With it, Stage 4's "done when" (a reign won on
+the live server appears on the live board) is reachable once the branch is deployed.
+
+- **API**: `Leaderboard.ts` (`leaderboard(db, board, now)`: the top 100 of a board from the
+  `stats` cache joined to `accounts`, one window-function query per board so the rank read for
+  one account agrees with the rank in the list; `ownRow`: the caller's row, ranked or not).
+  `LeaderboardRoutes.ts` (`GET /leaderboard?board=`, 400 on an unknown board, `reigns` by
+  default; the top list held in memory for a minute, the own row live; `Cache-Control: public,
+max-age=60` for an anonymous answer, `private` with a token; `Vary: Authorization`).
+  `Bearer.ts` (`BearerVerifier`, the token check `/users/@me` used, now shared).
+- **Schema**: `LeaderboardBoardSchema`, `LeaderboardEntrySchema`, `LeaderboardResponseSchema`
+  in `ApiSchemas.ts`.
+- **Client**: `LeaderboardApi.ts` (`fetchLeaderboard`, the token along when there is one, a
+  10-second timeout, null on any failure). `LeaderboardModal.ts` (`<leaderboard-modal
+id="page-leaderboard" inline>` in `index.html`, router name `leaderboard`; tabs per board;
+  read on every open and once per tab visit; an answer arriving after the page closed is
+  dropped; spinner, empty board, unreachable API with a retry). A **Leaderboard** item after
+  Play in both nav bars (a text item until Tom draws it a pixel-art button like Play's), and a
+  Leaderboard entry in the Sign in menu and the account panel. `SignIn.ts` (`startSignInWith`,
+  `signInProviders`, the provider icons) is the sign-in start the account button and the win
+  screen now share. `hud/layers/ReignPrompt.ts` (`<reign-prompt>`): the win screen renders it
+  with `active` set for the credited winner on a throne round (`wonRound` and a current throne);
+  it asks `isLoggedIn`, then either offers the providers or polls `fetchUserMeUncached` every
+  3 s, up to 12 times, until `reigns` exceeds the cached profile's, and shows the last numbers
+  read without a mark if they never move. Whatever fails inside it leaves the win screen as it
+  was.
+- **Strings**: `main.leaderboard`, `account.view_leaderboard`, `leaderboard.*` (the page; the
+  object already held the in-game stats panel's column names) and `win_modal.reign_*`.
+- **Tests**: `tests/api/Leaderboard.test.ts` (the empty board; an unknown board; the two orders
+  with shared ranks; the own row ranked, unranked and anonymous; banned, expired-ban and deleted
+  accounts; the top-100 cut with the caller ranked beyond it; the minute's cache against the
+  live own row and the headers). `tests/client/LeaderboardModal.test.ts` (rows and the split,
+  the tabs and the once-per-visit read, the highlighted and the pinned own row, the two hints,
+  the empty board, the retry, a stale answer). `tests/client/graphics/layers/ReignPrompt.test.ts`
+  (nothing when inactive; the guest's providers and the home redirect; the numbers moving on the
+  second poll with both marks; the reign mark alone; the poll limit; no cached profile; removal
+  stops the polling). `WinModalReign.test.ts` (who gets the prompt: the slayer and the timer
+  Hegemon; not the overthrown, a bystander, a slayer's teammate, or anyone off a throne round).
+  `tests/client/NavBars.leaderboard.test.ts` (the item after Play in both bars, its translation
+  hooks, the highlight).
+- **Not yet**: Google among the providers (after the privacy policy, B2's note); a weekly
+  board, profiles behind a row (B7); the pixel-art nav button.
+
 ## 13. Tests
 
 API tests run against an in-memory database, under `tests/api/`, added to `npm test`.
@@ -547,8 +600,8 @@ API tests run against an in-memory database, under `tests/api/`, added to `npm t
   private and solo records kept but not recorded; a wrong API key; the read-back and the
   pruning; the rebuild.
 - `NextReign.test.ts` (core, built): the four outcomes.
-- `Leaderboard.test.ts`: ordering and ties; banned and deleted accounts absent; the caller's own
-  row.
+- `Leaderboard.test.ts` (built, §12.5): ordering and ties; banned and deleted accounts absent;
+  the caller's own row; the top-100 cut; the cache.
 - `Account.test.ts`: rename rules and the wait; deletion erases sign-ins and sessions and
   anonymises rounds.
 - Server: `tests/server/GameServerJoin` gains the guest-in-production, assigned-guest-name
@@ -583,6 +636,10 @@ API tests run against an in-memory database, under `tests/api/`, added to `npm t
 
 ## 16. Changelog
 
+- **2026-10-12** — **B5 built** (§12.5): `GET /leaderboard` with the caller's own row, the
+  Leaderboard page beside Play with its two tabs, the win screen's reign prompt (sign-in for a
+  guest winner, the numbers moving for a signed-in one), and the sign-in start shared between
+  the account button and the win screen. §6 records the tie rule and who is left off.
 - **2026-10-11** — **B4 built** (§12.4): the throne block and `verified` on the record,
   `nextReign` in core shared with the registry, the ingest into `rounds`, `round_players` and
   `stats`, kept records with 30-day pruning, the rebuild script, and the account panel's numbers

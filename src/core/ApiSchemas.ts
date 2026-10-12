@@ -342,6 +342,40 @@ export const UserMeResponseSchema = z.object({
   }),
 });
 export type UserMeResponse = z.infer<typeof UserMeResponseSchema>;
+
+// Under a Dark Star: GET /leaderboard?board=reigns|longest
+// (docs/DarkStar-Accounts.md §6). The top 100 of one board, and the caller's
+// own row when they sent a token: ranked when they are on the board (rank
+// is then the same as in `entries` when they are in the top 100), unranked
+// (`rank` null) with their zeros otherwise.
+export const LEADERBOARD_BOARDS = ["reigns", "longest"] as const;
+export const LeaderboardBoardSchema = z.enum(LEADERBOARD_BOARDS);
+export type LeaderboardBoard = z.infer<typeof LeaderboardBoardSchema>;
+
+export const LeaderboardEntrySchema = z.object({
+  rank: z.number().int().min(1),
+  publicId: z.string(),
+  // Name.1234, as /users/@me gives it.
+  username: z.string(),
+  reigns: z.number().int().min(0),
+  longestReign: z.number().int().min(0),
+  thronesTaken: z.number().int().min(0),
+  roundsHeld: z.number().int().min(0),
+});
+export type LeaderboardEntry = z.infer<typeof LeaderboardEntrySchema>;
+
+export const LeaderboardResponseSchema = z.object({
+  board: LeaderboardBoardSchema,
+  // When the board was computed (it is cached for a minute).
+  generatedAt: z.number().int().min(0),
+  entries: LeaderboardEntrySchema.array(),
+  me: LeaderboardEntrySchema.extend({
+    rank: z.number().int().min(1).nullable(),
+  })
+    .nullable()
+    .optional(),
+});
+export type LeaderboardResponse = z.infer<typeof LeaderboardResponseSchema>;
 export type UserSubscription = NonNullable<
   NonNullable<UserMeResponse["player"]["subscription"]>
 >;

@@ -1,8 +1,7 @@
 import { randomBytes } from "crypto";
-import { Express, Request, Response } from "express";
-import { CryptoKey, importJWK, jwtVerify } from "jose";
+import { Express, Response } from "express";
 import { DatabaseSync } from "node:sqlite";
-import { base64urlToUuid, uuidToBase64url } from "../core/Base64";
+import { uuidToBase64url } from "../core/Base64";
 import {
   accountById,
   accountProvider,
@@ -11,6 +10,7 @@ import {
   tokenRole,
   userMeResponse,
 } from "./Accounts";
+import { BearerVerifier } from "./Bearer";
 import { allowedOrigin, ApiConfig, issuerFor } from "./Config";
 import { SigningKey, signToken } from "./Keys";
 import { FetchLike, providersFor } from "./Providers";
@@ -61,9 +61,7 @@ export function mountAuthRoutes(app: Express, deps: AuthDeps): void {
   );
   const issuer = issuerFor(config);
   const audience = config.domain;
-  let publicKey: Promise<CryptoKey | Uint8Array> | null = null;
-  const verificationKey = () =>
-    (publicKey ??= importJWK(key.publicJwk, "EdDSA"));
+  const bearer = new BearerVerifier(key, config);
 
   const callbackUri = (provider: string) =>
     `${issuer}/auth/callback/${provider}`;
@@ -236,7 +234,7 @@ export function mountAuthRoutes(app: Express, deps: AuthDeps): void {
   // The account behind a token: the client's and the game server's view.
   app.get("/users/@me", async (req, res, next) => {
     try {
-      const accountId = await bearerAccountId(req);
+      const accountId = await bearer.accountId(req);
       const account = accountId === null ? null : accountById(db, accountId);
       if (account === null || account.deleted_at !== null) {
         res.status(401).json({ error: "unauthorized" });
@@ -247,28 +245,6 @@ export function mountAuthRoutes(app: Express, deps: AuthDeps): void {
       next(error);
     }
   });
-
-  // The account ID a Bearer token names, or null when there is no valid
-  // token. Verified the way the game server verifies it (jwt.ts): EdDSA,
-  // our key, issuer and audience pinned.
-  async function bearerAccountId(req: Request): Promise<string | null> {
-    const header = req.headers.authorization;
-    if (typeof header !== "string" || !header.startsWith("Bearer "))
-      return null;
-    const token = header.slice("Bearer ".length).trim();
-    if (token === "") return null;
-    try {
-      const { payload } = await jwtVerify(token, await verificationKey(), {
-        algorithms: ["EdDSA"],
-        issuer,
-        audience,
-      });
-      if (typeof payload.sub !== "string") return null;
-      return base64urlToUuid(payload.sub) || null;
-    } catch {
-      return null;
-    }
-  }
 }
 
 // The state cookie: the one-time value and where to send the browser after,

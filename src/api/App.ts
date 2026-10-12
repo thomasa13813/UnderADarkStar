@@ -4,6 +4,7 @@ import { mountAuthRoutes } from "./AuthRoutes";
 import { allowedOrigin, ApiConfig } from "./Config";
 import { mountJoinRoutes } from "./JoinRoutes";
 import { jwksDocument, SigningKey } from "./Keys";
+import { mountLeaderboardRoutes } from "./LeaderboardRoutes";
 import { FetchLike } from "./Providers";
 import { RecordStore } from "./Records";
 import { mountResultRoutes } from "./ResultRoutes";
@@ -13,8 +14,8 @@ import { mountResultRoutes } from "./ResultRoutes";
 // serves its signing key, answers the health check, and tells the client
 // there is no cluster list (which the client reads as "reachable, one
 // server"). B2 adds sign-in, sessions and /users/@me (AuthRoutes.ts), B3 the
-// join path (JoinRoutes.ts), B4 the results (ResultRoutes.ts). The board
-// follows (B5).
+// join path (JoinRoutes.ts), B4 the results (ResultRoutes.ts), B5 the
+// board (LeaderboardRoutes.ts).
 //
 // Built as a factory so tests mount it on an ephemeral port; Server.ts is the
 // one place that reads the environment and listens.
@@ -82,6 +83,7 @@ export function createApiApp(deps: ApiDeps): Express {
   mountAuthRoutes(app, deps);
   mountJoinRoutes(app, deps);
   mountResultRoutes(app, { ...deps, records });
+  mountLeaderboardRoutes(app, deps);
 
   app.use((_req, res) => {
     res.status(404).json({ error: "not found" });

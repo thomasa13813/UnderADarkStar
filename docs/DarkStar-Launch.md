@@ -188,8 +188,9 @@ friends is possible.
 - [x] **B4** Results: the record additions, ingest, reigns and longest reign (M). Built
       2026-10-11 (Accounts doc §12.4) on `feat/team-thrones`, with the account panel's numbers
       from B5; live once that branch is deployed.
-- [ ] **B5** The leaderboard page, ~~the account panel's numbers~~ (with B4), the win-screen
-      prompt (M).
+- [x] **B5** The leaderboard page, ~~the account panel's numbers~~ (with B4), the win-screen
+      prompt (M). Built 2026-10-12 (Accounts doc §12.5) on `feat/leaderboard`; live once that
+      branch is deployed.
 - [x] **T4** Special thrones: the modifier whitelist and picker (S). Built 2026-10-03 (Lobbies doc
       §10.4), ahead of Stage 3 at Tom's request.
 
@@ -293,6 +294,11 @@ _Done when_ the checklist is clean. This build is the release candidate.
 
 ## 7. Changelog
 
+- **2026-10-12** — **B5 built** on `feat/leaderboard` (Accounts doc §12.5): the Leaderboard page
+  beside Play (Reigns and Longest reign, the player's own row), the API's board endpoint, and
+  the win screen's reign prompt (a guest winner is offered the sign-in, a signed-in winner sees
+  the numbers move). Stage 4's "done when" is reachable once the branch is deployed: win a
+  public throne round signed in on the live server and open the page.
 - **2026-10-12** — **Soundtrack in** (Design §11): Tom's five AI-generated tracks replace the silent
   placeholders and cycle with crossfades through the whole session (`Soundtrack.ts`). Stage 5's
   sound item keeps only the new cues, the orphan files and the game-start alert.

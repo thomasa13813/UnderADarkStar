@@ -50,7 +50,9 @@ import { EventBus } from "../../../../src/core/EventBus";
 // panel reads the list live over its own feed, which runs only while it is
 // on screen. Doing nothing stays (the lobby the Stay button leads to is the
 // successor the server announced). A successor that vanishes after being
-// listed was retired (L20): only the head is offered.
+// listed was retired (L20): only the head is offered. Eliminated while the
+// round goes on (L31), the death screen carries the same panel with the head
+// alone: there is no successor yet, and staying is Spectate.
 
 const VEGA = {
   throneID: "throne-vega",
@@ -81,12 +83,15 @@ function throne(
   };
 }
 
-function game(): GameView {
+function game(opts: { alive?: boolean; spawned?: boolean } = {}): GameView {
   return {
     myPlayer: () => ({
-      isAlive: () => false,
+      isAlive: () => opts.alive ?? false,
       isLobbyCreator: () => false,
+      hasSpawned: () => opts.spawned ?? true,
     }),
+    inSpawnPhase: () => false,
+    updatesSinceLastTick: () => ({}),
   } as unknown as GameView;
 }
 
@@ -119,6 +124,7 @@ const place = () =>
   modal.querySelector("[data-line-place]")?.textContent?.trim() ?? null;
 const hint = () =>
   modal.querySelector("[data-line-panel] p")?.textContent?.trim() ?? null;
+const mode = () => panel()?.getAttribute("data-line-mode") ?? null;
 
 beforeEach(async () => {
   lobbiesCallbackRef.current = null;
@@ -239,6 +245,122 @@ describe("the win screen's line panel (L27)", () => {
     await modal.updateComplete;
 
     expect(modal.querySelector("[data-throne-panel]")).not.toBeNull();
+    expect(panel()).toBeNull();
+    expect(socketLog).toEqual([]);
+  });
+});
+
+describe("the death screen's line panel (L31)", () => {
+  it("offers a player eliminated mid-round the head of the line alone, live", async () => {
+    setCurrentThrone(VEGA);
+    modal.tick();
+    await modal.updateComplete;
+
+    expect(modal.isVisible).toBe(true);
+    expect(panel()).not.toBeNull();
+    expect(mode()).toBe("fallen");
+    expect(modal.querySelector("[data-join-next]")).toBeNull();
+    expect(socketLog).toEqual(["start"]);
+    // Before the list arrives: no Stay (our throne's next round does not
+    // exist yet), no head yet.
+    expect(stayTitle()).toBeNull();
+    expect(headTitle()).toBeNull();
+    expect(hint()).toBe("throne.line_fallen_empty");
+
+    await push({
+      throne: [
+        throne("g-ours", "Vega", "ffa", { running: true }),
+        throne("g-head", "Altair", "ffa", { place: 1 }),
+        throne("g-mid", "Deneb", "ffa", { place: 2 }),
+        throne("g-special", "Rigel", "special", { place: 1 }),
+      ],
+    });
+    expect(stayTitle()).toBeNull();
+    expect(headTitle()).toBe("throne.line_head:Altair");
+    expect(hint()).toBe("throne.line_fallen");
+    expect(
+      modal.querySelector("[data-line-head] o-button")?.getAttribute("variant"),
+    ).toBe("primary");
+
+    // Altair launches; Deneb is the head now.
+    await push({
+      throne: [
+        throne("g-ours", "Vega", "ffa", { running: true }),
+        throne("g-head", "Altair", "ffa", { running: true }),
+        throne("g-mid", "Deneb", "ffa", { place: 1 }),
+      ],
+    });
+    expect(headTitle()).toBe("throne.line_head:Deneb");
+
+    // Spectate closes the panel and its feed; the death screen opens once.
+    modal.hide();
+    expect(socketLog).toEqual(["start", "stop"]);
+    modal.tick();
+    await modal.updateComplete;
+    expect(modal.isVisible).toBe(false);
+  });
+
+  it("says so when nothing of this mode is gathering", async () => {
+    setCurrentThrone({ ...VEGA, type: "special" });
+    modal.tick();
+    await push({
+      throne: [
+        throne("g-ours", "Vega", "special", { running: true }),
+        throne("g-head", "Altair", "ffa", { place: 1 }),
+      ],
+    });
+    expect(mode()).toBe("fallen");
+    expect(headTitle()).toBeNull();
+    expect(hint()).toBe("throne.line_fallen_empty");
+  });
+
+  it("grows into the full panel when the round ends and the successor arrives", async () => {
+    setCurrentThrone(VEGA);
+    modal.tick();
+    await push({
+      throne: [
+        throne("g-ours", "Vega", "ffa", { running: true }),
+        throne("g-head", "Altair", "ffa", { place: 1 }),
+      ],
+    });
+    expect(mode()).toBe("fallen");
+
+    bus.emit(new NewLobbyEvent("g-next"));
+    await push({
+      throne: [
+        throne("g-head", "Altair", "ffa", { place: 1 }),
+        throne("g-next", "Vega", "ffa", { place: 2 }),
+      ],
+    });
+    expect(mode()).toBe("successor");
+    expect(stayTitle()).toBe("throne.line_stay:Vega");
+    expect(place()).toBe("throne.line_place_ahead:1");
+    expect(headTitle()).toBe("throne.line_head:Altair");
+    expect(hint()).toBe("throne.line_hint");
+    // One feed the whole way: the panel never left the screen.
+    expect(socketLog).toEqual(["start"]);
+  });
+
+  it("gives a death off a throne round the plain death screen", async () => {
+    modal.tick();
+    await modal.updateComplete;
+
+    expect(modal.isVisible).toBe(true);
+    expect(panel()).toBeNull();
+    expect(socketLog).toEqual([]);
+  });
+
+  it("does not open for a player still alive, or one who never spawned", async () => {
+    setCurrentThrone(VEGA);
+    modal.game = game({ alive: true });
+    modal.tick();
+    await modal.updateComplete;
+    expect(modal.isVisible).toBe(false);
+
+    modal.game = game({ spawned: false });
+    modal.tick();
+    await modal.updateComplete;
+    expect(modal.isVisible).toBe(false);
     expect(panel()).toBeNull();
     expect(socketLog).toEqual([]);
   });

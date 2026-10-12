@@ -29,6 +29,7 @@ import {
   SendWinnerEvent,
 } from "../../Transport";
 import { GameView } from "../../view";
+import "./ReignPrompt";
 
 // Under a Dark Star: the winner's Next-round panel on the win screen
 // (docs/DarkStar-Lobbies.md §4 step 4, §5.5). The master opened the throne's
@@ -36,8 +37,12 @@ import { GameView } from "../../view";
 // pick its map and keep the throne or step down, then jump to the lobby.
 // Everyone else on a throne round gets the line panel (L27): stay with this
 // throne, shown its place in line live, or join the head of the line, the
-// next round of the same mode to launch. Doing nothing stays. A private
-// lobby's successor is a plain Join button beside Exit and Spectate.
+// next round of the same mode to launch. Doing nothing stays. A player
+// eliminated while the round goes on gets the same panel on the death screen
+// with the head alone (L31): their throne's next round does not exist yet,
+// and staying is Spectate. A private lobby's successor is a plain Join
+// button beside Exit and Spectate. The winner of a public throne round also
+// gets the reign prompt (ReignPrompt.ts, Accounts §6) above the panels.
 interface ThronePanel {
   gameID: string;
   openedAt: number;
@@ -49,6 +54,8 @@ export class WinModal extends LitElement implements Controller {
   public game: GameView;
   public eventBus: EventBus;
 
+  // Set once the death screen has opened for us mid-round; it also turns
+  // the line panel into its head-only form (linePanelMode).
   private hasShownDeathModal = false;
 
   @state()
@@ -102,6 +109,9 @@ export class WinModal extends LitElement implements Controller {
         <h2 class="m-0 mb-4 text-[26px] text-center text-white shrink-0">
           ${this._title || ""}
         </h2>
+        <reign-prompt
+          .active=${this.wonRound && currentThrone() !== undefined}
+        ></reign-prompt>
         ${this.renderThronePanel()} ${this.renderLinePanel()}
         <div class="mt-4 flex justify-between gap-2.5 shrink-0">
           <o-button
@@ -144,6 +154,23 @@ export class WinModal extends LitElement implements Controller {
     );
   }
 
+  // Why the line panel is on screen: "successor" after the round, stay with
+  // this throne or join the head; "fallen" while it still runs and we are
+  // out of it, the head alone. Nothing for the winner, a private lobby, or
+  // a game that runs for no throne.
+  private linePanelMode(): "successor" | "fallen" | null {
+    if (this.onThroneRound()) return "successor";
+    if (
+      this.hasShownDeathModal &&
+      this.nextLobbyID === null &&
+      this.throne === null &&
+      currentThrone() !== undefined
+    ) {
+      return "fallen";
+    }
+    return null;
+  }
+
   async show() {
     this.isVisible = true;
     this.syncLineFeed();
@@ -168,7 +195,7 @@ export class WinModal extends LitElement implements Controller {
 
   // The public-list feed runs exactly while the line panel is on screen.
   private syncLineFeed() {
-    const wanted = this.isVisible && this.onThroneRound();
+    const wanted = this.isVisible && this.linePanelMode() !== null;
     if (wanted && this.lineSocket === null) {
       this.lineSocket = new PublicLobbySocket((lobbies) => {
         this.line = lobbies.games ?? {};
@@ -266,32 +293,41 @@ export class WinModal extends LitElement implements Controller {
   // throne this round ran on, with its place in line as the list reports it;
   // "Join the head" is the next throne of the same type to launch, when that
   // is another throne. A successor that vanished from the list after being
-  // seen was retired (L20): only the head is offered.
+  // seen was retired (L20): only the head is offered. Eliminated mid-round
+  // (L31) there is no successor to stay with, so the head is offered alone
+  // and the hint says the round goes on; our own throne is running, so it is
+  // never the head.
   private renderLinePanel() {
-    if (!this.onThroneRound()) return nothing;
+    const mode = this.linePanelMode();
+    if (mode === null) return nothing;
+    const fallen = mode === "fallen";
     const throne = currentThrone()!;
     const own = findLobby(this.line, this.nextLobbyID);
-    const retired = this.lineSeenOwn && own === undefined;
+    const retired = !fallen && this.lineSeenOwn && own === undefined;
     const head = lineHead(this.line, throne.type);
     const headIsOwn = head !== undefined && head.gameID === this.nextLobbyID;
     const place = placeLabel(own?.throne?.place);
+    const hint = fallen
+      ? head === undefined
+        ? translateText("throne.line_fallen_empty")
+        : translateText("throne.line_fallen")
+      : retired
+        ? translateText("throne.line_retired")
+        : headIsOwn
+          ? translateText("throne.line_is_head")
+          : translateText("throne.line_hint");
     return html`
       <div
         class="flex flex-col gap-3 rounded-lg border border-purple-400/40 bg-black/30 p-3"
         data-line-panel
+        data-line-mode=${mode}
       >
         <span class="font-bold tracking-wide text-purple-300">
           ${translateText("throne.line_title")}
         </span>
-        <p class="text-xs text-white/60">
-          ${retired
-            ? translateText("throne.line_retired")
-            : headIsOwn
-              ? translateText("throne.line_is_head")
-              : translateText("throne.line_hint")}
-        </p>
+        <p class="text-xs text-white/60">${hint}</p>
         <div class="flex flex-col gap-2.5 sm:flex-row">
-          ${retired
+          ${retired || fallen
             ? nothing
             : html`<div class="flex flex-1 flex-col gap-1" data-line-stay>
                 <o-button
@@ -313,7 +349,7 @@ export class WinModal extends LitElement implements Controller {
           ${head !== undefined && !headIsOwn
             ? html`<div class="flex flex-1 flex-col gap-1" data-line-head>
                 <o-button
-                  variant=${retired ? "primary" : "ghost"}
+                  variant=${retired || fallen ? "primary" : "ghost"}
                   width="block"
                   .title=${translateText("throne.line_head", {
                     name: head.throne?.name ?? "",
@@ -507,6 +543,8 @@ export class WinModal extends LitElement implements Controller {
       this.hasShownDeathModal = true;
       this._title = translateText("win_modal.died");
       this.eventBus.emit(new PlaySoundEffectEvent("defeat"));
+      // On a throne round this opens the head-only line panel (L31), and
+      // its feed with it.
       this.show();
     }
     const updates = this.game.updatesSinceLastTick();
