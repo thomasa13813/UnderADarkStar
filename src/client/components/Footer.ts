@@ -1,14 +1,7 @@
 import { LitElement, html } from "lit";
 import { customElement } from "lit/decorators.js";
 import { assetUrl } from "../../core/AssetUrls";
-import { currentGameVersion } from "../GameVersion";
-
-/**
- * Public repository of this fork. The AGPL obliges us to offer players the
- * source of the server they are playing on; this link is how we do it, so it
- * must always point at the code that is actually deployed.
- */
-export const SOURCE_URL = "https://github.com/thomasa13813/UnderADarkStar";
+import { currentGameVersion, currentSourceUrl } from "../GameVersion";
 
 @customElement("page-footer")
 export class Footer extends LitElement {
@@ -16,6 +9,9 @@ export class Footer extends LitElement {
   // BOOTSTRAP_CONFIG, which the server injects into the page and which is not
   // guaranteed to exist at the moment this module is first imported.
   private readonly versionLabel = currentGameVersion();
+  // The AGPL §13 offer of source, pointed at the deployed commit's tree so a
+  // player reaches the code they are playing on (GameVersion.sourceUrlFor).
+  private readonly sourceUrl = currentSourceUrl();
 
   createRenderRoot() {
     return this;
@@ -33,7 +29,7 @@ export class Footer extends LitElement {
             class="flex items-center justify-center gap-4 lg:gap-6 pt-2 w-full relative"
           >
             <a
-              href=${SOURCE_URL}
+              href=${this.sourceUrl}
               target="_blank"
               rel="noopener noreferrer"
               class="flex items-center gap-2 opacity-60 hover:opacity-100 transition-all"

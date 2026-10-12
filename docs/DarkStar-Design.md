@@ -2004,6 +2004,13 @@ these before any public release.
   screen); do **not** use "OpenFront" as the primary title or imply endorsement. (The rename to
   "Under a Dark Star" is therefore required, not just branding.)
 - **`resources/`: CC BY-SA 4.0** — attribute OpenFront; derivative assets are share-alike.
+- **Our own audio and the fonts [2026-10-12].** The soundtrack and the four own cues were produced
+  with Claude; Anthropic's terms assign its rights in output to the user and ask no attribution, so
+  they ship as January Games' under `resources/`' CC BY-SA (`CREDITS.md` says so, and that
+  purely AI-generated audio may attract no copyright at all). Each font carries its OFL text
+  (`Tektur-OFL.txt`, `Overpass-OFL.txt`). The footer's Source link names the deployed commit
+  (`/tree/<GIT_COMMIT>`; `GameVersion.sourceUrlFor`), the §13 offer made exact. `SECURITY.md`
+  says where to report a vulnerability privately.
 - **`proprietary/`: removed (2026-09-27, roadmap P1 step A).** OpenFront's logos, `OpenFront.ttf`,
   favicon and music are out of the repository and the build. Our own marks live in **`branding/`**
   (© January Games, All Rights Reserved, `branding/LICENSE`), which overrides `resources/` through
@@ -2073,6 +2080,11 @@ hydrogen-bomb removal (closed by S6).
 
 ## 11. Changelog
 
+- **2026-10-12** — **Ready for a public repository (§8).** The soundtrack and the four own cues are
+  credited as produced with Claude (Anthropic's terms assign the output to the user, no attribution
+  owed; CC BY-SA 4.0 with the rest of `resources/`); Overpass gets its OFL text beside Tektur's;
+  `SECURITY.md` added and linked from the README; the footer's Source link now names the deployed
+  commit (`GameVersion.sourceUrlFor`, tested). On `chore/public-repo`.
 - **2026-10-12** — **The fleet cue is ours (S8).** Tom supplied `invasion.mp3`; it replaces the
   inherited boat horn when your Fleet sets out, behind the unchanged `transport-ship` key and to
   the same audience (you). `docs/DarkStar-Sound.md` and `CREDITS.md` updated.

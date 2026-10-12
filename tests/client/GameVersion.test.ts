@@ -2,8 +2,10 @@ import version from "resources/version.txt?raw";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { ClientEnv } from "../../src/client/ClientEnv";
 import {
+  SOURCE_URL,
   composeGameVersion,
   currentGameVersion,
+  sourceUrlFor,
   taggedGameVersion,
 } from "../../src/client/GameVersion";
 
@@ -124,5 +126,26 @@ describe("taggedGameVersion", () => {
     expect(composeGameVersion("x.xx.xx", SHA)).not.toBe(
       taggedGameVersion("x.xx.xx"),
     );
+  });
+});
+
+// The AGPL §13 offer: the footer's Source link names the deployed commit, so
+// a player reaches the code they are playing on, not whatever main holds by
+// the time they click.
+describe("sourceUrlFor", () => {
+  it("links the tree of the build's commit", () => {
+    expect(sourceUrlFor(SHA)).toBe(`${SOURCE_URL}/tree/${SHA}`);
+  });
+
+  it("tolerates whitespace and upper-case hex, as an export might carry", () => {
+    expect(sourceUrlFor(` ${SHA.toUpperCase()}\n`)).toBe(
+      `${SOURCE_URL}/tree/${SHA}`,
+    );
+  });
+
+  it("falls back to the repository when the build names no commit", () => {
+    expect(sourceUrlFor("DEV")).toBe(SOURCE_URL);
+    expect(sourceUrlFor("unknown")).toBe(SOURCE_URL);
+    expect(sourceUrlFor("")).toBe(SOURCE_URL);
   });
 });

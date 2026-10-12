@@ -17,6 +17,32 @@ const SHA_RE = /^[0-9a-f]{7,40}$/i;
 const SHORT_COMMIT_LENGTH = 7;
 
 /**
+ * Public repository of this fork. The AGPL (§13) obliges us to offer players
+ * the source of the server they are playing on; the footer's Source link is
+ * that offer.
+ */
+export const SOURCE_URL = "https://github.com/thomasa13813/UnderADarkStar";
+
+/**
+ * Where the Source link points: the tree of the commit this build was made
+ * from, so the offer names the code actually deployed rather than whatever
+ * main holds by the time a player clicks. A build whose GIT_COMMIT is not a
+ * sha ("DEV" locally, "unknown" from a bare docker build) links the
+ * repository itself.
+ */
+export function sourceUrlFor(gitCommit: string): string {
+  const commit = gitCommit.trim();
+  return SHA_RE.test(commit)
+    ? `${SOURCE_URL}/tree/${commit.toLowerCase()}`
+    : SOURCE_URL;
+}
+
+/** sourceUrlFor applied to this page; same caveat as currentGameVersion. */
+export function currentSourceUrl(): string {
+  return sourceUrlFor(currentGitCommit());
+}
+
+/**
  * The label identifying this client build.
  *
  * Show the version when the build has one, and the 7-char commit when it does

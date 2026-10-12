@@ -29,6 +29,7 @@ the footer's "Source" link.
   Games and are not open: see [branding/LICENSE](branding/LICENSE).
 - Licence history and the fork's obligations: [LICENSING.md](LICENSING.md).
 - Third-party data, icons and fonts: [CREDITS.md](CREDITS.md).
+- Found a security problem? [SECURITY.md](SECURITY.md) says how to report it.
 
 ## Prerequisites
 

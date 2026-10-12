@@ -26,25 +26,27 @@ open licence and are not in this repository. See [LICENSING.md](LICENSING.md).
   all rights reserved. See [branding/LICENSE](branding/LICENSE). The January
   Games wordmark in the footer (`branding/images/JanuaryGamesWordmark*.svg`)
   is an AI-generated placeholder mark, kept until a final studio logo is made.
-- **Soundtrack:** the five tracks in `resources/sounds/music/` (_The Hegemon_,
-  _Dark Expanse_, _Whispers of Rebellion_, _Throne of Stars_, _The Fall_) were
-  generated with an AI music tool by January Games for this game (2026-10-12)
-  and are released with the rest of `resources/` under CC BY-SA 4.0. No
-  third-party music is used; nothing from OpenFront's soundtrack was ever in
-  this repository.
+- **Audio of our own:** the five soundtrack tracks in `resources/sounds/music/`
+  (_The Hegemon_, _Dark Expanse_, _Whispers of Rebellion_, _Throne of Stars_,
+  _The Fall_) and the effects `landing.mp3` (troops landing), `launch.mp3`
+  (troops launched from the Dark Star or a stargate), `missile.mp3` (a missile
+  leaving a stargate) and `invasion.mp3` (a fleet setting out) in
+  `resources/sounds/effects/` were produced with Claude, Anthropic's AI model,
+  at January Games' direction (October 2026). Anthropic's terms assign its
+  rights in that output to the user and ask for no attribution, so the files
+  are January Games' and ship with the rest of `resources/` under CC BY-SA 4.0.
+  Whether purely AI-generated audio attracts copyright at all is unsettled;
+  where it does not, the files are free to use regardless of the licence. No
+  third-party music or samples are used; nothing from OpenFront's soundtrack
+  was ever in this repository.
 - **Placeholder audio:** `resources/sounds/effects/game-start-alert.mp3` is a
   silent placeholder until a cue of our own lands (roadmap P4).
-- **Own sound effects:** `resources/sounds/effects/landing.mp3` (troops
-  landing), `launch.mp3` (troops launched from the Dark Star or a stargate),
-  `missile.mp3` (a missile leaving a stargate) and `invasion.mp3` (a fleet
-  setting out) were made by January Games for this game and are released with
-  the rest of `resources/` under CC BY-SA 4.0.
 - **Fonts** (`resources/fonts/`), both under the
-  [SIL Open Font License 1.1](https://openfontlicense.org/): Tektur, the
-  display face, © 2023 The Tektur Project Authors
-  (<https://github.com/hyvyys/Tektur>, licence in `Tektur-OFL.txt`); and
-  Overpass, used in the game and as the fallback, by Delve Withrington, Dave
-  Bailey and Thomas Jockin.
+  [SIL Open Font License 1.1](https://openfontlicense.org/), each with its
+  licence text beside it: Tektur, the display face, © 2023 The Tektur Project
+  Authors (<https://github.com/hyvyys/Tektur>, `Tektur-OFL.txt`); and
+  Overpass, used in the game and as the fallback, © 2021 The Overpass Project
+  Authors (<https://github.com/RedHatOfficial/Overpass>, `Overpass-OFL.txt`).
 
 ## Map data
 
