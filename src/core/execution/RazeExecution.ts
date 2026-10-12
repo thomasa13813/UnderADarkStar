@@ -412,6 +412,20 @@ export class RazeExecution implements Execution, StrikeInFlight, HegemonStrike {
         this.comeHome(this.troops ?? 0);
         return;
       }
+      if (this.punitive !== null && this.mg.owner(this.ref) !== this.target) {
+        // The gate changed hands in flight (H19, 2026-10-12): the punishment
+        // was the launcher's owner's, not the captor's, so the strike is
+        // cancelled on the spot. The levy stays spent: comeHome burns it.
+        this.mg.displayMessage(
+          "events_display.dark_star_punitive_lost",
+          MessageType.ATTACK_CANCELLED,
+          this.hegemon.id(),
+          undefined,
+          { name: this.target.displayName() },
+        );
+        this.comeHome(this.troops ?? 0);
+        return;
+      }
       if (!this.fly()) return;
       this.land();
       return;

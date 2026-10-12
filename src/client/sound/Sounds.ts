@@ -66,7 +66,9 @@ export const soundEffectUrls: ReadonlyMap<SoundEffect, string> = new Map([
   ["alliance-declined", assetUrl("sounds/effects/alliance-declined.mp3")],
   ["build-factory", assetUrl("sounds/effects/build-factory.mp3")],
   ["build-train-station", assetUrl("sounds/effects/build-train-station.mp3")],
-  ["transport-ship", assetUrl("sounds/effects/transport-ship.mp3")],
+  // Tom's invasion cue (2026-10-12) replaces the inherited boat horn; the
+  // key stays, so the controller, mixer and tests are untouched.
+  ["transport-ship", assetUrl("sounds/effects/invasion.mp3")],
   ["nuke-warning", assetUrl("sounds/effects/nuke-warning.mp3")],
   ["spawn", assetUrl("sounds/effects/spawn.mp3")],
   ["landing", assetUrl("sounds/effects/landing.mp3")],

@@ -35,10 +35,10 @@ open licence and are not in this repository. See [LICENSING.md](LICENSING.md).
 - **Placeholder audio:** `resources/sounds/effects/game-start-alert.mp3` is a
   silent placeholder until a cue of our own lands (roadmap P4).
 - **Own sound effects:** `resources/sounds/effects/landing.mp3` (troops
-  landing), `launch.mp3` (troops launched from the Dark Star or a stargate)
-  and `missile.mp3` (a missile leaving a stargate) were made by January Games
-  for this game and are released with the rest of `resources/` under
-  CC BY-SA 4.0.
+  landing), `launch.mp3` (troops launched from the Dark Star or a stargate),
+  `missile.mp3` (a missile leaving a stargate) and `invasion.mp3` (a fleet
+  setting out) were made by January Games for this game and are released with
+  the rest of `resources/` under CC BY-SA 4.0.
 - **Fonts** (`resources/fonts/`), both under the
   [SIL Open Font License 1.1](https://openfontlicense.org/): Tektur, the
   display face, © 2023 The Tektur Project Authors

@@ -265,6 +265,11 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
     Antimatter, and orders the strike by **clicking the silo** (a plain click, or the radial's
     Punish slot). The throne **may decline**: it pays
     nothing, so declining is how it shows favour (H15) or leaves an intimidating power alone.
+    [Revised 2026-10-12] The flag is the **firing owner's**, never the gate's: a gate that
+    **changes hands** loses its flag at once, so a player who captures another's launcher is not
+    punished for a launch they never made. A punitive strike **in flight** to a gate that changes
+    hands is **cancelled on the spot**, the throne told; the levy is **not refunded** (it was spent
+    when the order was given, like any strike's troops).
   - **The levy.** The strike's troops are **not the Hegemon's**. When it is ordered, every living
     challenger, Barons included and the nuke's victim too, is levied a share of the troops it has at
     home: `punitiveLevyPercentNuclear` (10%) for a Nuclear flag, `punitiveLevyPercentAntimatter` (25%)
@@ -354,11 +359,12 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   behaviour is unchanged apart from the cheaper price and the faster reload.
 - **C5 — Shield arrays.** [Decided 2026-09-28; built the same day, §6.23; revised 2026-09-29,
   §6.24; price 5M → 2M 2026-09-30] A challenger **structure** (**2M gold**, 10 s build, **one level, no upgrades**) that
-  projects a perimeter of `shieldArrayRadius` (35 tiles: half a level-1 SAM's 70, and never more):
+  projects a perimeter of `shieldArrayRadius` (**39** tiles since 2026-10-12: half a level-1 SAM's
+  70 plus a tenth, 38.5 rounded up; 35 before, Tom finding it a touch too small):
   **no missile can harm anything inside it**. A warhead may be aimed anywhere, the array included;
   when it lands, the blast clears its circle as usual **except the tiles inside the perimeter** —
   no land lost, no troops killed, no structure destroyed there, no crater — so an Antimatter
-  Warhead on an array wipes the ring from 35 to 100 and leaves the inside untouched, and a Nuclear
+  Warhead on an array wipes the ring from 39 to 100 and leaves the inside untouched, and a Nuclear
   Warhead (30) on the array itself does nothing at all. Nothing is refused and nothing is shot
   down. **The Hegemon's missiles are kept out like anyone else's** (revised from "pass through",
   Tom 2026-09-29); its **strikes** (H8, H19) still pass through. An array under construction
@@ -465,7 +471,7 @@ destroyers and the challenger table). The playtest checks left over from them ar
 | F18 | **Exclaves from gate landings (§6.10, §6.11).** A landlocked beachhead pocket stands until its landing tile is retaken. Measured: World ends with 4–23 such pockets, Milky Way 1–3, Event Horizon 0–1. Whether a cap or decay is needed — likely moot once the geography maps go (F17); decide after Tom has seen the pockets on a galaxy map.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | F19 | **Playtest checks outstanding.** On Event Horizon: the disc and moat by eye (radius 162, moat 18 — the computed default written into `info.json`); 24 Lords as a count; the 15 s opening cap; Barons not flying. From the throne: should a human Hegemon get the AI's landing wave, or is active defence the point (a passive throne kept 5% of the domain on World seed a); the 5 s stall threshold (H13). The HUD merge: [Closed 2026-09-25 — **dropped**] built as columns in the player table with the panel cut to a strip, played, and discarded: seen missing, the panel's fields (the throne's troop bar, domain held, the invasion status, the bubble, the challenger board with its strike status) justify a panel of their own. The panel stays as built (§6.3, §6.6); its only change is that the challenger board starts **collapsed**, with the throne's show/hide toggle to unfold it. Clean-up later if it earns it.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | F20 | **Punitive strike numbers (H19). [Open 2026-09-26]** The levy shares (10% / 25%, raised from 5% / 15% after the first look), the flag window (30 s), the halt (5 s), the radius (34, a quarter more area than the first 30) and the AI's land-share threshold are starting points. Because the levy taxes every challenger's troops, it moves the invasion curve, so H19 is built **before** the F1 sweep and its numbers ride with it. To judge in `HegemonSim` and in play: how often Lords nuke on a galaxy map (and so how often the galaxy is levied); whether a 15% levy in a radius-30 pocket is so dense that the halt is never disturbed; whether the pocket should follow the warhead that was fired (Antimatter's 100) rather than one radius for both.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| F21 | **Missiles on gates, shields and the throne's warheads (C4, C5, H2). [Open 2026-09-28]** The shield radius (35) is the cap Tom set, not a tuned number; the throne's missiles have no reload — gold-limited only — and may want a cadence once the shadow tax is tuned (F1); Lords do not build shield arrays and the AI Hegemon fires no missiles; a shield refusing gate shots was considered and left as no (gates are meant to matter more, not less). [2026-09-29] The array now shelters its zone from every missile, the throne's included, and costs 5M — Tom's baseline, not a tuned number. To judge in play: whether a level-1 gate's 180 leaves a warhead any target worth 1M, whether a 5M array around a capital is worth it or unanswerable (the throne's strike and conquest are the only answers), and whether a hole in the blast reads clearly on screen. [2026-09-30] The array drops to 2M and the gate to a flat 500k with a 5 s reload and no level cap: the same questions, at the new prices — plus whether warheads at a 5 s cadence and unbounded reach bring back the oppression that tying them to gates was meant to end.                                                                                                                                                                                                                                                                                                                               |
+| F21 | **Missiles on gates, shields and the throne's warheads (C4, C5, H2). [Open 2026-09-28]** The shield radius (35; **39** since 2026-10-12, a tenth more on Tom's feel for play) is the cap Tom set, not a tuned number; the throne's missiles have no reload — gold-limited only — and may want a cadence once the shadow tax is tuned (F1); Lords do not build shield arrays and the AI Hegemon fires no missiles; a shield refusing gate shots was considered and left as no (gates are meant to matter more, not less). [2026-09-29] The array now shelters its zone from every missile, the throne's included, and costs 5M — Tom's baseline, not a tuned number. To judge in play: whether a level-1 gate's 180 leaves a warhead any target worth 1M, whether a 5M array around a capital is worth it or unanswerable (the throne's strike and conquest are the only answers), and whether a hole in the blast reads clearly on screen. [2026-09-30] The array drops to 2M and the gate to a flat 500k with a 5 s reload and no level cap: the same questions, at the new prices — plus whether warheads at a 5 s cadence and unbounded reach bring back the oppression that tying them to gates was meant to end.                                                                                                                                                                                                                                                                 |
 
 ## 5. Engine foundation — what we reuse
 
@@ -1396,7 +1402,10 @@ for both warheads, and **everyone is told** of the levy.
 
 - **The flag.** `Unit.punitiveFlag()` / `flagForPunishment()` / `clearPunitiveFlag()` on the silo
   (`UnitImpl`): warhead and expiry tick, the severer warhead kept, the expiry always the latest
-  launch's; expired flags read as none. `NukeExecution` flags the silo right after `silo.launch()`
+  launch's; expired flags read as none. [2026-10-12] `UnitImpl.setOwner` drops the flag, so a
+  captured gate carries none; `RazeExecution.tick` cancels a punitive strike in flight the tick
+  its gate's owner is no longer the target (`comeHome`, which burns the levy), with a message to
+  the throne (`dark_star_punitive_lost`). `NukeExecution` flags the silo right after `silo.launch()`
   — a Nuclear or Antimatter Warhead only (MIRVs are off anyway), never for the Hegemon, and not
   while `Game.hegemonStrikeOn(player)`. The flag rides `UnitUpdate.punitiveFlag`; the client's
   `UnitState` carries `punitiveWarhead` (1/2) and `punitiveExpiresTick`.
@@ -2050,7 +2059,7 @@ hydrogen-bomb removal (closed by S6).
 | **Freighter**                 | The engine's trade ship; travels overland to and from a harbour at half speed (S7).                                                                                                                |
 | **Trade lane**                | A railroad drawn and ridden as a straight line between two stations (S7).                                                                                                                          |
 | **Stargate**                  | A challenger structure that fires a troop-carrying projectile at any tile in range; it lands as a beachhead (C4).                                                                                  |
-| **Shield Array**              | A challenger structure whose 35-tile perimeter no missile can harm the inside of, the throne's included; the blast clears the rest of its circle; strikes pass through (C5).                       |
+| **Shield Array**              | A challenger structure whose 39-tile perimeter no missile can harm the inside of, the throne's included; the blast clears the rest of its circle; strikes pass through (C5).                       |
 | **Projectile**                | The shared flight — a unit on a nuke-style arc with a motion plan — used by strikes, gate shots and the opening.                                                                                   |
 | **Tyranny**                   | The cost penalty on striking a small player; at the floor they cannot be struck at all.                                                                                                            |
 | **Bubble**                    | The land a strike holds while it lasts; fought over by the struck player, pops to neutral.                                                                                                         |
@@ -2064,6 +2073,16 @@ hydrogen-bomb removal (closed by S6).
 
 ## 11. Changelog
 
+- **2026-10-12** — **The fleet cue is ours (S8).** Tom supplied `invasion.mp3`; it replaces the
+  inherited boat horn when your Fleet sets out, behind the unchanged `transport-ship` key and to
+  the same audience (you). `docs/DarkStar-Sound.md` and `CREDITS.md` updated.
+- **2026-10-12** — **A captured gate carries no flag; shields a tenth wider (H19, C5).** Tom's
+  two asks. A stargate's punitive flag was the gate's, so a player who took a flagged gate could
+  be struck for a launch they never made; now the flag is the firing owner's: it is dropped the
+  moment the gate changes hands, and a punitive strike already in flight to such a gate is
+  cancelled at once, the levy burnt rather than refunded. The shield array's radius rises from 35
+  to 39 (a tenth more, 38.5 rounded up). `tests/PunitiveStrikes.test.ts` (+2),
+  `tests/ShieldArray.test.ts` revised.
 - **2026-10-12** — **The soundtrack (S8).** Tom supplied five AI-generated tracks (_The Hegemon_,
   _Dark Expanse_, _Whispers of Rebellion_, _Throne of Stars_, _The Fall_); they live in
   `resources/sounds/music/` under CC BY-SA with the rest of the folder and the silent placeholders

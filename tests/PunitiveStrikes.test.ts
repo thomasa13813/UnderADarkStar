@@ -418,6 +418,63 @@ describe("The levy and the strike (H19)", () => {
     expect(game.hegemonBubbleTiles()).toBe(0);
   });
 
+  test("a gate that changes hands loses its flag: the captor is not the one who fired", () => {
+    const tile = inland(east, 1);
+    const silo = buildSilo(east, tile);
+    fire(east, UnitType.AtomBomb);
+    expect(silo.punitiveFlag()).toBeDefined();
+    expect(RazeExecution.punitiveOption(game, tile)).not.toBeNull();
+
+    // West takes the gate's tile; the hand-over is PlayerExecution's.
+    west.conquer(tile);
+    executeTicks(game, 2);
+    expect(silo.owner()).toBe(west);
+    expect(silo.punitiveFlag()).toBeUndefined();
+    expect(RazeExecution.punitiveOption(game, tile)).toBeNull();
+
+    // Nothing to answer: the throne's order on the captured gate fizzles.
+    punish(tile);
+    expect(game.strikesInFlight()).toHaveLength(0);
+    expect(game.hegemonStrikeOn(west)).toBe(false);
+    expect(game.hegemonStrikeOn(east)).toBe(false);
+  });
+
+  test("a strike in flight to a gate that changes hands is cancelled at once; the levy is not refunded", () => {
+    const tile = inland(east, 1);
+    const silo = buildSilo(east, tile);
+    fire(east, UnitType.AtomBomb);
+    const ceiling = game.config().maxTroops(hegemon);
+    hegemon.setTroops(ceiling);
+    punish(tile);
+    expect(game.strikesInFlight()).toHaveLength(1);
+    const eastAfterLevy = east.troops();
+    const westAfterLevy = west.troops();
+
+    west.conquer(tile);
+    executeTicks(game, 1);
+    expect(game.strikesInFlight()).toHaveLength(0);
+    expect(game.hegemonStrikeOn(east)).toBe(false);
+    expect(hegemon.outgoingAttacks()).toHaveLength(0);
+    expect(hegemon.units(UnitType.Projectile)).toHaveLength(0);
+    // Burnt, not returned: nobody is richer than a tick's regeneration.
+    expect(hegemon.troops()).toBe(ceiling);
+    expect(east.troops()).toBeLessThan(eastAfterLevy * 1.02);
+    expect(west.troops()).toBeLessThan(westAfterLevy * 1.02);
+
+    // The gate is the captor's, unflagged, and never captured by the throne.
+    executeTicks(game, 2);
+    expect(silo.isActive()).toBe(true);
+    expect(silo.owner()).toBe(west);
+    expect(silo.punitiveFlag()).toBeUndefined();
+    expect(game.hegemonBubbleTiles()).toBe(0);
+    // Another strike on east may follow: the cancelled one is not "alive".
+    const second = buildSilo(east, game.ref(game.x(tile), game.y(tile) + 8));
+    fire(east, UnitType.AtomBomb);
+    expect(second.punitiveFlag()).toBeDefined();
+    punish(second.tile());
+    expect(game.strikesInFlight()).toHaveLength(1);
+  });
+
   test("no flag, no strike; a challenger's order does nothing; the throne's order fires", () => {
     const tile = inland(east, 1);
     buildSilo(east, tile);

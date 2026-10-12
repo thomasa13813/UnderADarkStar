@@ -307,9 +307,10 @@ export const STARGATE_DEFAULTS = {
 // missiles are kept out like anyone else's; only its strikes pass through.
 export const SHIELD_ARRAY_DEFAULTS = {
   // The protected radius in tiles: half the range of the level-1 SAM it
-  // replaces (70), and never more (decided 2026-09-28). A single level, so
-  // upgrades buy nothing.
-  radius: 35,
+  // replaces (70) was the first cap (decided 2026-09-28); raised a tenth to
+  // 39 (38.5 rounded up) on 2026-10-12, Tom finding 35 a touch too small.
+  // A single level, so upgrades buy nothing.
+  radius: 39,
   // Lowered 2026-09-30 from the 5M baseline for a zone nothing short of
   // conquest can clear; F21 keeps it open to tuning.
   costGold: 2_000_000,

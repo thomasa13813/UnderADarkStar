@@ -108,7 +108,7 @@ async function start(instantBuild = true, wideWest = false) {
   west = game.player("west");
   settle(east, 1, 40, 300_000);
   // The wide block (60 deep, 120 tall) leaves west plenty of land outside
-  // an array's 35-tile zone for a blast to clear.
+  // an array's 39-tile zone for a blast to clear.
   if (wideWest) settle(west, -1, 60, 300_000, 60);
   else settle(west, -1, 40, 300_000);
   hegemon.addGold(50_000_000n);
@@ -174,12 +174,13 @@ describe("Building a shield array", () => {
     expect(game.config().unitInfo(UnitType.ShieldArray).upgradable).toBeFalsy();
   });
 
-  test("its perimeter is at most half a level-1 SAM's range", () => {
+  test("its perimeter is half a level-1 SAM's range plus a tenth (39)", () => {
     // The engine's formula (TestConfig shortens SAM ranges): 150 - 480/6 = 70.
+    // Half of it (35) was the first cap; raised a tenth on 2026-10-12.
     const samLevel1 = Config.prototype.samRange.call(game.config(), 1);
     expect(samLevel1).toBe(70);
-    expect(radius()).toBeLessThanOrEqual(samLevel1 / 2);
-    expect(radius()).toBeGreaterThan(0);
+    expect(radius()).toBe(Math.ceil((samLevel1 / 2) * 1.1));
+    expect(radius()).toBe(39);
   });
 
   test("neither the Dark Star nor the throne may hold one (H2)", () => {
@@ -232,7 +233,7 @@ describe("What a shield array keeps out (C5)", () => {
     const city = build(west, UnitType.City, tileOf(west, 40, 20));
     const tiles = west.numTilesOwned();
     const troops = west.troops();
-    // The atom bomb's 30-tile circle lies within the 35-tile zone.
+    // The atom bomb's 30-tile circle lies within the 39-tile zone.
     strike(east, UnitType.AtomBomb, site);
     expect(west.numTilesOwned()).toBe(tiles);
     // Troops only grow over the flight: none died.

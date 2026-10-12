@@ -14,9 +14,10 @@ workflow in §6 says how a new one gets in. Companion to the design doc's S8
   start alert) lived in their closed `proprietary/` folder and was never in this
   repository; the paths that pointed at it were given silent placeholders on
   2026-09-27 and the music ones replaced on 2026-10-12.
-- **What is ours:** the five soundtrack tracks and the three cues of
-  2026-10-04 (`launch`, `landing`, `missile`). All CC BY-SA with the rest of
-  `resources/`.
+- **What is ours:** the five soundtrack tracks, the three cues of
+  2026-10-04 (`launch`, `landing`, `missile`) and the fleet cue of 2026-10-12
+  (`invasion.mp3`, under the `transport-ship` key). All CC BY-SA with the
+  rest of `resources/`.
 - **One placeholder remains:** `game-start-alert.mp3`, the lobby bell, is a
   silent file.
 - **Sound is off by default on the web** (master starts at 0 until a player
@@ -51,6 +52,7 @@ The fork's first commit is 2026-09-19.
 | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 2026-09-27 | OpenFront's `proprietary/` overlay became `branding/`. The three audio paths that pointed at their closed files (menu theme, gameplay music, lobby start alert) got silent placeholder files so the code kept working.                                                            |
 | 2026-10-04 | Tom recorded **`launch`** (troops leaving the Dark Star or a stargate), **`landing`** (those troops coming down) and **`missile`** (a warhead leaving a stargate). Wired under the audience principle. The inherited atom/hydrogen/MIRV launch cues stopped playing (files kept). |
+| 2026-10-12 | **The fleet cue:** Tom's `invasion.mp3` replaces the inherited boat horn (`transport-ship.mp3`, kept on disk, no longer referenced) behind the unchanged `transport-ship` key: your Fleet setting out, heard by you.                                                              |
 | 2026-10-12 | **The soundtrack:** Tom's five AI-generated tracks replace the two silent music placeholders. One continuous cycle through menu, lobby and game with a four-second crossfade between tracks (`Soundtrack.ts`, replacing `MenuMusic.ts` and the gameplay loop).                    |
 
 ## 4. The ledger
@@ -72,36 +74,36 @@ Played in this order, wrapping round, for the whole session.
 Origin: **OF** = inherited from OpenFront (CC BY-SA), **ours** = made for this
 game. Player-facing unit names are used; the code keeps the old ones.
 
-| Cue                   | File                      | When                                                                                     | Who hears it                                             | Channel   | Origin |
-| --------------------- | ------------------------- | ---------------------------------------------------------------------------------------- | -------------------------------------------------------- | --------- | ------ |
-| `spawn`               | `spawn.mp3`               | You place or re-place your spawn                                                         | You                                                      | effects   | OF     |
-| `game-start`          | `game-start.mp3`          | The spawn phase ends                                                                     | Everyone                                                 | effects   | OF     |
-| `launch`              | `launch.mp3`              | Troops leave the Dark Star or a stargate (the opening flight, a strike, a gate shot)     | The launcher and the owner of the aimed tile             | effects   | ours   |
-| `landing`             | `landing.mp3`             | Those troops come down (once per tick at most)                                           | The launcher and the owner of the land they land on      | effects   | ours   |
-| `missile`             | `missile.mp3`             | A warhead leaves a stargate                                                              | The launcher, the target's owner, and always the Hegemon | effects   | ours   |
-| `atom-hit`            | `atom-hit.mp3`            | A Nuclear Warhead detonates; each MIRV warhead (rate-limited)                            | Everyone                                                 | effects   | OF     |
-| `hydrogen-hit`        | `hydrogen-hit.mp3`        | An Antimatter Warhead detonates                                                          | Everyone                                                 | effects   | OF     |
-| `nuke-warning`        | `nuke-warning.mp3`        | A warhead is inbound on your land (rate-limited)                                         | The target                                               | alerts    | OF     |
-| `conquered`           | `conquered.mp3`           | You eliminate a human player                                                             | You                                                      | effects   | OF     |
-| `ka-ching`            | `ka-ching.mp3`            | You eliminate a Baron or a Lord                                                          | You                                                      | effects   | OF     |
-| `build-city`          | `build-city.mp3`          | Your City is built                                                                       | You                                                      | effects   | OF     |
-| `build-port`          | `build-port.mp3`          | Your Spaceport is built                                                                  | You                                                      | effects   | OF     |
-| `build-factory`       | `build-factory.mp3`       | Your Factory is built                                                                    | You                                                      | effects   | OF     |
-| `build-defense-post`  | `build-defense-post.mp3`  | Your Defense Post or Shield Array is built                                               | You                                                      | effects   | OF     |
-| `silo-built`          | `silo-built.mp3`          | Your Stargate (or Missile Silo, which is disabled under a Dark Star) is built            | You                                                      | effects   | OF     |
-| `build-warship`       | `build-warship.mp3`       | Your Destroyer is launched                                                               | You                                                      | effects   | OF     |
-| `transport-ship`      | `transport-ship.mp3`      | Your Fleet sets out                                                                      | You                                                      | effects   | OF     |
-| `build-train-station` | `build-train-station.mp3` | A structure of yours gains a freighter station (once per tick at most)                   | You                                                      | effects   | OF     |
-| `alliance-suggested`  | `alliance-suggested.mp3`  | Someone proposes an alliance to you                                                      | You                                                      | alerts    | OF     |
-| `alliance-accepted`   | `alliance-accepted.mp3`   | Your proposal is accepted                                                                | You                                                      | alerts    | OF     |
-| `alliance-declined`   | `alliance-declined.mp3`   | Your proposal is declined                                                                | You                                                      | alerts    | OF     |
-| `alliance-broken`     | `alliance-broken.mp3`     | An alliance of yours is broken                                                           | You                                                      | alerts    | OF     |
-| `message`             | `alliance-suggested.mp3`  | A chat message addressed to you (same morse cue as the proposal, by the designer's note) | You                                                      | alerts    | OF     |
-| `victory`             | `victory.mp3`             | The win screen, won                                                                      | You                                                      | effects   | OF     |
-| `defeat`              | `defeat.mp3`              | The win screen, lost                                                                     | You                                                      | effects   | OF     |
-| `click`               | `click.mp3`               | A radial-menu pick                                                                       | You                                                      | interface | OF     |
-| `slider`              | `slider.mp3`              | A settings slider tick                                                                   | You                                                      | interface | OF     |
-| `sam-built`           | `sam-built.mp3`           | A SAM Launcher is built — **never heard**: the unit is disabled under a Dark Star        | —                                                        | effects   | OF     |
+| Cue                   | File                      | When                                                                                      | Who hears it                                             | Channel   | Origin |
+| --------------------- | ------------------------- | ----------------------------------------------------------------------------------------- | -------------------------------------------------------- | --------- | ------ |
+| `spawn`               | `spawn.mp3`               | You place or re-place your spawn                                                          | You                                                      | effects   | OF     |
+| `game-start`          | `game-start.mp3`          | The spawn phase ends                                                                      | Everyone                                                 | effects   | OF     |
+| `launch`              | `launch.mp3`              | Troops leave the Dark Star or a stargate (the opening flight, a strike, a gate shot)      | The launcher and the owner of the aimed tile             | effects   | ours   |
+| `landing`             | `landing.mp3`             | Those troops come down (once per tick at most)                                            | The launcher and the owner of the land they land on      | effects   | ours   |
+| `missile`             | `missile.mp3`             | A warhead leaves a stargate                                                               | The launcher, the target's owner, and always the Hegemon | effects   | ours   |
+| `atom-hit`            | `atom-hit.mp3`            | A Nuclear Warhead detonates; each MIRV warhead (rate-limited)                             | Everyone                                                 | effects   | OF     |
+| `hydrogen-hit`        | `hydrogen-hit.mp3`        | An Antimatter Warhead detonates                                                           | Everyone                                                 | effects   | OF     |
+| `nuke-warning`        | `nuke-warning.mp3`        | A warhead is inbound on your land (rate-limited)                                          | The target                                               | alerts    | OF     |
+| `conquered`           | `conquered.mp3`           | You eliminate a human player                                                              | You                                                      | effects   | OF     |
+| `ka-ching`            | `ka-ching.mp3`            | You eliminate a Baron or a Lord                                                           | You                                                      | effects   | OF     |
+| `build-city`          | `build-city.mp3`          | Your City is built                                                                        | You                                                      | effects   | OF     |
+| `build-port`          | `build-port.mp3`          | Your Spaceport is built                                                                   | You                                                      | effects   | OF     |
+| `build-factory`       | `build-factory.mp3`       | Your Factory is built                                                                     | You                                                      | effects   | OF     |
+| `build-defense-post`  | `build-defense-post.mp3`  | Your Defense Post or Shield Array is built                                                | You                                                      | effects   | OF     |
+| `silo-built`          | `silo-built.mp3`          | Your Stargate (or Missile Silo, which is disabled under a Dark Star) is built             | You                                                      | effects   | OF     |
+| `build-warship`       | `build-warship.mp3`       | Your Destroyer is launched                                                                | You                                                      | effects   | OF     |
+| `transport-ship`      | `invasion.mp3`            | Your Fleet sets out (Tom's cue since 2026-10-12; the inherited boat horn is kept on disk) | You                                                      | effects   | ours   |
+| `build-train-station` | `build-train-station.mp3` | A structure of yours gains a freighter station (once per tick at most)                    | You                                                      | effects   | OF     |
+| `alliance-suggested`  | `alliance-suggested.mp3`  | Someone proposes an alliance to you                                                       | You                                                      | alerts    | OF     |
+| `alliance-accepted`   | `alliance-accepted.mp3`   | Your proposal is accepted                                                                 | You                                                      | alerts    | OF     |
+| `alliance-declined`   | `alliance-declined.mp3`   | Your proposal is declined                                                                 | You                                                      | alerts    | OF     |
+| `alliance-broken`     | `alliance-broken.mp3`     | An alliance of yours is broken                                                            | You                                                      | alerts    | OF     |
+| `message`             | `alliance-suggested.mp3`  | A chat message addressed to you (same morse cue as the proposal, by the designer's note)  | You                                                      | alerts    | OF     |
+| `victory`             | `victory.mp3`             | The win screen, won                                                                       | You                                                      | effects   | OF     |
+| `defeat`              | `defeat.mp3`              | The win screen, lost                                                                      | You                                                      | effects   | OF     |
+| `click`               | `click.mp3`               | A radial-menu pick                                                                        | You                                                      | interface | OF     |
+| `slider`              | `slider.mp3`              | A settings slider tick                                                                    | You                                                      | interface | OF     |
+| `sam-built`           | `sam-built.mp3`           | A SAM Launcher is built — **never heard**: the unit is disabled under a Dark Star         | —                                                        | effects   | OF     |
 
 ### 4.3 Ambience (OF)
 

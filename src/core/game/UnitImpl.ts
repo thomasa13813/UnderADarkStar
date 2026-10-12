@@ -235,6 +235,10 @@ export class UnitImpl implements Unit {
 
   setOwner(newOwner: PlayerImpl): void {
     this.clearPendingDeletion();
+    // A punitive flag (H19) answers a launch by the gate's owner at the time:
+    // whoever takes the gate afterwards is not the one who fired, so the
+    // flag goes with the old owner, never to the captor (Tom, 2026-10-12).
+    this._punitiveFlag = undefined;
     switch (this._type) {
       case UnitType.Warship:
       case UnitType.Port:
