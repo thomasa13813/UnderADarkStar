@@ -1,5 +1,7 @@
 {
   "name": "under-a-dark-star",
+  "private": true,
+  "license": "AGPL-3.0-only",
   "scripts": {
     "build-dev": "concurrently \"tsc --noEmit\" \"vite build --mode development\"",
     "build-prod": "concurrently --kill-others-on-fail \"tsc --noEmit\" \"vite build\" && tsx scripts/buildAssetHashes.ts",

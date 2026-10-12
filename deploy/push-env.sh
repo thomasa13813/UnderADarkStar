@@ -5,6 +5,9 @@
 #
 #   sh deploy/push-env.sh root@<server> ~/.ssh/<key>
 #
+# The real host and key name are in the private operations doc (docs-private/,
+# never in the repository).
+#
 # Reads DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, TURNSTILE_SITE_KEY,
 # TURNSTILE_SECRET_KEY and TUNNEL_TOKEN from ./.env (git-ignored), generates
 # a fresh API_KEY, fills in deploy/env.example's fixed values, and uploads the
@@ -24,7 +27,10 @@ if [ -n "$KEY" ]; then
 fi
 
 LOCAL_ENV="${DARKSTAR_LOCAL_ENV:-.env}"
-[ -f "$LOCAL_ENV" ] || { echo "no $LOCAL_ENV in $(pwd)" >&2; exit 1; }
+[ -f "$LOCAL_ENV" ] || {
+    echo "no $LOCAL_ENV in $(pwd)" >&2
+    exit 1
+}
 
 # The value of KEY= in the local env file, without quotes or CR.
 val() {
@@ -55,7 +61,7 @@ fi
 
 TMP="$(mktemp)"
 trap 'rm -f "$TMP"' EXIT
-cat > "$TMP" <<EOF
+cat > "$TMP" << EOF
 # Under a Dark Star production environment. Written by deploy/push-env.sh on
 # $(date -u +%Y-%m-%dT%H:%MZ); see deploy/env.example for what each key is.
 DEPLOY_BRANCH=$DEPLOY_BRANCH

@@ -60,8 +60,8 @@ Sizes as in the roadmap: S is a session, M a few, L a week or more of sessions.
 - [x] Choose the domain name (needed by 3b). **Done 2026-10-06:** `january-games.com`, a studio
       domain, registered at Cloudflare (at cost, already the DNS host); .io ruled out (price,
       repeated wholesale rises, Chagos sovereignty risk, and it would echo openfront.io).
-      Studio email is Cloudflare Email Routing: `hello@january-games.com` forwards to Tom's
-      personal Gmail. The game's hostname under it is still to pick (see §6.2).
+      Studio email is Cloudflare Email Routing: `hello@january-games.com` forwards to a
+      mailbox outside the domain. The game's hostname under it is still to pick (see §6.2).
 - [x] Set the launch map count: at least six new maps (2026-10-01). Which of the 13 inherited
       maps stay is still open.
 - [x] Commit the uncommitted work (the 09-30 balance pass, the documents of 10-01). Done; the
@@ -114,13 +114,12 @@ join path is identical).
 **3b. First deployment (M)**
 
 - [x] **H1** Accounts and purchases: ~~the domain, on Cloudflare~~ (done 2026-10-06,
-      `january-games.com`, Cloudflare account on an address outside the domain with Email Routing);
-      the server: done 2026-10-07, a DigitalOcean Droplet named `darkstar`, Basic Premium AMD,
-      2 vCPU / 4 GB / 80 GB, New York (NYC1), $28 a month, image "Docker on Ubuntu 22.04",
-      `<server>`, root over SSH with the key `~/.ssh/<key>`. Two cores
-      rather than four: the simulation runs in the browsers, the server only relays; resize
-      later if a launch day needs it. The DigitalOcean account is on a studio-controlled Google
-      account, not `hello@` (a departure from the 10-06 rule; move or accept at leisure).
+      `january-games.com`, with Email Routing); the server: done 2026-10-07, a DigitalOcean
+      Droplet named `darkstar` running Docker on Ubuntu 22.04. Two cores rather than four: the
+      simulation runs in the browsers, the server only relays; resize later if a launch day
+      needs it. The machine's address, its access, its size and price, and the accounts that
+      own each service are in the private operations doc (`docs-private/`, kept outside the
+      repository).
 - [x] **H2** The server set up: Docker, a compose file with two containers (the game, and
       `cloudflared` for the tunnel), a `/data` volume, the two hostnames
       (`darkstar.january-games.com` and `darkstar-api.january-games.com`) routed through the
@@ -171,10 +170,11 @@ _Done when_ Tom deploys a new commit with one command and a round completes on t
 **Stage 3 passed 2026-10-07.** The per-deploy check from here is the two-minute one (page, both
 health endpoints, one round starts); the two-network and sign-in checks are repeated only when a
 change touches the server, the join path, accounts or the lobbies.
-The command, from any machine with the key:
+The command, from any machine with the key (the real host and key name are in the private
+operations doc):
 
 ```
-ssh -i ~/.ssh/<key> root@<server> /opt/darkstar/repo/deploy/deploy.sh
+ssh -i <key> root@<server> /opt/darkstar/repo/deploy/deploy.sh
 ```
 
 It deploys whatever `DEPLOY_BRANCH` in the server's env file names: `main` since 2026-10-07,
@@ -294,6 +294,13 @@ _Done when_ the checklist is clean. This build is the release candidate.
 
 ## 7. Changelog
 
+- **2026-10-12** — **Prepared for a public repository.** The address, access and ownership facts
+  moved to the private operations doc (`docs-private/DarkStar-Operations.md`, git-ignored); the
+  public Services doc keeps the architecture only. The git history was rewritten to remove the
+  server's address, the key name and the personal email, so every clone made before this date
+  must be re-cloned. Also: `SECURITY.md`, the font licences, the Claude audio credits, the
+  Source link naming the deployed commit, and OpenFront's contributor templates and automation
+  removed. Next: Tom force-pushes and makes the repository public before the friends test.
 - **2026-10-12** — **B5 built** on `feat/leaderboard` (Accounts doc §12.5): the Leaderboard page
   beside Play (Reigns and Longest reign, the player's own row), the API's board endpoint, and
   the win screen's reign prompt (a guest winner is offered the sign-in, a signed-in winner sees
@@ -375,10 +382,10 @@ _Done when_ the checklist is clean. This build is the release candidate.
   panel, the help page's Discord and email links. Checked in the browser with the dev provider:
   sign in, reload, host a lobby, a guest joins it, sign out. Next: B3, the production join path.
 - **2026-10-06** — **Domain bought:** `january-games.com` at Cloudflare, with Email Routing
-  forwarding `hello@january-games.com` to a mailbox outside the domain; .io ruled out. Order of operations agreed: the Cloudflare account on a studio-controlled
-  Gmail (never on an address at the domain, or a lockout would also cut off the recovery mail),
+  forwarding `hello@january-games.com` to a mailbox outside the domain; .io ruled out. Order of operations agreed: the Cloudflare account on an address
+  outside the domain (never on one at the domain, or a lockout would also cut off the recovery mail),
   then the domain, then Cloudflare Email Routing (free forwarding, no mailbox) so that
-  `hello@january-games.com` lands in that Gmail. The VPS, Discord developer, itch.io and Google
+  `hello@january-games.com` lands in that mailbox. The VPS, Discord developer, itch.io and Google
   Cloud accounts are then opened on `hello@` so they belong to the studio. Replies as `hello@`
   go through Gmail's "Send mail as"; Google Workspace only if proper outbound mail is ever needed.
 - **2026-10-01** — Created. Scope of the minimum public release fixed from Tom's decisions of the

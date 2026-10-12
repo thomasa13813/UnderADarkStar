@@ -10,7 +10,10 @@ const row = (bg, fg) =>
    </div>`;
 const html = `<body style="margin:0">${row("#202124", "#eee")}${row("#f1f3f4", "#222")}</body>`;
 const browser = await chromium.launch();
-const page = await browser.newPage({ viewport: { width: 520, height: 200 }, deviceScaleFactor: 2 });
+const page = await browser.newPage({
+  viewport: { width: 520, height: 200 },
+  deviceScaleFactor: 2,
+});
 await page.setContent(html);
 await page.screenshot({ path: process.argv[2] ?? "favicon-preview.png" });
 await browser.close();

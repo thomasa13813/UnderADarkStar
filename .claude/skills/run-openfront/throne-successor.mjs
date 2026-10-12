@@ -6,9 +6,7 @@ import fs from "fs";
 import { gotoHome, launch } from "./driver.mjs";
 import { waitForGameReady } from "./game.mjs";
 
-const OUT =
-  process.env.OUT ??
-  "<scratchpad>/96e665c0-6749-4e32-a4d1-dab51e4e1065/scratchpad/browser";
+const OUT = process.env.OUT ?? "out/browser";
 fs.mkdirSync(OUT, { recursive: true });
 
 const { browser, page: host } = await launch();

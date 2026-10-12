@@ -58,7 +58,9 @@ open licence and are not in this repository. See [LICENSING.md](LICENSING.md).
 The other maps that ship (Sol, Traders Dream, Passage, Branching Paths,
 Chopping Block, More Than Luck, Sierpinski, Warship Warship, Duel, Standoff,
 Corners, Royale) were drawn by OpenFront contributors and are CC BY-SA 4.0 like
-the rest of `resources/`; Event Horizon is January Games' own, under the same
+the rest of `resources/`; Event Horizon and the six maps generated from the
+sketches in `MapImages/` (No Moon, Nucleic Acid, Nucleus, Jovian System,
+Bullseye, Cube) are January Games' own, sketches included, under the same
 licence.
 
 ## Icons

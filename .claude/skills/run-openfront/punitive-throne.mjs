@@ -13,10 +13,7 @@ import {
 } from "./game.mjs";
 
 const oi = process.argv.indexOf("--out");
-const OUT =
-  oi >= 0
-    ? process.argv[oi + 1]
-    : "<scratchpad>/ba39f6b1-5c29-4f2a-baf2-5b9d59ba6f24/scratchpad/browser";
+const OUT = oi >= 0 ? process.argv[oi + 1] : (process.env.OUT ?? "out/browser");
 fs.mkdirSync(OUT, { recursive: true });
 const wi = process.argv.indexOf("--wait");
 const WAIT = (wi >= 0 ? Number(process.argv[wi + 1]) : 540) * 1000;

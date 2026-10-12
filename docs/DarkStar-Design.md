@@ -566,7 +566,7 @@ persistence was OpenFront's closed-source API, which we do not have.
   sectors, void at the corners, the Lords in a ring at about 400 tiles from the centre. It is
   written by `scripts/generateGalaxyMap.ts` (deterministic for its seed; `--seed`, `--size`,
   `--land`) — `image.png` and `info.json` — and then `npm run gen-maps` as for any map. The Go
-  toolchain lives at `<home>\go-sdk\go\bin` on Tom's machine (the official zip, no installer).
+  toolchain lives outside PATH on the dev machine (the official zip under the home directory, no installer).
 - **No Moon** (`map-generator/assets/maps/nomoon/`, 1800×1800, ~530k land tiles, 19 Lords) [Built
   2026-10-03] is the first map made from one of Tom's Paint sketches (`MapImages/NoMoon.png`): the
   Dark Star in the bottom-right corner, a beam of land running from it to the top left, where it
@@ -2084,7 +2084,12 @@ hydrogen-bomb removal (closed by S6).
   credited as produced with Claude (Anthropic's terms assign the output to the user, no attribution
   owed; CC BY-SA 4.0 with the rest of `resources/`); Overpass gets its OFL text beside Tektur's;
   `SECURITY.md` added and linked from the README; the footer's Source link now names the deployed
-  commit (`GameVersion.sourceUrlFor`, tested). On `chore/public-repo`.
+  commit (`GameVersion.sourceUrlFor`, tested). Then the cleanup: the server's address, key name
+  and personal-account details left every tracked file for the private operations doc
+  (`docs-private/`, git-ignored) and the history was rewritten to remove them; OpenFront's
+  CODEOWNERS, issue and PR templates, GitHub automation scripts and the dangling gatekeeper
+  submodule deleted; `package.json` marked private and AGPL-3.0-only; the map sketches put under
+  the asset licence. On `chore/public-repo`.
 - **2026-10-12** — **The fleet cue is ours (S8).** Tom supplied `invasion.mp3`; it replaces the
   inherited boat horn when your Fleet sets out, behind the unchanged `transport-ship` key and to
   the same audience (you). `docs/DarkStar-Sound.md` and `CREDITS.md` updated.

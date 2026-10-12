@@ -14,11 +14,7 @@ const gitignorePath = path.resolve(__dirname, ".gitignore");
 export default [
   includeIgnoreFile(gitignorePath),
   {
-    ignores: [
-      "src/server/gatekeeper/**",
-      "tests/pathfinding/playground/**",
-      ".claude/**",
-    ],
+    ignores: ["tests/pathfinding/playground/**", ".claude/**"],
   },
   { files: ["**/*.{js,mjs,cjs,ts}"] },
   { languageOptions: { globals: { ...globals.browser, ...globals.node } } },

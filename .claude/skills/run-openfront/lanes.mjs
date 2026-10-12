@@ -16,10 +16,7 @@ import {
 } from "./game.mjs";
 
 const oi = process.argv.indexOf("--out");
-const OUT =
-  oi >= 0
-    ? process.argv[oi + 1]
-    : "<scratchpad>/bf36e29c-c56d-490f-bb8b-194f3fa0565d/scratchpad/browser";
+const OUT = oi >= 0 ? process.argv[oi + 1] : (process.env.OUT ?? "out/browser");
 fs.mkdirSync(OUT, { recursive: true });
 
 const { browser, page } = await launch();

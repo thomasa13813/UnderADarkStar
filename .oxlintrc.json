@@ -4,10 +4,7 @@
     "browser": true,
     "node": true
   },
-  "ignorePatterns": [
-    "src/server/gatekeeper/**",
-    "tests/pathfinding/playground/**"
-  ],
+  "ignorePatterns": ["tests/pathfinding/playground/**"],
   "categories": {
     "correctness": "off",
     "suspicious": "off",

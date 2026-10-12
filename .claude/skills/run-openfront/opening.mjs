@@ -5,8 +5,7 @@ import fs from "fs";
 import { gotoHome, launch, openSoloModal } from "./driver.mjs";
 import { spawn, startSoloGame, waitForGameReady } from "./game.mjs";
 
-const OUT =
-  "<scratchpad>/dfaf8ef6-83fa-4a25-a2f6-a2964bb196ae/scratchpad/browser";
+const OUT = process.env.OUT ?? "out/browser";
 fs.mkdirSync(OUT, { recursive: true });
 const asHegemon = process.argv.includes("--hegemon");
 const mi = process.argv.indexOf("--map");

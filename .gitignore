@@ -13,6 +13,9 @@ resources/.DS_Store
 .DS_Store
 .clinic/
 NOTES.md
+# The operations runbook: the server's address and access, account ownership,
+# where each secret lives. Kept beside the repo, never in it.
+docs-private/
 .claude/*
 !.claude/skills/
 .idea/
