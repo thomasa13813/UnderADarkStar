@@ -5,5 +5,9 @@
 # Add PATH setup to ensure npx is found
 export PATH="/usr/local/bin:$HOME/.npm-global/bin:$HOME/.nvm/versions/node/$(node -v)/bin:$PATH"
 
+# Refuse private values (server address, key names, personal addresses): the
+# list lives in docs-private/forbidden-patterns.txt, outside the repository.
+node scripts/checkPrivatePatterns.mjs || exit 1
+
 # Then run lint-staged if tests pass
 npx lint-staged --concurrent false

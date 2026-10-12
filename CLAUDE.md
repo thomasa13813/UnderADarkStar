@@ -104,3 +104,23 @@ Tests use a `setup()` helper from `tests/util/Setup.ts` that creates a full game
 - **Schemas/Validation:** Zod
 - **Testing:** Vitest
 - **Server:** Node.js, Express, ws (WebSocket)
+
+## Public repository rules
+
+This repository is public (AGPL §13 requires it). Decided 2026-10-12 after a cleanup and a
+history rewrite; do not make it necessary again.
+
+- **Never commit** the server's address, hostnames of machines (public DNS names are fine), SSH
+  key names or paths, which personal account owns a service, personal email addresses, or local
+  paths carrying a username. These live in `docs-private/` (git-ignored) and nowhere else. Point
+  at `docs-private/DarkStar-Operations.md` instead of repeating them.
+- **The contact address in anything tracked is `hello@january-games.com`**, never a personal one.
+  The repo's git config sets it as the author email; keep it that way.
+- **Secrets** (tokens, keys, client secrets) exist only in the root `.env` (git-ignored) and on the
+  server. Never paste one into a file, a commit message, a test fixture or a chat reply.
+- **A pre-commit guard** (`scripts/checkPrivatePatterns.mjs`, run by `.husky/pre-commit`) refuses
+  any staged line matching `docs-private/forbidden-patterns.txt`. When a new private value appears,
+  add it to that file first.
+- **Design docs are public.** Tom's first name and his decisions are fine in them; his accounts,
+  machines and addresses are not.
+- When in doubt, write the fact in `docs-private/` and leave a pointer in the public doc.
