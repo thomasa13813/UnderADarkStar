@@ -236,12 +236,14 @@ _Done when_ nothing a player sees or hears is a placeholder.
       home cards per line head, place in line, the win screen's stay-or-join-the-head choice,
       L31 the dead join the head); team thrones (T5, Lobbies §10.6) with it. All live since
       2026-10-12.
-- [ ] **Watching it**: ~~an uptime check on `/api/health` and the API's `/health`~~ (UptimeRobot,
-      both endpoints, set up by Tom 2026-10-12); a look at the
-      server's logs and load with a dozen clients connected. Planned for the week of 2026-10-12,
-      before the friends test: a scripted soak of ten or so headless clients through a throne
-      round on the live site (Turnstile permitting; see the changelog), with `docker stats` and
-      the logs read at the peak, plus a free external uptime monitor on both health endpoints.
+- [x] **Watching it**: ~~an uptime check on `/api/health` and the API's `/health`~~ (UptimeRobot,
+      both endpoints, set up by Tom 2026-10-12); ~~a look at the server's logs and load with a
+      dozen clients connected~~ dropped 2026-10-12: a scripted soak was built and proven on the dev
+      server, but on the live site Turnstile challenges a scripted browser (its checkbox, which is
+      the bot check working), and Tom judged the exercise unnecessary after a clean four-player
+      test the week before. The load is read instead during the friends test itself: at the busiest
+      moment, `docker stats --no-stream` and the game container's last 80 log lines through
+      the private helper, pasted to the changelog afterwards.
 - [x] **Somewhere to report bugs** (a Discord server or an email address; Tom's choice). Done
       2026-10-07: the Discord server "Under a Dark Star" (invite `https://discord.gg/vTjcPKadD`,
       five channels: welcome, announcements, general, bug-reports, suggestions), owned by the
