@@ -206,10 +206,11 @@ _Done when_ a reign won on the live server appears on the live board.
       (Tom's five-track soundtrack, 2026-10-12); the further cues Tom shares, wired as they come;
       the silent lobby bell. Nothing inherited needs removing and everything is credited
       (`docs/DarkStar-Sound.md` §1). The orphan files are clutter, not a release blocker.
-- [ ] **Brand** (P1 step E): ~~font~~ (Tektur, 2026-10-07), logo, wordmark, favicon and the
-      home-screen title. Decided 2026-10-07: the January Games wreath wordmark stays as the
-      studio mark; the game's working mark is the black disc with a purple border (the
-      Hegemon). The title treatment around the font is still to design.
+- [ ] **Brand** (P1 step E): ~~font~~ (Tektur, 2026-10-07), ~~the home-screen title~~ (Tom's
+      stacked pixel-art title, `TitleStacked.svg` in the nav bar, 2026-10-08), logo and
+      favicon. Decided 2026-10-07: the January Games wreath wordmark stays as the studio
+      mark; the game's working mark is the black disc with a purple border (the Hegemon).
+      Open: a final logo and favicon, if the working mark is not to be the final one.
 
 _Done when_ nothing a player sees or hears is a placeholder.
 
