@@ -36,10 +36,18 @@ export async function launch({ viewport, rafIntervalMs, args } = {}) {
   // Windows: the game refuses software WebGL (render/gl/initGL.ts), and the
   // headless shell has no GPU. Full Chromium in new-headless mode gets a real
   // D3D11 context, so no rafIntervalMs throttle is needed there either.
+  // HEADED=1 opens a visible window (Cloudflare Turnstile admits a real,
+  // headed browser where it times out on a headless one; live-probe.mjs and
+  // soak.mjs need this against the live site), and BROWSER_CHANNEL picks the
+  // browser: "chrome" (an installed Google Chrome, the most trusted) or the
+  // default Playwright "chromium".
+  const headed = process.env.HEADED === "1";
+  const channel = process.env.BROWSER_CHANNEL ?? "chromium";
   const browser =
     process.platform === "win32"
       ? await chromium.launch({
-          channel: "chromium",
+          channel,
+          headless: !headed,
           args: [
             "--enable-gpu",
             "--ignore-gpu-blocklist",
