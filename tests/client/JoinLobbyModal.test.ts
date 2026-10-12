@@ -114,3 +114,70 @@ describe("JoinLobbyModal spectate link", () => {
     expect((modal as any).showMessage).not.toHaveBeenCalled();
   });
 });
+
+// Under a Dark Star (docs/DarkStar-Lobbies.md L16-L19, §10.7): the lobby reads
+// its throne's place in line off the public list its own feed carries, since
+// the lobby info from the worker has no place.
+describe("JoinLobbyModal throne place in line", () => {
+  const vega = {
+    throneID: "throne-vega",
+    name: "Vega",
+    type: "ffa" as const,
+    reign: 0,
+    seat: "open" as const,
+  };
+
+  it("is unknown before the list arrives, or off a throne", () => {
+    const modal = new JoinLobbyModal();
+    (modal as any).currentLobbyId = "g1";
+    expect((modal as any).thronePlace()).toBeUndefined();
+    (modal as any).throne = vega;
+    expect((modal as any).thronePlace()).toBeUndefined();
+    (modal as any).throne = null;
+    (modal as any).publicGames = {
+      throne: [
+        {
+          gameID: "g1",
+          numClients: 1,
+          publicGameType: "throne",
+          throne: { ...vega, place: 2 },
+        },
+      ],
+    };
+    expect((modal as any).thronePlace()).toBeUndefined();
+  });
+
+  it("follows the list's place for this lobby", () => {
+    const modal = new JoinLobbyModal();
+    (modal as any).currentLobbyId = "g1";
+    (modal as any).throne = vega;
+    (modal as any).publicGames = {
+      throne: [
+        {
+          gameID: "g0",
+          numClients: 1,
+          publicGameType: "throne",
+          throne: { ...vega, name: "Altair", place: 1 },
+        },
+        {
+          gameID: "g1",
+          numClients: 1,
+          publicGameType: "throne",
+          throne: { ...vega, place: 3 },
+        },
+      ],
+    };
+    expect((modal as any).thronePlace()).toBe(3);
+    (modal as any).publicGames = {
+      throne: [
+        {
+          gameID: "g1",
+          numClients: 1,
+          publicGameType: "throne",
+          throne: { ...vega, place: 1 },
+        },
+      ],
+    };
+    expect((modal as any).thronePlace()).toBe(1);
+  });
+});

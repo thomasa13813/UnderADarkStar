@@ -87,6 +87,7 @@ describe("MasterLobbyService thrones", () => {
     gameConfig: ReturnType<typeof vi.fn>;
     maxPlayersForMap?: ReturnType<typeof vi.fn>;
     throneSpecialConfig?: ReturnType<typeof vi.fn>;
+    throneTeamSplit?: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(() => {

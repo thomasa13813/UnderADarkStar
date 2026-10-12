@@ -1360,7 +1360,7 @@ export class HelpModal extends BaseModal {
       ["invasion", 5],
       ["arsenal", 4],
       ["gift", 3],
-      ["throne", 5],
+      ["throne", 6],
     ];
     return html`
       <!-- Rules Section -->

@@ -8,7 +8,7 @@ import {
 import { EventBus } from "../../../core/EventBus";
 import { GameMapType } from "../../../core/game/Game";
 import { GameUpdateType } from "../../../core/game/GameUpdates";
-import { TeamCountConfig } from "../../../core/Schemas";
+import { PublicGames, TeamCountConfig } from "../../../core/Schemas";
 import {
   THRONE_MAX_MODIFIERS,
   THRONE_MODIFIER_WHITELIST,
@@ -19,7 +19,9 @@ import { THRONE_TEAM_SPLITS } from "../../../core/ThroneTeams";
 import { ClientEnv } from "../../ClientEnv";
 import "../../components/map/MapPicker";
 import { Controller } from "../../Controller";
+import { PublicLobbySocket } from "../../LobbySocket";
 import { PlaySoundEffectEvent } from "../../sound/Sounds";
+import { findLobby, lineHead, placeLabel } from "../../ThroneLine";
 import { currentThrone } from "../../ThroneState";
 import {
   NewLobbyEvent,
@@ -32,7 +34,10 @@ import { GameView } from "../../view";
 // (docs/DarkStar-Lobbies.md §4 step 4, §5.5). The master opened the throne's
 // next lobby and reserved its seat for the winner until `until`; here they
 // pick its map and keep the throne or step down, then jump to the lobby.
-// Everyone else gets a Join button beside Exit and Spectate (nextLobbyID).
+// Everyone else on a throne round gets the line panel (L27): stay with this
+// throne, shown its place in line live, or join the head of the line, the
+// next round of the same mode to launch. Doing nothing stays. A private
+// lobby's successor is a plain Join button beside Exit and Spectate.
 interface ThronePanel {
   gameID: string;
   openedAt: number;
@@ -67,6 +72,14 @@ export class WinModal extends LitElement implements Controller {
   // Repaints the window bar once a second while the panel is up.
   @state() private windowTick = 0;
   private windowTimer: number | null = null;
+  // The line panel's live view of the public list (L27): the master stamps
+  // each throne's place on it, and nothing else carries that. Opened while
+  // the panel is up, closed with it.
+  @state() private line: PublicGames["games"] | null = null;
+  private lineSocket: PublicLobbySocket | null = null;
+  // Our throne's next round was listed at least once: when it is gone after
+  // that, the throne was retired under us (L20), and only the head remains.
+  private lineSeenOwn = false;
 
   private _title: string;
 
@@ -89,7 +102,7 @@ export class WinModal extends LitElement implements Controller {
         <h2 class="m-0 mb-4 text-[26px] text-center text-white shrink-0">
           ${this._title || ""}
         </h2>
-        ${this.renderThronePanel()}
+        ${this.renderThronePanel()} ${this.renderLinePanel()}
         <div class="mt-4 flex justify-between gap-2.5 shrink-0">
           <o-button
             variant="primary"
@@ -107,7 +120,7 @@ export class WinModal extends LitElement implements Controller {
               : translateText("win_modal.spectate")}
             @click=${this.hide}
           ></o-button>
-          ${this.nextLobbyID !== null
+          ${this.nextLobbyID !== null && !this.onThroneRound()
             ? html`<o-button
                 variant="primary"
                 width="block"
@@ -122,8 +135,18 @@ export class WinModal extends LitElement implements Controller {
     `;
   }
 
+  // A non-winner's successor on a public throne: the line panel, not a Join.
+  private onThroneRound(): boolean {
+    return (
+      this.nextLobbyID !== null &&
+      this.throne === null &&
+      currentThrone() !== undefined
+    );
+  }
+
   async show() {
     this.isVisible = true;
+    this.syncLineFeed();
     this.requestUpdate();
   }
 
@@ -133,7 +156,31 @@ export class WinModal extends LitElement implements Controller {
       window.clearInterval(this.windowTimer);
       this.windowTimer = null;
     }
+    this.syncLineFeed();
     this.requestUpdate();
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this.isVisible = false;
+    this.syncLineFeed();
+  }
+
+  // The public-list feed runs exactly while the line panel is on screen.
+  private syncLineFeed() {
+    const wanted = this.isVisible && this.onThroneRound();
+    if (wanted && this.lineSocket === null) {
+      this.lineSocket = new PublicLobbySocket((lobbies) => {
+        this.line = lobbies.games ?? {};
+        if (findLobby(this.line, this.nextLobbyID) !== undefined) {
+          this.lineSeenOwn = true;
+        }
+      });
+      void this.lineSocket.start();
+    } else if (!wanted && this.lineSocket !== null) {
+      this.lineSocket.stop();
+      this.lineSocket = null;
+    }
   }
 
   private _handleExit() {
@@ -158,6 +205,7 @@ export class WinModal extends LitElement implements Controller {
         return;
       }
       this.nextLobbyID = event.gameID;
+      this.lineSeenOwn = false;
       this.show();
       return;
     }
@@ -212,6 +260,76 @@ export class WinModal extends LitElement implements Controller {
     const id = this.throne?.gameID ?? this.nextLobbyID;
     if (id === null) return;
     window.location.href = this.lobbyUrl(id);
+  }
+
+  // The non-winner's line panel (L27). "Stay" is the successor lobby of the
+  // throne this round ran on, with its place in line as the list reports it;
+  // "Join the head" is the next throne of the same type to launch, when that
+  // is another throne. A successor that vanished from the list after being
+  // seen was retired (L20): only the head is offered.
+  private renderLinePanel() {
+    if (!this.onThroneRound()) return nothing;
+    const throne = currentThrone()!;
+    const own = findLobby(this.line, this.nextLobbyID);
+    const retired = this.lineSeenOwn && own === undefined;
+    const head = lineHead(this.line, throne.type);
+    const headIsOwn = head !== undefined && head.gameID === this.nextLobbyID;
+    const place = placeLabel(own?.throne?.place);
+    return html`
+      <div
+        class="flex flex-col gap-3 rounded-lg border border-purple-400/40 bg-black/30 p-3"
+        data-line-panel
+      >
+        <span class="font-bold tracking-wide text-purple-300">
+          ${translateText("throne.line_title")}
+        </span>
+        <p class="text-xs text-white/60">
+          ${retired
+            ? translateText("throne.line_retired")
+            : headIsOwn
+              ? translateText("throne.line_is_head")
+              : translateText("throne.line_hint")}
+        </p>
+        <div class="flex flex-col gap-2.5 sm:flex-row">
+          ${retired
+            ? nothing
+            : html`<div class="flex flex-1 flex-col gap-1" data-line-stay>
+                <o-button
+                  variant="primary"
+                  width="block"
+                  .title=${translateText("throne.line_stay", {
+                    name: throne.name,
+                  })}
+                  @click=${() => this.joinNext()}
+                ></o-button>
+                ${place !== undefined
+                  ? html`<span
+                      class="text-center text-xs tabular-nums text-white/70"
+                      data-line-place
+                      >${place}</span
+                    >`
+                  : nothing}
+              </div>`}
+          ${head !== undefined && !headIsOwn
+            ? html`<div class="flex flex-1 flex-col gap-1" data-line-head>
+                <o-button
+                  variant=${retired ? "primary" : "ghost"}
+                  width="block"
+                  .title=${translateText("throne.line_head", {
+                    name: head.throne?.name ?? "",
+                  })}
+                  @click=${() => {
+                    window.location.href = this.lobbyUrl(head.gameID);
+                  }}
+                ></o-button>
+                <span class="text-center text-xs tabular-nums text-white/70"
+                  >${placeLabel(1)}</span
+                >
+              </div>`
+            : nothing}
+        </div>
+      </div>
+    `;
   }
 
   private toggleModifier(modifier: ThroneModifier) {

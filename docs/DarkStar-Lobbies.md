@@ -54,7 +54,7 @@ Numbered so the code and tests can cite them.
 | L24 | **A throne's place is fixed when it enters the line.** Claiming or leaving a seat afterwards does not move it. Open to revision if it would help the flow of games. [2026-10-06]                                                                                                                                                                                                                                                                                                                                |
 | L25 | **Launch with two lines, FFA and special.** The team line needs T5 (§5.9), which becomes the priority after this work. [Team line opened 2026-10-10 with T5, §10.6: three lines.] The home page shows one card per line head: two at launch. A line with nobody in it shows its first throne as waiting for players. [2026-10-06]                                                                                                                                                                               |
 | L26 | **A running countdown is never interrupted.** A throne ahead of the head that regains the minimum is simply head next, with a full 2 minutes. A held throne's remaining time (L10) is its own only until another throne takes the countdown. [2026-10-06]                                                                                                                                                                                                                                                       |
-| L27 | **After a round, the players who did not win choose:** stay with their throne, shown its place in line, or join the head of the line. [2026-10-06]                                                                                                                                                                                                                                                                                                                                                              |
+| L27 | **After a round, the players who did not win choose:** stay with their throne, shown its place in line, or join the head of the line. [2026-10-06] **[Settled 2026-10-11 by Tom: the head is the next round of the same mode to launch; no answer stays with the throne (an AFK player should not swell the next room; revisited if staying bloats counts instead); the place shows live.]**                                                                                                                    |
 | L28 | **Open thrones overtaken repeatedly by returning winners** is accepted for launch and watched; it needs a real population to occur. [2026-10-06]                                                                                                                                                                                                                                                                                                                                                                |
 | L29 | **The lobby browser files thrones by type.** Its tabs are **Free for all**, **Teams** and **Special** (plus All), each listing that line's thrones head first, with Watch on a running round. There is no Thrones tab, and a line with nothing in it has no pane and no tab, so the team line appears by itself when T5 lands. The home page keeps one card per line head (L25). Reason: one Thrones pile mixed FFA and special rounds, and the three empty queue panes beside it read as a fault. [2026-10-09] |
 | L30 | **The team throne's winner sets the split.** With the map, the winner of a team throne may choose the next round's team split: a fixed count of 2 to 7 teams, or Duos, Trios or Quads; never Humans vs Lords (the throne is a third side to neither). The cap is recomputed for the split on the chosen map, and a count the map cannot give two players each falls back to as many teams as fill. Nothing chosen keeps the split the lobby rolled. Tom's ask, 2026-10-10. [2026-10-10]                         |
@@ -531,10 +531,8 @@ L16-L20, L23, L24 and L26 in the master; the client (L21, L25, L27) is not built
   order, the floor, the cull, names); `MasterLobbyServiceThrones.test.ts` (18: launch order
   with places, the retire message, the expiry keeping the heir);
   `WorkerLobbyServiceThrones.test.ts` gains the retire case.
-- **Still to build (client).** Two home cards, one per line head, with "next" or "N ahead";
-  the Thrones tab in line order; the lobby's own place display; the win screen's "stay with
-  this throne (Nth in line)" and "join the head" buttons (L27); sending a player whose
-  throne was retired under them to the head; the rulebook's line about launches.
+- **Client.** Built in two parts: the home cards and the lobby browser's panes with §10.6
+  (L25, L29), and the rest as §10.7 (2026-10-11).
 
 ### 10.6 As built: T5, team thrones (2026-10-10)
 
@@ -579,6 +577,44 @@ lobby browser's Teams pane (L29) and the third home card (L25) appear on their o
 - **Open.** Private team lobbies now carry a throne too (G4; the host seats a player or the
   AI holds it). Team spawn areas on maps that define them ignore the throne, which never
   spawns. Lords in team rounds: off for now, revisited if the launch balance asks for them.
+
+### 10.7 As built: the launch lines, client side (2026-10-11)
+
+L21, L27 and the rest of §10.5's client list. The place in line only exists on the public
+list (the master stamps it there, §10.5), so every reader below takes it from the lobby feed.
+
+- **The helper.** `src/client/ThroneLine.ts`: `findLobby` (a lobby in any bucket),
+  `throneLine(type)` (the thrones of a type that are gathering or counting down, head first;
+  a deciding or running throne has no place and is not in line), `lineHead`, and
+  `placeLabel` ("Next to launch" at 1, "N ahead in line" behind).
+- **The win screen (L27).** A non-winner on a throne round gets the line panel in place of
+  the plain Join button (which stays for a private lobby's successor): **Stay with the
+  throne of X**, with its place under it, and **Join the head of the line: Y**, the next
+  throne of the same type to launch, shown only when that is another throne (when our own
+  is the head the hint says so). The panel opens its own `PublicLobbySocket` while it is on
+  screen and closes it with the panel, so the place moves as thrones ahead launch. Doing
+  nothing stays: the Stay button is the successor the server already announced, and
+  nothing moves an idle player. A successor that was listed and then vanished was retired
+  (L20): the Stay button goes and the head is offered alone. The winner's Next-round panel
+  is unchanged.
+- **The lobby (L21).** `JoinLobbyModal` keeps the whole snapshot its hosted-lobby feed
+  already receives and reads its own lobby's place off it: the status line says "N ahead
+  in line" behind the head, "Waiting for players" at it, and "The Hegemon is choosing…"
+  while the winner decides (as before).
+- **The lobby browser.** A throne card's pill reads its place: the head waits for players
+  (then counts down as before), the rest say "N ahead", a deciding throne says the Hegemon
+  is choosing, a running round says Watch (as before). The home cards are the heads, so
+  they show nothing new.
+- **Retired under a player.** Only an empty lobby is retired (L20), so nobody is ever
+  inside one when it closes; the one place a player can hold a retired throne is the win
+  screen, handled above.
+- **The rulebook.** `rules_throne_6` says how the lines launch and what the choice is.
+- **Strings.** `throne.line_title`, `line_hint`, `line_is_head`, `line_retired`,
+  `line_stay`, `line_head`, `line_place_next`, `line_place_ahead`, `place_ahead`.
+- **Tests.** `tests/client/ThroneLine.test.ts` (4), `tests/client/graphics/layers/WinModalLine.test.ts`
+  (6: the live place and head, head-is-own, retired, the feed's life, the private Join, the
+  winner's panel), `tests/client/DetailedGameViewThronePill.test.ts` (2),
+  `tests/client/JoinLobbyModal.test.ts` (the place, 2).
 
 ## 11. Tests
 
@@ -666,6 +702,13 @@ strings; the registry changes and tests (`ThroneRegistry` stays pure: the queue 
 over the existing gathering state, plus `create` / `retire` actions).
 
 ## 14. Changelog
+
+- **2026-10-11** — **The launch lines' client built** (§10.7): the win screen's stay-or-join-
+  the-head choice with the place live, the lobby's own place, the browser pill's place,
+  the rulebook line. Tom settled L27's open edges the same day: the head is the next round
+  of the same mode, no answer stays with the throne (revisited if it bloats counts with AFK
+  players), the place shows live. The two type errors in the master throne test's playlist
+  mock (no `throneTeamSplit`) fixed.
 
 - **2026-09-29** — Created from Tom's outline and answers: fixed pool of 15 named thrones, fixed
   type per throne, no accounts, 30-second winner window with map and rules pick and the option to

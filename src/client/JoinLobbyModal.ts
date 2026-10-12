@@ -20,6 +20,7 @@ import {
   GameRecordSchema,
   LobbyInfoEvent,
   PublicGameInfo,
+  PublicGames,
   ThroneInfo,
 } from "../core/Schemas";
 import {
@@ -34,6 +35,7 @@ import { PublicLobbySocket } from "./LobbySocket";
 import { JoinLobbyEvent } from "./Main";
 import { ensureServerList, redirectToGameVersion } from "./ServerList";
 import { terrainMapFileLoader } from "./TerrainMapFileLoader";
+import { findLobby } from "./ThroneLine";
 import { ClaimSeatEvent, LeaveSeatEvent, SendSpectateEvent } from "./Transport";
 import { normaliseMapKey } from "./Utils";
 import { isReplayShellHost, versionedReplayUrl } from "./VersionedReplay";
@@ -79,10 +81,22 @@ export class JoinLobbyModal extends BaseModal {
   private countdownTimerId: number | null = null;
   private handledJoinTimeout = false;
 
+  // Under a Dark Star: the whole snapshot is kept too, for this throne
+  // lobby's own place in its launch line (L16-L19), which only the public list
+  // carries.
+  @state() private publicGames: PublicGames["games"] | null = null;
   private readonly hostedLobbySocket = new PublicLobbySocket((lobbies) => {
     this.hostedLobbies = lobbies.games?.hosted ?? [];
     this.hostedLobbiesLoaded = true;
+    this.publicGames = lobbies.games ?? null;
   });
+
+  // My throne's place in its line, from the public list: undefined until the
+  // list arrives, or while the throne is not in line (the winner is choosing).
+  private thronePlace(): number | undefined {
+    if (this.throne === null) return undefined;
+    return findLobby(this.publicGames, this.currentLobbyId)?.throne?.place;
+  }
 
   private isPrivateLobby(): boolean {
     return this.gameConfig?.gameType === GameType.Private;
@@ -315,7 +329,11 @@ export class JoinLobbyModal extends BaseModal {
           ? translateText("private_lobby.joined_waiting")
           : this.throneChoosing()
             ? translateText("throne.choosing")
-            : translateText("public_lobby.waiting_for_players")
+            : (this.thronePlace() ?? 1) > 1
+              ? translateText("throne.line_place_ahead", {
+                  count: String(this.thronePlace()! - 1),
+                })
+              : translateText("public_lobby.waiting_for_players")
         : secondsRemaining > 0
           ? translateText("public_lobby.starting_in", {
               time: renderDuration(secondsRemaining),
@@ -728,6 +746,7 @@ export class JoinLobbyModal extends BaseModal {
     this.hostedLobbySocket.stop();
     this.hostedLobbies = [];
     this.hostedLobbiesLoaded = false;
+    this.publicGames = null;
     this.clearCountdownTimer();
     this.stopLobbyUpdates();
 

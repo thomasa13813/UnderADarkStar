@@ -240,7 +240,8 @@ _Done when_ the checklist is clean. This build is the release candidate.
 ### Stage 7 — The friends test (the gate)
 
 - [ ] Tom and friends play an evening on the live server: several thrones, guests and accounts,
-      a winner who keeps the seat, one who leaves, a restart in the middle.
+      a winner who keeps the seat, one who leaves, a loser who stays with their throne and one
+      who joins the head of the line, a restart in the middle.
 - [ ] Collect what broke, what confused, and whether it was fun. Fix what must be fixed; adjust
       balance (the numbers from M4 are expected to move).
 
@@ -286,6 +287,11 @@ _Done when_ the checklist is clean. This build is the release candidate.
 6. An itch.io listing at launch, or after the first week?
 
 ## 7. Changelog
+
+- **2026-10-11** — **Launch-lines client built** on `feat/team-thrones` (Lobbies §10.7): the
+  win screen's stay-or-join-the-head choice, the place in line in the lobby and the browser,
+  the rulebook line. The branch type-checks again (the throne test's mock lacked
+  `throneTeamSplit`).
 
 - **2026-10-10** — **Team thrones built (T5)** on `feat/team-thrones`, not merged: the team
   line opens at the same floor as the FFA and special lines once deployed (Lobbies §10.6).
