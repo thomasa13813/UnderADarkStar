@@ -332,27 +332,22 @@ on every one.
 **Goal.** Tom's point 5 and S8: a legal soundtrack and cues for the things this game does that
 OpenFront does not.
 
-**Exists.** 34 effect files and 4 ambience loops in `resources/sounds` (CC BY-SA), played through
-`Sounds.ts` → `AudioMixer` with per-category volumes; four files on disk are never referenced
-(`warship-lost`, `warship-shot`, `sam-hit`, `sam-shoot`). Music is entirely proprietary: menu theme,
-gameplay loop, game-start alert. No credits file for any sound.
+**The ledger is `docs/DarkStar-Sound.md`** (2026-10-12): every sound, when it plays, who hears
+it, where it came from, and what is still open. The summary below is kept short; the ledger is the
+source of truth.
 
-**Work.**
+**Done.** The soundtrack (five tracks of Tom's own, crossfading, 2026-10-12); the three cues of
+2026-10-04 (`launch`, `landing`, `missile`) under the audience principle; the finding that nothing
+inherited needs removing (every effect and ambience file is OpenFront's CC BY-SA under `resources/`,
+credited; their proprietary audio was never in the repository).
 
-- ~~**Soundtrack:** one menu theme and one or more gameplay loops.~~ **Done 2026-10-12:** five
-  AI-generated tracks of Tom's own in `resources/sounds/music/` (CC BY-SA, credited), played as one
-  crossfading cycle through the session by `src/client/sound/Soundtrack.ts`, which replaced
-  `MenuMusic.ts` and the gameplay loop in `SoundManager`.
-- **New cues:** strike inbound, strike landed, punitive levy, invasion landed on the Dark Star, the
-  last stand, the Hegemon overthrown, timer victory, gate fired. Wire them where the events already
-  exist (`events_display.*` in `en.json` marks the spots).
-- **Verify effects play** in a real round (S8 says silence is a bug), reference or delete the four
-  orphan files, and write the sound credits.
+**Open.** Tom's further sounds, wired as he shares them (ledger §5–§6); a real file for the silent
+lobby bell (`game-start-alert.mp3`); verifying every cue is heard in a real round; tidying the files
+that no longer play (the four unregistered orphans, the retired launch cues, the SAM and silo
+entries for units disabled under a Dark Star). Candidate cues nobody has decided on are listed in
+the ledger, not here.
 
-**Decide.** The soundtrack source and budget; whether the throne has its own ambience.
-
-**Done when** the proprietary music is gone from the build, every cue has a file, and `CREDITS.md`
-lists each one with its licence.
+**Done when** Tom says the sound set is complete and the ledger's §5 is empty.
 
 ## P5. Identity and the minimal backend (L)
 

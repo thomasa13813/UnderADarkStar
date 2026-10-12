@@ -433,9 +433,11 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   They play as one cycle for the whole session, home page, lobby and game alike, each track
   crossfading into the next over four seconds and the last wrapping to the first
   (`src/client/sound/Soundtrack.ts`); the old split into a looping menu theme and a looping
-  gameplay track is gone, so nothing cuts when the map appears. **Before any public release:** the
-  remaining effects verified (the repo carries 37 effect files that `Sounds.ts` plays, so silence
-  in play is a bug to diagnose, not missing assets).
+  gameplay track is gone, so nothing cuts when the map appears. **The ledger of every sound** — when
+  it plays, who hears it, where it came from, what is still open — is `docs/DarkStar-Sound.md`
+  (2026-10-12); it also records that nothing inherited needs removing before release. **Before any
+  public release:** the remaining effects verified (silence in play is a bug to diagnose, not
+  missing assets).
 - **S9 — Map library.** [Decided 2026-09-24] Launch with **10–20 galaxy maps** authored around the
   Dark Star; Event Horizon is the first and `scripts/generateGalaxyMap.ts` the tool. Most or all
   existing maps — the Earth-geography ones in particular — are removed, decided map by map (F17).

@@ -189,7 +189,7 @@ npx vitest tests/MapConsistency.test.ts --run # single file
   `FONTCONFIG_FILE` pointing at `~/.cache/openfront-run/`; diagnose new
   missing libs with `DEBUG=pw:browser` and
   `ldd .../chrome-headless-shell | grep "not found"`.
-- **The single-player button is labeled "SOLO!"**, and the DOM has more
+- **The single-player card is an image button (`img[alt="Solo"]`)**, and the DOM has more
   than one (responsive layouts) — use `button:visible` with
   `hasText: /solo/i`.
 - **Lit + Vite HMR**: custom elements can't be re-registered, so an

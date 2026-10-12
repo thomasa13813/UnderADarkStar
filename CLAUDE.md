@@ -63,27 +63,28 @@ The game server only serves `index.html` and the WebSocket. All other assets (JS
 
 ## Key Files
 
-| File                               | Purpose                                       |
-| ---------------------------------- | --------------------------------------------- |
-| `docs/DarkStar-Design.md`          | DarkStar goals, rules, roadmap                |
-| `docs/DarkStar-Roadmap.md`         | The road to release (phases P0–P8)            |
-| `docs/DarkStar-Lobbies.md`         | Public lobbies / thrones design (P6)          |
-| `docs/DarkStar-Accounts.md`        | Accounts / leaderboard design (P5)            |
-| `docs/DarkStar-Launch.md`          | Ordered steps to the public release           |
-| `docs/DarkStar-Services.md`        | The third-party services and how they connect |
-| `docs/MapMaking.md`                | Drawing a map and building it                 |
-| `src/core/configuration/Config.ts` | All game balance constants/formulas           |
-| `src/core/Schemas.ts`              | All intent/message types (Zod schemas)        |
-| `src/core/GameRunner.ts`           | Simulation orchestrator                       |
-| `src/core/game/GameImpl.ts`        | Game state implementation                     |
-| `src/server/GameServer.ts`         | Main WebSocket server, game loop              |
-| `src/server/Master.ts`             | Lobby and game registry                       |
-| `tests/util/Setup.ts`              | Test helper — creates test games              |
-| `docs/Architecture.md`             | Architecture overview                         |
-| `zbin/README.md`                   | Binary wire format for zod schemas            |
-| `docs/Auth.md`                     | JWT/auth flow                                 |
-| `docs/API.md`                      | Public API endpoints                          |
-| `vite.config.ts`                   | Build config, CDN handling                    |
+| File                               | Purpose                                           |
+| ---------------------------------- | ------------------------------------------------- |
+| `docs/DarkStar-Design.md`          | DarkStar goals, rules, roadmap                    |
+| `docs/DarkStar-Roadmap.md`         | The road to release (phases P0–P8)                |
+| `docs/DarkStar-Lobbies.md`         | Public lobbies / thrones design (P6)              |
+| `docs/DarkStar-Accounts.md`        | Accounts / leaderboard design (P5)                |
+| `docs/DarkStar-Launch.md`          | Ordered steps to the public release               |
+| `docs/DarkStar-Services.md`        | The third-party services and how they connect     |
+| `docs/DarkStar-Sound.md`           | The sound ledger: every cue, its audience, origin |
+| `docs/MapMaking.md`                | Drawing a map and building it                     |
+| `src/core/configuration/Config.ts` | All game balance constants/formulas               |
+| `src/core/Schemas.ts`              | All intent/message types (Zod schemas)            |
+| `src/core/GameRunner.ts`           | Simulation orchestrator                           |
+| `src/core/game/GameImpl.ts`        | Game state implementation                         |
+| `src/server/GameServer.ts`         | Main WebSocket server, game loop                  |
+| `src/server/Master.ts`             | Lobby and game registry                           |
+| `tests/util/Setup.ts`              | Test helper — creates test games                  |
+| `docs/Architecture.md`             | Architecture overview                             |
+| `zbin/README.md`                   | Binary wire format for zod schemas                |
+| `docs/Auth.md`                     | JWT/auth flow                                     |
+| `docs/API.md`                      | Public API endpoints                              |
+| `vite.config.ts`                   | Build config, CDN handling                        |
 
 ## UI Text / i18n
 

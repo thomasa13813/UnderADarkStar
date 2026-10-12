@@ -85,7 +85,16 @@ export async function gotoHome(page) {
 // The single-player button is labeled "SOLO!". There are multiple SOLO
 // buttons in the DOM (responsive layouts) — only one is visible.
 export async function openSoloModal(page) {
-  await page.locator("button:visible", { hasText: /solo/i }).first().click();
+  // Since 2026-10-10 the card is a pixel-art image button: the label is the
+  // <img alt="Solo">. Fall back to the old text label.
+  const byImage = page.locator("button:visible", {
+    has: page.locator('img[alt="Solo" i]'),
+  });
+  if ((await byImage.count()) > 0) {
+    await byImage.first().click();
+  } else {
+    await page.locator("button:visible", { hasText: /solo/i }).first().click();
+  }
   await page.waitForTimeout(1500);
 }
 
