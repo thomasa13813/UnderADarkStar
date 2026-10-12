@@ -223,17 +223,23 @@ _Done when_ nothing a player sees or hears is a placeholder.
 - [x] **Help and tutorial** rewritten for the Hegemon rules; the solo screen explains the throne.
       Built 2026-10-04 in three parts (below): the help page's rulebook, the in-game tutorial,
       and a one-line note under the solo screen's "Play as the Hegemon" toggle.
-- [ ] **Licence items**: the Source link points at the deployed commit; `CREDITS.md` complete; the
-      attribution line present.
+- [x] **Licence items**: the Source link points at the deployed commit; `CREDITS.md` complete; the
+      attribution line present. Done 2026-10-12: `GameVersion.sourceUrlFor` builds the
+      `/tree/<commit>` link, CREDITS covers the fonts (OFL texts shipped), the Claude-made
+      audio, the map sketches; the repository is public and the deploy key retired.
 - [ ] **Production keys**: ~~real Turnstile keys~~ (issued 2026-10-07, in `.env`); secrets rotated
       from anything used in testing (the `API_KEY` of the audit was a throwaway).
-- [ ] **Throne launch lines** (was: throne count for the opening). Decided 2026-10-06 as
+- [x] **Throne launch lines** (was: throne count for the opening). Decided 2026-10-06 as
       L16-L28 in `DarkStar-Lobbies.md`: per-type lines with a floor of five, one countdown per
-      line. The server side is built (Lobbies §10.5); the client (home cards per line head,
-      place in line, the win screen's stay-or-join-the-head choice) remains. Team thrones (T5)
-      built 2026-10-10 on `feat/team-thrones` (Lobbies §10.6), not yet deployed.
+      line. Server side built (Lobbies §10.5); client side built 2026-10-11 (Lobbies §10.7:
+      home cards per line head, place in line, the win screen's stay-or-join-the-head choice,
+      L31 the dead join the head); team thrones (T5, Lobbies §10.6) with it. All live since
+      2026-10-12.
 - [ ] **Watching it**: an uptime check on `/api/health` and the API's `/health`; a look at the
-      server's logs and load with a dozen clients connected.
+      server's logs and load with a dozen clients connected. Planned for the week of 2026-10-12,
+      before the friends test: a scripted soak of ten or so headless clients through a throne
+      round on the live site (Turnstile permitting; see the changelog), with `docker stats` and
+      the logs read at the peak, plus a free external uptime monitor on both health endpoints.
 - [x] **Somewhere to report bugs** (a Discord server or an email address; Tom's choice). Done
       2026-10-07: the Discord server "Under a Dark Star" (invite `https://discord.gg/vTjcPKadD`,
       five channels: welcome, announcements, general, bug-reports, suggestions), owned by the
@@ -294,6 +300,12 @@ _Done when_ the checklist is clean. This build is the release candidate.
 
 ## 7. Changelog
 
+- **2026-10-12** — **Checklist brought up to date.** Licence items and the throne launch lines
+  ticked (both live). Tom's decision on F12: **no automatic defence for a Hegemon who drops or
+  goes AFK**; the throne stays exactly as its player left it and may be taken. Next before the
+  friends test: the soak test and the uptime monitor ("Watching it"). The soak's one unknown is
+  Turnstile: a first join on the live site needs a token, and headless browsers may not get one;
+  the fallback is a short window on Cloudflare's always-pass test keys, then the real keys back.
 - **2026-10-12** — **Prepared for a public repository.** The address, access and ownership facts
   moved to the private operations doc (`docs-private/DarkStar-Operations.md`, git-ignored); the
   public Services doc keeps the architecture only. The git history was rewritten to remove the
