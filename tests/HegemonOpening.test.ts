@@ -1,4 +1,6 @@
 import { AttackExecution } from "../src/core/execution/AttackExecution";
+import { Executor } from "../src/core/execution/ExecutionManager";
+import { NoOpExecution } from "../src/core/execution/NoOpExecution";
 import { PlayerExecution } from "../src/core/execution/PlayerExecution";
 import { SpawnExecution } from "../src/core/execution/SpawnExecution";
 import {
@@ -16,6 +18,7 @@ import {
 } from "../src/core/game/GameUpdates";
 import { flightTicks, openingWindowTicks } from "../src/core/game/Opening";
 import { loadTerrainMap } from "../src/core/game/TerrainMapLoader";
+import { StampedIntent } from "../src/core/Schemas";
 import { setup } from "./util/Setup";
 import { TestConfig } from "./util/TestConfig";
 
@@ -114,7 +117,7 @@ describe("Opening window", () => {
     expect(game.elapsedGameSeconds()).toBe(0.1);
   });
 
-  test("nothing runs during the opening; orders queue until the round begins", async () => {
+  test("nothing runs during the opening; an execution added directly waits for the round", async () => {
     const east = human("east");
     const game = await hegemonGame([east]);
     const g = game.darkStar()!;
@@ -147,6 +150,70 @@ describe("Opening window", () => {
     for (let t = 0; t < 20; t++) game.executeNextTick();
     expect(ran).toBe(true);
     expect(player.troops()).not.toBe(troops);
+    expect(player.numTilesOwned()).toBeGreaterThan(tiles);
+  });
+
+  test("an order sent during the opening is refused, not queued; the same order after the landing is taken", async () => {
+    const east = human("east");
+    const game = await hegemonGame([east]);
+    const g = game.darkStar()!;
+    const spawn = game.ref(g.cx + g.radius + g.moatWidth + 20, g.cy);
+    const end = await openRound(game, [east], [spawn]);
+    const player = game.player("east");
+    game.addExecution(new PlayerExecution(player));
+    const executor = new Executor(game, "game", undefined);
+    const expand = (): StampedIntent => ({
+      type: "attack",
+      targetID: null,
+      troops: 1000,
+      clientID: "east",
+    });
+    expect(game.inOpening()).toBe(true);
+
+    // Orders off the wire come back as nothing while the flights are in the
+    // air — an early lander cannot stack attacks for the landing.
+    expect(executor.createExec(expand())).toBeInstanceOf(NoOpExecution);
+    expect(
+      executor.createExec({
+        type: "boat",
+        troops: 100,
+        dst: spawn,
+        clientID: "east",
+      }),
+    ).toBeInstanceOf(NoOpExecution);
+    expect(
+      executor.createExec({
+        type: "allianceRequest",
+        recipient: "east",
+        clientID: "east",
+      }),
+    ).toBeInstanceOf(NoOpExecution);
+    // What is not an order still passes: a spawn pick (refused downstream),
+    // the disconnect mark, the pause.
+    expect(
+      executor.createExec({ type: "spawn", tile: spawn, clientID: "east" }),
+    ).toBeInstanceOf(SpawnExecution);
+    expect(
+      executor.createExec({
+        type: "mark_disconnected",
+        isDisconnected: true,
+        clientID: "east",
+      }),
+    ).not.toBeInstanceOf(NoOpExecution);
+
+    // Played through, the refused order never fires.
+    const tiles = player.numTilesOwned();
+    game.addExecution(executor.createExec(expand()));
+    while (game.ticks() < end.startTick) game.executeNextTick();
+    for (let t = 0; t < 20; t++) game.executeNextTick();
+    expect(player.outgoingAttacks()).toHaveLength(0);
+    expect(player.numTilesOwned()).toBe(tiles);
+
+    // The same order after the landing is an attack, and it expands.
+    const taken = executor.createExec(expand());
+    expect(taken).toBeInstanceOf(AttackExecution);
+    game.addExecution(taken);
+    for (let t = 0; t < 20; t++) game.executeNextTick();
     expect(player.numTilesOwned()).toBeGreaterThan(tiles);
   });
 

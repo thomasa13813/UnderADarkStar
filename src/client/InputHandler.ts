@@ -969,6 +969,7 @@ export class InputHandler {
         !this.userSettings.leftClickOpensMenu() ||
         event.shiftKey ||
         this.gameView.inSpawnPhase() || // No Radial Menu during spawn phase, only spawn point selection
+        this.gameView.inOpening() || // nor while the challengers are still landing (C3)
         this.uiState.ghostStructure !== null // Block radial menu on left click if building
       ) {
         this.eventBus.emit(new MouseUpEvent(event.x, event.y));
@@ -1109,7 +1110,7 @@ export class InputHandler {
 
   private onContextMenu(event: MouseEvent) {
     event.preventDefault();
-    if (this.gameView.inSpawnPhase()) {
+    if (this.gameView.inSpawnPhase() || this.gameView.inOpening()) {
       return;
     }
     if (this.uiState.ghostStructure !== null) {
@@ -1254,7 +1255,11 @@ export class InputHandler {
 
   private canUseBuildKeybinds(): boolean {
     const myPlayer = this.gameView.myPlayer?.();
-    return !this.gameView.inSpawnPhase() && myPlayer?.isAlive() === true;
+    return (
+      !this.gameView.inSpawnPhase() &&
+      !this.gameView.inOpening() &&
+      myPlayer?.isAlive() === true
+    );
   }
 
   private getPinchDistance(): number {

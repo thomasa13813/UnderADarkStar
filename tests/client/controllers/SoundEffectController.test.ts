@@ -122,11 +122,18 @@ describe("SoundEffectController", () => {
   });
 
   it("plays spawn on every spawn placement", () => {
-    game.myPlayer = () => ({});
+    game.myPlayer = () => ({ isHegemon: () => false });
     controller.init();
     eventBus.emit(new SendSpawnIntentEvent(0 as never));
     eventBus.emit(new SendSpawnIntentEvent(1 as never));
     expect(played).toEqual(["spawn", "spawn"]);
+  });
+
+  it("the throne never hears a spawn cue: it has no spawn to place", () => {
+    game.myPlayer = () => ({ isHegemon: () => true });
+    controller.init();
+    eventBus.emit(new SendSpawnIntentEvent(0 as never));
+    expect(played).toEqual([]);
   });
 
   it("does not play spawn for spectators", () => {

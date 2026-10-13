@@ -86,6 +86,8 @@ const CLICK = { x: 10, y: 20 };
 // Runner around fully mocked collaborators; started so clicks are handled.
 function makeRunner(overrides: {
   inSpawnPhase?: boolean;
+  // The view already knows me as the throne (seated from the start).
+  throne?: boolean;
   hasOwner?: boolean;
   playerByClientID?: () => unknown;
   actions?: Record<string, unknown>;
@@ -100,7 +102,8 @@ function makeRunner(overrides: {
   const gameView = {
     config: () => ({ isRandomSpawn: () => false, isReplay: () => false }),
     inSpawnPhase: () => overrides.inSpawnPhase ?? false,
-    myPlayer: () => null,
+    inOpening: () => false,
+    myPlayer: () => (overrides.throne ? { isHegemon: () => true } : null),
     isValidCoord: () => true,
     ref: () => TILE,
     isLand: () => true,
@@ -158,6 +161,16 @@ describe("left click", () => {
 
     expect(spawns).toHaveLength(1);
     expect(spawns[0].tile).toBe(TILE);
+  });
+
+  it("sends nothing when the throne clicks unowned land during the spawn phase", () => {
+    const { eventBus } = makeRunner({ inSpawnPhase: true, throne: true });
+    const spawns: SendSpawnIntentEvent[] = [];
+    eventBus.on(SendSpawnIntentEvent, (e) => spawns.push(e));
+
+    eventBus.emit(new MouseUpEvent(CLICK.x, CLICK.y));
+
+    expect(spawns).toHaveLength(0);
   });
 
   it("lazily resolves myPlayer by clientID and emits an attack intent", async () => {

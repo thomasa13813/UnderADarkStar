@@ -572,6 +572,7 @@ export class RadialMenu implements Controller {
     return (
       this.params === null ||
       this.params.game.inSpawnPhase() ||
+      this.params.game.inOpening() ||
       item.disabled(this.params)
     );
   }

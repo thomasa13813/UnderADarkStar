@@ -1069,7 +1069,10 @@ export const centerButtonElement: CenterButtonElement = {
   },
   action: (params: MenuElementParams) => {
     if (params.game.inSpawnPhase()) {
-      params.playerActionHandler.handleSpawn(params.tile);
+      // The throne has no spawn to place.
+      if (!params.myPlayer.isHegemon()) {
+        params.playerActionHandler.handleSpawn(params.tile);
+      }
     } else {
       if (isFriendlyTarget(params) && !isDisconnectedTarget(params)) {
         const selectedPlayer = params.selected as PlayerView;

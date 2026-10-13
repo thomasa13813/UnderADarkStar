@@ -1204,12 +1204,16 @@ export class ClientGameRunner {
       this.gameView.isLand(tile) &&
       !this.gameView.hasOwner(tile) &&
       this.gameView.inSpawnPhase() &&
-      !this.gameView.config().isRandomSpawn()
+      !this.gameView.config().isRandomSpawn() &&
+      // The throne is seated already: its click on nebula during the spawn
+      // phase is nothing, and sounds like nothing.
+      !this.gameView.myPlayer()?.isHegemon()
     ) {
       this.eventBus.emit(new SendSpawnIntentEvent(tile));
       return;
     }
-    if (this.gameView.inSpawnPhase()) {
+    // No orders until the last challenger has landed (the opening, C3).
+    if (this.gameView.inSpawnPhase() || this.gameView.inOpening()) {
       return;
     }
     if (this.myPlayer === null) {
@@ -1307,7 +1311,7 @@ export class ClientGameRunner {
       this.myPlayer = myPlayer;
     }
 
-    if (this.gameView.inSpawnPhase()) {
+    if (this.gameView.inSpawnPhase() || this.gameView.inOpening()) {
       return;
     }
 
@@ -1452,7 +1456,11 @@ export class ClientGameRunner {
   }
 
   private doRetaliateAttackMostRecent(): void {
-    if (!this.isActive || this.gameView.inSpawnPhase()) {
+    if (
+      !this.isActive ||
+      this.gameView.inSpawnPhase() ||
+      this.gameView.inOpening()
+    ) {
       return;
     }
 
@@ -1554,7 +1562,7 @@ export class ClientGameRunner {
     if (!this.isActive || !this.lastMousePosition) {
       return null;
     }
-    if (this.gameView.inSpawnPhase()) {
+    if (this.gameView.inSpawnPhase() || this.gameView.inOpening()) {
       return null;
     }
     const cell = this.renderer.transformHandler.screenToWorldCoordinates(

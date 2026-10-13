@@ -13,7 +13,7 @@ export interface SoundtrackTrack {
  * this game (2026-10-12) and shipped with the rest of `resources/` under
  * CC BY-SA 4.0; see CREDITS.md. They run as one cycle through the whole
  * session, the home page and the game alike, wrapping from the last back to
- * the first.
+ * the first, and carrying on across the page loads in between.
  */
 export const SOUNDTRACK: readonly SoundtrackTrack[] = [
   { title: "The Hegemon", file: "the-hegemon.mp3" },
@@ -85,16 +85,85 @@ function rampGain(target: number, t: number): number {
   return target * 10 ** ((FADE_IN_FLOOR_DB * (1 - t)) / 20);
 }
 
+// ------------------------------------------------------------- persistence
+
+/**
+ * Where the position is kept between page loads: sessionStorage, which lives
+ * as long as the tab does and no longer. Leaving a game for the home page is a
+ * full navigation (`window.location.href = homeHref()`), as is a join that
+ * lands on another server, and each one builds this player afresh -- which
+ * used to mean the first track again every time, several times an evening for
+ * a player knocked out of game after game. A fresh tab still opens on the top
+ * of the list; a tab coming back to the home page picks up where it was.
+ */
+export const SOUNDTRACK_STORAGE_KEY = "darkstar.soundtrack";
+
+interface SavedPosition {
+  /** Index into SOUNDTRACK of the track that was playing. */
+  readonly index: number;
+  /** Seconds into it. */
+  readonly position: number;
+  /** Its length in seconds, or 0 while the stream had not reported one. */
+  readonly duration: number;
+}
+
+/**
+ * A track with less than a fade-in plus a crossfade left is not worth coming
+ * back for: it would open from silence and be fading out again before it had
+ * arrived. The next one starts clean instead.
+ */
+const RESUME_MIN_REMAINING_MS = FADE_IN_MS + CROSSFADE_MS;
+
+function readSavedPosition(): SavedPosition | null {
+  let raw: string | null;
+  try {
+    raw = sessionStorage.getItem(SOUNDTRACK_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+  if (raw === null) return null;
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (typeof parsed !== "object" || parsed === null) return null;
+    const { index, position, duration } = parsed as Record<string, unknown>;
+    // The list may have changed between the build that wrote this and the
+    // one reading it, so an index is only trusted inside the current list.
+    if (typeof index !== "number" || !Number.isInteger(index)) return null;
+    if (index < 0 || index >= SOUNDTRACK.length) return null;
+    if (typeof position !== "number" || !Number.isFinite(position)) return null;
+    if (position < 0) return null;
+    const length =
+      typeof duration === "number" && Number.isFinite(duration) && duration > 0
+        ? duration
+        : 0;
+    return { index, position, duration: length };
+  } catch {
+    return null;
+  }
+}
+
+function writeSavedPosition(saved: SavedPosition): void {
+  try {
+    sessionStorage.setItem(SOUNDTRACK_STORAGE_KEY, JSON.stringify(saved));
+  } catch {
+    // Storage unavailable or full: the music still plays, it just starts
+    // over on the next page.
+  }
+}
+
 /**
  * The soundtrack: the tracks of SOUNDTRACK one after another, each fading
  * into the next, wrapping round for as long as the page lives.
  *
  * One instance per page, created in Main.ts alongside the mixer, so the home
  * page, the lobby and the game are one continuous cycle: nothing cuts at the
- * map appearing, nothing restarts on the way back to the menu. Browsers block
- * audio until a user gesture, so the first track starts inside the first
- * pointerdown/keydown; a game started by URL asks for it from
- * ClientGameRunner.start(), which lands after a click of its own.
+ * map appearing, nothing restarts on the way back to the menu. Where the way
+ * back IS a page load, the track and the position go through sessionStorage
+ * (see SOUNDTRACK_STORAGE_KEY) and the new page's player resumes them, so the
+ * cycle is the tab's rather than the page's. Browsers block audio until a user
+ * gesture, so the first track starts inside the first pointerdown/keydown; a
+ * game started by URL asks for it from ClientGameRunner.start(), which lands
+ * after a click of its own.
  *
  * Every track streams (html5) rather than decoding megabytes up front; the
  * next one is constructed as soon as the current one starts, so its fetch is
@@ -110,6 +179,12 @@ function rampGain(target: number, t: number): number {
 export class Soundtrack {
   /** Index into SOUNDTRACK of `current`, or of the next track to start. */
   private index = 0;
+  /**
+   * Seconds into the track at `index` to start from: where the previous page
+   * left it, or 0. Cleared once playback has really started there, so a play
+   * the autoplay rule blocked still resumes on the gesture that follows.
+   */
+  private resumeAt = 0;
   /** The track being heard, or on its way in. Null until the first start. */
   private current: Howl | null = null;
   /** The track after `current`, constructed early so it is buffering. */
@@ -122,6 +197,8 @@ export class Soundtrack {
   private disposed = false;
 
   constructor(private readonly mixer: AudioMixer) {
+    this.restore();
+    window.addEventListener("pagehide", this.onPageHide);
     this.arm();
   }
 
@@ -136,12 +213,19 @@ export class Soundtrack {
     this.next = null;
     if (howl === null) return;
     this.current = howl;
+    // Howler queues a seek on a stream that has not loaded and applies it
+    // before the queued play, so the first sample heard is the resumed one.
+    if (this.resumeAt > 0) {
+      const at = this.resumeAt;
+      this.safely("seek track", () => howl.seek(at));
+    }
     this.begin(howl, this.index, () => this.fadeIn(howl));
     howl.play();
   }
 
   dispose(): void {
     this.disposed = true;
+    window.removeEventListener("pagehide", this.onPageHide);
     this.disarm();
     this.cancelRamp();
     this.stopPoll();
@@ -174,6 +258,41 @@ export class Soundtrack {
   }
 
   private readonly onGesture = () => this.play();
+
+  // ------------------------------------------------------------- position
+
+  /** Picks up where the previous page in this tab left the soundtrack. */
+  private restore(): void {
+    const saved = readSavedPosition();
+    if (saved === null) return;
+    const remainingMs = (saved.duration - saved.position) * 1000;
+    if (saved.duration > 0 && remainingMs <= RESUME_MIN_REMAINING_MS) {
+      this.index = (saved.index + 1) % SOUNDTRACK.length;
+      return;
+    }
+    this.index = saved.index;
+    this.resumeAt = saved.position;
+  }
+
+  /**
+   * Records where the playing track has got to. Called from every poll tick,
+   * so the record is at most POSITION_POLL_MS stale on a normal navigation,
+   * and from pagehide for a hidden tab whose timers were held back.
+   */
+  private save(howl: Howl): void {
+    const duration = howl.duration();
+    const position: unknown = howl.seek();
+    if (typeof position !== "number" || !Number.isFinite(position)) return;
+    writeSavedPosition({
+      index: this.index,
+      position,
+      duration: duration > 0 && Number.isFinite(duration) ? duration : 0,
+    });
+  }
+
+  private readonly onPageHide = () => {
+    if (this.current !== null) this.save(this.current);
+  };
 
   // -------------------------------------------------------------- tracks
 
@@ -217,6 +336,10 @@ export class Soundtrack {
       howl.off("playerror", onPlayError);
       if (this.current !== howl) return;
       this.loadFailures = 0;
+      // Written now, ahead of the first poll, so a page that leaves during
+      // the opening seconds still knows which track it was on.
+      writeSavedPosition({ index, position: this.resumeAt, duration: 0 });
+      this.resumeAt = 0;
       // The one after this starts buffering now, so the crossfade finds it
       // ready. One ahead only: two streams is the most ever in flight.
       this.next = this.load((index + 1) % SOUNDTRACK.length);
@@ -383,6 +506,7 @@ export class Soundtrack {
       const position: unknown = howl.seek();
       if (typeof position !== "number") return;
       if (!(duration > 0) || !Number.isFinite(duration)) return;
+      this.save(howl);
       if ((duration - position) * 1000 <= CROSSFADE_MS) {
         this.stopPoll();
         this.advance(howl, "crossfade");

@@ -1,5 +1,6 @@
 import { LitElement, html } from "lit";
 import { customElement, state } from "lit/decorators.js";
+import { assetUrl } from "../../../core/AssetUrls";
 import { GameMode, GameType, RankedType } from "../../../core/game/Game";
 import { GameUpdateType } from "../../../core/game/GameUpdates";
 import { Controller } from "../../Controller";
@@ -7,6 +8,10 @@ import { translateText } from "../../Utils";
 import { GameView } from "../../view";
 
 const COLLUSION_WARNING_CLOSED_KEY = "hasClosedCollusionWarning";
+
+// The opening (C3): no order is taken until the last challenger has landed,
+// and this label, Tom's, says so where the heads-up text otherwise sits.
+const WAITING_TO_LAND_LABEL = assetUrl("images/WaitingToLandLabel.svg");
 
 @customElement("heads-up-message")
 export class HeadsUpMessage extends LitElement implements Controller {
@@ -24,6 +29,9 @@ export class HeadsUpMessage extends LitElement implements Controller {
 
   @state()
   private isImmunityActive = false;
+
+  @state()
+  private isOpening = false;
 
   @state()
   private isCatchingUp = false;
@@ -121,6 +129,9 @@ export class HeadsUpMessage extends LitElement implements Controller {
     this.isCatchingUp =
       this.catchingUpTicks >= HeadsUpMessage.CATCHING_UP_SHOW_THRESHOLD;
 
+    // The flights are in the air: orders are held until the last landing.
+    this.isOpening = this.game.inOpening();
+
     // Announce overtime in this banner (not the toast, which is a brief
     // notification slot). Window-based rather than a fired-once flag, so a
     // late joiner or replay seek doesn't get a stale announcement long after
@@ -136,6 +147,7 @@ export class HeadsUpMessage extends LitElement implements Controller {
 
     this.isVisible =
       this.game.inSpawnPhase() ||
+      this.isOpening ||
       this.isPaused ||
       this.isImmunityActive ||
       this.isCatchingUp ||
@@ -180,6 +192,12 @@ export class HeadsUpMessage extends LitElement implements Controller {
       : translateText("heads_up_message.choose_spawn");
   }
 
+  // The landing label replaces the text while the opening runs; a pause or a
+  // catch-up still says so in words.
+  private showLandingLabel(): boolean {
+    return this.isOpening && !this.isPaused && !this.isCatchingUp;
+  }
+
   private onCloseCollusionWarning = (): void => {
     localStorage.setItem(COLLUSION_WARNING_CLOSED_KEY, "true");
     this.hasClosedCollusionWarning = true;
@@ -213,7 +231,20 @@ export class HeadsUpMessage extends LitElement implements Controller {
               </div>
             `
           : null}
-        ${this.isVisible
+        ${this.isVisible && this.showLandingLabel()
+          ? html`
+              <img
+                class="fixed top-[15%] left-1/2 -translate-x-1/2 z-[799]
+                            w-[min(70vw,560px)] max-w-[90vw] select-none"
+                style="animation: landingBlink 2.6s ease-in-out infinite;"
+                src=${WAITING_TO_LAND_LABEL}
+                alt=${translateText("heads_up_message.waiting_to_land")}
+                draggable="false"
+                @contextmenu=${(e: MouseEvent) => e.preventDefault()}
+              />
+            `
+          : null}
+        ${this.isVisible && !this.showLandingLabel()
           ? html`
               <div
                 class="fixed top-[15%] left-1/2 -translate-x-1/2 z-[799]

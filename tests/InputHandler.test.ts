@@ -58,6 +58,7 @@ describe("InputHandler AutoUpgrade", () => {
 
     mockGameView = {
       inSpawnPhase: () => false,
+      inOpening: () => false,
       myPlayer: () => ({ isAlive: () => true }),
       config: () => ({ isUnitDisabled: () => false }),
     } as unknown as GameView;
@@ -1056,7 +1057,10 @@ describe("Warship box selection (Shift+drag)", () => {
   let uiState: UIState;
 
   beforeEach(() => {
-    const mockGameView = { inSpawnPhase: () => false } as GameView;
+    const mockGameView = {
+      inSpawnPhase: () => false,
+      inOpening: () => false,
+    } as unknown as GameView;
     mockCanvas = document.createElement("canvas");
     eventBus = new EventBus();
     uiState = {
@@ -1242,6 +1246,7 @@ describe("InputHandler right-click cancels unit selection (#4692)", () => {
     inputHandler = new InputHandler(
       {
         inSpawnPhase: () => false,
+        inOpening: () => false,
         myPlayer: () => ({ isAlive: () => true }),
       } as unknown as GameView,
       {
@@ -1357,6 +1362,7 @@ describe("InputHandler teardown (OPE-411)", () => {
     new InputHandler(
       {
         inSpawnPhase: () => false,
+        inOpening: () => false,
         myPlayer: () => ({ isAlive: () => true }),
       } as unknown as GameView,
       {

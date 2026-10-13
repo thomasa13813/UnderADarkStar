@@ -219,7 +219,7 @@ export class WarshipSelectionController implements Controller {
     if (!this.game.isValidCoord(cell.x, cell.y)) return;
 
     const clickRef = this.game.ref(cell.x, cell.y);
-    if (this.game.inSpawnPhase()) {
+    if (this.game.inSpawnPhase() || this.game.inOpening()) {
       if (!this.game.isWater(clickRef)) {
         this.eventBus.emit(new MouseUpEvent(event.x, event.y));
       }

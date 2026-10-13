@@ -1033,7 +1033,7 @@ export class HelpModal extends BaseModal {
                     </td>
                     <td class="py-3 border-b border-white/5">
                       <img
-                        src=${assetUrl("images/BattleshipIconWhite.svg")}
+                        src=${assetUrl("images/DestroyerIconWhite.svg")}
                         class="w-8 h-8 scale-75 origin-left"
                       />
                     </td>

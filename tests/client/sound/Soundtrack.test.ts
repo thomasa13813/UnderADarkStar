@@ -60,6 +60,7 @@ import {
   CROSSFADE_MS,
   POSITION_POLL_MS,
   SOUNDTRACK,
+  SOUNDTRACK_STORAGE_KEY,
   Soundtrack,
 } from "../../../src/client/sound/Soundtrack";
 
@@ -90,6 +91,9 @@ beforeEach(() => {
   vi.clearAllMocks();
   buildMixer();
   vi.useFakeTimers();
+  // jsdom's sessionStorage outlives a test, and a position left behind by
+  // one would have the next start mid-list.
+  sessionStorage.removeItem(SOUNDTRACK_STORAGE_KEY);
 });
 
 afterEach(() => {
@@ -344,6 +348,138 @@ describe("advancing", () => {
     retry._fire("loaderror");
     expect(retry.unload).toHaveBeenCalled();
     expect(track(SOUNDTRACK[2].file).play).toHaveBeenCalled();
+  });
+});
+
+describe("across page loads", () => {
+  // Leaving a game for the home page is a full navigation, so what the next
+  // page's player can know is only what this one wrote to sessionStorage.
+  const saved = () =>
+    JSON.parse(sessionStorage.getItem(SOUNDTRACK_STORAGE_KEY)!);
+  const leaveSaved = (index: number, position: number, duration: number) =>
+    sessionStorage.setItem(
+      SOUNDTRACK_STORAGE_KEY,
+      JSON.stringify({ index, position, duration }),
+    );
+
+  it("starts a fresh tab at the top of the list", () => {
+    startOnGesture();
+    expect(howlInstances[0].src).toContain(SOUNDTRACK[0].file);
+    expect(howlInstances[0].seek).not.toHaveBeenCalledWith(expect.any(Number));
+  });
+
+  it("records the track as soon as it starts, and the position as it plays", () => {
+    const first = startOnGesture();
+    expect(sessionStorage.getItem(SOUNDTRACK_STORAGE_KEY)).toBeNull();
+    first.begin();
+    // Before the stream has reported anything: the track, at least.
+    expect(saved()).toEqual({ index: 0, position: 0, duration: 0 });
+
+    first.duration.mockReturnValue(180);
+    first.seek.mockReturnValue(42);
+    vi.advanceTimersByTime(POSITION_POLL_MS);
+    expect(saved()).toEqual({ index: 0, position: 42, duration: 180 });
+  });
+
+  it("writes the position when the page is hidden", () => {
+    const first = settledFirstTrack();
+    first.duration.mockReturnValue(180);
+    first.seek.mockReturnValue(100);
+    // A hidden tab's timers are held back, so the poll may be a minute stale
+    // when the navigation comes; pagehide is the last word.
+    window.dispatchEvent(new Event("pagehide"));
+    expect(saved()).toEqual({ index: 0, position: 100, duration: 180 });
+  });
+
+  it("resumes where the previous page left it", () => {
+    leaveSaved(2, 42, 180);
+    startOnGesture();
+    const resumed = track(SOUNDTRACK[2].file);
+    expect(resumed).toBeDefined();
+    expect(track(SOUNDTRACK[0].file)).toBeUndefined();
+    // The seek goes in ahead of play(): Howler queues both and runs them in
+    // order once the stream has loaded.
+    expect(resumed.seek).toHaveBeenCalledWith(42);
+    expect(resumed.play).toHaveBeenCalled();
+
+    resumed.begin();
+    // The cycle carries on from there, not from the top.
+    expect(track(SOUNDTRACK[3].file)).toBeDefined();
+    expect(saved()).toEqual({ index: 2, position: 42, duration: 0 });
+  });
+
+  it("still resumes when the first play is blocked", () => {
+    leaveSaved(1, 30, 180);
+    player = new Soundtrack(mixer);
+    // A game opened by URL asks before any click: the autoplay rule says no.
+    player.play();
+    const blocked = track(SOUNDTRACK[1].file);
+    blocked._fire("playerror");
+
+    document.dispatchEvent(new Event("pointerdown"));
+    const retry = howlInstances[1];
+    expect(retry.src).toBe(blocked.src);
+    expect(retry.seek).toHaveBeenCalledWith(30);
+  });
+
+  it("moves on to the next track when the last one was nearly over", () => {
+    // Six seconds left: a fade-in plus a crossfade, with nothing in between.
+    leaveSaved(1, 174, 180);
+    startOnGesture();
+    const next = track(SOUNDTRACK[2].file);
+    expect(next).toBeDefined();
+    expect(track(SOUNDTRACK[1].file)).toBeUndefined();
+    expect(next.seek).not.toHaveBeenCalledWith(expect.any(Number));
+  });
+
+  it("wraps from the last track to the first when that one was nearly over", () => {
+    leaveSaved(SOUNDTRACK.length - 1, 108, 108);
+    startOnGesture();
+    expect(track(SOUNDTRACK[0].file)).toBeDefined();
+  });
+
+  it("ignores a record it cannot trust", () => {
+    for (const raw of [
+      "not json",
+      JSON.stringify({ index: 99, position: 10, duration: 180 }),
+      JSON.stringify({ index: -1, position: 10, duration: 180 }),
+      JSON.stringify({ index: 1.5, position: 10, duration: 180 }),
+      JSON.stringify({ index: 1, position: -3, duration: 180 }),
+      JSON.stringify({ index: 1, position: "10", duration: 180 }),
+      JSON.stringify(null),
+    ]) {
+      howlInstances.length = 0;
+      player?.dispose();
+      sessionStorage.setItem(SOUNDTRACK_STORAGE_KEY, raw);
+      startOnGesture();
+      expect(howlInstances[0].src, raw).toContain(SOUNDTRACK[0].file);
+      expect(howlInstances[0].seek).not.toHaveBeenCalledWith(
+        expect.any(Number),
+      );
+    }
+  });
+
+  it("trusts a position whose length the stream had not reported", () => {
+    // duration 0 is "unknown", not "zero seconds long".
+    leaveSaved(3, 20, 0);
+    startOnGesture();
+    const resumed = track(SOUNDTRACK[3].file);
+    expect(resumed).toBeDefined();
+    expect(resumed.seek).toHaveBeenCalledWith(20);
+  });
+
+  it("stops listening for pagehide once disposed", () => {
+    const first = settledFirstTrack();
+    first.duration.mockReturnValue(180);
+    first.seek.mockReturnValue(50);
+    vi.advanceTimersByTime(POSITION_POLL_MS);
+    player!.dispose();
+    player = null;
+    first.seek.mockReturnValue(90);
+    window.dispatchEvent(new Event("pagehide"));
+    // The last record stands: a disposed player writes nothing more, and the
+    // record itself is kept for the next page.
+    expect(saved()).toEqual({ index: 0, position: 50, duration: 180 });
   });
 });
 

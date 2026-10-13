@@ -72,8 +72,10 @@ export class SoundEffectController implements Controller {
 
   private onSpawnIntent = (): void => {
     // Spectators can click unowned land too, but their intent is dropped
-    // server-side — no false confirmation cue.
-    if (this.game.myPlayer() === null) return;
+    // server-side — no false confirmation cue. The throne has no spawn to
+    // place, so it never hears one either.
+    const me = this.game.myPlayer();
+    if (me === null || me.isHegemon()) return;
     this.emit("spawn");
   };
 

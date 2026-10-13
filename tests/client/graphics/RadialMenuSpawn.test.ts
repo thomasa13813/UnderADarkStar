@@ -28,6 +28,7 @@ describe("RadialMenu center button - spawn phase", () => {
     const params = {
       tile,
       game: { inSpawnPhase: () => true },
+      myPlayer: { isHegemon: () => false },
       playerActionHandler: { handleSpawn, handleAttack },
       closeMenu,
     } as unknown as MenuElementParams;
@@ -37,5 +38,22 @@ describe("RadialMenu center button - spawn phase", () => {
     expect(handleSpawn).toHaveBeenCalledExactlyOnceWith(tile);
     expect(handleAttack).not.toHaveBeenCalled();
     expect(closeMenu).toHaveBeenCalled();
+  });
+
+  it("the throne's centre click during the spawn phase places nothing", () => {
+    const handleSpawn = vi.fn();
+    const handleAttack = vi.fn();
+    const params = {
+      tile: 42 as TileRef,
+      game: { inSpawnPhase: () => true },
+      myPlayer: { isHegemon: () => true },
+      playerActionHandler: { handleSpawn, handleAttack },
+      closeMenu: vi.fn(),
+    } as unknown as MenuElementParams;
+
+    centerButtonElement.action(params);
+
+    expect(handleSpawn).not.toHaveBeenCalled();
+    expect(handleAttack).not.toHaveBeenCalled();
   });
 });

@@ -607,7 +607,8 @@
     "pvp_immunity_active": "PVP immunity active for {seconds}s",
     "random_spawn": "Random spawn is enabled. Selecting starting location for you...",
     "random_spawn_spectator": "Random spawn is enabled",
-    "singleplayer_game_paused": "Game paused"
+    "singleplayer_game_paused": "Game paused",
+    "waiting_to_land": "Waiting for players to land"
   },
   "help_modal": {
     "action_attack_altclick": "Attack (when left click is set to open menu)",
@@ -701,7 +702,7 @@
     "rules_domain_4": "Holding Dark Star tiles gives a challenger nothing: no troop capacity, no income. Losing them costs the Hegemon a fixed share of its troops per tile; otherwise its strength does not depend on how much of the disc it holds.",
     "rules_domain_title": "The Dark Star",
     "rules_gift_1": "The Hegemon may build or upgrade any challenger structure on any challenger's nebula, paying from its own gold. The structure belongs to the host from the moment it is placed and cannot be refused.",
-    "rules_gift_2": "Spaceports are placed anywhere in your territory, like a city. A port's harbour is the nearest deep space reachable over nebula: freighters crawl overland at half speed to it and travel at full speed across space, and Destroyers launch from and repair at a harbour.",
+    "rules_gift_2": "Spaceports are placed anywhere in your territory, like a city. A port's harbour is the nearest deep space reachable over nebula: freighters crawl through the nebula at half speed to it and travel at full speed across space, and Destroyers launch from and repair at a harbour.",
     "rules_gift_3": "Trade lanes between stations are straight lines, in the simulation as well as on screen. A line that crosses void, or deep space wider than a strait, does not connect.",
     "rules_gift_title": "Gifts and the economy",
     "rules_hegemon_1": "The Hegemon starts with a full pool of troops sized from the map ({ceiling}% of what one player owning every nebula tile could field). The pool refills at a flat rate, empty to full in {refill} minutes, whatever its territory.",
@@ -721,7 +722,7 @@
     "rules_round_2": "The Hegemon is eliminated when it owns no tiles. The challenger whose attack takes its last tile wins the round and is the Hegemon of the next one.",
     "rules_round_3": "If the timer runs out with the Hegemon still holding any tile, the Hegemon wins and keeps the throne.",
     "rules_round_4": "If no human holds the throne, an AI Hegemon plays it. This is also how a solo game works unless you choose to play as the Hegemon yourself.",
-    "rules_round_5": "At the start of a round every challenger is launched from the Dark Star to its chosen spawn. Nothing moves and the clock holds until the last one has landed; spawn protection starts at the landing.",
+    "rules_round_5": "At the start of a round every challenger is launched from the Dark Star to its chosen spawn. Nothing moves, no orders can be given and the clock holds until the last one has landed; spawn protection starts at the landing.",
     "rules_round_6": "A challenger who loses all territory is out of the round and may spectate or leave. Only a challenger can eliminate a challenger: the Hegemon never can.",
     "rules_round_title": "The round",
     "rules_strike_1": "The strike is the Hegemon's attack. It picks any challenger tile and sends a share of its pool; the strike flies visibly from the centre of the Dark Star on a warhead's arc, taking longer the further it goes. On landing it takes the tile and fights outward like a landing.",

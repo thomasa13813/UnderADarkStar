@@ -40,7 +40,7 @@ OpenFront.io (the engine DarkStar is built on) is a real-time multiplayer territ
 3. **`src/server/`** — Game coordination, intent relay, WebSocket management (Node.js/Express/ws).
 4. **API** — Closed-source Cloudflare Worker handling auth, stats, cosmetics, monetization. Not in this repo, and **not available to this fork** — features that depend on it (accounts, store, ranked, game archive/replays) do not work.
 
-Terminology (decided 2026-10-07, feudal): simple bots are **Barons** to players (`TribeExecution`, "Tribes" in the code); the smarter map-defined AI players are **Lords** (`NationExecution`, `src/core/execution/nation/`, "Nations" in the code). The Hegemon sits above both. Code identifiers keep the old names; only player-facing text and the docs use the new ones.
+Terminology (decided 2026-10-07, feudal): simple bots are **Barons** to players (`TribeExecution`, "Tribes" in the code); the smarter map-defined AI players are **Lords** (`NationExecution`, `src/core/execution/nation/`, "Nations" in the code). The Hegemon sits above both. Terrain (decided 2026-10-12): the engine's land tiles are **nebula** (plural **nebulae**) and its water is **deep space**. Code identifiers keep the old names; only player-facing text and the docs use the new ones.
 
 ### Simulation Flow (Intent → Execution)
 

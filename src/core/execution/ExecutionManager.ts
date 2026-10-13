@@ -32,6 +32,13 @@ import { TribeSpawner } from "./TribeSpawner";
 import { UpgradeStructureExecution } from "./UpgradeStructureExecution";
 import { PlayerSpawner } from "./utils/PlayerSpawner";
 
+// Intents still taken during the opening: a spawn pick (SpawnExecution
+// refuses a late one itself), the chat, the disconnect mark and the pause.
+// Everything else is an order and waits for the landing.
+const PASSES_DURING_OPENING: ReadonlySet<StampedIntent["type"]> = new Set<
+  StampedIntent["type"]
+>(["spawn", "emoji", "quick_chat", "mark_disconnected", "toggle_pause"]);
+
 export class Executor {
   // private random = new PseudoRandom(999)
   private random: PseudoRandom;
@@ -55,6 +62,16 @@ export class Executor {
     const player = this.mg.playerByClientID(intent.clientID);
     if (!player) {
       console.warn(`player with clientID ${intent.clientID} not found`);
+      return new NoOpExecution();
+    }
+
+    // The opening (C3): while the challengers' flights are in the air no
+    // order is taken. A player who lands early would otherwise spend the wait
+    // queueing attacks on empty space that all fire the moment the round
+    // begins and bleed the troops they landed with. Refused here, not
+    // queued, so the order is simply gone; the client greys its controls and
+    // says why. What is not an order still passes.
+    if (this.mg.inOpening() && !PASSES_DURING_OPENING.has(intent.type)) {
       return new NoOpExecution();
     }
 
