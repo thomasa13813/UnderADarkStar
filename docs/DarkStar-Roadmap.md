@@ -255,7 +255,7 @@ inherited ones.
 
 **Exists.** The Go generator (`map-generator/`) takes **one PNG per map** plus an `info.json` — so
 yes, MS Paint images work directly. The encoding: any pixel with **blue = 106** (or alpha under 20)
-is deep space; **pure black** is void (impassable, drawn as background); **anything else is land**,
+is deep space; **pure black** is void (impassable, drawn as background); **anything else is nebula**,
 with the blue channel setting elevation (blue below 159 is plains). Shores are computed. Islands under
 30 px and lakes under 200 px are deleted. Recommended area 2–3M px (1800 × 1800 is what Event
 Horizon uses); width and height are cropped to multiples of 4. `info.json` names the map, its
@@ -268,7 +268,7 @@ Only Event Horizon is ours; Milky Way and Sol are upstream (CC BY-SA); everythin
 **Work.**
 
 - **An authoring kit for Tom:** a one-page guide and a small script that takes an MS Paint PNG in a
-  friendly palette (e.g. white = land, blue = space, black = void, red dots = Lord spawns, a
+  friendly palette (e.g. white = nebula, blue = space, black = void, red dots = Lord spawns, a
   yellow circle = the Dark Star) and writes the generator's exact encoding plus the `info.json`.
   Then `npm run gen-maps`. Thumbnails come free; the picker needs no hand-made art.
 - **The pool itself:** 10–20 maps (S9), each played once in `HegemonSim` for a sanity check (Lord

@@ -1,5 +1,10 @@
 {
   "categories": ["arcade"],
+  "hegemon": {
+    "center": [1240, 1430],
+    "moat": 21,
+    "radius": 193
+  },
   "id": "BranchingPaths",
   "map": {
     "height": 2148,
@@ -100,17 +105,17 @@
       "strength": 1
     },
     {
-      "coordinates": [1243, 1666],
+      "coordinates": [1243, 1684],
       "name": "Fishing Town",
       "strength": 1
     },
     {
-      "coordinates": [1031, 1316],
+      "coordinates": [1017, 1308],
       "name": "Fishing Village",
       "strength": 1
     },
     {
-      "coordinates": [1446, 1314],
+      "coordinates": [1462, 1305],
       "name": "Fishing Hamlet",
       "strength": 1
     }

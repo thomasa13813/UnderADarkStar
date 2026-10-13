@@ -85,21 +85,21 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   every map** representing the supermassive black hole. Size guide: big enough that the Hegemon's name
   is **clearly legible on it when the whole map is zoomed out**. It is deliberately _not_ proportionate
   to the Hegemon's strength — the Hegemon is far stronger than its tile count would suggest.
-  It is a **solid disc**: every tile within the radius becomes Hegemon-owned land, whatever the map had
+  It is a **solid disc**: every tile within the radius becomes Hegemon-owned nebula, whatever the map had
   there (water and void are filled in), so it is a clean circle on any map.
 - **H2 — Starting state, and no structures on the Dark Star.** Full troops (at its ceiling), gold
   income from the shadow tax (H4), **no structures — ever**. [Decided 2026-09-24] **Nothing can be
   built inside the Dark Star**, by the Hegemon or by an invader: no cities, ports, factories, silos,
   SAMs, defence posts or gates on domain tiles. The Hegemon therefore has no nukes, no home economy to
   grow and no navy of its own beyond H10 (F8 is closed by this rule — a Hegemon silo would have been a
-  raze that skipped tyranny and the bubble). What the throne builds, it builds in its vassals' lands
+  raze that skipped tyranny and the bubble). What the throne builds, it builds in its vassals' nebulae
   (H18). [Built 2026-09-25, §6.13] Domain tiles are never structure sites for anyone, and the
   Hegemon can build no structure of its own anywhere, a strike's bubble included.
   [Revised 2026-09-28; built the same day, §6.23] **Missiles are the exception.** The throne may buy
   a Nuclear or Antimatter Warhead at any player's price (S6) and it flies from the **Dark Star's
   centre**, as its strikes do: no launcher, no reload, gold is the only limit. A gate its strike
   captured is never fired (H19), MIRVs stay off. [Revised 2026-09-29] Its warheads are **kept out
-  of shield arrays like anyone else's** (C5); only its strikes pass through.
+  of shield arrays like anyone else's** (C5); its strikes, like every gate shot, pass through.
 - **H3 — Strength scales with the map, not the player count** — for the troop ceiling. Gold scales
   with the round's economy (H4).
 - **H4 — Strength target.** [Revised 2026-09-24] The Hegemon is a **large pool that refills slowly**,
@@ -140,16 +140,16 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   non-combat elimination paths (enclosed-cluster capture, the <100-tile mop-up handing tiles to
   neighbours) must not apply to the Hegemon.
 - **H8 — No territorial growth.** The Hegemon never owns tiles outside the domain; it may retake domain
-  tiles it has lost. It **may attack** challengers, but land it takes **reverts to neutral** ("razed").
+  tiles it has lost. It **may attack** challengers, but nebula it takes **reverts to neutral** ("razed").
   [Decided 2026-09-20] A raze is a **direct strike**: the Hegemon aims at any challenger tile and, after
   a flight time that grows with distance, the strike falls there and razes outward — no fleet, so it
   reaches inland players and works where the moat is a landlocked lake. [Built 2026-09-23, §6.9] The
   flight is a visible **projectile** on the nuke's arc from the Dark Star's centre, at nuke speed, with
-  an impact ring on the aim tile; everyone sees it coming. It pays for the land from the Hegemon's fixed pool — [Decided 2026-09-21] at a
+  an impact ring on the aim tile; everyone sees it coming. It pays for the nebula from the Hegemon's fixed pool — [Decided 2026-09-21] at a
   **deliberately poor rate** (`razeAttackerLossPercent` / `razeSlowPercent`, 300/300: three times the
   troops and three times the time of an ordinary conquest) — runs until its troops are spent, the target
-  has no land within reach, or it is recalled (survivors come home). It **can never eliminate** a
-  challenger (H16). **Structures on razed land are destroyed.** The target can fight it (H17).
+  has no nebula within reach, or it is recalled (survivors come home). It **can never eliminate** a
+  challenger (H16). **Structures on razed nebula are destroyed.** The target can fight it (H17).
   [Built 2026-09-22] A human Hegemon orders one with the **Strike** action — its own `strike` order,
   never a fleet — on any challenger tile, sized by the troop slider; **one live strike per target**,
   any number of targets; a recall in flight brings the troops home whole, on the ground it pays the
@@ -166,7 +166,7 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   its pool has room — no alliance, the lobby toggle ignored, the cooldown as usual. **While someone
   holds the Dark Star, every troop donated to the throne goes straight into the counter-attack
   against them**, stalled or not, human or AI throne. Why: a round can deadlock when an invader takes
-  most of the domain and exhausts the throne but loses its land beyond the moat, so its troop cap
+  most of the domain and exhausts the throne but loses its nebula beyond the moat, so its troop cap
   collapses (H5) and neither side can move; the other challengers' donations finish the failed
   invasion and free the slot, and are how rivals compete for the throne by proxy.
 - **H10 — Destroyers of the Dark Star.** [Revised 2026-09-24] The Hegemon may build **destroyers**
@@ -177,7 +177,7 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   enemy warship only inside the moat; the AI Hegemon does not build them yet.
 - **H11 — AI Hegemon personality.** Defensive by default; when its troops have sat at the ceiling for a
   while it may launch a punitive attack at the most powerful challenger. [Decided 2026-09-20 — the
-  "leveller"] Only while nobody is invading; "most powerful" is the largest **troop capacity** (land and
+  "leveller"] Only while nobody is invading; "most powerful" is the largest **troop capacity** (nebula and
   cities), and only a real threat is struck (capacity ≥ 25% of the Hegemon's ceiling). It sends 25% of
   its troops at the target's greatest city, recalls the strike once the target is clearly below the
   runner-up (85% of their capacity) or the moment the Dark Star is invaded, then waits 90 s. All tunable.
@@ -218,7 +218,7 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   to every upstart — and every tool it uses draws on the same slow-to-refill pool (H4).
 
 - **H16 — Tyranny: the Hegemon cannot eliminate anyone.** [Decided 2026-09-21] A strike's troop cost is
-  multiplied by a **tyranny** penalty that depends only on the **target's share of the map's land**
+  multiplied by a **tyranny** penalty that depends only on the **target's share of the map's nebula**
   (Dark Star tiles not counted; _not_ on its strength relative to the Hegemon). No penalty at
   `tyrannyFreePermille` (3%) and above; below that the multiplier is
   `(free − floor) ÷ (share − floor)`, rising without limit towards `tyrannyFloorPermille` (0.5%), at and
@@ -228,10 +228,10 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   only: evicting an invader from the Dark Star is ordinary combat, so a player whose homeland is gone
   can still die on the Dark Star.
 - **H17 — Strike counterplay: the bubble.** [Decided 2026-09-21; replaces the same-day "hold" design]
-  A strike is an ordinary conquest: the land it takes is the strike's **bubble**, Hegemon-owned while
+  A strike is an ordinary conquest: the nebula it takes is the strike's **bubble**, Hegemon-owned while
   the strike lasts and bordering the target, so the target **fights it like any other invader** — an
   attack order on the Hegemon (the HUD's **Counter-attack** button, or clicking the bubble) takes bubble
-  tiles back over land. The bubble is **defended by the strike's own troops**, never by the Dark Star's:
+  tiles back over nebula. The bubble is **defended by the strike's own troops**, never by the Dark Star's:
   every tile retaken costs the strike its troops-per-bubble-tile (the bubble is costed as no smaller than
   `razeBubbleMinTiles`, 200), so a fresh compact bubble is expensive to breach and a sprawling one is
   soft — no explicit grace window. **Only the struck player may attack the bubble**; everyone else, and
@@ -241,7 +241,7 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   reach, recalled, or the throne fallen) the bubble **pops**: whatever it still holds reverts to neutral
   for anyone to scramble over. Strikes are exempt from the engine's troop-for-troop cancelling. AI
   Lords need no special rule: the engine's retaliation against an attacker already fights the bubble.
-- **H18 — Gifts: the Hegemon builds in its vassals' lands.** [Decided 2026-09-24] The Hegemon may
+- **H18 — Gifts: the Hegemon builds in its vassals' nebulae.** [Decided 2026-09-24] The Hegemon may
   place **any structure a challenger could build** — city, port, factory, defence post, SAM, silo,
   stargate — on **any challenger's territory**, paying the cost from its own gold (H4). The structure
   is a **gift**: it belongs to the host player outright from the moment it is placed, exactly as if
@@ -279,13 +279,13 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   - **No tyranny, a radius instead.** The strike pays no tyranny multiplier (H16) and can never be
     recalled. Its reach is capped: it razes only tiles within `punitiveRadius` (34: the Nuclear
     Warhead's outer blast radius of 30 with a quarter more area) of the silo, and it never takes the target below the tyranny floor
-    (`tyrannyFloorPermille`), so H16 still holds for a player whose whole land fits in the pocket.
+    (`tyrannyFloorPermille`), so H16 still holds for a player whose whole nebula fits in the pocket.
   - **Halt, then pop.** When nothing within its radius is left to take (or the floor is reached) the
     strike **halts** for `punitiveHaltSeconds` (5 s). If the target retakes any bubble tile in that
     time the halt is cancelled and the strike resumes out to its radius, halting again once it is
     full; the target may fight it exactly as any bubble (H17), a dense pocket that takes a real army
     to breach. An undisturbed halt, or troops spent, ends the strike: the bubble **pops** as in H17
-    (land to neutral, the silo and every captured structure destroyed) and any troops left over are
+    (nebula to neutral, the silo and every captured structure destroyed) and any troops left over are
     **burnt**: not returned to the levied, never the throne's.
   - **One at a time.** Ordering a strike on one of a player's silos clears every other flag that
     player holds, and no new flag arises on any of their silos while any strike (punitive or H8) on
@@ -295,7 +295,7 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
     missiles fly from the Dark Star (H2, revised 2026-09-28), and a captured gate's charge stays
     untouched.
   - **AI Hegemon.** Strikes any flag as soon as it may, except against a challenger holding less than
-    `punitiveAIMinLandPermille` of the map's land (tunable, 50–100‰ to start).
+    `punitiveAIMinLandPermille` of the map's nebula (tunable, 50–100‰ to start).
 
 ### 3.3 Challengers
 
@@ -324,7 +324,7 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
 - **C4 — Stargates.** [Decided 2026-09-22; plan in §6.8] A challenger **structure** that launches a
   **strike-style projectile** carrying troops at any tile within its **range**: the shot flies an arc
   like a nuke and, on landing, **conquers** the tile and fights outward from it exactly as a transport
-  landing does (the land is kept — a beachhead behind any coastline). Silo-like: costs gold, builds
+  landing does (the nebula is kept — a beachhead behind any coastline). Silo-like: costs gold, builds
   over time, one shot then a **cooldown**; the range is **small and grows with the gate's upgrade
   level**; a player may build **any number** of gates, each with its own reload. A shot **may land on
   the Dark Star** — an invasion that bypasses the moat, subject to the single-invader rule and the
@@ -332,7 +332,7 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   troop slider and leave at launch. **SAMs do not intercept** gate shots. One projectile unit type (`Projectile`, built 2026-09-23 for
   the throne's strike, §6.9) carries gate shots too, drawn in its owner's colours. [Built 2026-09-24,
   §6.10, humans only] Decided with the numbers in F15: a shot may target **any tile that is not the
-  shooter's own** (neutral land included — a gate is the landlocked player's port); it lands and fights
+  shooter's own** (neutral nebula included — a gate is the landlocked player's port); it nebulae and fights
   whoever holds the tile by then, or the troops simply join if it became a friend's; a shot bound for
   the Dark Star is refused at launch during the cooldown or while the slot is taken, and turns back
   (troops home at once) if the slot is claimed in flight; only the struck player may land on a strike's
@@ -340,8 +340,8 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   [Built 2026-09-24, §6.11] **Lords build and fire gates** like silos: every Lord, by a per-city
   ratio the difficulty sets, a first gate early, at most three; a Lord ready for the throne wants a
   gate that reaches the moat and upgrades or builds towards it; a ready gate in range of the rim fires
-  the invasion instead of a fleet; otherwise gates shoot at rivals beyond the Lord's land, at neutral
-  land across water, and last at a land neighbour's far side — never at friends, never a second shot on
+  the invasion instead of a fleet; otherwise gates shoot at rivals beyond the Lord's nebula, at neutral
+  nebula across water, and last at a nebula neighbour's far side — never at friends, never a second shot on
   a pocket already fighting, never while holding the slot.
   [2026-09-26] With spaceports anywhere (S7) nobody is landlocked for trade: the gate is a **purely
   offensive** tool, the road past a front and to the throne.
@@ -359,17 +359,19 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   behaviour is unchanged apart from the cheaper price and the faster reload.
 - **C5 — Shield arrays.** [Decided 2026-09-28; built the same day, §6.23; revised 2026-09-29,
   §6.24; price 5M → 2M 2026-09-30] A challenger **structure** (**2M gold**, 10 s build, **one level, no upgrades**) that
-  projects a perimeter of `shieldArrayRadius` (**39** tiles since 2026-10-12: half a level-1 SAM's
-  70 plus a tenth, 38.5 rounded up; 35 before, Tom finding it a touch too small):
+  projects a perimeter of `shieldArrayRadius` (**40** tiles since 2026-10-12: half a level-1 SAM's
+  70 was the first cap, 35, which Tom found a touch too small; 39 briefly, then an even 40):
   **no missile can harm anything inside it**. A warhead may be aimed anywhere, the array included;
   when it lands, the blast clears its circle as usual **except the tiles inside the perimeter** —
-  no land lost, no troops killed, no structure destroyed there, no crater — so an Antimatter
-  Warhead on an array wipes the ring from 39 to 100 and leaves the inside untouched, and a Nuclear
+  no nebula lost, no troops killed, no structure destroyed there, no crater — so an Antimatter
+  Warhead on an array wipes the ring from 40 to 100 and leaves the inside untouched, and a Nuclear
   Warhead (30) on the array itself does nothing at all. Nothing is refused and nothing is shot
   down. **The Hegemon's missiles are kept out like anyone else's** (revised from "pass through",
-  Tom 2026-09-29); its **strikes** (H8, H19) still pass through. An array under construction
+  Tom 2026-09-29); its **strikes** (H8, H19) still pass through, and so does **every gate shot**
+  (C4): both are troops, not missiles, and land inside. The player-facing wording says so
+  explicitly (Tom 2026-10-12: the tutorial named only the strikes). An array under construction
   protects nothing; a captured array shields its new owner; the owner's own missiles are not kept
-  out. Gate shots are troops, not missiles, and land inside. The array shelters itself, so short
+  out. The array shelters itself, so short
   of the throne's strike only conquest removes one — hence the price (Tom's baseline; F21). Lords
   do not build arrays yet (F21). Icon: a crenelated generator under a dashed dome (the silhouette
   of the Echo Base shield generator, not its name).
@@ -382,8 +384,10 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   weakness. That is why its subjects are forever plotting to overthrow it — to install _themselves_ as
   the supreme immortal ruler. Time reversal is **lore only**: it explains the round reset (R4) and is
   not a player-activated ability.
-- **S2 — Galaxy maps.** Star systems / nebulae are "land"; deep space is "water" crossed by fleets;
-  true void is impassable. Engine terrain model reused unchanged.
+- **S2 — Galaxy maps.** The engine's land tiles are **nebula** (regions of space dense enough to form
+  planets); its water is **deep space**, crossed by fleets; true void is impassable. Engine terrain model
+  reused unchanged. [Decided 2026-10-12] Player-facing text and the rules in this doc say nebula /
+  nebulae; code identifiers (`isLand`, `landTiles`, …) and the engine notes in §6 keep "land".
 - **S3 — Delivery order.** Singleplayer (vs AI Hegemon) and private lobbies first; public lobbies later.
 - **S4 — Public release eventually.** §8 cleanup is tracked but does not block prototyping.
 - **S5 — Long-term: Hegemon high scores** — most rounds won as Hegemon, longest reign streaks. Needs
@@ -407,13 +411,13 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   tile on it is shoreline water (the narrow-strait rule the rail pathfinder already applies), water
   tiles counting six toward the length budget as they do today; a blocked line means no connection,
   no bent fallback. (2) **Spaceports anywhere**: the port is placed **like a city**, anywhere in the
-  territory, exactly where clicked. Its **harbour** is the nearest deep space reachable over land
+  territory, exactly where clicked. Its **harbour** is the nearest deep space reachable over nebula
   (never across the Dark Star's disc), one per body of space, where its freighters put to space and
   its destroyers are launched and repaired; a coastal port's harbours are its adjacent water, so
   nothing changes for it. (3) **Freighters** (the engine's trade ships) travel overland to and from a
   harbour at **half speed** (one tile every 2 ticks; tunable) and the deep-space leg at full speed:
-  three legs — out of land, across space, into land. The route always goes via deep space and two
-  ports that share no body of space do not trade (accepted for now). They cross any land but the
+  three legs — out of nebula, across space, into nebula. The route always goes via deep space and two
+  ports that share no body of space do not trade (accepted for now). They cross any nebula but the
   Dark Star's disc, the moat included, and route cost never looks at who owns a tile. Spawn odds,
   destination weighting and the global throttle are unchanged; the payout stays per tile travelled.
   (4) **Destroyers** stay deep-space units: a challenger's is launched from the harbour of its
@@ -423,12 +427,12 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   offensive tool (C4). Built in steps (M3.6): spaceports and harbours [Built 2026-09-26, §6.17],
   freighters overland [Built 2026-09-26, §6.18], straight lanes [Built 2026-09-26, §6.19; Tom kept them, hop
   threshold 3], the names [Built 2026-09-26, §6.20]. A
-  freighter on a land leg cannot be captured — a destroyer's reach ends at the water's edge.
+  freighter on a nebula leg cannot be captured — a destroyer's reach ends at the water's edge.
 - **S8 — Audio.** [Revised 2026-10-04] Sound work has started, cue by cue: Tom describes the sound
   and the rule for who hears it, supplies the file (his own recordings, or CC0 / CC BY sources
   credited in `CREDITS.md`), and it is wired into `Sounds.ts` and the controllers. **Audience
   principle:** a cue is heard by the players involved, not by the whole map — a landing by the one
-  who lands, the one who launched it and the one whose land it comes down on; a third player hears
+  who nebulae, the one who launched it and the one whose nebula it comes down on; a third player hears
   nothing. **The one exception:** the Hegemon hears every missile launch in the galaxy. A missile's
   detonation is heard by all. Cues under the principle so far: `launch` (troops leaving the Dark
   Star or a stargate — the opening, strikes and gate shots), `landing` (those troops coming down),
@@ -461,7 +465,7 @@ destroyers and the challenger table). The playtest checks left over from them ar
 
 | #   | Question                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| F1  | **Calibrating Hegemon strength (H4).** [Direction decided 2026-09-24] Regeneration is cut severely, the ceiling may rise to compensate, gold becomes a shadow tax on the challengers' combined income; the last stand (an AI rule: everything into the Dark Star's defence once the throne is truly threatened) rides with it. **Target [Decided 2026-09-20]:** roughly a third to a half of AI-only rounds end in an overthrow. **[First pass built 2026-09-27, §6.21]** `HEGEMON_DEFAULTS` now: ceiling = **125%** of what one player owning every land tile could field (`2·(L^0.6·1000+50000)`; Milky Way ≈ 6.2M), a **flat refill** of the ceiling over `refillMinutes` = **20** (~312k/min on Milky Way, a tenth of the old half-full rate), gold = a **3% shadow tax** on everything the challengers earn, the last stand at 40% of the domain with a 5% reserve, the leveller's bar at 75%. Before the change, with everything in: 0 of 6 overthrows; after: **3 of 6** at refill 10, 20 and 40 minutes alike (the AI throne's waves, not the refill, decide what it has when it matters), in the target band. Tom playtests the default with 10 and 40 minutes as the forgiving and harsh alternatives. Still open: the tax share (3% is a first guess at "a mid-table challenger's income"), whether one refill time fits all map sizes, the AI's other strike thresholds (H11) and the gate numbers (F15), and the Lords that stall on the last few percent of the domain. |
+| F1  | **Calibrating Hegemon strength (H4).** [Direction decided 2026-09-24] Regeneration is cut severely, the ceiling may rise to compensate, gold becomes a shadow tax on the challengers' combined income; the last stand (an AI rule: everything into the Dark Star's defence once the throne is truly threatened) rides with it. **Target [Decided 2026-09-20]:** roughly a third to a half of AI-only rounds end in an overthrow. **[First pass built 2026-09-27, §6.21]** `HEGEMON_DEFAULTS` now: ceiling = **125%** of what one player owning every nebula tile could field (`2·(L^0.6·1000+50000)`; Milky Way ≈ 6.2M), a **flat refill** of the ceiling over `refillMinutes` = **20** (~312k/min on Milky Way, a tenth of the old half-full rate), gold = a **3% shadow tax** on everything the challengers earn, the last stand at 40% of the domain with a 5% reserve, the leveller's bar at 75%. Before the change, with everything in: 0 of 6 overthrows; after: **3 of 6** at refill 10, 20 and 40 minutes alike (the AI throne's waves, not the refill, decide what it has when it matters), in the target band. Tom playtests the default with 10 and 40 minutes as the forgiving and harsh alternatives. Still open: the tax share (3% is a first guess at "a mid-table challenger's income"), whether one refill time fits all map sizes, the AI's other strike thresholds (H11) and the gate numbers (F15), and the Lords that stall on the last few percent of the domain. |
 | F15 | **Stargate numbers (C4).** Rules and starting numbers are decided (range 180 +75 per level to level 5 — raised 2026-09-26 from 120 +60, which underperformed, 1M gold, 10 s build, 60 s reload, upgrades buy range only, nearest ready gate fires; Lords by difficulty ratio, cap 3 — details in C4 and `STARGATE_DEFAULTS`). [Revised 2026-09-30] Now a flat 500k, a 5 s reload and no level cap (+75 per level without end). [Closed 2026-09-24] A shot on the Dark Star does nothing to a fleet already bound for it. Still open: whether the gate numbers survive F1.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | F12 | **Edge cases.** Hegemon disconnects or goes AFK mid-round — **[Decided 2026-10-12: no automatic defence.** The throne stays exactly as its player left it; H13's stall rule still fires for any Hegemon, but nothing else takes over. Holding the seat means being present, and a dropped throne is a challenger's opportunity.]; the invader disconnects; an AI challenger (Lord/Baron) lands the killing blow (next round gets an AI Hegemon per R6?); team modes (probably out of scope at first). [Team modes built 2026-10-10: the throne is a team of one, Lobbies doc §5.9 and §10.6.]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | F13 | **Hegemon identity across rounds.** Beyond the high-score table (S5): titles, reign counter in the lobby, anything inherited besides the seat.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
@@ -470,8 +474,8 @@ destroyers and the challenger table). The playtest checks left over from them ar
 | F17 | **The map library (S9).** Which existing maps stay — Tom decides map by map, instinct: most or all go, geography first (the `GameMapType` enum is wire format, but this fork has no replays or archive to keep compatible); whether every map's Dark Star is central (H1) or a map may place it elsewhere via `info.json`; how many Lords a galaxy map wants (24 on Event Horizon, to be judged in play); what the generator needs to produce 10–20 distinct maps (seeds and parameters, or hand-authored variants).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | F18 | **Exclaves from gate landings (§6.10, §6.11).** A landlocked beachhead pocket stands until its landing tile is retaken. Measured: World ends with 4–23 such pockets, Milky Way 1–3, Event Horizon 0–1. Whether a cap or decay is needed — likely moot once the geography maps go (F17); decide after Tom has seen the pockets on a galaxy map.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | F19 | **Playtest checks outstanding.** On Event Horizon: the disc and moat by eye (radius 162, moat 18 — the computed default written into `info.json`); 24 Lords as a count; the 15 s opening cap; Barons not flying. From the throne: should a human Hegemon get the AI's landing wave, or is active defence the point (a passive throne kept 5% of the domain on World seed a); the 5 s stall threshold (H13). The HUD merge: [Closed 2026-09-25 — **dropped**] built as columns in the player table with the panel cut to a strip, played, and discarded: seen missing, the panel's fields (the throne's troop bar, domain held, the invasion status, the bubble, the challenger board with its strike status) justify a panel of their own. The panel stays as built (§6.3, §6.6); its only change is that the challenger board starts **collapsed**, with the throne's show/hide toggle to unfold it. Clean-up later if it earns it.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| F20 | **Punitive strike numbers (H19). [Open 2026-09-26]** The levy shares (10% / 25%, raised from 5% / 15% after the first look), the flag window (30 s), the halt (5 s), the radius (34, a quarter more area than the first 30) and the AI's land-share threshold are starting points. Because the levy taxes every challenger's troops, it moves the invasion curve, so H19 is built **before** the F1 sweep and its numbers ride with it. To judge in `HegemonSim` and in play: how often Lords nuke on a galaxy map (and so how often the galaxy is levied); whether a 15% levy in a radius-30 pocket is so dense that the halt is never disturbed; whether the pocket should follow the warhead that was fired (Antimatter's 100) rather than one radius for both.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| F21 | **Missiles on gates, shields and the throne's warheads (C4, C5, H2). [Open 2026-09-28]** The shield radius (35; **39** since 2026-10-12, a tenth more on Tom's feel for play) is the cap Tom set, not a tuned number; the throne's missiles have no reload — gold-limited only — and may want a cadence once the shadow tax is tuned (F1); Lords do not build shield arrays and the AI Hegemon fires no missiles; a shield refusing gate shots was considered and left as no (gates are meant to matter more, not less). [2026-09-29] The array now shelters its zone from every missile, the throne's included, and costs 5M — Tom's baseline, not a tuned number. To judge in play: whether a level-1 gate's 180 leaves a warhead any target worth 1M, whether a 5M array around a capital is worth it or unanswerable (the throne's strike and conquest are the only answers), and whether a hole in the blast reads clearly on screen. [2026-09-30] The array drops to 2M and the gate to a flat 500k with a 5 s reload and no level cap: the same questions, at the new prices — plus whether warheads at a 5 s cadence and unbounded reach bring back the oppression that tying them to gates was meant to end.                                                                                                                                                                                                                                                                 |
+| F20 | **Punitive strike numbers (H19). [Open 2026-09-26]** The levy shares (10% / 25%, raised from 5% / 15% after the first look), the flag window (30 s), the halt (5 s), the radius (34, a quarter more area than the first 30) and the AI's nebula-share threshold are starting points. Because the levy taxes every challenger's troops, it moves the invasion curve, so H19 is built **before** the F1 sweep and its numbers ride with it. To judge in `HegemonSim` and in play: how often Lords nuke on a galaxy map (and so how often the galaxy is levied); whether a 15% levy in a radius-30 pocket is so dense that the halt is never disturbed; whether the pocket should follow the warhead that was fired (Antimatter's 100) rather than one radius for both.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| F21 | **Missiles on gates, shields and the throne's warheads (C4, C5, H2). [Open 2026-09-28]** The shield radius (35; **40** since 2026-10-12, a tenth more on Tom's feel for play, rounded even) is the cap Tom set, not a tuned number; the throne's missiles have no reload — gold-limited only — and may want a cadence once the shadow tax is tuned (F1); Lords do not build shield arrays and the AI Hegemon fires no missiles; a shield refusing gate shots was considered and left as no (gates are meant to matter more, not less). [2026-09-29] The array now shelters its zone from every missile, the throne's included, and costs 5M — Tom's baseline, not a tuned number. To judge in play: whether a level-1 gate's 180 leaves a warhead any target worth 1M, whether a 5M array around a capital is worth it or unanswerable (the throne's strike and conquest are the only answers), and whether a hole in the blast reads clearly on screen. [2026-09-30] The array drops to 2M and the gate to a flat 500k with a 5 s reload and no level cap: the same questions, at the new prices — plus whether warheads at a 5 s cadence and unbounded reach bring back the oppression that tying them to gates was meant to end.                                                                                                                                                                                                                                                   |
 
 ## 5. Engine foundation — what we reuse
 
@@ -2058,18 +2062,18 @@ hydrogen-bomb removal (closed by S6).
 | **Challenger**                | Any non-Hegemon player.                                                                                                                                                                            |
 | **Dark Star / Domain**        | The central black-hole region: the Hegemon's territory, the only tiles it may ever own.                                                                                                            |
 | **Invader**                   | The single challenger currently allowed to attack the domain.                                                                                                                                      |
-| **Raze / Strike**             | The Hegemon's attack: land it takes returns to neutral instead of being claimed (challenger raids were dropped).                                                                                   |
-| **Gift**                      | A structure the Hegemon builds on a challenger's land at its own cost; the host owns it and cannot refuse (H18).                                                                                   |
+| **Raze / Strike**             | The Hegemon's attack: nebula it takes returns to neutral instead of being claimed (challenger raids were dropped).                                                                                   |
+| **Gift**                      | A structure the Hegemon builds on a challenger's nebula at its own cost; the host owns it and cannot refuse (H18).                                                                                   |
 | **Shadow tax**                | The Hegemon's gold income: a share of the challengers' combined income, deducted from nobody (H4).                                                                                                 |
 | **Destroyer**                 | The engine's warship, a deep-space unit; a challenger's is launched from a spaceport's harbour, the Hegemon's spawn in the moat, portless and purely defensive (H10, S7).                          |
-| **Spaceport**                 | The engine's port, placed anywhere like a city; its **harbour** is the nearest deep space reachable over land, where freighters put to space and destroyers are launched and repaired (S7, §6.17). |
+| **Spaceport**                 | The engine's port, placed anywhere like a city; its **harbour** is the nearest deep space reachable over nebula, where freighters put to space and destroyers are launched and repaired (S7, §6.17). |
 | **Freighter**                 | The engine's trade ship; travels overland to and from a harbour at half speed (S7).                                                                                                                |
 | **Trade lane**                | A railroad drawn and ridden as a straight line between two stations (S7).                                                                                                                          |
 | **Stargate**                  | A challenger structure that fires a troop-carrying projectile at any tile in range; it lands as a beachhead (C4).                                                                                  |
-| **Shield Array**              | A challenger structure whose 39-tile perimeter no missile can harm the inside of, the throne's included; the blast clears the rest of its circle; strikes pass through (C5).                       |
+| **Shield Array**              | A challenger structure whose 40-tile perimeter no missile can harm the inside of, the throne's included; the blast clears the rest of its circle; strikes and gate shots pass through (C5).        |
 | **Projectile**                | The shared flight — a unit on a nuke-style arc with a motion plan — used by strikes, gate shots and the opening.                                                                                   |
 | **Tyranny**                   | The cost penalty on striking a small player; at the floor they cannot be struck at all.                                                                                                            |
-| **Bubble**                    | The land a strike holds while it lasts; fought over by the struck player, pops to neutral.                                                                                                         |
+| **Bubble**                    | The nebula a strike holds while it lasts; fought over by the struck player, pops to neutral.                                                                                                         |
 | **Overthrow**                 | Eliminating the Hegemon (zero tiles).                                                                                                                                                              |
 | **Killing blow**              | The conquest that eliminates the Hegemon; its owner wins the round.                                                                                                                                |
 | **Round / Reign**             | One game / the consecutive rounds a player holds the throne.                                                                                                                                       |
@@ -2094,6 +2098,14 @@ hydrogen-bomb removal (closed by S6).
   CODEOWNERS, issue and PR templates, GitHub automation scripts and the dangling gatekeeper
   submodule deleted; `package.json` marked private and AGPL-3.0-only; the map sketches put under
   the asset licence. On `chore/public-repo`.
+- **2026-10-12** — **Branching Paths: the Dark Star moves to the central island.** Tom noticed
+  the centred default (1240, 1074; radius 193, moat 21) put the throne inside the northern branch.
+  `info.json` / `manifest.json` now carry `hegemon: { center: [1240, 1430], radius: 193, moat: 21 }`,
+  the land centroid of the triangular island in the map's central clearing (also the centre that
+  carves the least surrounding land: about 5,400 branch tiles beyond the island and its three
+  walls, against 95,000 trunk tiles before). The four island Lords (Last Hold, First/Second/Third
+  Wall) lose their cells to the disc and start at random, as on Milky Way; the three Fishing Lords
+  at the channel mouths are nudged 18 tiles outward so they keep their places.
 - **2026-10-12** — **The fleet cue is ours (S8).** Tom supplied `invasion.mp3`; it replaces the
   inherited boat horn when your Fleet sets out, behind the unchanged `transport-ship` key and to
   the same audience (you). `docs/DarkStar-Sound.md` and `CREDITS.md` updated.
@@ -2104,6 +2116,12 @@ hydrogen-bomb removal (closed by S6).
   cancelled at once, the levy burnt rather than refunded. The shield array's radius rises from 35
   to 39 (a tenth more, 38.5 rounded up). `tests/PunitiveStrikes.test.ts` (+2),
   `tests/ShieldArray.test.ts` revised.
+- **2026-10-12** — **Shields an even 40; the wording names gate shots (C5).** Tom's two asks, later
+  the same day. The radius rounds up from 39 to 40, and the renderer's own copy of it (stuck at 35
+  in `UnitType.ts` since the first build) is brought level. Every player-facing line on the array
+  (tutorial, rules, build menu, tooltip) said only the Hegemon's strikes pass through; it now says
+  strikes and every Stargate shot do, which is what the engine has always done. Glossary and
+  F21 updated.
 - **2026-10-12** — **The soundtrack (S8).** Tom supplied five AI-generated tracks (_The Hegemon_,
   _Dark Expanse_, _Whispers of Rebellion_, _Throne of Stars_, _The Fall_); they live in
   `resources/sounds/music/` under CC BY-SA with the rest of the folder and the silent placeholders

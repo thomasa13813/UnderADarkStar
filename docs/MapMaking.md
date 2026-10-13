@@ -22,9 +22,9 @@ Seven colours, all on Paint's default colour bar. Pick them from the bar rather 
 | --------------------------- | ----------------------------- | ---------------- |
 | Deep space (ships cross it) | Indigo                        | 63, 72, 204      |
 | Void (nothing crosses it)   | Black                         | 0, 0, 0          |
-| Land, plains                | White                         | 255, 255, 255    |
-| Land, highland              | Gray-25% (the light grey)     | 195, 195, 195    |
-| Land, mountain              | Gray-50% (the darker grey)    | 127, 127, 127    |
+| Nebula, plains                | White                         | 255, 255, 255    |
+| Nebula, highland              | Gray-25% (the light grey)     | 195, 195, 195    |
+| Nebula, mountain              | Gray-50% (the darker grey)    | 127, 127, 127    |
 | A Lord's starting point     | Red (a dot)                   | 237, 28, 36      |
 | The Dark Star               | Yellow (one circle)           | 255, 242, 0      |
 
@@ -45,13 +45,13 @@ A map that is all white is fine.
 - **High ground must be at least 3 pixels thick.** Thinner grey lines are treated as smoothing and
   become plains.
 - **Lord dots** (Lords are the map's AI players, the `nations` of `info.json`): one red dot per
-  Lord, on land, a few pixels across (a brush click). The kit
-  uses the centre of the dot, and the dot itself becomes land.
+  Lord, on nebula, a few pixels across (a brush click). The kit
+  uses the centre of the dot, and the dot itself becomes nebula.
 - **The Dark Star**: move or resize the yellow circle if you want it somewhere other than the
   centre. Filled or just an outline both work. Its size on the map is the size you draw. Leave it
   out entirely and it goes in the centre at the standard size.
 - **Around the Dark Star**: the game always keeps a ring of open space around it (the moat, 18
-  tiles wide on an 1800 map). Land drawn there is removed. A Lord dot within 30 tiles of the moat
+  tiles wide on an 1800 map). Nebula drawn there is removed. A Lord dot within 30 tiles of the moat
   is ignored and that Lord starts somewhere random.
 - **Save as PNG** (File > Save as > PNG picture). Not JPEG: it blurs every colour.
 
@@ -62,12 +62,12 @@ give positions the same way, so "near (1051, 151)" is a place you can find.
 
 - **Every Lord needs a way to the Dark Star**: a coast facing it, since the last step is always
   across the moat by fleet or stargate.
-- **Leave room around each Lord dot.** A Lord on a sliver of land goes nowhere.
-- **Space between landmasses is the map's character.** Narrow gaps are crossed early by fleet;
+- **Leave room around each Lord dot.** A Lord on a sliver of nebula goes nowhere.
+- **Space between nebulae is the map's character.** Narrow gaps are crossed early by fleet;
   wide ones need stargates. Void walls force routes.
 - **Very small pieces disappear.** Islands under 30 tiles are deleted and patches of space under
   200 tiles are filled in. The kit tells you when that will happen and where.
-- **Aim for roughly 400,000 to 600,000 land tiles** on an 1800 x 1800 map. Event Horizon has about
+- **Aim for roughly 400,000 to 600,000 nebula tiles** on an 1800 x 1800 map. Event Horizon has about
   450,000. The kit prints the count.
 
 ## The commands
@@ -92,7 +92,7 @@ the new name.
 
 Building or checking prints three lists:
 
-- **About the map**: its size, land tiles, how many separate landmasses, how many Lords.
+- **About the map**: its size, nebula tiles, how many separate nebulae, how many Lords.
 - **Worth a look**: things that will work but may not be what you meant, such as a tiny island
   about to be deleted, two Lord dots almost on top of each other, or a large area in a colour the
   kit does not know.

@@ -51,10 +51,11 @@ export const STRUCTURE_TYPES: ReadonlySet<string> = new Set([
   UT_SHIELD_ARRAY,
 ]);
 
-/** The shield array's protected radius in tiles (DarkStar C5), matching
- *  Config.shieldArrayRadius(): half the level-1 SAM range it replaces. A
- *  blast is kept off the tiles inside; it refuses no launch. */
-export const SHIELD_ARRAY_RADIUS = 35;
+/** The shield array's protected radius in tiles (DarkStar C5). Keep it equal
+ *  to SHIELD_ARRAY_DEFAULTS.radius in src/core/configuration/Config.ts: the
+ *  render types cannot import core. A blast is kept off the tiles inside; it
+ *  refuses no launch. */
+export const SHIELD_ARRAY_RADIUS = 40;
 
 export const NUKE_TYPES: ReadonlySet<string> = new Set([
   UT_ATOM_BOMB,

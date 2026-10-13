@@ -545,8 +545,8 @@ lobby browser's Teams pane (L29) and the third home card (L25) appear on their o
   `populateTeams` and the `assignTeams` input see only the challengers, so the team count and
   the split ignore the throne, and `game.teams()` does not list it. `Config.hegemonConfig` no
   longer turns the mode off outside FFA. `WinCheckExecution.tick` runs the Hegemon check
-  whenever the throne is on, before the FFA or team land-share check, so a team holding nearly
-  all the land wins nothing (R1) and the killing blow is the slayer's alone (L8). Donations and
+  whenever the throne is on, before the FFA or team nebula-share check, so a team holding nearly
+  all the nebula wins nothing (R1) and the killing blow is the slayer's alone (L8). Donations and
   alliances needed no change: `canDonateTroops` / `canDonateGold` / `canSendAllianceRequest`
   already special-case the throne before the team and toggle checks (H9).
 - **Server.** `GameServer.start()` stamps the seat in any mode. `MapPlaylist.gameConfig` takes

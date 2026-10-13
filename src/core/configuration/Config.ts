@@ -304,13 +304,14 @@ export const STARGATE_DEFAULTS = {
 // 2026-09-29): a challenger structure whose perimeter no missile can harm the
 // inside of. It intercepts nothing and refuses no launch — a warhead lands as
 // usual and the blast is simply kept off the tiles inside. The throne's
-// missiles are kept out like anyone else's; only its strikes pass through.
+// missiles are kept out like anyone else's; strikes and gate shots (troops,
+// not missiles) pass through.
 export const SHIELD_ARRAY_DEFAULTS = {
   // The protected radius in tiles: half the range of the level-1 SAM it
-  // replaces (70) was the first cap (decided 2026-09-28); raised a tenth to
-  // 39 (38.5 rounded up) on 2026-10-12, Tom finding 35 a touch too small.
+  // replaces (70) was the first cap (decided 2026-09-28); raised to 39 and
+  // then an even 40 on 2026-10-12, Tom finding 35 a touch too small.
   // A single level, so upgrades buy nothing.
-  radius: 39,
+  radius: 40,
   // Lowered 2026-09-30 from the 5M baseline for a zone nothing short of
   // conquest can clear; F21 keeps it open to tuning.
   costGold: 2_000_000,
