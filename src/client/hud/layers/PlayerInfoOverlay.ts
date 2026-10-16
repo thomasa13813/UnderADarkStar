@@ -34,6 +34,7 @@ import {
   IMAGE_ICON_KIND,
 } from "../PlayerIcons";
 import { ImmunityBarVisibleEvent } from "./ImmunityTimer";
+import { unitTypeName } from "./lib/UnitNames";
 import { CloseRadialMenuEvent } from "./RadialMenu";
 import "./RelationSmiley";
 import { SpawnBarVisibleEvent } from "./SpawnTimer";
@@ -628,7 +629,9 @@ export class PlayerInfoOverlay extends LitElement implements Controller {
         </div>
         <div class="mt-1">
           <div class="text-sm opacity-80">
-            ${corsair ? translateText("piracy.corsair") : unit.type()}
+            ${corsair
+              ? translateText("piracy.corsair")
+              : unitTypeName(unit.type())}
           </div>
           ${unit.hasHealth()
             ? html` <div class="text-sm">Health: ${unit.health()}</div> `

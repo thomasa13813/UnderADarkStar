@@ -32,6 +32,7 @@ import {
   renderTroops,
   translateText,
 } from "../../Utils";
+import { unitTypeName } from "./lib/UnitNames";
 
 interface GameEvent {
   description: string;
@@ -61,18 +62,6 @@ const TIER_1_TYPES: ReadonlySet<MessageType> = new Set([
 ]);
 
 const isTier1 = (type: MessageType): boolean => TIER_1_TYPES.has(type);
-
-// Structure names for sim messages that carry a `unit` param (a gift, H18).
-const UNIT_NAME_KEYS: Partial<Record<UnitType, string>> = {
-  [UnitType.City]: "city",
-  [UnitType.DefensePost]: "defense_post",
-  [UnitType.Factory]: "factory",
-  [UnitType.MissileSilo]: "missile_silo",
-  [UnitType.Port]: "port",
-  [UnitType.SAMLauncher]: "sam_launcher",
-  [UnitType.Stargate]: "stargate",
-  [UnitType.ShieldArray]: "shield_array",
-};
 
 @customElement("events-display")
 export class EventsDisplay extends LitElement implements Controller {
@@ -272,12 +261,9 @@ export class EventsDisplay extends LitElement implements Controller {
   ): Record<string, string | number> {
     let params = event.params ?? {};
     // A `unit` param is a UnitType from the sim; show it in the viewer's
-    // language (a gift's "City", H18).
+    // language (a gift's "City", H18; a lost Destroyer).
     if (typeof params.unit === "string") {
-      const key = UNIT_NAME_KEYS[params.unit as UnitType];
-      if (key !== undefined) {
-        params = { ...params, unit: translateText(`unit_type.${key}`) };
-      }
+      params = { ...params, unit: unitTypeName(params.unit as UnitType) };
     }
     if (params.name === undefined || event.focusPlayerID === undefined) {
       return params;

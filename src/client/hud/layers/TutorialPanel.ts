@@ -21,6 +21,7 @@ import {
   TutorialProgress,
   TutorialStep,
 } from "../Tutorial";
+import { unitTypeName } from "./lib/UnitNames";
 
 /** How often (in ticks) to ask the worker for current build costs. */
 const COST_POLL_TICKS = 10;
@@ -35,15 +36,6 @@ const COST_POLL_TYPES = [
   UnitType.Stargate,
 ] as const;
 
-/** `unit_type.*` name key per build-step unit, for the earn-gold text. */
-const UNIT_NAME_KEYS: Partial<Record<UnitType, string>> = {
-  [UnitType.City]: "city",
-  [UnitType.Factory]: "factory",
-  [UnitType.Port]: "port",
-  [UnitType.DefensePost]: "defense_post",
-  [UnitType.Warship]: "warship",
-  [UnitType.Stargate]: "stargate",
-};
 /** Ticks the "you're ready" message stays up before the panel closes. */
 const COMPLETE_LINGER_TICKS = 50;
 
@@ -561,7 +553,7 @@ export class TutorialPanel extends LitElement implements Controller {
       (this.game.myPlayer()?.gold() ?? 0n) < cost
     ) {
       return translateText("tutorial.step.earn_gold", {
-        unit: translateText(`unit_type.${UNIT_NAME_KEYS[step.unit!]}`),
+        unit: unitTypeName(step.unit!),
         cost: renderNumber(cost),
       });
     }
