@@ -25,10 +25,13 @@ export default [
     languageOptions: {
       parserOptions: {
         projectService: {
+          // The glob below matches about a dozen small files, above
+          // typescript-eslint's default cap of eight for the default project.
+          maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING: 20,
           allowDefaultProject: [
             "__mocks__/fileMock.js",
             "eslint.config.js",
-            "scripts/sync-assets.mjs",
+            "scripts/*.mjs",
             "scripts/generateSpriteAtlases.ts",
             "scripts/generateGalaxyMap.ts",
             "scripts/generateStarfield.ts",

@@ -12,6 +12,14 @@ import {
 } from "../../src/server/RenderHtml";
 import { ServerEnv } from "../../src/server/ServerEnv";
 
+// A machine that has run a production build carries static/asset-manifest.json
+// (git-ignored), which the real-template tests below would otherwise inline.
+// Nothing here is about the manifest, so render as a clean checkout would.
+vi.mock("../../src/server/RuntimeAssetManifest", () => ({
+  getRuntimeAssetManifest: async () => ({}),
+  clearRuntimeAssetManifestCache: () => {},
+}));
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // The identity deploy.sh writes: the tests below boot as letter "a" with one
@@ -327,6 +335,7 @@ describe("RenderHtml environment-only render", () => {
         '        instanceLetter: "a",',
         '        turnstileSiteKey: "test-key",',
         '        jwtAudience: "openfront.io",',
+        `        apiOrigin: ${JSON.stringify(ServerEnv.jwtIssuer())},`,
         '        stripePublishableKey: "pk_test_abc",',
         '        instanceId: "i-1",',
         '        serverHost: "blue.openfront.io",',

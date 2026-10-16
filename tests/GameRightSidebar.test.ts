@@ -55,6 +55,10 @@ function createSidebar(overrides: Partial<TimerState> = {}) {
     elapsedGameSeconds: () => state.elapsedSeconds,
     inSpawnPhase: () => state.inSpawnPhase,
     myPlayer: () => undefined,
+    // The Dark Star panel is embedded in the sidebar template too; no throne
+    // in these tests, so it stays hidden.
+    hegemon: () => null,
+    darkStar: () => null,
     ticks: () => state.ticks,
   } as unknown as GameView;
 

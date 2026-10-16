@@ -36,6 +36,9 @@ vi.mock("../../src/client/Utils", () => ({
   translateText: (key: string, vars?: Record<string, unknown>) =>
     translations.loaded ? `t(${key})${vars ? JSON.stringify(vars) : ""}` : key,
   showToast: vi.fn(),
+  // The name box renders a guest chip from the browser ID (Auth.getPersistentID),
+  // which mints one through this when localStorage is empty.
+  generateCryptoRandomUUID: () => "00000000-0000-4000-8000-000000000000",
 }));
 
 // Lapsed, still inside the grace window, and holding unclaimed rewards — the

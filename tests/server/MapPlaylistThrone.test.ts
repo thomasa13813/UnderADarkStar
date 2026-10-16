@@ -61,9 +61,13 @@ describe("MapPlaylist team throne rounds", () => {
   // it; the capacity rule keeps two players per team.
   it("sizes the cap for a winner's team split", async () => {
     const playlist = new MapPlaylist();
-    const base = (await playlist.gameConfig("team", {
-      throne: true,
-    })) as GameConfig;
+    // Pinned to a normal-sized map: the playlist may roll a compact round,
+    // whose cap (about a dozen) cannot seat seven teams of two, and the
+    // capacity rule would rightly shrink the split. Compact is tested below.
+    const base = {
+      ...((await playlist.gameConfig("team", { throne: true })) as GameConfig),
+      gameMapSize: GameMapSize.Normal,
+    };
     for (const split of [2, 3, 5, 7, Duos] as const) {
       const result = await playlist.throneTeamSplit(
         GameMapType.EventHorizon,

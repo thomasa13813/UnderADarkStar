@@ -20,6 +20,9 @@ function fakeGame(): GameView {
     inSpawnPhase: () => false,
     elapsedGameSeconds: () => 0,
     myPlayer: () => undefined,
+    // The Dark Star panel is embedded in the sidebar template; no throne here.
+    hegemon: () => null,
+    darkStar: () => null,
     gameID: () => "test-game",
   } as unknown as GameView;
 }

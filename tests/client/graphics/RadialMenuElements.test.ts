@@ -381,6 +381,7 @@ describe("RadialMenuElements", () => {
     it("should handle ally menu correctly", () => {
       const allyPlayer = {
         id: () => 2,
+        isHegemon: vi.fn(() => false),
         isAlliedWith: vi.fn(() => true),
         isPlayer: vi.fn(() => true),
         isTraitor: vi.fn(() => false),
@@ -398,6 +399,7 @@ describe("RadialMenuElements", () => {
     it("should show extend element when inAllianceExtensionWindow is true", () => {
       const allyPlayer = {
         id: () => 2,
+        isHegemon: vi.fn(() => false),
         isAlliedWith: vi.fn(() => true),
         isPlayer: vi.fn(() => true),
       } as unknown as PlayerView;
@@ -424,6 +426,7 @@ describe("RadialMenuElements", () => {
     it("should not show extend element when inAllianceExtensionWindow is false", () => {
       const allyPlayer = {
         id: () => 2,
+        isHegemon: vi.fn(() => false),
         isAlliedWith: vi.fn(() => true),
         isPlayer: vi.fn(() => true),
       } as unknown as PlayerView;
@@ -450,6 +453,7 @@ describe("RadialMenuElements", () => {
     it("should show extend element as disabled when canExtend is false", () => {
       const allyPlayer = {
         id: () => 2,
+        isHegemon: vi.fn(() => false),
         isAlliedWith: vi.fn(() => true),
         isPlayer: vi.fn(() => true),
       } as unknown as PlayerView;
@@ -477,6 +481,7 @@ describe("RadialMenuElements", () => {
     it("should show extend element as enabled when canExtend is true", () => {
       const allyPlayer = {
         id: () => 2,
+        isHegemon: vi.fn(() => false),
         isAlliedWith: vi.fn(() => true),
         isPlayer: vi.fn(() => true),
       } as unknown as PlayerView;
