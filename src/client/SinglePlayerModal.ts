@@ -108,6 +108,8 @@ const DEFAULT_OPTIONS = {
   doomsdayClockSpeed: "normal" as DoomsdayClockSpeed,
   hegemon: true,
   playAsHegemon: false,
+  // Piracy (docs/DarkStar-Piracy.md): on unless switched off.
+  piracy: true,
   overtime: false,
   overtimeStartMinutes: undefined as number | undefined,
 } as const;
@@ -199,6 +201,7 @@ export class SinglePlayerModal extends BaseModal {
   // The seat for this round only: who holds the throne between rounds is
   // not modelled yet (docs/DarkStar-Design.md §5.2).
   @state() private playAsHegemon: boolean = DEFAULT_OPTIONS.playAsHegemon;
+  @state() private piracy: boolean = DEFAULT_OPTIONS.piracy;
   @state() private doomsdayClock: boolean = DEFAULT_OPTIONS.doomsdayClock;
   @state() private doomsdayClockSpeed: DoomsdayClockSpeed =
     DEFAULT_OPTIONS.doomsdayClockSpeed;
@@ -506,6 +509,11 @@ export class SinglePlayerModal extends BaseModal {
                     hidden: !this.hegemon,
                   },
                   {
+                    labelKey: "game_settings.piracy",
+                    descriptionKey: "game_settings.piracy_desc",
+                    checked: this.piracy,
+                  },
+                  {
                     labelKey: "game_settings.instant_build",
                     checked: this.instantBuild,
                   },
@@ -603,6 +611,7 @@ export class SinglePlayerModal extends BaseModal {
       this.waterNukes !== DEFAULT_OPTIONS.waterNukes ||
       this.hegemon !== DEFAULT_OPTIONS.hegemon ||
       this.playAsHegemon !== DEFAULT_OPTIONS.playAsHegemon ||
+      this.piracy !== DEFAULT_OPTIONS.piracy ||
       this.doomsdayClock !== DEFAULT_OPTIONS.doomsdayClock ||
       // Pace only matters when the mode is on (startGame drops it when off).
       (this.doomsdayClock &&
@@ -681,6 +690,7 @@ export class SinglePlayerModal extends BaseModal {
     this.waterNukes = DEFAULT_OPTIONS.waterNukes;
     this.hegemon = DEFAULT_OPTIONS.hegemon;
     this.playAsHegemon = DEFAULT_OPTIONS.playAsHegemon;
+    this.piracy = DEFAULT_OPTIONS.piracy;
     this.doomsdayClock = DEFAULT_OPTIONS.doomsdayClock;
     this.doomsdayClockSpeed = DEFAULT_OPTIONS.doomsdayClockSpeed;
     this.overtime = DEFAULT_OPTIONS.overtime;
@@ -784,6 +794,9 @@ export class SinglePlayerModal extends BaseModal {
         break;
       case "game_settings.play_as_hegemon":
         this.playAsHegemon = checked;
+        break;
+      case "game_settings.piracy":
+        this.piracy = checked;
         break;
       default:
         break;
@@ -1150,6 +1163,7 @@ export class SinglePlayerModal extends BaseModal {
                       },
                     }
                   : {}),
+                ...(this.piracy ? { piracy: { enabled: true } } : {}),
                 // A Hegemon round is always timed (R5); stating the default
                 // here also gives the HUD its countdown. Any mode: in a team
                 // game the throne is a team of one (Lobbies §5.9).

@@ -280,6 +280,14 @@ export interface PlayerUpdate {
   betrayals?: number;
   domainTilesHeld?: number;
   invasionStalled?: boolean;
+  /** Piracy: the player is at sea as a corsair, or between corsairs. */
+  isPirate?: boolean;
+  /** Piracy: the tick the next corsair may spawn (0 = no wait). */
+  pirateRespawnAt?: Tick;
+  /** Piracy: the shore a landing is under way to (null = none). */
+  pirateLanding?: TileRef | null;
+  /** Piracy: where the last corsair sank (null = none); the next spawn keeps its distance. */
+  corsairSunkTile?: TileRef | null;
   lastDeleteUnitTick?: Tick;
   isLobbyCreator?: boolean;
   isHegemon?: boolean;

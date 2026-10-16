@@ -110,7 +110,7 @@ const TRAIN_FIRST_COL = UNIT_ORDER.indexOf("TrainEngine");
  * Per-instance data (16 bytes):
  *   float x, y, ownerID   — 12 bytes (3 floats)
  *   uint8 atlasIdx         —  1 byte  (atlas column 0–11)
- *   uint8 flags            —  1 byte  (0 = normal, 1 = flicker, 2 = angry, 3 = trade-friendly, 4 = retreating, 5 = flicker-untargetable)
+ *   uint8 flags            —  1 byte  (0 = normal, 1 = flicker, 2 = angry, 3 = trade-friendly, 4 = retreating, 5 = flicker-untargetable, 6 = trade-self, 7 = pirate)
  *   uint8 flickerHash      —  1 byte  (per-instance flicker phase offset)
  *   1 byte padding         — aligns to 4-byte boundary
  */
@@ -125,6 +125,9 @@ const FLAG_TRADE_FRIENDLY = 3;
 const FLAG_RETREATING = 4;
 const FLAG_FLICKER_UNTARGETABLE = 5;
 const FLAG_TRADE_SELF = 6;
+/** A pirate's corsair (docs/DarkStar-Piracy.md, PR15): the shared pirate
+ *  livery in place of the owner's colours, in both views. */
+const FLAG_PIRATE = 7;
 
 /** Atlas column indices for train sub-types (resolved from trainType + loaded) */
 const TRAIN_ENGINE_COL = UNIT_ORDER.indexOf("TrainEngine");
@@ -264,6 +267,8 @@ export class UnitPass {
   // Trade-friendly detection: enemy trade ships heading to a self/allied port
   private localPlayerID = 0;
   private friendlyOwners = new Set<number>();
+  // Owners at sea as pirates: their warships wear the pirate livery.
+  private pirateOwners = new Set<number>();
   private structures: Map<number, UnitState> = new Map();
 
   constructor(
@@ -512,7 +517,11 @@ export class UnitPass {
       }
 
       let flags = FLAG_NORMAL;
-      if (tradeFlag !== FLAG_NORMAL) {
+      if (unit.unitType === UT_WARSHIP && this.pirateOwners.has(unit.ownerID)) {
+        // Anonymous at sea: no owner colour, and no combat state that the
+        // livery would otherwise show (PR15).
+        flags = FLAG_PIRATE;
+      } else if (tradeFlag !== FLAG_NORMAL) {
         flags = tradeFlag;
       } else if (isRetreatingWarship) {
         flags = FLAG_RETREATING;
@@ -583,6 +592,9 @@ export class UnitPass {
   }
   setAllies(allies: Set<number>): void {
     this.friendlyOwners = allies;
+  }
+  setPirates(pirates: Set<number>): void {
+    this.pirateOwners = pirates;
   }
   setStructures(structs: Map<number, UnitState>): void {
     this.structures = structs;

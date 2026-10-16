@@ -14,6 +14,7 @@ import { DonateGoldExecution } from "./DonateGoldExecution";
 import { DonateTroopsExecution } from "./DonateTroopExecution";
 import { EmbargoAllExecution } from "./EmbargoAllExecution";
 import { EmbargoExecution } from "./EmbargoExecution";
+import { EmbracePiracyExecution } from "./EmbracePiracyExecution";
 import { EmojiExecution } from "./EmojiExecution";
 import { GateShotExecution } from "./GateShotExecution";
 import { GiftExecution } from "./GiftExecution";
@@ -22,6 +23,7 @@ import { MoveWarshipExecution } from "./MoveWarshipExecution";
 import { NationExecution } from "./NationExecution";
 import { NoOpExecution } from "./NoOpExecution";
 import { PauseExecution } from "./PauseExecution";
+import { PirateLandingExecution } from "./PirateLandingExecution";
 import { QuickChatExecution } from "./QuickChatExecution";
 import { RazeExecution } from "./RazeExecution";
 import { RetreatExecution } from "./RetreatExecution";
@@ -162,6 +164,12 @@ export class Executor {
         );
       case "delete_unit":
         return new DeleteUnitExecution(player, intent.unitId);
+      case "embrace_piracy":
+        // Piracy (PR1, PR3); EmbracePiracyExecution refuses what it must.
+        return new EmbracePiracyExecution(player, intent.tile);
+      case "pirate_land":
+        // A landing (PR7); PirateLandingExecution refuses what it must.
+        return new PirateLandingExecution(player, intent.tile);
       case "quick_chat":
         return new QuickChatExecution(
           player,

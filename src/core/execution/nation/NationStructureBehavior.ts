@@ -13,7 +13,7 @@ import {
 import { TileRef } from "../../game/GameMap";
 import { Cluster } from "../../game/TrainStation";
 import { PseudoRandom } from "../../PseudoRandom";
-import { assertNever } from "../../Util";
+import { assertNever, calculateBoundingBox } from "../../Util";
 import { ConstructionExecution } from "../ConstructionExecution";
 import { UpgradeStructureExecution } from "../UpgradeStructureExecution";
 import { nearestTileDist, nearestTileDistCapped } from "../Util";
@@ -1148,8 +1148,15 @@ export class NationStructureBehavior {
   }
 
   private territoryCentre(player: Player): TileRef | null {
-    const box = player.largestClusterBoundingBox;
-    if (box === null) return null;
+    // The cluster box is the player's own execution's, recomputed every
+    // twenty ticks or so; a player just back from piracy (100 tiles, no
+    // execution tick yet) has none, so the border's box stands in, as it
+    // does for a gate's reach (NationStargateBehavior.nearAGate).
+    let box = player.largestClusterBoundingBox ?? null;
+    if (box === null) {
+      if (player.numTilesOwned() === 0) return null;
+      box = calculateBoundingBox(this.game, player.borderTiles());
+    }
     const x = Math.floor((box.min.x + box.max.x) / 2);
     const y = Math.floor((box.min.y + box.max.y) / 2);
     return this.game.isValidCoord(x, y) ? this.game.ref(x, y) : null;

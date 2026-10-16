@@ -129,6 +129,7 @@ export class GameManager {
           bots: 400,
           disabledUnits: [],
           hegemon: { enabled: true }, // always on (Under a Dark Star)
+          piracy: { enabled: true }, // docs/DarkStar-Piracy.md; the host may switch it off
           ...gameConfig,
         },
         creatorPersistentID,

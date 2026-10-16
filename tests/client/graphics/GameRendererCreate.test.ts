@@ -39,6 +39,7 @@ const HUD_TAGS = [
   "alert-frame",
   "spawn-timer",
   "immunity-timer",
+  "pirate-hold-panel",
   "tutorial-panel",
 ] as const;
 

@@ -1,7 +1,9 @@
+import { renderNumber, renderTroops } from "../../client/Utils";
 import {
   Execution,
   Game,
   isUnit,
+  MessageType,
   OwnerComp,
   Unit,
   UnitParams,
@@ -26,6 +28,10 @@ export class WarshipExecution implements Execution {
   private lastEmittedCombat = false;
   // A destroyer of the Dark Star (H10): portless, moat-bound, defensive.
   private hegemon = false;
+  // A pirate's corsair (docs/DarkStar-Piracy.md, PR2–PR6, PR11): portless,
+  // never fires on fleets, scuttles the freighters it catches into a hold of
+  // troops and a purse of raid gold, heals slowly anywhere, never retreats.
+  private pirate = false;
 
   constructor(
     private input: (UnitParams<UnitType.Warship> & OwnerComp) | Unit,
@@ -55,6 +61,7 @@ export class WarshipExecution implements Execution {
       );
     }
     this.hegemon = this.warship.owner().isHegemon();
+    this.pirate = this.warship.owner().isPirate();
     this.lastObservedPatrolTile = this.warship.warshipState().patrolTile;
   }
 
@@ -72,6 +79,28 @@ export class WarshipExecution implements Execution {
 
     this.healWarship();
     this.handleManualPatrolOverride();
+
+    // A corsair (PR4–PR6): no port to retreat to and no fleets to shoot. It
+    // returns fire on a warship in range, hunts freighters within its patrol
+    // range, and otherwise patrols where the pirate pointed it.
+    if (this.pirate) {
+      // A landing under way (PR7): PirateLandingExecution sails the ship.
+      if (this.warship.owner().pirateLanding() !== undefined) {
+        return;
+      }
+      this.warship.setTargetUnit(this.findTargetUnit());
+      if (this.warship.targetUnit()?.type() === UnitType.Warship) {
+        this.shootTarget();
+        this.patrol();
+        return;
+      }
+      if (this.warship.targetUnit()?.type() === UnitType.TradeShip) {
+        this.huntDownTradeShip();
+        return;
+      }
+      this.patrol();
+      return;
+    }
 
     // A doomed side cannot repair its navy (see healWarship), so retreating to
     // a port only pulls a warship out of the fight to idle there forever. Undock
@@ -140,6 +169,15 @@ export class WarshipExecution implements Execution {
 
   private healWarship(): void {
     const owner = this.warship.owner();
+    // A corsair heals slowly, anywhere (PR11): it has no port and never
+    // docks, so a hurt one hides rather than lands.
+    if (this.pirate) {
+      const every = this.mg.config().piracyConfig().healEveryTicks;
+      if (every > 0 && this.mg.ticks() % every === 0) {
+        this.warship.modifyHealth(1);
+      }
+      return;
+    }
     // A doomed side (below the Doomsday Clock bar) cannot repair its navy, so the
     // decay in DoomsdayClockExecution actually sinks warships instead of being
     // out-healed at a port. Inert when the mode is off: the mark is never set.
@@ -271,6 +309,11 @@ export class WarshipExecution implements Execution {
   }
 
   private findTargetUnit(): Unit | undefined {
+    // A corsair never fires on fleets (PR6): a dead player must not decide
+    // who reaches the throne.
+    if (this.pirate) {
+      return this.findBestTarget([UnitType.Warship, UnitType.TradeShip], true);
+    }
     return this.findBestTarget(
       [UnitType.TransportShip, UnitType.Warship, UnitType.TradeShip],
       true,
@@ -354,8 +397,11 @@ export class WarshipExecution implements Execution {
           // (S7, §6.18): slow inland, but safe.
           mg.isLand(unit.tile()) ||
           // A destroyer has no port to bring a prize to: the invader's ship
-          // is simply lost to them (H10).
-          (!hasReachablePort && !this.hegemon) ||
+          // is simply lost to them (H10). A corsair scuttles its prize
+          // where it stands (PR5), so it needs no port either.
+          (!hasReachablePort && !this.hegemon && !this.pirate) ||
+          // The Dark Star's water is not a corsair's hunting ground (PR5).
+          (this.pirate && mg.isInMoat(unit.tile())) ||
           patrolTile === undefined ||
           unit.isSafeFromPirates() ||
           unit.targetUnit()?.owner() === owner ||
@@ -682,10 +728,7 @@ export class WarshipExecution implements Execution {
       const dist = this.mg.manhattanDist(this.warship.tile(), targetTile);
 
       if (dist <= 5) {
-        this.warship.owner().captureUnit(target);
-        this.warship.recordTradeCapture();
-        this.warship.setTargetUnit(undefined);
-        this.warship.touch();
+        this.takePrize(target);
         return;
       }
 
@@ -702,10 +745,7 @@ export class WarshipExecution implements Execution {
       const result = this.pathfinder.next(this.warship.tile(), targetTile, 5);
       switch (result.status) {
         case PathStatus.COMPLETE:
-          this.warship.owner().captureUnit(target);
-          this.warship.recordTradeCapture();
-          this.warship.setTargetUnit(undefined);
-          this.warship.touch();
+          this.takePrize(target);
           return;
         case PathStatus.NEXT:
           this.warship.move(result.node);
@@ -715,6 +755,61 @@ export class WarshipExecution implements Execution {
           break;
       }
     }
+  }
+
+  // The freighter is caught: a destroyer captures it and sails it to its
+  // port; a corsair scuttles it (PR5).
+  private takePrize(target: Unit): void {
+    if (this.pirate) {
+      this.scuttle(target);
+    } else {
+      this.warship.owner().captureUnit(target);
+      this.warship.recordTradeCapture();
+    }
+    this.warship.setTargetUnit(undefined);
+    this.warship.touch();
+  }
+
+  // A raid (PR5, PR15, PR16): the freighter is deleted where it stands and
+  // the trading partners get nothing; the hold gains raidTroops up to the
+  // cap and the pirate's purse a flat raidGold, counted as raid gold. The
+  // victim's event names no one: pirates are anonymous at sea.
+  private scuttle(target: Unit): void {
+    const mg = this.mg;
+    const cfg = mg.config().piracyConfig();
+    const pirate = this.warship.owner();
+    const victim = target.owner();
+    const targetID = target.id();
+    target.delete(false);
+
+    const hold = Math.min(this.warship.troops() + cfg.raidTroops, cfg.holdCap);
+    this.warship.setTroops(hold);
+    const gold = BigInt(cfg.raidGold);
+    pirate.addGold(gold);
+    pirate.addPiracyGold(gold);
+    pirate.recordPirateRaid();
+    mg.stats().boatCapturedTrade(pirate, victim, gold);
+
+    mg.displayMessage(
+      "events_display.freighter_raided",
+      MessageType.UNIT_DESTROYED,
+      victim.id(),
+      undefined,
+      undefined,
+      targetID,
+    );
+    mg.displayMessage(
+      "events_display.pirate_raid",
+      MessageType.CAPTURED_ENEMY_UNIT,
+      pirate.id(),
+      gold,
+      {
+        name: victim.displayName(),
+        gold: renderNumber(gold),
+        troops: renderTroops(hold),
+      },
+      this.warship.id(),
+    );
   }
 
   // The throne's destroyers are purely defensive (H10): they engage fleets
@@ -810,10 +905,20 @@ export class WarshipExecution implements Execution {
   }
 
   private patrol() {
+    // A corsair always sails at the chase's pace, two steps a tick (Tom,
+    // 2026-10-15); a destroyer patrols at one.
+    const steps = this.pirate ? 2 : 1;
+    for (let i = 0; i < steps; i++) {
+      if (!this.patrolStep()) return;
+    }
+  }
+
+  // One step of the patrol; false when there is nothing more to do this tick.
+  private patrolStep(): boolean {
     if (this.warship.targetTile() === undefined) {
       this.warship.setTargetTile(this.randomTile());
       if (this.warship.targetTile() === undefined) {
-        return;
+        return false;
       }
     }
 
@@ -825,14 +930,14 @@ export class WarshipExecution implements Execution {
       case PathStatus.COMPLETE:
         this.warship.setTargetTile(undefined);
         this.warship.move(result.node);
-        break;
+        return false;
       case PathStatus.NEXT:
         this.warship.move(result.node);
-        break;
+        return true;
       case PathStatus.NOT_FOUND: {
         console.log(`path not found to target`);
         this.warship.setTargetTile(undefined);
-        break;
+        return false;
       }
     }
   }

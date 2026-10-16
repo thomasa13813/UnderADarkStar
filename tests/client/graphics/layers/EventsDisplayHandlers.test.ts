@@ -54,6 +54,7 @@ describe("EventsDisplay handlers", () => {
     smallID: () => 1,
     displayName: () => "Me",
     isAlive: () => true,
+    isPirate: () => false,
     isFriendly: (p: { smallID: () => number }) => p.smallID() === 2,
   };
   const friend = {

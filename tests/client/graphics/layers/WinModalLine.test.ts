@@ -87,9 +87,11 @@ function game(opts: { alive?: boolean; spawned?: boolean } = {}): GameView {
   return {
     myPlayer: () => ({
       isAlive: () => opts.alive ?? false,
+      isPirate: () => false,
       isLobbyCreator: () => false,
       hasSpawned: () => opts.spawned ?? true,
     }),
+    config: () => ({ piracyConfig: () => ({ enabled: false }) }),
     inSpawnPhase: () => false,
     updatesSinceLastTick: () => ({}),
   } as unknown as GameView;

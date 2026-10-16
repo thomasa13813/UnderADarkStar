@@ -1222,6 +1222,9 @@ export class ClientGameRunner {
       if (myPlayer === null) return;
       this.myPlayer = myPlayer;
     }
+    // A dead player sends no attack; a pirate's clicks are PiracyController's
+    // (docs/DarkStar-Piracy.md, PR4).
+    if (!this.myPlayer.isAlive()) return;
     // The throne's click anywhere on a flagged silo's badge IS the punitive
     // strike (H19): hit-tested here against the ring as drawn at this zoom,
     // and sent with the silo's own tile. The radial's Punish slot is the

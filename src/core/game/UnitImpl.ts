@@ -340,6 +340,17 @@ export class UnitImpl implements Unit {
     this._wasDestroyedByEnemy = destroyer !== undefined;
     this._destroyer = destroyer ?? undefined;
 
+    // A pirate's corsair going down (PR10): destroyed, which the engine
+    // announces, as opposed to scuttled or beached, which delete silently.
+    // The hold is on the unit and goes with it; the cooldown starts here.
+    if (
+      this._type === UnitType.Warship &&
+      displayMessage !== false &&
+      this._owner.isPirate()
+    ) {
+      this._owner.recordCorsairSunk(this._tile);
+    }
+
     this._owner._units = this._owner._units.filter((b) => b !== this);
     this._owner._myUnitsVersion++;
     this._active = false;
@@ -681,6 +692,10 @@ export class UnitImpl implements Unit {
     if (this._warshipState === undefined) {
       return;
     }
+    // A corsair has no veterancy (PR2).
+    if (this._owner.isPirate()) {
+      return;
+    }
     if (targetType === UnitType.Warship) {
       // Final blow on an enemy warship: instant level, and the partial
       // transport/capture progress toward the next level is wiped.
@@ -693,6 +708,10 @@ export class UnitImpl implements Unit {
 
   recordTradeCapture(): void {
     if (this._warshipState === undefined) {
+      return;
+    }
+    // A corsair has no veterancy (PR2).
+    if (this._owner.isPirate()) {
       return;
     }
     this.addVeterancyProgress(UnitType.TradeShip);

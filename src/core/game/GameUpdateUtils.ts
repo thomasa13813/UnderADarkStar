@@ -56,6 +56,10 @@ export function diffPlayerUpdate(
     prev.inDoomsdayClock === next.inDoomsdayClock &&
     prev.markedDoomsdayClockTick === next.markedDoomsdayClockTick &&
     prev.isDecaying === next.isDecaying &&
+    prev.isPirate === next.isPirate &&
+    prev.pirateRespawnAt === next.pirateRespawnAt &&
+    prev.pirateLanding === next.pirateLanding &&
+    prev.corsairSunkTile === next.corsairSunkTile &&
     prev.hasSpawned === next.hasSpawned &&
     prev.spawnTile === next.spawnTile &&
     prev.betrayals === next.betrayals &&
@@ -140,6 +144,16 @@ export function diffPlayerUpdate(
   );
   setIfDifferent("isLobbyCreator", prev.isLobbyCreator === next.isLobbyCreator);
   setIfDifferent("isHegemon", prev.isHegemon === next.isHegemon);
+  setIfDifferent("isPirate", prev.isPirate === next.isPirate);
+  setIfDifferent(
+    "pirateRespawnAt",
+    prev.pirateRespawnAt === next.pirateRespawnAt,
+  );
+  setIfDifferent("pirateLanding", prev.pirateLanding === next.pirateLanding);
+  setIfDifferent(
+    "corsairSunkTile",
+    prev.corsairSunkTile === next.corsairSunkTile,
+  );
   setIfDifferent("allies", numberArrayEqual(prev.allies, next.allies));
   setIfDifferent("targets", numberArrayEqual(prev.targets, next.targets));
   setIfDifferent(
@@ -188,6 +202,12 @@ export function applyStateUpdate(target: PlayerState, pu: PlayerUpdate): void {
     target.isDisconnected = pu.isDisconnected;
   if (pu.killedBy !== undefined) target.killedBy = pu.killedBy;
   if (pu.deathPosition !== undefined) target.deathPosition = pu.deathPosition;
+  if (pu.isPirate !== undefined) target.isPirate = pu.isPirate;
+  if (pu.pirateRespawnAt !== undefined)
+    target.pirateRespawnAt = pu.pirateRespawnAt;
+  if (pu.pirateLanding !== undefined) target.pirateLanding = pu.pirateLanding;
+  if (pu.corsairSunkTile !== undefined)
+    target.corsairSunkTile = pu.corsairSunkTile;
   if (pu.tilesOwned !== undefined) target.tilesOwned = pu.tilesOwned;
   if (pu.gold !== undefined) target.gold = Number(pu.gold);
   if (pu.tradeGold !== undefined) target.tradeGold = Number(pu.tradeGold);

@@ -318,6 +318,37 @@ export const SHIELD_ARRAY_DEFAULTS = {
   constructionSeconds: 10,
 };
 
+// Piracy (docs/DarkStar-Piracy.md, PR1–PR18): an eliminated challenger stays
+// in the round as one anonymous raiding ship, the corsair, and may beach it
+// to return as a tiny challenger. Every number is a lever (§5); only
+// `enabled` is wire-configurable (the lobby toggle).
+export const PIRACY_DEFAULTS = {
+  enabled: false,
+  // PR5: troops a scuttled freighter adds to the hold, and the hold's cap.
+  // Engine units: the engine stores troops ten times what the screen shows
+  // (renderTroops), so these read 100 and 2,500 to the player (Tom,
+  // 2026-10-15).
+  raidTroops: 1_000,
+  holdCap: 25_000,
+  // PR16: the flat payout of a raid, whatever the voyage.
+  raidGold: 10_000,
+  // PR8: the free claim a landing takes — exactly the engine's mop-up
+  // threshold (AttackExecution.handleDeadDefender), so the foothold is not
+  // popped on arrival, and nothing more.
+  landingTiles: 100,
+  // PR10: the wait before a corsair may launch, after an elimination and
+  // after a sinking (doubling with each sinking, capped); and the distance
+  // from the sinking the next corsair must keep.
+  respawnSeconds: 15,
+  respawnCapSeconds: 120,
+  respawnExclusion: 150,
+  // PR12: landings are refused this close to the round's end.
+  landingClosesSeconds: 60,
+  // PR11: one health every this many ticks, anywhere in deep space (a third
+  // of a harbour's passive heal).
+  healEveryTicks: 3,
+};
+
 export const HEGEMON_DEFAULTS = {
   enabled: false,
   defaultRoundMinutes: 20, // R5, used when maxTimerValue is unset
@@ -505,11 +536,30 @@ export class Config {
       dropPercentPerMinute: d.dropPercentPerMinute,
     };
   }
+  // The round's length in seconds, or null when it has no timer: a Hegemon
+  // round is always timed (R5, WinCheckExecution), the engine's own modes
+  // only when the lobby set one.
+  roundSeconds(): number | null {
+    const timer = this._gameConfig.maxTimerValue;
+    if (this.hegemonConfig().enabled) {
+      return (timer ?? this.hegemonConfig().defaultRoundMinutes) * 60;
+    }
+    return timer === undefined || timer === null ? null : timer * 60;
+  }
   // Hegemon config, resolved against defaults. Any mode: in a team game the
   // throne is a team of one (docs/DarkStar-Lobbies.md §5.9, T5).
   hegemonConfig(): typeof HEGEMON_DEFAULTS {
     const c = this._gameConfig.hegemon;
     const d = HEGEMON_DEFAULTS;
+    return {
+      ...d,
+      enabled: c?.enabled ?? d.enabled,
+    };
+  }
+  // Piracy config (docs/DarkStar-Piracy.md), resolved against defaults.
+  piracyConfig(): typeof PIRACY_DEFAULTS {
+    const c = this._gameConfig.piracy;
+    const d = PIRACY_DEFAULTS;
     return {
       ...d,
       enabled: c?.enabled ?? d.enabled,
@@ -832,15 +882,20 @@ export class Config {
           cost: () => 0n,
         };
         break;
-      case UnitType.Warship:
+      case UnitType.Warship: {
+        const cost = this.costWrapper(
+          (numUnits: number) => Math.min(1_000_000, (numUnits + 1) * 250_000),
+          UnitType.Warship,
+        );
         info = {
-          cost: this.costWrapper(
-            (numUnits: number) => Math.min(1_000_000, (numUnits + 1) * 250_000),
-            UnitType.Warship,
-          ),
+          // A pirate's corsair costs nothing (PR3): the one ship a dead
+          // player may have, paid for by being dead.
+          cost: (game: Game, player: Player, extraUnits?: number) =>
+            player.isPirate() ? 0n : cost(game, player, extraUnits),
           maxHealth: 1000,
         };
         break;
+      }
       case UnitType.Shell:
         info = {
           cost: () => 0n,

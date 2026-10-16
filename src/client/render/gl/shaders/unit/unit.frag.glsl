@@ -42,6 +42,13 @@ const float FLAG_TRADE_FRIENDLY = 3.0;
 const float FLAG_RETREATING     = 4.0;
 const float FLAG_FLICKER_UNTARGETABLE = 5.0; // nuke out of SAM range — dimmed
 const float FLAG_TRADE_SELF     = 6.0;
+const float FLAG_PIRATE         = 7.0; // a pirate's corsair: the shared livery
+
+// The pirate livery (docs/DarkStar-Piracy.md, PR15): a black hull with a
+// crimson heart, the same for every pirate, in place of any owner colour.
+const vec3 PIRATE_HULL   = vec3(0.22, 0.22, 0.24);
+const vec3 PIRATE_BORDER = vec3(0.03, 0.03, 0.04);
+const vec3 PIRATE_HEART  = vec3(0.62, 0.08, 0.10);
 
 // Flicker hot colors: red → orange → yellow → white
 const vec3 FLICKER_COLORS[4] = vec3[4](
@@ -126,14 +133,19 @@ void main() {
 
   float gray = texel.r;
 
+  bool pirate = abs(vFlags - FLAG_PIRATE) < 0.1;
+
   // Alt-view: solid affiliation color, no gray-replacement bands
   if (uAltView != 0) {
-    // Trade ships: green if self is on either end, yellow if an ally is
-    vec3 ac = abs(vFlags - FLAG_TRADE_SELF) < 0.1
-      ? uSelfColor
-      : abs(vFlags - FLAG_TRADE_FRIENDLY) < 0.1
-        ? uAllyColor
-        : texelFetch(uAffiliation, ivec2(int(vOwnerID), 1), 0).rgb;
+    // Trade ships: green if self is on either end, yellow if an ally is.
+    // A corsair is nobody's: the livery's hull, here too.
+    vec3 ac = pirate
+      ? PIRATE_HULL
+      : abs(vFlags - FLAG_TRADE_SELF) < 0.1
+        ? uSelfColor
+        : abs(vFlags - FLAG_TRADE_FRIENDLY) < 0.1
+          ? uAllyColor
+          : texelFetch(uAffiliation, ivec2(int(vOwnerID), 1), 0).rgb;
     fragColor = vec4(ac, texel.a * alphaMul);
     return;
   }
@@ -200,8 +212,17 @@ void main() {
   //   130/255 ~ 0.510 -> spawn/mid color (interpolated; used by missiles)
   //   100/255 ~ 0.392 -> center accent (warship center — tracks ring, blinks black)
   //   70/255  ~ 0.275 -> border color (dark band)
+  // The pirate livery replaces every owner-derived colour, cosmetics
+  // included; the centre band is the pirate marker.
+  if (pirate) {
+    territoryColor = PIRATE_HULL;
+    borderColor = PIRATE_BORDER;
+  }
+
   vec3 spawnColor = mix(territoryColor, borderColor, 0.5);
-  vec3 centerColor = mix(territoryColor, vec3(0.0), retreatBlink);
+  vec3 centerColor = pirate
+    ? PIRATE_HEART
+    : mix(territoryColor, vec3(0.0), retreatBlink);
 
   vec3 color;
   if (gray > 0.6) {

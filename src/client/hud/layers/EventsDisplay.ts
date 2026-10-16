@@ -208,7 +208,9 @@ export class EventsDisplay extends LitElement implements Controller {
     }
 
     const myPlayer = this.game.myPlayer();
-    if (!myPlayer || !myPlayer.isAlive()) {
+    // A pirate at sea is dead but in the room: raids, refusals and the
+    // landing are told here (docs/DarkStar-Piracy.md).
+    if (!myPlayer || (!myPlayer.isAlive() && !myPlayer.isPirate())) {
       if (this._isVisible) {
         this._isVisible = false;
         this.requestUpdate();

@@ -6,7 +6,7 @@ import {
   translateText,
 } from "../../../client/Utils";
 import { EventBus } from "../../../core/EventBus";
-import { GameMapType } from "../../../core/game/Game";
+import { GameMapType, PlayerType } from "../../../core/game/Game";
 import { GameUpdateType } from "../../../core/game/GameUpdates";
 import { PublicGames, TeamCountConfig } from "../../../core/Schemas";
 import {
@@ -19,6 +19,7 @@ import { THRONE_TEAM_SPLITS } from "../../../core/ThroneTeams";
 import { ClientEnv } from "../../ClientEnv";
 import "../../components/map/MapPicker";
 import { Controller } from "../../Controller";
+import { BeginPiracyEvent } from "../../controllers/PiracyController";
 import { PublicLobbySocket } from "../../LobbySocket";
 import { PlaySoundEffectEvent } from "../../sound/Sounds";
 import { findLobby, lineHead, placeLabel } from "../../ThroneLine";
@@ -55,8 +56,12 @@ export class WinModal extends LitElement implements Controller {
   public eventBus: EventBus;
 
   // Set once the death screen has opened for us mid-round; it also turns
-  // the line panel into its head-only form (linePanelMode).
+  // the line panel into its head-only form (linePanelMode). Cleared when a
+  // pirate lands and is alive again, so a second death opens it again
+  // (docs/DarkStar-Piracy.md, section 8).
   private hasShownDeathModal = false;
+  // The round has a result (or none): no more piracy from here.
+  private roundOver = false;
 
   @state()
   isVisible = false;
@@ -113,6 +118,7 @@ export class WinModal extends LitElement implements Controller {
           .active=${this.wonRound && currentThrone() !== undefined}
         ></reign-prompt>
         ${this.renderThronePanel()} ${this.renderLinePanel()}
+        ${this.renderPiracyPanel()}
         <div class="mt-4 flex justify-between gap-2.5 shrink-0">
           <o-button
             variant="primary"
@@ -141,6 +147,51 @@ export class WinModal extends LitElement implements Controller {
               ></o-button>`
             : nothing}
         </div>
+      </div>
+    `;
+  }
+
+  // Piracy (docs/DarkStar-Piracy.md, PR1): a challenger eliminated while the
+  // round goes on may embrace it, any number of times; the Hegemon never
+  // (its fall ends the round), and nobody once the round has a result.
+  private canEmbrace(): boolean {
+    const me = this.game?.myPlayer();
+    return (
+      this.hasShownDeathModal &&
+      !this.roundOver &&
+      this.game.config().piracyConfig().enabled &&
+      me !== null &&
+      me !== undefined &&
+      !me.isAlive() &&
+      !me.isPirate() &&
+      me.hasSpawned() &&
+      me.type() === PlayerType.Human &&
+      !me.isHegemon()
+    );
+  }
+
+  private embracePiracy() {
+    this.hide();
+    this.eventBus.emit(new BeginPiracyEvent());
+  }
+
+  private renderPiracyPanel() {
+    if (!this.canEmbrace()) return nothing;
+    return html`
+      <div
+        class="mt-3 flex flex-col gap-2 rounded-lg border border-red-400/40 bg-black/30 p-3"
+        data-piracy-panel
+      >
+        <p class="text-xs text-white/60">
+          ${translateText("win_modal.embrace_piracy_hint")}
+        </p>
+        <o-button
+          variant="primary"
+          width="block"
+          translationKey="win_modal.embrace_piracy"
+          data-embrace-piracy
+          @click=${() => this.embracePiracy()}
+        ></o-button>
       </div>
     `;
   }
@@ -533,6 +584,11 @@ export class WinModal extends LitElement implements Controller {
 
   tick() {
     const myPlayer = this.game.myPlayer();
+    // A pirate who landed is back among the living: their next death is a
+    // death screen again.
+    if (this.hasShownDeathModal && !this.roundOver && myPlayer?.isAlive()) {
+      this.hasShownDeathModal = false;
+    }
     if (
       !this.hasShownDeathModal &&
       myPlayer &&
@@ -550,6 +606,7 @@ export class WinModal extends LitElement implements Controller {
     const updates = this.game.updatesSinceLastTick();
     const winUpdates = updates?.[GameUpdateType.Win] ?? [];
     winUpdates.forEach((wu) => {
+      this.roundOver = true;
       if (wu.winner === undefined) {
         // Match cancelled (e.g. a ranked 2v2 that didn't fill or fully
         // spawn): the game ends with no winner. Still vote the result to the

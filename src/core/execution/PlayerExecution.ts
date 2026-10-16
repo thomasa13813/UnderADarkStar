@@ -70,6 +70,8 @@ export class PlayerExecution implements Execution {
     if (!this.player.isAlive()) {
       this.removeOnDeath();
       this.active = false;
+      // Piracy (PR10): the wait before a corsair runs from here too.
+      this.player.recordEliminated();
       // OFM live standings: finishing place = non-bot players still standing when
       // we fell, + 1 (we are the last of them). players() is alive-only and we
       // just dropped to zero tiles, so it already excludes us. Bots are fill, not

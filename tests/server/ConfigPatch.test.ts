@@ -40,6 +40,7 @@ const EDITABLE: { [K in keyof GameConfig]?: GameConfig[K] } = {
   nameRevealPublicIds: ["pub-b"],
   hegemon: { enabled: true, seat: "c1000000" },
   randomMap: true,
+  piracy: { enabled: true },
 };
 
 // `.nullable().optional()` in the schema: null clears, undefined leaves alone.

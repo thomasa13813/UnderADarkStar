@@ -8,6 +8,7 @@ import { HoverHighlightController } from "../controllers/HoverHighlightControlle
 import { LiveStatsController } from "../controllers/LiveStatsController";
 import { MapLayerController } from "../controllers/MapLayerController";
 import { OpeningController } from "../controllers/OpeningController";
+import { PiracyController } from "../controllers/PiracyController";
 import { SoundEffectController } from "../controllers/SoundEffectController";
 import { StructureHighlightController } from "../controllers/StructureHighlightController";
 import { StructureRangeHoverController } from "../controllers/StructureRangeHoverController";
@@ -37,6 +38,7 @@ import { ImmunityTimer } from "./layers/ImmunityTimer";
 import { MainRadialMenu } from "./layers/MainRadialMenu";
 import { MultiTabModal } from "./layers/MultiTabModal";
 import { PerformanceOverlay } from "./layers/PerformanceOverlay";
+import { PirateHoldPanel } from "./layers/PirateHoldPanel";
 import { PlayerInfoOverlay } from "./layers/PlayerInfoOverlay";
 import { PlayerPanel } from "./layers/PlayerPanel";
 import { ReplayPanel } from "./layers/ReplayPanel";
@@ -287,6 +289,22 @@ export function createRenderer(
   immunityTimer.game = game;
   immunityTimer.eventBus = eventBus;
 
+  // Piracy (docs/DarkStar-Piracy.md): the two-click controller and the
+  // pirate's one HUD panel.
+  const piracyController = new PiracyController(
+    game,
+    eventBus,
+    transformHandler,
+  );
+  const pirateHoldPanel = document.querySelector(
+    "pirate-hold-panel",
+  ) as PirateHoldPanel;
+  if (!(pirateHoldPanel instanceof PirateHoldPanel)) {
+    console.error("pirate hold panel not found");
+  }
+  pirateHoldPanel.game = game;
+  pirateHoldPanel.piracy = piracyController;
+
   const tutorialPanel = document.querySelector(
     "tutorial-panel",
   ) as TutorialPanel;
@@ -300,6 +318,7 @@ export function createRenderer(
 
   const layers: Controller[] = [
     new WarshipSelectionController(game, eventBus, transformHandler, view),
+    piracyController,
     new BuildPreviewController(
       game,
       eventBus,
@@ -334,6 +353,7 @@ export function createRenderer(
     ),
     spawnTimer,
     immunityTimer,
+    pirateHoldPanel,
     gameLeftSidebar,
     unitDisplay,
     gameRightSidebar,

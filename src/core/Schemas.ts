@@ -64,7 +64,9 @@ export type Intent =
   | GiftUnitIntent
   | PunitiveStrikeIntent
   | ClaimSeatIntent
-  | LeaveSeatIntent;
+  | LeaveSeatIntent
+  | EmbracePiracyIntent
+  | PirateLandIntent;
 
 export type AttackIntent = z.infer<typeof AttackIntentSchema>;
 export type CancelAttackIntent = z.infer<typeof CancelAttackIntentSchema>;
@@ -104,6 +106,8 @@ export type UpdateGameConfigIntent = z.infer<
 >;
 export type ClaimSeatIntent = z.infer<typeof ClaimSeatIntentSchema>;
 export type LeaveSeatIntent = z.infer<typeof LeaveSeatIntentSchema>;
+export type EmbracePiracyIntent = z.infer<typeof EmbracePiracyIntentSchema>;
+export type PirateLandIntent = z.infer<typeof PirateLandIntentSchema>;
 export type ClientThronePickMessage = z.infer<typeof ClientThronePickSchema>;
 export type ToggleGameStartTimer = z.infer<
   typeof ToggleGameStartTimerIntentSchema
@@ -544,6 +548,14 @@ export const HegemonConfigSchema = z.object({
   seat: z.string().optional(),
 });
 
+// Under a Dark Star: piracy (docs/DarkStar-Piracy.md). An eliminated
+// challenger may stay in the round as a corsair and beach it to return. Only
+// `enabled` is wire-configurable (the lobby toggle); the numbers live in
+// PIRACY_DEFAULTS (Config.ts).
+export const PiracyConfigSchema = z.object({
+  enabled: z.boolean().optional(),
+});
+
 export const GameConfigSchema = z.object({
   gameMap: z.enum(GameMapType),
   difficulty: z.enum(Difficulty),
@@ -627,6 +639,7 @@ export const GameConfigSchema = z.object({
     })
     .optional(),
   hegemon: HegemonConfigSchema.optional(),
+  piracy: PiracyConfigSchema.optional(),
 });
 
 export const TeamSchema = z.string();
@@ -885,6 +898,22 @@ export const LeaveSeatIntentSchema = z.object({
   type: z.literal("leave_seat"),
 });
 
+// Piracy (docs/DarkStar-Piracy.md, PR1/PR3): an eliminated challenger
+// embraces piracy, or spawns their next corsair after a sinking, on a
+// deep-space tile. EmbracePiracyExecution refuses what it must.
+export const EmbracePiracyIntentSchema = z.object({
+  type: z.literal("embrace_piracy"),
+  tile: zb.uint(),
+});
+
+// Piracy (PR4, PR7): the pirate orders a landing on the nebula at this
+// tile; the corsair sails to the nearest shore of it and beaches.
+// PirateLandingExecution refuses what it must (PR9, PR12).
+export const PirateLandIntentSchema = z.object({
+  type: z.literal("pirate_land"),
+  tile: zb.uint(),
+});
+
 export const IntentSchema = z.discriminatedUnion("type", [
   AttackIntentSchema,
   CancelAttackIntentSchema,
@@ -918,6 +947,8 @@ export const IntentSchema = z.discriminatedUnion("type", [
   PunitiveStrikeIntentSchema,
   ClaimSeatIntentSchema,
   LeaveSeatIntentSchema,
+  EmbracePiracyIntentSchema,
+  PirateLandIntentSchema,
 ]);
 
 // StampedIntent = Intent with server-stamped clientID (used in turns and execution)

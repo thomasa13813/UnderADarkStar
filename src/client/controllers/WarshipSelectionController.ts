@@ -137,6 +137,12 @@ export class WarshipSelectionController implements Controller {
     if (this.dragRectEl !== null) this.dragRectEl.style.display = "none";
   }
 
+  // A pirate's corsair takes its two clicks from PiracyController
+  // (docs/DarkStar-Piracy.md, PR4); it is never drawn as selected.
+  private pirate(): boolean {
+    return this.game.myPlayer()?.isPirate() === true;
+  }
+
   /**
    * Find player-owned warships near the given cell, sorted by distance.
    */
@@ -170,6 +176,7 @@ export class WarshipSelectionController implements Controller {
     clickRef?: TileRef,
     nearbyWarships?: UnitView[],
   ) {
+    if (this.pirate()) return;
     if (clickRef === undefined) {
       const cell = this.transformHandler.screenToWorldCoordinates(
         event.x,
@@ -212,6 +219,7 @@ export class WarshipSelectionController implements Controller {
    * back to opening the radial menu.
    */
   private onTouch(event: TouchEvent) {
+    if (this.pirate()) return;
     const cell = this.transformHandler.screenToWorldCoordinates(
       event.x,
       event.y,
@@ -250,6 +258,7 @@ export class WarshipSelectionController implements Controller {
    * whose screen position falls inside the rectangle.
    */
   private onSelectionBoxComplete(event: WarshipSelectionBoxCompleteEvent) {
+    if (this.pirate()) return;
     const x1 = Math.min(event.startX, event.endX);
     const y1 = Math.min(event.startY, event.endY);
     const x2 = Math.max(event.startX, event.endX);
@@ -292,6 +301,7 @@ export class WarshipSelectionController implements Controller {
   }
 
   private onSelectAllWarships() {
+    if (this.pirate()) return;
     const allWarships = this.getAllWarships();
     if (allWarships.length === 0) return;
 

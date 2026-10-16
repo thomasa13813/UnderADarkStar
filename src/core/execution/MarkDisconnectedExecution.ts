@@ -1,4 +1,4 @@
-import { Execution, Game, Player } from "../game/Game";
+import { Execution, Game, Player, UnitType } from "../game/Game";
 
 export class MarkDisconnectedExecution implements Execution {
   constructor(
@@ -17,6 +17,15 @@ export class MarkDisconnectedExecution implements Execution {
         totalLand,
         wasAlive: this.player.isAlive(),
       });
+      // A pirate who leaves (PR18): the corsair is scuttled, silently, so
+      // no cooldown starts; a ghost ship raiding on autopilot serves nobody.
+      // They embrace again from the death screen if they come back.
+      if (this.player.isPirate()) {
+        for (const ship of this.player.units(UnitType.Warship)) {
+          if (ship.isActive()) ship.delete(false);
+        }
+        this.player.endPiracy();
+      }
     } else {
       this.player.markDisconnected(false);
     }

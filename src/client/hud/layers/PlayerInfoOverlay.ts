@@ -615,14 +615,21 @@ export class PlayerInfoOverlay extends LitElement implements Controller {
       (unit.owner() === this.game.myPlayer() ||
         this.game.myPlayer()?.isFriendly(unit.owner())) ??
       false;
+    // A pirate's corsair is anonymous at sea (docs/DarkStar-Piracy.md,
+    // PR15): the card says Pirates, and shows the hold, not the owner.
+    const corsair = unit.type() === UnitType.Warship && unit.owner().isPirate();
 
     return html`
       <div class="p-2">
         <div class="font-bold mb-1 ${isAlly ? "text-green-500" : "text-white"}">
-          ${unit.owner().displayName()}
+          ${corsair
+            ? translateText("piracy.pirates")
+            : unit.owner().displayName()}
         </div>
         <div class="mt-1">
-          <div class="text-sm opacity-80">${unit.type()}</div>
+          <div class="text-sm opacity-80">
+            ${corsair ? translateText("piracy.corsair") : unit.type()}
+          </div>
           ${unit.hasHealth()
             ? html` <div class="text-sm">Health: ${unit.health()}</div> `
             : ""}
@@ -630,6 +637,14 @@ export class PlayerInfoOverlay extends LitElement implements Controller {
             ? html`
                 <div class="text-sm">
                   Troops: ${renderTroops(unit.troops())}
+                </div>
+              `
+            : ""}
+          ${corsair
+            ? html`
+                <div class="text-sm">
+                  ${translateText("piracy.hold")}:
+                  ${renderTroops(unit.troops())}
                 </div>
               `
             : ""}

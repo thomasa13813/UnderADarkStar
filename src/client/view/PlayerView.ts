@@ -80,6 +80,10 @@ function stateFromUpdate(pu: PlayerUpdate): PlayerState {
     smallID: pu.smallID!,
     isAlive: pu.isAlive!,
     isDisconnected: pu.isDisconnected!,
+    isPirate: pu.isPirate ?? false,
+    pirateRespawnAt: pu.pirateRespawnAt ?? 0,
+    pirateLanding: pu.pirateLanding ?? null,
+    corsairSunkTile: pu.corsairSunkTile ?? null,
     killedBy: pu.killedBy ?? null,
     deathPosition: pu.deathPosition ?? null,
     tilesOwned: pu.tilesOwned!,
@@ -751,6 +755,20 @@ export class PlayerView {
   }
   isDisconnected(): boolean {
     return this.state.isDisconnected;
+  }
+  // Piracy (docs/DarkStar-Piracy.md): at sea as a corsair, or waiting for
+  // the next one after a sinking.
+  isPirate(): boolean {
+    return this.state.isPirate;
+  }
+  pirateRespawnAt(): number {
+    return this.state.pirateRespawnAt;
+  }
+  pirateLanding(): number | null {
+    return this.state.pirateLanding;
+  }
+  corsairSunkTile(): number | null {
+    return this.state.corsairSunkTile;
   }
 
   lastDeleteUnitTick(): Tick {

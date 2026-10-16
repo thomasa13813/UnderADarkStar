@@ -200,6 +200,15 @@ export class PlayerImpl implements Player {
   private _isDisconnected = false;
   private _disconnectSnapshot: DisconnectSnapshot | null = null;
 
+  // Piracy (docs/DarkStar-Piracy.md): the third state, and its counters.
+  private _pirate = false;
+  private _pirateSinkings = 0;
+  private _pirateRespawnAt: Tick = 0;
+  private _corsairSunkTile: TileRef | undefined;
+  private _pirateRaids = 0;
+  private _pirateLandings = 0;
+  private _pirateLanding: TileRef | undefined;
+
   /**
    * Last PlayerUpdate emitted for this player on the worker→main channel.
    * Used by GameImpl's tick loop to compute field-level diffs. Undefined on
@@ -219,7 +228,10 @@ export class PlayerImpl implements Player {
     this._pseudo_random = new PseudoRandom(simpleHash(this.playerInfo.id));
   }
 
-  largestClusterBoundingBox: { min: Cell; max: Cell } | null;
+  // Set by PlayerExecution.removeClusters each tick; null until it has run
+  // (a player back from piracy is in players() before its execution ticks,
+  // and a Lord aiming a stargate reads it that same tick).
+  largestClusterBoundingBox: { min: Cell; max: Cell } | null = null;
 
   /**
    * Build a PlayerUpdate for the worker→main wire.
@@ -447,6 +459,10 @@ export class PlayerImpl implements Player {
       lastDeleteUnitTick: this.lastDeleteUnitTick,
       isLobbyCreator: this.isLobbyCreator(),
       isHegemon: this.isHegemon(),
+      isPirate: this._pirate,
+      pirateRespawnAt: this._pirateRespawnAt,
+      pirateLanding: this._pirateLanding ?? null,
+      corsairSunkTile: this._corsairSunkTile ?? null,
     };
   }
 
@@ -799,6 +815,87 @@ export class PlayerImpl implements Player {
 
   isAlive(): boolean {
     return this._tiles.size > 0;
+  }
+
+  // Piracy (docs/DarkStar-Piracy.md). The flag is set by the corsair's first
+  // spawn and cleared by a landing or a scuttle; the sinking count, the
+  // cooldown and the raid tally outlive it within the round.
+  isPirate(): boolean {
+    return this._pirate;
+  }
+
+  embracePiracy(): void {
+    this._pirate = true;
+  }
+
+  endPiracy(): void {
+    this._pirate = false;
+  }
+
+  pirateSinkings(): number {
+    return this._pirateSinkings;
+  }
+
+  pirateRespawnAt(): Tick {
+    return this._pirateRespawnAt;
+  }
+
+  corsairSunkTile(): TileRef | undefined {
+    return this._corsairSunkTile;
+  }
+
+  // PR10: the whole hold went down with the ship (it was on the unit); the
+  // wait doubles with each sinking this round, capped, and the next corsair
+  // keeps its distance from here. Integer ticks only.
+  recordCorsairSunk(tile: TileRef): void {
+    const cfg = this.mg.config().piracyConfig();
+    this._pirateSinkings++;
+    let seconds = cfg.respawnSeconds;
+    for (let i = 1; i < this._pirateSinkings; i++) {
+      if (seconds >= cfg.respawnCapSeconds) break;
+      seconds *= 2;
+    }
+    seconds = Math.min(seconds, cfg.respawnCapSeconds);
+    this._pirateRespawnAt = this.mg.ticks() + seconds * 10;
+    this._corsairSunkTile = tile;
+  }
+
+  recordCorsairSpawned(): void {
+    this._corsairSunkTile = undefined;
+  }
+
+  // An elimination starts the base wait (no doubling: that is for
+  // sinkings), never shortening a wait already running.
+  recordEliminated(): void {
+    const cfg = this.mg.config().piracyConfig();
+    this._pirateRespawnAt = Math.max(
+      this._pirateRespawnAt,
+      this.mg.ticks() + cfg.respawnSeconds * 10,
+    );
+  }
+
+  pirateRaids(): number {
+    return this._pirateRaids;
+  }
+
+  recordPirateRaid(): void {
+    this._pirateRaids++;
+  }
+
+  pirateLandings(): number {
+    return this._pirateLandings;
+  }
+
+  recordPirateLanding(): void {
+    this._pirateLandings++;
+  }
+
+  pirateLanding(): TileRef | undefined {
+    return this._pirateLanding;
+  }
+
+  setPirateLanding(shore: TileRef | undefined): void {
+    this._pirateLanding = shore;
   }
 
   hasSpawned(): boolean {
@@ -1556,6 +1653,12 @@ export class PlayerImpl implements Player {
     if (this.isHegemon() && unitType === UnitType.MIRV) {
       return false;
     }
+    // A pirate builds one thing, the corsair, and it costs nothing (PR2,
+    // PR3): the alive check below would refuse it, so it is opened here.
+    // Everything else a dead player cannot build, a pirate cannot either.
+    if (this.isPirate() && unitType === UnitType.Warship) {
+      return true;
+    }
     const cost = knownCost ?? this.mg.unitInfo(unitType).cost(this.mg, this);
     if (payer.gold() < cost) {
       return false;
@@ -1855,6 +1958,26 @@ export class PlayerImpl implements Player {
     // anywhere in the moat, and nowhere else (H10).
     if (this.isHegemon()) {
       return this.mg.isInMoat(tile) ? tile : false;
+    }
+    // A pirate's corsair spawns where the pirate points (PR3): any deep
+    // space outside the Dark Star and its moat, once the cooldown has run
+    // (PR10) and never within the exclusion of where the last one sank.
+    if (this.isPirate()) {
+      const mg = this.mg;
+      if (mg.isInDarkStar(tile) || mg.isInMoat(tile)) {
+        return false;
+      }
+      if (mg.ticks() < this._pirateRespawnAt) {
+        return false;
+      }
+      const sunk = this._corsairSunkTile;
+      if (sunk !== undefined) {
+        const r = mg.config().piracyConfig().respawnExclusion;
+        if (mg.euclideanDistSquared(tile, sunk) < r * r) {
+          return false;
+        }
+      }
+      return tile;
     }
 
     // A challenger's destroyer is launched from the harbour of one of its

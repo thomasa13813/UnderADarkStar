@@ -99,6 +99,8 @@ export class HostLobbyModal extends BaseModal {
   @state() private whitelistEnabled: boolean = false;
   @state() private allowedPublicIds: string = "";
   @state() private waterNukes: boolean = false;
+  // Piracy (docs/DarkStar-Piracy.md): the server's lobby default is on.
+  @state() private piracy: boolean = true;
   // Under a Dark Star (P0): the throne is always there (the game itself, never
   // a toggle). The creator seats one player from the roster; nobody seated
   // means the AI holds it.
@@ -577,6 +579,11 @@ export class HostLobbyModal extends BaseModal {
                     checked: this.waterNukes,
                   },
                   {
+                    labelKey: "game_settings.piracy",
+                    descriptionKey: "game_settings.piracy_desc",
+                    checked: this.piracy,
+                  },
+                  {
                     labelKey: "game_settings.doomsday_clock",
                     checked: this.doomsdayClock,
                     doomsdayClockSpeed: this.doomsdayClockSpeed,
@@ -877,6 +884,7 @@ export class HostLobbyModal extends BaseModal {
     this.whitelistEnabled = false;
     this.allowedPublicIds = "";
     this.waterNukes = false;
+    this.piracy = true;
     this.hostCheatsEnabled = false;
     this.hostCheatInfiniteGold = false;
     this.hostCheatInfiniteTroops = false;
@@ -973,6 +981,10 @@ export class HostLobbyModal extends BaseModal {
         break;
       case "game_settings.water_nukes":
         this.waterNukes = checked;
+        this.putGameConfig();
+        break;
+      case "game_settings.piracy":
+        this.piracy = checked;
         this.putGameConfig();
         break;
       case "game_settings.doomsday_clock":
@@ -1378,6 +1390,7 @@ export class HostLobbyModal extends BaseModal {
     this.whitelistEnabled = (c.allowedPublicIds?.length ?? 0) > 0;
     this.allowedPublicIds = (c.allowedPublicIds ?? []).join(", ");
     this.waterNukes = c.waterNukes ?? false;
+    this.piracy = c.piracy?.enabled ?? false;
     this.hegemonSeat = c.hegemon?.seat ?? null;
     this.hostCheatsEnabled = c.hostCheats !== undefined;
     this.hostCheatInfiniteGold = c.hostCheats?.infiniteGold ?? false;
@@ -1552,6 +1565,8 @@ export class HostLobbyModal extends BaseModal {
               ? (this.parseAllowedPublicIds() ?? [])
               : [],
             waterNukes: this.waterNukes ? true : null,
+            // {enabled:false} when off, as doomsdayClock above.
+            piracy: { enabled: this.piracy },
             hostCheats: this.hostCheatsEnabled
               ? {
                   infiniteGold: this.hostCheatInfiniteGold || undefined,

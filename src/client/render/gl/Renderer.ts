@@ -937,6 +937,14 @@ export class GPURenderer {
       this.samRadiusPass.setAllies(friendly);
       this.unitPass.setAllies(friendly);
     }
+
+    // Pirates' corsairs wear the shared livery (docs/DarkStar-Piracy.md,
+    // PR15), whoever is looking.
+    const pirates = new Set<number>();
+    for (const [sid, ps] of players) {
+      if (ps.isPirate) pirates.add(sid);
+    }
+    this.unitPass.setPirates(pirates);
   }
 
   /** Re-resolve player name strings live (e.g. anonymous-names toggle). */

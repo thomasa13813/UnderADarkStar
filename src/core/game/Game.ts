@@ -705,6 +705,37 @@ export interface Player {
   beachheadCount(): number;
   beachheads(): ReadonlySet<TileRef>;
 
+  // Piracy (docs/DarkStar-Piracy.md). A pirate is a third state beside alive
+  // and dead: no tiles, but present, with one ship. isAlive() stays
+  // `tiles > 0`; everything the engine denies a dead player it still denies
+  // a pirate unless a gate says otherwise (the corsair's build and spawn).
+  isPirate(): boolean;
+  // Set when the first corsair spawns (PR1); cleared by a landing (PR7) or
+  // when a leaving pirate's ship is scuttled (PR18).
+  embracePiracy(): void;
+  endPiracy(): void;
+  // PR10: sinkings this round (the cooldown doubles with each), the tick the
+  // next corsair may spawn, and where the last one went down (the next spawn
+  // keeps its distance). The count persists across returns.
+  pirateSinkings(): number;
+  pirateRespawnAt(): Tick;
+  corsairSunkTile(): TileRef | undefined;
+  recordCorsairSunk(tile: TileRef): void;
+  // Called when the player is eliminated: the same wait before the first
+  // corsair as between corsairs (every phase transition, Tom 2026-10-15).
+  recordEliminated(): void;
+  // Called when a corsair spawns: the sinking's exclusion is spent.
+  recordCorsairSpawned(): void;
+  // PR14: raids and landings this round, for a later leaderboard line.
+  pirateRaids(): number;
+  recordPirateRaid(): void;
+  pirateLandings(): number;
+  recordPirateLanding(): void;
+  // PR7: the shore the corsair is sailing to beach on, while a landing is
+  // under way; the corsair's own execution stands down for the voyage.
+  pirateLanding(): TileRef | undefined;
+  setPirateLanding(shore: TileRef | undefined): void;
+
   // State & Properties
   isAlive(): boolean;
   isTraitor(): boolean;

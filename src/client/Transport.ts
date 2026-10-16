@@ -260,6 +260,17 @@ export class MoveWarshipIntentEvent implements GameEvent {
   ) {}
 }
 
+// Piracy (docs/DarkStar-Piracy.md, PR1/PR3): embrace piracy, or spawn the
+// next corsair, on a deep-space tile.
+export class SendEmbracePiracyIntentEvent implements GameEvent {
+  constructor(public readonly tile: number) {}
+}
+
+// Piracy (PR4, PR7): land the corsair on the nebula at this tile.
+export class SendPirateLandIntentEvent implements GameEvent {
+  constructor(public readonly tile: number) {}
+}
+
 export class SendKickPlayerIntentEvent implements GameEvent {
   constructor(public readonly target: string) {}
 }
@@ -401,6 +412,14 @@ export class Transport {
     this.subscribe(MoveWarshipIntentEvent, (e) => {
       this.onMoveWarshipEvent(e);
     });
+
+    this.subscribe(SendEmbracePiracyIntentEvent, (e) =>
+      this.onSendEmbracePiracyIntent(e),
+    );
+
+    this.subscribe(SendPirateLandIntentEvent, (e) =>
+      this.onSendPirateLandIntent(e),
+    );
 
     this.subscribe(SendDeleteUnitIntentEvent, (e) =>
       this.onSendDeleteUnitIntent(e),
@@ -1022,6 +1041,20 @@ export class Transport {
     this.sendIntent({
       type: "move_warship",
       unitIds: event.unitIds,
+      tile: event.tile,
+    });
+  }
+
+  private onSendEmbracePiracyIntent(event: SendEmbracePiracyIntentEvent) {
+    this.sendIntent({
+      type: "embrace_piracy",
+      tile: event.tile,
+    });
+  }
+
+  private onSendPirateLandIntent(event: SendPirateLandIntentEvent) {
+    this.sendIntent({
+      type: "pirate_land",
       tile: event.tile,
     });
   }

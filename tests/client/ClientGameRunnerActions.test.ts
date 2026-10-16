@@ -98,6 +98,7 @@ function makeRunner(overrides: {
     actions: vi.fn(async () => overrides.actions ?? {}),
     troops: () => 100,
     isHegemon: () => false,
+    isAlive: () => true,
   };
   const gameView = {
     config: () => ({ isRandomSpawn: () => false, isReplay: () => false }),

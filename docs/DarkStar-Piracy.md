@@ -160,7 +160,9 @@ round would not otherwise have.
   round). Lords and Barons do not (no AI pirates in the first version).
 - **PR2 — The corsair. [Proposed]** A pirate owns exactly **one ship**, the **corsair**: the
   engine's warship unit (`UnitType.Warship`) with a hold, drawn as a pirate ship in a neutral
-  pirate livery (PR15). Health, speed, shell damage and reload as a destroyer's; **no veterancy**.
+  pirate livery (PR15). Health, shell damage and reload as a destroyer's; **no veterancy**. It
+  always sails at a destroyer's chasing pace, two steps a tick, on patrol, in a chase and to a
+  landing [Tom 2026-10-15].
 - **PR3 — Spawning. [Proposed]** The pirate clicks any **deep-space tile outside the Dark Star and
   its moat** and the corsair appears there, at once the first time. It costs nothing. A click on
   land, the disc or the moat is refused with a heads-up line.
@@ -174,8 +176,9 @@ round would not otherwise have.
 - **PR5 — Raids. [Proposed]** The corsair hunts **any freighter** within its patrol range as a
   destroyer does, with the same exclusions (land legs, shoreline, the Dark Star's water). Reaching
   one **scuttles** it: the freighter is deleted where it stands, the trading partners get nothing,
-  the hold gains `pirateRaidTroops` (**100**) up to `pirateHoldCap` (**2,500**), and the pirate's
-  purse gains the raid's gold (PR16). Victims see the existing _trade ship captured_ event, by
+  the hold gains `pirateRaidTroops` (**100** on screen) up to `pirateHoldCap` (**2,500** on
+  screen; the engine stores troops ten times the displayed figure), and the pirate's purse gains
+  the raid's gold (PR16). Victims see the existing _trade ship captured_ event, by
   _Pirates_. A full hold keeps raiding for the gold.
 - **PR6 — No fleet sinking. [Proposed]** The corsair **never fires on fleets** (transport ships).
   It returns fire on **warships** that enter its range, and warships may hunt it. The throne's
@@ -200,10 +203,14 @@ round would not otherwise have.
   their team and may not land on a teammate's coast.
 - **PR10 — Death and return. [Decided]** A sunk corsair loses its **whole** hold (Tom: no mercy
   for pirates); the purse stays with the
-  player. The pirate may spawn another after `pirateRespawnSeconds` (**20**) **doubling with each
-  sinking** in the round (20, 40, 80 s…, capped at `pirateRespawnCapSeconds`, **120**), and never
-  within `pirateRespawnExclusion` (**150** tiles) of the tile where it was sunk. The first corsair
-  of each piracy has no wait; the sinking count persists across returns within the round.
+  player. The pirate may spawn another after `pirateRespawnSeconds` (**15**) **doubling with each
+  sinking** in the round (15, 30, 60 s…, capped at `pirateRespawnCapSeconds`, **120**), and never
+  within `pirateRespawnExclusion` (**150** tiles) of the tile where it was sunk. **The same wait
+  runs from every elimination** [Tom 2026-10-15]: a player who has just died waits 15 s before
+  their first corsair, and a returned pirate who falls again waits again, so no one can land,
+  be overwhelmed and relaunch in the same breath. Every phase transition, player to corsair or
+  corsair to corsair, carries the wait; the sinking count persists across returns within the
+  round.
 - **PR11 — Repair. [Decided; rate Proposed]** The corsair heals **slowly, anywhere** in deep space:
   one health every `pirateHealEveryTicks` (**3**) ticks, a third of a harbour's passive rate, so a
   corsair shot to a sliver is whole again in about five minutes. It never docks (no port, no moat).
@@ -216,8 +223,8 @@ round would not otherwise have.
   B5 is unchanged now.
 - **PR15 — Anonymity. [Decided]** While a player is a pirate, their corsair is drawn in a **single
   pirate livery** shared by every pirate (black hull, no owner colour, a pirate marker instead of
-  a name), its hover card says _Pirates_, and the raid event names _Pirates_, not the player. The
-  pirate's own client shows their own ship highlighted as selected. The sim knows the owner (it
+  a name), its hover card says _Pirates_, and the raid event names _Pirates_, not the player. No
+  selection box is drawn on it, not even for its owner [Tom 2026-10-15]. The sim knows the owner (it
   must: determinism, the hold, the return); only the view hides it. A returned challenger is in
   their own name and colours from the claim onward. Spectators and the Hegemon see the same livery
   as everyone.
@@ -234,18 +241,18 @@ round would not otherwise have.
 
 ## 5. Numbers (every one a lever)
 
-| Tunable                       | Draft        | Why this starting point                                                                                                |
-| ----------------------------- | ------------ | ---------------------------------------------------------------------------------------------------------------------- |
-| `pirateRaidTroops`            | 100          | Tom's figure. 25 raids to a full hold; on a busy lane one raid every 10–20 s, so a full hold is several minutes' work. |
-| `pirateHoldCap`               | 2,500        | Tom's figure. A tenth of a fresh spawn's 25,000; the landing is a foothold, not a return.                              |
-| `pirateLandingTiles`          | 100          | Exactly the engine's mop-up threshold: the bare minimum not to be popped on arrival, and no more (decision 3).         |
-| `pirateRespawnSeconds`        | 20           | Tom's figure, for the first sinking.                                                                                   |
-| `pirateRespawnCapSeconds`     | 120          | The doubling stops here: a pirate sunk five times waits two minutes, not forever.                                      |
-| `pirateRespawnExclusion`      | 150          | The warship's passive-healing range: far enough that "die and come straight back" is a voyage, not a respawn.          |
-| `pirateLandingClosesSeconds`  | 60           | Closes the last-minute padding without touching raids.                                                                 |
-| `pirateRaidGold`              | 10,000       | Tom's figure. Flat so the purse reads simply; 25 raids buy a destroyer.                                                |
-| `pirateHealEveryTicks`        | 3            | A third of a harbour's passive heal (1 a tick): whole again in ~5 min, so a hurt corsair hides rather than lands.      |
-| Corsair health / shell / rate | as destroyer | One unit type, one set of numbers; retune only if pirates win warship duels they should not.                           |
+| Tunable                       | Draft        | Why this starting point                                                                                             |
+| ----------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------- |
+| `pirateRaidTroops`            | 100          | Tom's figure, as shown on screen (1,000 in engine units, which are ten times the display). 25 raids to a full hold. |
+| `pirateHoldCap`               | 2,500        | Tom's figure, on screen (25,000 in engine units). A tenth of a fresh spawn's 25,000; a foothold, not a return.      |
+| `pirateLandingTiles`          | 100          | Exactly the engine's mop-up threshold: the bare minimum not to be popped on arrival, and no more (decision 3).      |
+| `pirateRespawnSeconds`        | 15           | Tom's figure (2026-10-15), after an elimination and after the first sinking.                                        |
+| `pirateRespawnCapSeconds`     | 120          | The doubling stops here: a pirate sunk five times waits two minutes, not forever.                                   |
+| `pirateRespawnExclusion`      | 150          | The warship's passive-healing range: far enough that "die and come straight back" is a voyage, not a respawn.       |
+| `pirateLandingClosesSeconds`  | 60           | Closes the last-minute padding without touching raids.                                                              |
+| `pirateRaidGold`              | 10,000       | Tom's figure. Flat so the purse reads simply; 25 raids buy a destroyer.                                             |
+| `pirateHealEveryTicks`        | 3            | A third of a harbour's passive heal (1 a tick): whole again in ~5 min, so a hurt corsair hides rather than lands.   |
+| Corsair health / shell / rate | as destroyer | One unit type, one set of numbers; retune only if pirates win warship duels they should not.                        |
 
 **To measure on Saturday with the headless sim** before freezing the numbers: freighters a corsair
 takes per minute on each map's busiest lane; the gold a raid pays on average; how long a 100-tile,
@@ -368,3 +375,10 @@ hold pays for the owner's tiles at the ordinary rate.
   (PR18), a sinking loses the whole hold (PR10), a slow heal anywhere (PR11, one health every 3
   ticks proposed), raid gold a flat 10k (PR16), the claim a free predetermined bite (PR8). Every
   shaping question is now decided; §9 is numbers only.
+- **2026-10-15** — Slices A–C built on `feat/piracy`. Tom confirmed the hold figures are
+  on-screen troops: `raidTroops` 1,000 and `holdCap` 25,000 in engine units (the engine stores
+  ten times what it shows). A Lord's stargate aim crashed on a player just back from piracy
+  (cluster box unset before its first PlayerExecution tick); the box now starts null. Later the
+  same day, Tom: no selection box on the corsair (PR15); the corsair always sails at the chase's
+  pace, two steps a tick (PR2); the wait is 15 s and runs from every elimination as well as every
+  sinking (PR10).

@@ -65,6 +65,14 @@ export interface PlayerState {
   isDisconnected: boolean;
   killedBy: string | null;
   deathPosition: number | null;
+  /** Piracy: at sea as a corsair, or between corsairs (live). */
+  isPirate: boolean;
+  /** Piracy: the tick the next corsair may spawn (0 = no wait). */
+  pirateRespawnAt: number;
+  /** Piracy: the shore a landing is under way to (null = none). */
+  pirateLanding: number | null;
+  /** Piracy: where the last corsair sank (null = none). */
+  corsairSunkTile: number | null;
   tilesOwned: number;
   gold: number;
   /** Cumulative ship-trade revenue (live, from PlayerUpdate). */
