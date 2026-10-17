@@ -1,5 +1,6 @@
 {
   "categories": ["arcade"],
+  "ffa_frequency": 1,
   "hegemon": {
     "center": [1240, 1430],
     "moat": 21,

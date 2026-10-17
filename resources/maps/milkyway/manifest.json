@@ -1,6 +1,7 @@
 {
   "categories": ["cosmic"],
   "display_name": "Milky Way",
+  "ffa_frequency": 1,
   "id": "MilkyWay",
   "map": {
     "height": 1748,

@@ -1,5 +1,6 @@
 {
   "categories": ["cosmic"],
+  "ffa_frequency": 1,
   "hegemon": {
     "center": [1440, 1440],
     "moat": 18,

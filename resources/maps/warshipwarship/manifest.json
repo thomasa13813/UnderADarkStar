@@ -92,6 +92,7 @@
     }
   ],
   "categories": ["arcade"],
+  "ffa_frequency": 1,
   "id": "WarshipWarship",
   "map": {
     "height": 1396,

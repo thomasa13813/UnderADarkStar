@@ -1,5 +1,6 @@
 {
   "categories": ["fictional"],
+  "ffa_frequency": 1,
   "id": "TradersDream",
   "map": {
     "height": 1920,

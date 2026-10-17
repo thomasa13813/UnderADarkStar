@@ -1103,6 +1103,7 @@
     }
   ],
   "categories": ["arcade"],
+  "ffa_frequency": 1,
   "id": "MoreThanLuck",
   "map": {
     "height": 1344,

@@ -1,5 +1,6 @@
 {
   "categories": ["fictional"],
+  "ffa_frequency": 1,
   "id": "Passage",
   "map": {
     "height": 400,

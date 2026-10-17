@@ -1,5 +1,6 @@
 {
   "categories": ["arcade"],
+  "ffa_frequency": 1,
   "id": "Sierpinski",
   "map": {
     "height": 1400,
