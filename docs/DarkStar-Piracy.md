@@ -123,8 +123,9 @@ round would not otherwise have.
   raid only the friend's rivals. Both are small, visible, and no worse than what two allied
   challengers already do.
 - **Noise for the living.** Every raid today posts a _trade ship captured_ event to the victim.
-  Keep the event, name the raider _Pirates_ (PR15), and give the cue to the pirate and the victim
-  only (S8).
+  Keep the event and name the raider _Pirates_ (PR15). No sound cue for a raid: a busy corsair
+  would ring it all round long (Tom, 2026-10-17). The beaching has one, for the pirate and the
+  coast's owner (S8).
 - **Clutter at the end.** Pirates landing in the last minute to pad a standing. PR12 closes
   landings in the final minute.
 - **Autopilot pirates.** A corsair patrols and raids by itself. A pirate who closes the tab would
@@ -219,8 +220,9 @@ round would not otherwise have.
 - **PR13 — Round end. [Proposed]** A pirate at the timer is a spectator for the end screen; R3/R4
   are unchanged. A pirate at sea can never win; a returned challenger can, like anyone.
 - **PR14 — Standings. [Proposed]** The first elimination stamps the finishing place, as today.
-  Raids and landings are recorded (`piracyRaids`, `piracyLandings`) for a later leaderboard line;
-  B5 is unchanged now.
+  [Decided 2026-10-17, Tom: **no piracy data is tracked or shown.**] The sim keeps two per-round
+  counters (`pirateRaids`, `pirateLandings`) that nothing reads; no leaderboard line is planned
+  and B5 is unchanged.
 - **PR15 — Anonymity. [Decided]** While a player is a pirate, their corsair is drawn in a **single
   pirate livery** shared by every pirate (black hull, no owner colour, a pirate marker instead of
   a name), its hover card says _Pirates_, and the raid event names _Pirates_, not the player. No
@@ -355,11 +357,12 @@ hold pays for the owner's tiles at the ordinary rate.
 ## 10. Amendments this makes elsewhere (slice D)
 
 - `DarkStar-Design.md` **C1**: "cannot re-deploy" → "may return only as a pirate
-  (DarkStar-Piracy.md)"; **§4** F22 (pointer added 2026-10-14); **§10 Glossary**: _pirate_,
+  (DarkStar-Piracy.md)" [Done 2026-10-17]; **§4** F22 (pointer added 2026-10-14); **§10 Glossary**: _pirate_,
   _corsair_, _raid_, _hold_, _claim_; a §6 as-built note with the build.
-- `DarkStar-Lobbies.md` **L31**: the death screen has a fourth action.
-- `DarkStar-Sound.md`: _embrace_ (the pirate alone), _raid_ (pirate and victim), _beaching_ (the
-  pirate and the coast's owner).
+- `DarkStar-Lobbies.md` **L31**: the death screen has a fourth action. [Done 2026-10-17]
+- `DarkStar-Sound.md`: _embrace_ (the pirate alone), ~~_raid_ (pirate and victim)~~, _beaching_
+  (the pirate and the coast's owner). [Done 2026-10-17: `embrace` and `beaching` wired from Tom's
+  files; no raid cue, which would repeat all round long (Tom).]
 - `resources/lang/en.json`: _Piracy Gold/min_ → _Raid Gold/min_ (PR17). [Done 2026-10-17, with a _Piracy_
   section on the help page's rules.]
 
@@ -387,3 +390,7 @@ hold pays for the owner's tiles at the ordinary rate.
   _Piracy_ section with the round's elimination rule pointing at it (`HelpModal.ts`, `en.json`,
   `tests/client/HelpModalRules.test.ts`), so the friends test can read the mechanic. Slice D
   keeps the rest.
+- **2026-10-17, later** — Slice D, most of it: the cues (`embrace`, `beaching`; no raid cue), C1 and
+  L31 amended, the glossary rows; and Tom's call that **no piracy data is tracked** (PR14: the
+  counters stay unread, no leaderboard line). Left of slice D: the as-built note in the design
+  doc's §6 and the Lords check that a scuttle still triggers retaliation.

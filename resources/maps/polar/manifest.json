@@ -1,0 +1,155 @@
+{
+  "categories": ["cosmic"],
+  "hegemon": {
+    "center": [900, 900],
+    "moat": 18,
+    "radius": 163
+  },
+  "id": "Polar",
+  "map": {
+    "height": 1800,
+    "num_land_tiles": 662478,
+    "width": 1800
+  },
+  "map16x": {
+    "height": 450,
+    "num_land_tiles": 36482,
+    "width": 450
+  },
+  "map4x": {
+    "height": 900,
+    "num_land_tiles": 158291,
+    "width": 900
+  },
+  "multiplayer_frequency": 4,
+  "name": "Polar",
+  "nations": [
+    {
+      "coordinates": [1129, 47],
+      "flag": "",
+      "name": "Kochab Sovereignty"
+    },
+    {
+      "coordinates": [1211, 301],
+      "flag": "",
+      "name": "Alcyone Sovereignty"
+    },
+    {
+      "coordinates": [1261, 446],
+      "flag": "",
+      "name": "Mortonian Order"
+    },
+    {
+      "coordinates": [1381, 466],
+      "flag": "",
+      "name": "Menkar Covenant"
+    },
+    {
+      "coordinates": [1747, 673],
+      "flag": "",
+      "name": "Merak Union"
+    },
+    {
+      "coordinates": [1336, 786],
+      "flag": "",
+      "name": "Altair Reach"
+    },
+    {
+      "coordinates": [1376, 821],
+      "flag": "",
+      "name": "Wezen Compact"
+    },
+    {
+      "coordinates": [1351, 866],
+      "flag": "",
+      "name": "Antares Mandate"
+    },
+    {
+      "coordinates": [1351, 996],
+      "flag": "",
+      "name": "Achernar Combine"
+    },
+    {
+      "coordinates": [1281, 1146],
+      "flag": "",
+      "name": "Eltanin Syndicate"
+    },
+    {
+      "coordinates": [1286, 1236],
+      "flag": "",
+      "name": "Crolltonian Syndicate"
+    },
+    {
+      "coordinates": [1522, 1522],
+      "flag": "",
+      "name": "Fomalhaut Dominion"
+    },
+    {
+      "coordinates": [1191, 1246],
+      "flag": "",
+      "name": "Bellatrix Dominion"
+    },
+    {
+      "coordinates": [1241, 1476],
+      "flag": "",
+      "name": "Perlbergian Worlds"
+    },
+    {
+      "coordinates": [1081, 1536],
+      "flag": "",
+      "name": "Arcturus Crown"
+    },
+    {
+      "coordinates": [1021, 1376],
+      "flag": "",
+      "name": "Rasalhague Authority"
+    },
+    {
+      "coordinates": [671, 1753],
+      "flag": "",
+      "name": "Arbiten Harmony"
+    },
+    {
+      "coordinates": [771, 1366],
+      "flag": "",
+      "name": "Procyon Compact"
+    },
+    {
+      "coordinates": [556, 1371],
+      "flag": "",
+      "name": "Lyra Commonwealth"
+    },
+    {
+      "coordinates": [386, 1326],
+      "flag": "",
+      "name": "Andromeda Confederation"
+    },
+    {
+      "coordinates": [321, 1166],
+      "flag": "",
+      "name": "Killbot-7"
+    },
+    {
+      "coordinates": [49, 1128],
+      "flag": "",
+      "name": "Draco Combine"
+    },
+    {
+      "coordinates": [401, 946],
+      "flag": "",
+      "name": "Polaris Concord"
+    },
+    {
+      "coordinates": [456, 811],
+      "flag": "",
+      "name": "Aldebaran Syndicate"
+    },
+    {
+      "coordinates": [274, 274],
+      "flag": "",
+      "name": "Saiph Order"
+    }
+  ],
+  "themes": ["space"],
+  "translation_key": "map.polar"
+}

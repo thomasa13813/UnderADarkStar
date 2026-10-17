@@ -55,6 +55,7 @@ The fork's first commit is 2026-09-19.
 | 2026-10-12 | **The fleet cue:** Tom's `invasion.mp3` replaces the inherited boat horn (`transport-ship.mp3`, kept on disk, no longer referenced) behind the unchanged `transport-ship` key: your Fleet setting out, heard by you.                                                                                                                                                                                                                                                    |
 | 2026-10-12 | **The soundtrack:** Tom's five AI-generated tracks replace the two silent music placeholders. One continuous cycle through menu, lobby and game with a four-second crossfade between tracks (`Soundtrack.ts`, replacing `MenuMusic.ts` and the gameplay loop).                                                                                                                                                                                                          |
 | 2026-10-12 | **The soundtrack carries across page loads:** leaving a game for the home page is a full navigation, and the player used to start again from "The Hegemon" every time, so a player knocked out of several games in a row heard little else (Tom). The track and the position now go through the tab's `sessionStorage`; the next page resumes them (a track with under six seconds left gives way to the next instead). A fresh tab still opens on the top of the list. |
+| 2026-10-17 | **Piracy cues:** Tom's `embrace.mp3` (choosing piracy on the death screen; the pirate alone) and `beaching.mp3` (the corsair beaching to attack a coast; the pirate and the coast's owner). A raid at sea gets no cue: a busy corsair would ring it all round long (Tom). Credited like the others.                                                                                                                                                                     |
 | 2026-10-12 | **Credits:** the soundtrack and the four own cues (`launch`, `landing`, `missile`, `invasion`) are recorded in `CREDITS.md` as produced with Claude; Anthropic's terms assign the output to the user and ask no attribution, so they ship as January Games' under `resources/`' CC BY-SA 4.0.                                                                                                                                                                           |
 
 ## 4. The ledger
@@ -98,6 +99,8 @@ game. Player-facing unit names are used; the code keeps the old ones.
 | `silo-built`          | `silo-built.mp3`          | Your Stargate (or Missile Silo, which is disabled under a Dark Star) is built             | You                                                      | effects   | OF     |
 | `build-warship`       | `build-warship.mp3`       | Your Destroyer is launched                                                                | You                                                      | effects   | OF     |
 | `transport-ship`      | `invasion.mp3`            | Your Fleet sets out (Tom's cue since 2026-10-12; the inherited boat horn is kept on disk) | You                                                      | effects   | ours   |
+| `embrace`             | `embrace.mp3`             | You choose _Embrace piracy_ on the death screen (the button, not the corsair's launch)    | You                                                      | effects   | ours   |
+| `beaching`            | `beaching.mp3`            | A corsair beaches: the claim is taken and the hold attacks the coast (no cue for a raid)  | The pirate and the owner of the coast                    | effects   | ours   |
 | `build-train-station` | `build-train-station.mp3` | A structure of yours gains a freighter station (once per tick at most)                    | You                                                      | effects   | OF     |
 | `alliance-suggested`  | `alliance-suggested.mp3`  | Someone proposes an alliance to you                                                       | You                                                      | alerts    | OF     |
 | `alliance-accepted`   | `alliance-accepted.mp3`   | Your proposal is accepted                                                                 | You                                                      | alerts    | OF     |
@@ -175,6 +178,10 @@ with them since those units never appear.
 
 ## 7. Changelog
 
+- **2026-10-17** — **Piracy cues.** Tom's `embrace` (the pirate alone, on the death screen's
+  button) and `beaching` (the pirate and the coast's owner, on the landing's two messages) are
+  wired in `SoundEffectController` with tests. No raid cue, by Tom's call: a corsair raids too
+  often for one. The Piracy doc's slice D sound line is closed.
 - **2026-10-12** — Document created: the ledger of every sound, the changes
   since the fork, and the finding that nothing inherited needs removing. The
   roadmap's P4 now points here.

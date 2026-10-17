@@ -1,11 +1,21 @@
 import { EventBus } from "../../core/EventBus";
-import { MessageType, PlayerType, UnitType } from "../../core/game/Game";
+import {
+  MessageType,
+  PIRATE_LANDED_MESSAGE,
+  PIRATE_LANDING_MESSAGE,
+  PlayerType,
+  UnitType,
+} from "../../core/game/Game";
 import { TileRef } from "../../core/game/GameMap";
-import { GameUpdateType } from "../../core/game/GameUpdates";
+import {
+  DisplayMessageUpdate,
+  GameUpdateType,
+} from "../../core/game/GameUpdates";
 import { Controller } from "../Controller";
 import { PlaySoundEffectEvent, SoundEffect } from "../sound/Sounds";
 import { SendSpawnIntentEvent } from "../Transport";
-import { GameView, UnitView } from "../view";
+import { GameView, PlayerView, UnitView } from "../view";
+import { BeginPiracyEvent } from "./PiracyController";
 
 // A MIRV rains hundreds of warheads over a few seconds; playing a boom per
 // warhead churns the audio pipeline. Play at most one warhead boom per interval.
@@ -68,6 +78,9 @@ export class SoundEffectController implements Controller {
     // On the intent, not the sim confirmation: the cue answers the player's
     // click, and re-placing the spawn should sound every time.
     this.eventBus.on(SendSpawnIntentEvent, this.onSpawnIntent);
+    // Likewise on the death screen's button, not on the corsair's spawn: the
+    // cue marks the choice (docs/DarkStar-Piracy.md; Tom, 2026-10-17).
+    this.eventBus.on(BeginPiracyEvent, this.onBeginPiracy);
   }
 
   private onSpawnIntent = (): void => {
@@ -77,6 +90,13 @@ export class SoundEffectController implements Controller {
     const me = this.game.myPlayer();
     if (me === null || me.isHegemon()) return;
     this.emit("spawn");
+  };
+
+  // Heard by the pirate alone: the button is theirs, and at sea they fly no
+  // name (PR15), so nobody else has anything to hear.
+  private onBeginPiracy = (): void => {
+    if (this.game.myPlayer() === null) return;
+    this.emit("embrace");
   };
 
   tick(): void {
@@ -97,6 +117,7 @@ export class SoundEffectController implements Controller {
 
     const myPlayer = this.game.myPlayer();
     if (myPlayer === null) return;
+    this.handleBeachings(updates[GameUpdateType.DisplayEvent] ?? [], myPlayer);
     for (const c of updates[GameUpdateType.ConquestEvent] ?? []) {
       if (c.conquerorId === myPlayer.id()) {
         // Battle cue for conquering a real player; the ka-ching payout
@@ -120,6 +141,29 @@ export class SoundEffectController implements Controller {
       }
       this.lastNukeWarningSoundTick = tick;
       this.emit("nuke-warning");
+    }
+  }
+
+  /**
+   * A corsair beaching (PirateLandingExecution.beach): the claim is taken and
+   * the hold goes ashore as an attack on the coast. The sim tells the pirate
+   * and the coast's owner each with their own message; the cue follows those
+   * two messages, so it reaches exactly the players involved and nobody
+   * watching from across the map. No cue for a raid at sea: a busy corsair
+   * would ring it all round long (Tom, 2026-10-17).
+   */
+  private handleBeachings(
+    messages: readonly DisplayMessageUpdate[],
+    me: PlayerView,
+  ): void {
+    for (const m of messages) {
+      if (m.playerID !== me.smallID()) continue;
+      if (
+        m.message === PIRATE_LANDED_MESSAGE ||
+        m.message === PIRATE_LANDING_MESSAGE
+      ) {
+        this.emit("beaching");
+      }
     }
   }
 

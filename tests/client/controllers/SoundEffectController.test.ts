@@ -1,8 +1,15 @@
+import { BeginPiracyEvent } from "../../../src/client/controllers/PiracyController";
 import { SoundEffectController } from "../../../src/client/controllers/SoundEffectController";
 import { PlaySoundEffectEvent } from "../../../src/client/sound/Sounds";
 import { SendSpawnIntentEvent } from "../../../src/client/Transport";
 import { EventBus } from "../../../src/core/EventBus";
-import { MessageType, PlayerType, UnitType } from "../../../src/core/game/Game";
+import {
+  MessageType,
+  PIRATE_LANDED_MESSAGE,
+  PIRATE_LANDING_MESSAGE,
+  PlayerType,
+  UnitType,
+} from "../../../src/core/game/Game";
 import { GameUpdateType } from "../../../src/core/game/GameUpdates";
 
 describe("SoundEffectController", () => {
@@ -532,5 +539,65 @@ describe("SoundEffectController", () => {
     };
     tickWithUnits(city);
     expect(played).toEqual([]);
+  });
+
+  describe("piracy", () => {
+    function tickWithMessages(
+      ...messages: Array<{ message: string; playerID: number | null }>
+    ) {
+      game.updatesSinceLastTick = () => ({
+        [GameUpdateType.DisplayEvent]: messages.map((m) => ({
+          ...m,
+          messageType: MessageType.CONQUERED_PLAYER,
+        })),
+      });
+      controller.tick();
+    }
+
+    it("plays embrace when the player chooses piracy on the death screen", () => {
+      game.myPlayer = () => ({ smallID: () => 7 });
+      controller.init();
+      eventBus.emit(new BeginPiracyEvent());
+      expect(played).toEqual(["embrace"]);
+    });
+
+    it("plays no embrace for a spectator with no player", () => {
+      controller.init();
+      eventBus.emit(new BeginPiracyEvent());
+      expect(played).toEqual([]);
+    });
+
+    it("plays beaching for the pirate who lands", () => {
+      game.myPlayer = () => ({ smallID: () => 7 });
+      tickWithMessages({ message: PIRATE_LANDED_MESSAGE, playerID: 7 });
+      expect(played).toEqual(["beaching"]);
+    });
+
+    it("plays beaching for the owner of the coast landed on", () => {
+      game.myPlayer = () => ({ smallID: () => 3 });
+      tickWithMessages(
+        { message: PIRATE_LANDED_MESSAGE, playerID: 7 },
+        { message: PIRATE_LANDING_MESSAGE, playerID: 3 },
+      );
+      expect(played).toEqual(["beaching"]);
+    });
+
+    it("stays silent for a landing between two other players", () => {
+      game.myPlayer = () => ({ smallID: () => 9 });
+      tickWithMessages(
+        { message: PIRATE_LANDED_MESSAGE, playerID: 7 },
+        { message: PIRATE_LANDING_MESSAGE, playerID: 3 },
+      );
+      expect(played).toEqual([]);
+    });
+
+    it("ignores the player's other messages", () => {
+      game.myPlayer = () => ({ smallID: () => 7 });
+      tickWithMessages({
+        message: "events_display.pirate_raid",
+        playerID: 7,
+      });
+      expect(played).toEqual([]);
+    });
   });
 });

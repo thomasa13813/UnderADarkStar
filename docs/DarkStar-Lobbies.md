@@ -606,7 +606,9 @@ list (the master stamps it there, §10.5), so every reader below takes it from t
   screen is up and stops with Spectate. When the round ends and the successor arrives, the
   panel grows into the full stay-or-head choice without reopening the feed. Private lobbies
   and games that run for no throne keep the plain death screen. `WinModal.linePanelMode`
-  names the two forms (`successor`, `fallen`).
+  names the two forms (`successor`, `fallen`). Where piracy is on, the screen carries a fourth
+  action, **Embrace piracy**: the dead player stays in the round as a corsair
+  (`DarkStar-Piracy.md`, PR1; the Piracy doc's slice D, 2026-10-17).
 - **The lobby (L21).** `JoinLobbyModal` keeps the whole snapshot its hosted-lobby feed
   already receives and reads its own lobby's place off it: the status line says "N ahead
   in line" behind the head, "Waiting for players" at it, and "The Hegemon is choosing…"
@@ -715,6 +717,8 @@ over the existing gathering state, plus `create` / `retire` actions).
 
 ## 14. Changelog
 
+- **2026-10-17** â **L31 amended for piracy** (Â§10.7): the death screen's fourth action,
+  _Embrace piracy_, recorded (the Piracy doc's slice D).
 - **2026-10-12** — **The dead may join the head of the line** (L31, §10.7): the "You died"
   screen carries the line panel in a head-only form on a throne round, so eliminated players
   pool into the next room instead of idling through the rest of the round. The full choice

@@ -36,7 +36,9 @@ export type SoundEffect =
   | "missile"
   | "game-start"
   | "victory"
-  | "defeat";
+  | "defeat"
+  | "embrace"
+  | "beaching";
 
 export const soundEffectUrls: ReadonlyMap<SoundEffect, string> = new Map([
   ["ka-ching", assetUrl("sounds/effects/ka-ching.mp3")],
@@ -77,6 +79,11 @@ export const soundEffectUrls: ReadonlyMap<SoundEffect, string> = new Map([
   ["game-start", assetUrl("sounds/effects/game-start.mp3")],
   ["victory", assetUrl("sounds/effects/victory.mp3")],
   ["defeat", assetUrl("sounds/effects/defeat.mp3")],
+  // Piracy (docs/DarkStar-Piracy.md): Tom's cues of 2026-10-17. Embracing
+  // piracy from the death screen, and the corsair beaching to attack a coast.
+  // A raid has no cue: it would repeat too often (Tom).
+  ["embrace", assetUrl("sounds/effects/embrace.mp3")],
+  ["beaching", assetUrl("sounds/effects/beaching.mp3")],
 ]);
 
 export type AmbienceTrack = "city" | "factory" | "missile-silo" | "sam-silo";
@@ -143,6 +150,10 @@ const CUE_CATEGORY: Record<SoundEffect, Exclude<CueCategory, "ambience">> = {
   "game-start": "effects",
   victory: "effects",
   defeat: "effects",
+  // Piracy: the pirate alone hears the embrace; the beaching is heard by the
+  // pirate and the coast's owner (SoundEffectController).
+  embrace: "effects",
+  beaching: "effects",
 };
 
 /** Channel of a cue. A pure function of the name — call sites never choose. */

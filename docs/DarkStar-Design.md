@@ -301,7 +301,9 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
 
 - **C1 — Elimination is final.** [Decided 2026-09-21; replaces resettlement] A challenger who loses all
   territory is out of the round: they may **spectate or leave** to find another game (the engine's
-  existing behaviour), and cannot re-deploy. In exchange, **only other challengers can eliminate a
+  existing behaviour) or, where piracy is on, **embrace piracy** and sail on as a corsair. They may
+  return only as a pirate, by beaching to claim a 100-tile foothold (`DarkStar-Piracy.md`, F22;
+  amended 2026-10-17). In exchange, **only other challengers can eliminate a
   challenger** — never the Hegemon (H16).
 - **C2 — Raids. [Dropped 2026-09-24]** Challenger raids (razing attacks between challengers) are
   abandoned. Tom: a regular player has almost no incentive to raid, the incentives it would need add
@@ -479,7 +481,7 @@ destroyers and the challenger table). The playtest checks left over from them ar
 | F19 | **Playtest checks outstanding.** On Event Horizon: the disc and moat by eye (radius 162, moat 18 — the computed default written into `info.json`); 24 Lords as a count; the 15 s opening cap; Barons not flying. From the throne: should a human Hegemon get the AI's landing wave, or is active defence the point (a passive throne kept 5% of the domain on World seed a); the 5 s stall threshold (H13). The HUD merge: [Closed 2026-09-25 — **dropped**] built as columns in the player table with the panel cut to a strip, played, and discarded: seen missing, the panel's fields (the throne's troop bar, domain held, the invasion status, the bubble, the challenger board with its strike status) justify a panel of their own. The panel stays as built (§6.3, §6.6); its only change is that the challenger board starts **collapsed**, with the throne's show/hide toggle to unfold it. Clean-up later if it earns it.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | F20 | **Punitive strike numbers (H19). [Open 2026-09-26]** The levy shares (10% / 25%, raised from 5% / 15% after the first look), the flag window (30 s), the halt (5 s), the radius (34, a quarter more area than the first 30) and the AI's nebula-share threshold are starting points. Because the levy taxes every challenger's troops, it moves the invasion curve, so H19 is built **before** the F1 sweep and its numbers ride with it. To judge in `HegemonSim` and in play: how often Lords nuke on a galaxy map (and so how often the galaxy is levied); whether a 15% levy in a radius-30 pocket is so dense that the halt is never disturbed; whether the pocket should follow the warhead that was fired (Antimatter's 100) rather than one radius for both.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | F21 | **Missiles on gates, shields and the throne's warheads (C4, C5, H2). [Open 2026-09-28]** The shield radius (35; **40** since 2026-10-12, a tenth more on Tom's feel for play, rounded even) is the cap Tom set, not a tuned number; the throne's missiles have no reload — gold-limited only — and may want a cadence once the shadow tax is tuned (F1); Lords do not build shield arrays and the AI Hegemon fires no missiles; a shield refusing gate shots was considered and left as no (gates are meant to matter more, not less). [2026-09-29] The array now shelters its zone from every missile, the throne's included, and costs 5M — Tom's baseline, not a tuned number. To judge in play: whether a level-1 gate's 180 leaves a warhead any target worth 1M, whether a 5M array around a capital is worth it or unanswerable (the throne's strike and conquest are the only answers), and whether a hole in the blast reads clearly on screen. [2026-09-30] The array drops to 2M and the gate to a flat 500k with a 5 s reload and no level cap: the same questions, at the new prices — plus whether warheads at a 5 s cadence and unbounded reach bring back the oppression that tying them to gates was meant to end.                                                                                                                                                                                                                                                     |
-| F22 | **Piracy: eliminated challengers as raiders (C1). [Open 2026-10-14]** Tom's proposal, shaped the same day: an eliminated challenger may _embrace piracy_, spawning one free anonymous ship (the corsair) that raids freighters for troops (100 a raid, 2,500 cap) and gold, and may beach on any non-Hegemon coast to claim exactly 100 tiles and return as a tiny challenger; sunk, it respawns after a climbing cooldown. Decided: the return, landings on players' coasts, the 100-tile floor, anonymity, two-click control, raid gold; target the Sunday 2026-10-18 test behind a lobby toggle. Every shaping question decided the same day (scuttle a leaving pirate, no hold survives a sinking, slow heal, flat 10k raid gold, free 100-tile bite); numbers are levers. Rules PR1–PR18 in `docs/DarkStar-Piracy.md`. Will amend C1 ("cannot re-deploy") when built.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| F22 | **Piracy: eliminated challengers as raiders (C1). [Open 2026-10-14]** Tom's proposal, shaped the same day: an eliminated challenger may _embrace piracy_, spawning one free anonymous ship (the corsair) that raids freighters for troops (100 a raid, 2,500 cap) and gold, and may beach on any non-Hegemon coast to claim exactly 100 tiles and return as a tiny challenger; sunk, it respawns after a climbing cooldown. Decided: the return, landings on players' coasts, the 100-tile floor, anonymity, two-click control, raid gold; target the Sunday 2026-10-18 test behind a lobby toggle. Every shaping question decided the same day (scuttle a leaving pirate, no hold survives a sinking, slow heal, flat 10k raid gold, free 100-tile bite); numbers are levers. Rules PR1–PR18 in `docs/DarkStar-Piracy.md`. [Built 2026-10-15, live 2026-10-17; C1 amended, the cues wired (embrace, beaching; no raid cue) and **no piracy data tracked** (PR14), all 2026-10-17.]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 
 ## 5. Engine foundation — what we reuse
 
@@ -638,6 +640,33 @@ persistence was OpenFront's closed-source API, which we do not have.
   a Lord, as does the third cell in on each face's diagonal (just past 500 tiles); the cells
   nearer the star are Baron land. First `HegemonSim` look: with the outer rows alone (21 Lords)
   the throne held in 3 of 3 seeds; with those three seated as well, overthrown in 3 of 3 (at 14½, 18 and 19 minutes; the fast one by an inner-diagonal Lord, the other two from the outer rows). `src/scripts/drawings/Cube.ts`.
+- **Polar** (`map-generator/assets/maps/polar/`, 1800×1800, ~660k land tiles, 25 Lords) [Built
+  2026-10-17] from Tom's brief: Earth seen from above the north pole, so the Arctic Ocean is the
+  Dark Star and its moat, the continents fan out around it, and Antarctica, which the projection
+  stretches into the rim, is an unbroken ring of nebula. The map is round: beyond the rim is
+  void. The coastlines, lakes, rivers and ranges are Natural Earth data (public domain) kept as
+  longitude and latitude in `src/scripts/drawings/data/Polar.json` and projected by the script;
+  the commercial reference picture Tom gave is not in the repo. **The radius is not linear in the
+  distance from the pole but that distance to the power 0.7** (`RADIAL_POWER`): a true
+  equidistant view left the northern lands squashed against the disc and most of the map deep
+  space (Tom, same day), so the north gets more of the disc and the far south less: the moat's
+  edge is at 72° N, the equator at 554 tiles, Antarctica's coast at about 830. The big rivers and
+  the Great Lakes, Victoria, Tanganyika and Baikal are waterways; the Suez and Panama canals and
+  the sub-tile straits of Gibraltar and Bab-el-Mandeb are cut, so Africa, Eurasia and the two
+  Americas are separate pieces; ranges are mountain with highland shoulders, plateaus highland
+  (Antarctica's own relief is skipped: its polar plateau loops round the pole); twenty mid-ocean
+  islands too small to survive are enlarged into stepping stones. The Antarctic ring keeps the
+  real coast's profile at 36% of its width plus 10 tiles (about 40 wide) with six Lords spaced
+  evenly round it by hand; a first build cracked it into arcs, which Tom had not pictured. **The
+  Lord exclusion is 450 tiles, which is 23° N here** (Tom's call that the land nearest the throne
+  is its shadow and Baron land; 400 was tried first). The placer seats Eurasia 6, Africa 5,
+  South America 3, Central America 1, Mexico 1, Australia 2, New Guinea 1. First `HegemonSim`
+  look: at 400 overthrown in 2 of 3 seeds (both by gate, at 14m53s and 15m47s, first landings at
+  10 and 11 minutes), the third held with the domain down to 39%; at 450 overthrown in 3 of 3,
+  later (16m53s, 17m59s, 18m16s, first landings at 12). Kept at 450 for the later landings and no
+  overthrow under 15 minutes; a true equidistant first build with the exclusion at 400 (10° N
+  there) went 2 of 3 at 18 minutes.
+  `src/scripts/drawings/Polar.ts`.
 - **Gap:** terrain colours are global, not per-map, and map thumbnails are hard-coded
   blue-sea/green-land in `map-generator/map_generator.go` (`getThumbnailColor`).
 
@@ -2093,6 +2122,11 @@ hydrogen-bomb removal (closed by S6).
 | **Bubble**                    | The nebula a strike holds while it lasts; fought over by the struck player, pops to neutral.                                                                                                         |
 | **Overthrow**                 | Eliminating the Hegemon (zero tiles).                                                                                                                                                                |
 | **Killing blow**              | The conquest that eliminates the Hegemon; its owner wins the round.                                                                                                                                  |
+| **Pirate**                    | An eliminated challenger who stays in the round at the helm of a corsair; no territory, no building, no alliances; anonymous at sea (`DarkStar-Piracy.md`).                                          |
+| **Corsair**                   | The pirate's one free ship: patrols deep space, raids freighters, and may beach on a coast.                                                                                                          |
+| **Raid**                      | A corsair catching a freighter: the freighter is scuttled, the pirate pockets raid gold and troops go into the hold. (Not the dropped challenger raids of C2.)                                       |
+| **Hold**                      | The troops a corsair carries, capped; lost whole if the corsair sinks, sent ashore as an attack when it beaches.                                                                                     |
+| **Beaching / Claim**          | The corsair landing on a coast: a free claim of exactly 100 tiles around the landing, the hold's attack on the coast's owner, and the pirate's return as a challenger.                               |
 | **Round / Reign**             | One game / the consecutive rounds a player holds the throne.                                                                                                                                         |
 | **Baron**                     | Player-facing name for a simple bot (`PlayerType.Bot`; "Tribe" in the code).                                                                                                                         |
 | **Fleet**                     | Player-facing name for the transport ship (`UnitType.TransportShip`; the `boat` intent): troops crossing deep space without a gate.                                                                  |
@@ -2101,6 +2135,16 @@ hydrogen-bomb removal (closed by S6).
 
 ## 11. Changelog
 
+- **2026-10-17, map** — **Polar.** Earth from above the north pole: the Arctic as the Dark Star,
+  Antarctica as an unbroken ring at the rim, void beyond it, Natural Earth coasts, waterways and
+  ranges, the radius a 0.7 power of the distance from the pole so the north is not squashed
+  (Tom's correction of the first build), 25 Lords, the Lord exclusion 450 on this map (Tom's
+  call to reduce it; 400 fell under 15 minutes). §5.3.
+- **2026-10-17, later** — **Piracy closed out in the docs.** C1 now says an eliminated challenger
+  may return only as a pirate (it read "cannot re-deploy"); the glossary gains _pirate_,
+  _corsair_, _raid_, _hold_ and _beaching / claim_; F22 records the build as live. Tom's calls the
+  same day: no piracy data is tracked or shown (Piracy doc PR14), and the cues are _embrace_ and
+  _beaching_ only, no raid cue (Sound ledger).
 - **2026-10-17** — **One name pool for Barons and one for Lords, on every map.** Tom's call:
   keep only the sci-fi names, drop the other patterns, and have every map draw from the same pool.
   Barons: `resources/tribeNameThemes.json` keeps a single `default` theme, the former `space` pool

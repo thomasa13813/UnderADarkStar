@@ -3,6 +3,8 @@ import {
   Execution,
   Game,
   MessageType,
+  PIRATE_LANDED_MESSAGE,
+  PIRATE_LANDING_MESSAGE,
   Player,
   Structures,
   TerraNullius,
@@ -285,7 +287,7 @@ export class PirateLandingExecution implements Execution {
     }
 
     mg.displayMessage(
-      "events_display.pirate_landed",
+      PIRATE_LANDED_MESSAGE,
       MessageType.CONQUERED_PLAYER,
       player.id(),
       undefined,
@@ -293,7 +295,7 @@ export class PirateLandingExecution implements Execution {
     );
     if (coast.isPlayer()) {
       mg.displayMessage(
-        "events_display.pirate_landing",
+        PIRATE_LANDING_MESSAGE,
         MessageType.NAVAL_INVASION_INBOUND,
         coast.id(),
         undefined,

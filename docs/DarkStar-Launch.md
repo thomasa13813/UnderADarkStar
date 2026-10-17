@@ -257,7 +257,8 @@ _Done when_ the checklist is clean. This build is the release candidate.
 
 - [ ] Tom and friends play an evening on the live server: several thrones, guests and accounts,
       a winner who keeps the seat, one who leaves, a loser who stays with their throne and one
-      who joins the head of the line, a restart in the middle.
+      who joins the head of the line. No restart in the middle (Tom, 2026-10-17): the evening
+      runs on one uninterrupted server.
 - [ ] Collect what broke, what confused, and whether it was fun. Fix what must be fixed; adjust
       balance (the numbers from M4 are expected to move).
 
@@ -305,6 +306,10 @@ _Done when_ the checklist is clean. This build is the release candidate.
 
 ## 7. Changelog
 
+- **2026-10-17, later** — **Stage 7 trimmed:** no restart in the middle of the friends test
+  (Tom). The live site serves `main` at 8fcf9c4e with piracy on for every public throne; the
+  piracy cues (`embrace`, `beaching`) and the slice D doc amendments landed after it and need a
+  push and a deploy to be heard on the evening.
 - **2026-10-17** — **Leaderboard reshaped** on `feat/piracy` (Accounts doc §12.6): one list with
   a sort control in place of two tabs; Victories (every round won, throne taken or not) in place
   of the taken/held column; Reigns now rounds played as Hegemon and Longest reign the most

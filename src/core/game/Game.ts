@@ -1290,6 +1290,13 @@ export enum MessageType {
   RENEW_ALLIANCE,
 }
 
+// Piracy (docs/DarkStar-Piracy.md, PR7): the two messages a landing sends,
+// to the pirate and to the coast's owner. Named here so the client's sound
+// controller recognises them (the beaching cue) without importing the
+// execution.
+export const PIRATE_LANDED_MESSAGE = "events_display.pirate_landed";
+export const PIRATE_LANDING_MESSAGE = "events_display.pirate_landing";
+
 // Message categories used for filtering events in the EventsDisplay
 export enum MessageCategory {
   ATTACK = "ATTACK",
