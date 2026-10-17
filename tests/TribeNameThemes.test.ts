@@ -9,11 +9,11 @@ describe("resolveTribeNameData", () => {
     expect(data.prefixes.length).toBeGreaterThan(0);
     expect(data.suffixes.length).toBeGreaterThan(0);
     expect(data.customTribes).toBeUndefined();
-    // Spot-check that the default theme contains known prefixes.
-    expect(data.prefixes).toContain("Roman");
-    expect(data.prefixes).toContain("Viking");
-    expect(data.suffixes).toContain("Empire");
-    expect(data.suffixes).toContain("Kingdom");
+    // Spot-check that the default theme is the sci-fi pool.
+    expect(data.prefixes).toContain("Andromedan");
+    expect(data.prefixes).toContain("Voidborn");
+    expect(data.suffixes).toContain("Dominion");
+    expect(data.suffixes).toContain("Hive");
   });
 
   test("returns default theme when called with undefined", () => {
@@ -105,8 +105,15 @@ describe("tribeNameThemes.json", () => {
     }
   });
 
-  test("at least 3 themes are defined", () => {
-    expect(Object.keys(themes).length).toBeGreaterThanOrEqual(3);
+  test("only the sci-fi default theme is defined (Tom, 2026-10-17)", () => {
+    expect(Object.keys(themes)).toEqual(["default"]);
+  });
+
+  test("no real-world or non-sci-fi leftovers in the default theme", () => {
+    for (const word of ["Roman", "Viking", "Kingdom", "Duchy"]) {
+      expect(themes.default.prefixes).not.toContain(word);
+      expect(themes.default.suffixes).not.toContain(word);
+    }
   });
 });
 
@@ -126,7 +133,7 @@ describe("createRandomName (deterministic)", () => {
   test("different names produce different random names (usually)", () => {
     const name1 = createRandomName("Alice", PlayerType.Human);
     const name2 = createRandomName("Bob", PlayerType.Human);
-    // They could theoretically collide, but with 178*66 combinations it's unlikely.
+    // They could theoretically collide, but with 49*30 combinations it is unlikely.
     // We just verify both are valid.
     expect(name1).toBeTruthy();
     expect(name2).toBeTruthy();

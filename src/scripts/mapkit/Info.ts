@@ -1,3 +1,5 @@
+import { lordNameSupply } from "../../core/game/NationCreation";
+import { PseudoRandom } from "../../core/PseudoRandom";
 import { ConvertedMap } from "./Convert";
 
 // The map kit's info.json writer (docs/MapMaking.md): the map's identity from
@@ -31,95 +33,6 @@ export function mapIdentity(displayName: string): MapIdentity {
   return { name, id, folder: id.toLowerCase() };
 }
 
-const STARS = [
-  "Orion",
-  "Vega",
-  "Tau Ceti",
-  "Kepler",
-  "Rigel",
-  "Cygnus",
-  "Lyra",
-  "Draco",
-  "Sirius",
-  "Altair",
-  "Procyon",
-  "Aldebaran",
-  "Deneb",
-  "Antares",
-  "Fomalhaut",
-  "Arcturus",
-  "Capella",
-  "Betelgeuse",
-  "Polaris",
-  "Spica",
-  "Regulus",
-  "Canopus",
-  "Andromeda",
-  "Perseus",
-  "Achernar",
-  "Bellatrix",
-  "Castor",
-  "Pollux",
-  "Mira",
-  "Hadar",
-  "Mizar",
-  "Alcyone",
-  "Izar",
-  "Wezen",
-  "Gienah",
-  "Sabik",
-  "Naos",
-  "Kochab",
-  "Thuban",
-  "Zosma",
-  "Algol",
-  "Merak",
-  "Saiph",
-  "Tarazed",
-  "Vindemiatrix",
-  "Rasalhague",
-  "Eltanin",
-  "Menkar",
-];
-
-const POLITIES = [
-  "Combine",
-  "Ascendancy",
-  "Concord",
-  "Directorate",
-  "Syndicate",
-  "Dominion",
-  "Commonwealth",
-  "Protectorate",
-  "Republic",
-  "Mandate",
-  "Free Worlds",
-  "Sovereignty",
-  "Collective",
-  "Crown",
-  "Assembly",
-  "Covenant",
-  "Trade League",
-  "Marches",
-  "Order",
-  "Confederation",
-  "Authority",
-  "Union",
-  "Compact",
-  "Reach",
-];
-
-function mulberry32(seed: number): () => number {
-  let a = seed >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
 function hash(text: string): number {
   let h = 2166136261;
   for (let i = 0; i < text.length; i++) {
@@ -128,26 +41,14 @@ function hash(text: string): number {
   return h >>> 0;
 }
 
-function shuffled<T>(items: T[], rand: () => number): T[] {
-  const a = items.slice();
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(rand() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
-
-/** An endless, repeat-free supply of nation names, different for each map. */
-function* nationNames(mapId: string): Generator<string> {
-  const rand = mulberry32(hash(mapId));
-  const stars = shuffled(STARS, rand);
-  const polities = shuffled(POLITIES, rand);
-  // Each pass pairs every star with a different polity than the last pass.
-  for (let pass = 0; ; pass++) {
-    for (let i = 0; i < stars.length; i++) {
-      yield `${stars[i]} ${polities[(i + pass * 7) % polities.length]}`;
-    }
-  }
+/**
+ * Names for a map's Lords, from the one pool the game uses
+ * (src/core/game/NationCreation.ts), in an order fixed by the map's name.
+ * They label the Lords in info.json; at game start every Lord is named afresh
+ * from the same pool.
+ */
+function nationNames(mapId: string): Generator<string> {
+  return lordNameSupply(new PseudoRandom(hash(mapId)));
 }
 
 export interface NationEntry {
@@ -161,8 +62,9 @@ const SAME_NATION_DISTANCE = 40;
 
 /**
  * Names for the nations of a converted drawing. A nation within 40 tiles of
- * one in the previous info.json keeps that nation's name (and flag), so names
- * edited by hand survive a rebuild; the rest draw new names.
+ * one in the previous info.json keeps that nation's name (and flag), so an
+ * info.json edited by hand survives a rebuild; the rest draw new names. The
+ * game ignores these at game start and names every Lord from the pool.
  */
 export function nameNations(
   mapId: string,

@@ -1,4 +1,5 @@
 import zlib from "zlib";
+import lordNames from "../resources/lordNames.json";
 import { GameMapType } from "../src/core/game/Game";
 import {
   convertDrawing,
@@ -423,6 +424,26 @@ describe("map kit: info.json", () => {
     expect(nameNations("TwinSuns", spawns, []).map((n) => n.name)).toEqual(a);
     const b = nameNations("Rift9", spawns, []).map((n) => n.name);
     expect(b).not.toEqual(a);
+  });
+
+  test("a map's Lords draw on the shared pool: a few fixed names among star + polity pairs", () => {
+    const spawns = Array.from(
+      { length: 24 },
+      (_, i) => [i * 50, 0] as [number, number],
+    );
+    const names = nameNations("EventHorizon", spawns, []).map((n) => n.name);
+    const fixed = names.filter((n) => lordNames.names.includes(n));
+    expect(fixed.length).toBeGreaterThan(0);
+    expect(fixed.length).toBeLessThan(names.length);
+    for (const name of names) {
+      if (lordNames.names.includes(name)) continue;
+      const ok = lordNames.stars.some(
+        (s) =>
+          name.startsWith(`${s} `) &&
+          lordNames.polities.includes(name.slice(s.length + 1)),
+      );
+      expect(ok, name).toBe(true);
+    }
   });
 
   test("a rebuilt map keeps hand-edited names for nations that barely moved", () => {

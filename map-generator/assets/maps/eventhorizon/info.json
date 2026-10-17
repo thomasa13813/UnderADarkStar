@@ -10,7 +10,6 @@
     "radius": 162,
     "moat": 18
   },
-  "themes": ["space"],
   "nations": [
     {
       "coordinates": [599, 767],

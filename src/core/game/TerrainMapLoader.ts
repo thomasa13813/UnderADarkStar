@@ -31,9 +31,10 @@ export interface MapManifest {
   map4x: MapMetadata;
   map16x: MapMetadata;
   nations: Nation[];
-  // Optional pool of fallback nation names used when a game requests more
-  // nations than the manifest defines. Picked at random; if still not enough,
-  // the remainder is generated procedurally.
+  // Optional extra Lord starting points used when a game requests more
+  // nations than the manifest defines (names and flags are ignored: every
+  // Lord is named from resources/lordNames.json at game start). If still
+  // not enough, the remainder spawns at random.
   additionalNations?: AdditionalNation[];
   teamGameSpawnAreas?: TeamGameSpawnAreas;
   /** Optional map layers rendered between terrain and territory. */

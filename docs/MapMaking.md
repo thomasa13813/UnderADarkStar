@@ -22,9 +22,9 @@ Seven colours, all on Paint's default colour bar. Pick them from the bar rather 
 | --------------------------- | ----------------------------- | ---------------- |
 | Deep space (ships cross it) | Indigo                        | 63, 72, 204      |
 | Void (nothing crosses it)   | Black                         | 0, 0, 0          |
-| Nebula, plains                | White                         | 255, 255, 255    |
-| Nebula, highland              | Gray-25% (the light grey)     | 195, 195, 195    |
-| Nebula, mountain              | Gray-50% (the darker grey)    | 127, 127, 127    |
+| Nebula, plains              | White                         | 255, 255, 255    |
+| Nebula, highland            | Gray-25% (the light grey)     | 195, 195, 195    |
+| Nebula, mountain            | Gray-50% (the darker grey)    | 127, 127, 127    |
 | A Lord's starting point     | Red (a dot)                   | 237, 28, 36      |
 | The Dark Star               | Yellow (one circle)           | 255, 242, 0      |
 
@@ -101,11 +101,13 @@ Building or checking prints three lists:
 
 ## Lord names
 
-The kit gives each Lord a science-fiction name. To change one, edit `name` in
-`map-generator/assets/maps/<folder>/info.json` and build again. Your names are kept on later
-builds as long as the Lord's dot has not moved more than 40 tiles. The same file holds
-`multiplayer_frequency` (how often the map comes up in public lobbies; 0 for never), which is also
-kept.
+Every Lord on every map is named at the start of each game from the one Lord pool,
+`resources/lordNames.json`: a few of its fixed names (Harbekkan Concord, Killbot-7, …) scattered
+among pairs of a star and a polity (Vega Concord, Tau Ceti Directorate). To add a name for every
+map, add it to that file's `names` list. The kit writes names from the same pool into
+`map-generator/assets/maps/<folder>/info.json` so the file reads sensibly, but the game does not
+use them, so there is no point editing them. The same file holds `multiplayer_frequency` (how
+often the map comes up in public lobbies; 0 for never), which is kept on later builds.
 
 ## After building
 

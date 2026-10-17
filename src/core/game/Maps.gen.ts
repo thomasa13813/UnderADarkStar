@@ -155,7 +155,6 @@ export const maps: readonly MapInfo[] = [
     teamFrequency: -1,
     specialFrequency: -1,
     defaultNationCount: 20,
-    themes: ["space"],
   },
   {
     id: "ChoppingBlock",
@@ -191,7 +190,6 @@ export const maps: readonly MapInfo[] = [
     teamFrequency: -1,
     specialFrequency: -1,
     defaultNationCount: 24,
-    themes: ["space"],
   },
   {
     id: "Duel",
@@ -214,7 +212,6 @@ export const maps: readonly MapInfo[] = [
     teamFrequency: -1,
     specialFrequency: -1,
     defaultNationCount: 24,
-    themes: ["space"],
   },
   {
     id: "JovianSystem",
@@ -226,7 +223,6 @@ export const maps: readonly MapInfo[] = [
     teamFrequency: -1,
     specialFrequency: -1,
     defaultNationCount: 21,
-    themes: ["space"],
   },
   {
     id: "MilkyWay",
@@ -261,7 +257,6 @@ export const maps: readonly MapInfo[] = [
     teamFrequency: -1,
     specialFrequency: -1,
     defaultNationCount: 19,
-    themes: ["space"],
   },
   {
     id: "NucleicAcid",
@@ -273,7 +268,6 @@ export const maps: readonly MapInfo[] = [
     teamFrequency: -1,
     specialFrequency: -1,
     defaultNationCount: 18,
-    themes: ["space"],
   },
   {
     id: "Nucleus",
@@ -285,7 +279,6 @@ export const maps: readonly MapInfo[] = [
     teamFrequency: -1,
     specialFrequency: -1,
     defaultNationCount: 12,
-    themes: ["space"],
   },
   {
     id: "Passage",
@@ -331,7 +324,6 @@ export const maps: readonly MapInfo[] = [
     specialFrequency: -1,
     defaultNationCount: 53,
     forcedModifiers: ["isWaterNukes:50", "startingGold5M:100"],
-    themes: ["space"],
     customTribes: [
       { name: "Actaea", coordinates: [237, 727] },
       { name: "Hydra", coordinates: [352, 1554] },
