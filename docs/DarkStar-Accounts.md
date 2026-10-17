@@ -5,14 +5,15 @@
 > decisions of that day; rows marked **Proposed** are recommendations waiting for his review (§15).
 > Companion to `DarkStar-Roadmap.md` phase P5, which this document expands and supersedes, and to
 > `DarkStar-Lobbies.md` (thrones, seats, reigns). Where it sits in the order of work is in
-> `DarkStar-Launch.md`. B1 (2026-10-03, §12.1), B2 (2026-10-07, §12.2), B3 (2026-10-07, §12.3) and B4 (2026-10-11, §12.4, with the account panel's numbers from B5) are built; B5–B7 are not. Changelog at the end.
+> `DarkStar-Launch.md`. B1 (2026-10-03, §12.1), B2 (2026-10-07, §12.2), B3 (2026-10-07, §12.3), B4 (2026-10-11, §12.4) and B5 (2026-10-12, §12.5; one list with victories since 2026-10-17, §12.6) are built; B6–B7 are not. Changelog at the end.
 
 ## 1. Goals
 
 - **G1 — An authoritative record.** Who you are is established by the server (a sign-in it
   verified), and what you achieved is written by the server, never claimed by a browser.
-- **G2 — A leaderboard of reigns.** Two headline numbers per account: reigns (rounds won) and
-  longest reign (most wins in a row).
+- **G2 — A leaderboard of victories and reigns.** Three numbers per account: victories (rounds
+  won), reigns (rounds played as Hegemon) and longest reign (the most consecutive of them on one
+  throne).
 - **G3 — Guests are never turned away.** Anyone may play a public round and sit on a throne without
   an account (Lobbies L3). An account only adds a record.
 - **G4 — The smallest thing that works.** No passwords, no email addresses, one extra process, one
@@ -28,29 +29,29 @@ Non-goals for launch: profiles, friends, clans, ranked play or ratings, cosmetic
 
 Numbered so the code and tests can cite them. Build steps are B1–B7 (§12).
 
-| #   | Decision                                                                                                                                                                                                                                                                                                                       | Status   |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------- |
-| A1  | **Accounts are in the launch scope.** The server holds the account record and a leaderboard database.                                                                                                                                                                                                                          | Decided  |
-| A2  | **Sign in with Discord or Google.** No passwords. An account can carry several sign-ins, so email can be added later without rework.                                                                                                                                                                                           | Decided  |
-| A3  | **Guests play and may hold a throne;** a guest's results are not recorded.                                                                                                                                                                                                                                                     | Decided  |
-| A4  | **Every public throne round counts,** including the two-human minimum of L9. No higher bar for the leaderboard.                                                                                                                                                                                                                | Decided  |
-| A5  | **The board shows reigns and longest reign.** Every round won is one reign, whether by overthrowing the Hegemon or by holding the throne to the timer. Longest reign is the most wins in a row. The split of reigns into thrones taken and rounds held is stored and shown as detail. (Revised 2026-10-01 from three numbers.) | Decided  |
-| A6  | **Free launch.** Store and cosmetics come after it (P7).                                                                                                                                                                                                                                                                       | Decided  |
-| A7  | **One small service in this repository** (`src/api/`), Node and TypeScript like the game server, running in the same container on port 8787 and reached at `api.<DOMAIN>`: the address the game server and client already use.                                                                                                 | Proposed |
-| A8  | **SQLite.** The whole database is one file on a disk volume, copied off the server nightly.                                                                                                                                                                                                                                    | Proposed |
-| A9  | **Keep the token format the code already speaks:** a 15-minute signed token (EdDSA JWT) held in memory, renewed from a 30-day refresh cookie that rotates on each use (`docs/Auth.md`).                                                                                                                                        | Proposed |
-| A10 | **Guests in production.** The game server accepts the anonymous browser ID in every environment; today it refuses it outside dev (`jwt.ts`).                                                                                                                                                                                   | Proposed |
-| A11 | **Only verified sign-ins are credited.** The game record marks which players joined with a signed token; the API ignores everyone else.                                                                                                                                                                                        | Proposed |
-| A12 | **Stored about a person:** the provider's user ID, a display name, timestamps. No email address, no avatar, no IP address in the database.                                                                                                                                                                                     | Proposed |
-| A13 | **Account name:** taken from the provider at first sign-in, screened by the name filter, editable. Shown with a four-digit tag (`Tom.4471`) so two players with one name can be told apart. A signed-in player may play a round under any name they type.                                                                      | Decided  |
-| A14 | **Results arrive through the existing archive call.** The game server already posts each finished game to the API; the record gains a throne block. Private and solo games are not recorded.                                                                                                                                   | Proposed |
-| A15 | **Longest reign is consecutive wins:** the highest value the on-screen reign counter reached (Lobbies §3.1: the win that takes a throne is 1, each timer win after it adds 1). One rule, shared by the throne registry and the API.                                                                                            | Decided  |
-| A16 | **All-time boards only,** top 100 each, at launch. Weekly or seasonal boards later.                                                                                                                                                                                                                                            | Proposed |
-| A17 | **An account can delete itself.** Sign-ins and sessions are erased; its rounds stay as anonymous history and leave the board.                                                                                                                                                                                                  | Proposed |
-| A18 | **Moderation by command line.** A ban is a role on the account, carried in the token; the game server already refuses a banned token. Tom runs ban, unban and rename from a script on the server. No admin web page at launch.                                                                                                 | Proposed |
-| A19 | **Full game records are kept 30 days,** compressed on disk, then deleted. They are for bug reports and for replay-checking a disputed result (§5.5); the leaderboard does not need them.                                                                                                                                       | Proposed |
-| A20 | **Listing a private lobby publicly is off at launch.** Upstream sold it with a subscription; thrones are our public offer. Decided 2026-10-07.                                                                                                                                                                                 | Decided  |
-| A21 | **Guests do not choose a name.** The server gives a guest the name `Anon` plus five digits (`Anon48213`), derived from their browser ID so it stays the same between games. Choosing a name is a reason to sign in.                                                                                                            | Decided  |
+| #   | Decision                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | Status   |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------- |
+| A1  | **Accounts are in the launch scope.** The server holds the account record and a leaderboard database.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | Decided  |
+| A2  | **Sign in with Discord or Google.** No passwords. An account can carry several sign-ins, so email can be added later without rework.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Decided  |
+| A3  | **Guests play and may hold a throne;** a guest's results are not recorded.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Decided  |
+| A4  | **Every public throne round counts,** including the two-human minimum of L9. No higher bar for the leaderboard.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Decided  |
+| A5  | **The board shows victories, reigns and longest reign, as one list sorted by any of them.** A victory is every round won, by overthrowing the Hegemon or by holding the throne to the timer, whether or not the winner then takes the throne. A reign is a round played as Hegemon, won or lost; a slayer who declines the throne has a victory and nothing more. Longest reign is the most consecutive rounds as Hegemon on one throne (A15). Thrones taken and rounds held are still stored, no longer shown. (Revised 2026-10-01 from three numbers; revised 2026-10-17 by Tom: one list instead of two tabs, victories in place of the taken/held split, reigns counting time on the throne rather than wins.) | Decided  |
+| A6  | **Free launch.** Store and cosmetics come after it (P7).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | Decided  |
+| A7  | **One small service in this repository** (`src/api/`), Node and TypeScript like the game server, running in the same container on port 8787 and reached at `api.<DOMAIN>`: the address the game server and client already use.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Proposed |
+| A8  | **SQLite.** The whole database is one file on a disk volume, copied off the server nightly.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Proposed |
+| A9  | **Keep the token format the code already speaks:** a 15-minute signed token (EdDSA JWT) held in memory, renewed from a 30-day refresh cookie that rotates on each use (`docs/Auth.md`).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | Proposed |
+| A10 | **Guests in production.** The game server accepts the anonymous browser ID in every environment; today it refuses it outside dev (`jwt.ts`).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Proposed |
+| A11 | **Only verified sign-ins are credited.** The game record marks which players joined with a signed token; the API ignores everyone else.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | Proposed |
+| A12 | **Stored about a person:** the provider's user ID, a display name, timestamps. No email address, no avatar, no IP address in the database.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Proposed |
+| A13 | **Account name:** taken from the provider at first sign-in, screened by the name filter, editable. Shown with a four-digit tag (`Tom.4471`) so two players with one name can be told apart. A signed-in player may play a round under any name they type.                                                                                                                                                                                                                                                                                                                                                                                                                                                          | Decided  |
+| A14 | **Results arrive through the existing archive call.** The game server already posts each finished game to the API; the record gains a throne block. Private and solo games are not recorded.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Proposed |
+| A15 | **Longest reign is consecutive rounds as Hegemon on one throne.** The run continues while the same holder wins and keeps the seat; it ends on a loss, on stepping down (a seat claimed again in the lobby is a new run), on a server restart (L12), and it never carries to another throne: a Hegemon who quits one throne for an open seat elsewhere starts at one. The throne card's badge keeps its own rule (Lobbies §3.1: the win that takes a throne is 1, each timer win adds 1), which for a slayer who stays equals the run so far. (Revised 2026-10-17; until then, consecutive wins counted from the taking win, shared with the badge.)                                                                | Decided  |
+| A16 | **All-time boards only,** top 100 each, at launch. Weekly or seasonal boards later.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | Proposed |
+| A17 | **An account can delete itself.** Sign-ins and sessions are erased; its rounds stay as anonymous history and leave the board.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Proposed |
+| A18 | **Moderation by command line.** A ban is a role on the account, carried in the token; the game server already refuses a banned token. Tom runs ban, unban and rename from a script on the server. No admin web page at launch.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Proposed |
+| A19 | **Full game records are kept 30 days,** compressed on disk, then deleted. They are for bug reports and for replay-checking a disputed result (§5.5); the leaderboard does not need them.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | Proposed |
+| A20 | **Listing a private lobby publicly is off at launch.** Upstream sold it with a subscription; thrones are our public offer. Decided 2026-10-07.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Decided  |
+| A21 | **Guests do not choose a name.** The server gives a guest the name `Anon` plus five digits (`Anon48213`), derived from their browser ID so it stays the same between games. Choosing a name is a reason to sign in.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | Decided  |
 
 ## 3. How the pieces fit
 
@@ -194,47 +195,58 @@ round (private, solo, or no throne block), 200 for a repeat, 400 for a record th
 ### 5.4 The numbers
 
 `nextReign(outcome, reignBefore)` is one pure function in `src/core`, used by the throne registry
-for the number on screen and by the API for the number on the board, so they cannot disagree:
-`overthrown` gives 1, `timer` gives `reignBefore + 1`, `void` gives 0.
+for the badge on screen and kept by the API on each round as `reign_after`: `overthrown` gives 1,
+`timer` gives `reignBefore + 1`, `void` gives 0. The board's numbers are counted from the rounds
+themselves (revised 2026-10-17; until then reigns were wins and the longest reign the badge):
 
-| The round ended with…                 | Recorded for a verified winner                              | For anyone else |
-| ------------------------------------- | ----------------------------------------------------------- | --------------- |
-| A challenger overthrowing the Hegemon | reigns +1 (thrones taken +1); the streak is now 1           | Nothing         |
-| The Hegemon holding to the timer      | reigns +1 (rounds held +1); the streak is `reignBefore + 1` | Nothing         |
-| No winner (void), or the AI winning   | Nothing                                                     | Nothing         |
+| The round ended with…                 | For a verified winner                                                     | For a verified Hegemon who did not win     | For anyone else |
+| ------------------------------------- | ------------------------------------------------------------------------- | ------------------------------------------ | --------------- |
+| A challenger overthrowing the Hegemon | victories +1 (thrones taken +1)                                           | reigns +1; the run may raise longest reign | Nothing         |
+| The Hegemon holding to the timer      | victories +1 (rounds held +1), reigns +1; the run may raise longest reign | —                                          | Nothing         |
+| No winner (void), or the AI winning   | Nothing                                                                   | reigns +1; the run may raise longest reign | Nothing         |
 
-**Reigns** is the total of rounds won: thrones taken plus rounds held. **Longest reign** is the
-longest run of consecutive wins, which is the largest streak value an account has ever reached. The
-run is on one throne: it ends when the holder loses, steps down, or misses a round. A guest's or the AI's
-time on a throne records nothing, and a verified player who overthrows a guest starts at 1 like
-any slayer. A server restart opens every seat and resets reign counters (L12), which ends a streak
-on screen and on the board alike; persisting seats is B7.
+**Victories** is the total of rounds won: thrones taken plus rounds held, whether or not the
+winner then takes the throne. **Reigns** is the total of rounds played as Hegemon, won or lost.
+**Longest reign** is the longest run of consecutive rounds as Hegemon on one throne. The run
+(`hegemon_run` on the round, `hegemonRun` in `Results.ts`) continues from the throne's previous
+round when the same account sat there, won it, and came back as its confirmed holder
+(`reignBefore` above 0); a holder who steps down and claims the seat again in the lobby starts
+afresh, as the badge does, and a seat on another throne is always a new run. A guest's or the AI's
+time on a throne records nothing, and a slayer who declines the throne has a victory and nothing
+more. A server restart opens every seat and resets reign counters (L12), which ends a run on
+screen and on the board alike; persisting seats is B7.
 
 ### 5.5 Rebuilding and checking
 
-The `stats` table is a cache of the `rounds` table: a script recomputes it from scratch, which is
-also how a ban or a deleted account is taken off the board. While a full record is on disk (30
+The `stats` table is a cache of the `rounds` table: a script recomputes it from scratch, each
+round's `hegemon_run` first from its throne's history in order, which is also how a ban or a
+deleted account is taken off the board. Migration 3 (2026-10-17) ran that rebuild once, so the
+rounds recorded before it count under the new rule. While a full record is on disk (30
 days), the same deterministic simulation the clients ran can be replayed from it to confirm the
 winner. That is not launch work; it is the answer if farming or disputes become real.
 
 ## 6. The leaderboard
 
-- **`GET /leaderboard?board=reigns|longest`** returns the top 100: rank, public ID, name with
-  tag, reigns, longest reign, and the split of reigns into thrones taken and rounds held. Public,
-  no sign-in, cached for a minute. A caller who sends their token also gets their own row
-  (`me`), read live: ranked when they are on the board, `rank: null` with their zeros when they
-  have no reign yet. An account is on a board once it has won a round; a rank is shared on a tie
-  of the board's number (1, 2, 2, 4), the other number and then the name settling display order.
-  Banned and deleted accounts are left off (§10); a lifted ban puts the account back.
-- **Client:** a **Leaderboard** page in the nav beside Play, two tabs (Reigns, Longest reign), the
-  signed-in player's own row highlighted in the list or pinned at the bottom when they are
-  outside the top 100; a player with no reign is told how to get one, a guest to sign in. The
-  account panel shows the same numbers and links to the page.
+- **`GET /leaderboard?sort=victories|reigns|longest`** returns the top 100 of one list: rank,
+  public ID, name with tag, victories, reigns and longest reign, ranked on the number the sort
+  names (victories by default). Public, no sign-in, cached for a minute per sort. A caller who
+  sends their token also gets their own row (`me`), read live: ranked when they are on the list,
+  `rank: null` with their zeros when nothing is recorded yet. An account is on the list once it
+  has a victory or a reign; a rank is shared on a tie of the sorting number (1, 2, 2, 4), the
+  other numbers and then the name settling display order. Banned and deleted accounts are left
+  off (§10); a lifted ban puts the account back.
+- **Client:** a **Leaderboard** page in the nav beside Play: one list with a sort control
+  (Victories by default, Reigns, Longest reign), every row showing all three numbers with the
+  sorting one emphasised, the signed-in player's own row highlighted in the list or pinned at the
+  bottom when they are outside the top 100; a player with nothing recorded is told how to get on
+  the list, a guest to sign in. The account panel shows the same numbers and links to the page.
+  (Until 2026-10-17: two tabs, Reigns and Longest reign, with a taken/held column.)
 - **Win screen:** the player a public throne round credits (the slayer, or the Hegemon holding to
-  the timer) gets the reign prompt. A guest sees "Sign in to record your reigns" with the
+  the timer) gets the reign prompt. A guest sees "Sign in to record your victories" with the
   provider buttons (the sign-in lands on the home page: the round is over). A signed-in winner
   sees the numbers that just changed: the record lands a few seconds after the winner vote, so
-  the account is polled until its reigns move, then shown with the gain marked.
+  the account is polled until its victories move, then shown with the gains marked (a Hegemon
+  who held the timer sees the reign numbers move too; a slayer only the victory).
 - **Thrones:** the holder's name on a throne card stays the name they are playing under; nothing on
   the card depends on an account.
 
@@ -272,14 +284,14 @@ SQLite, opened by the API only. Node 24 ships a SQLite module (`node:sqlite`), w
 native dependency; `npm ci --ignore-scripts` would not build one. B1 confirms it is stable enough,
 with `better-sqlite3` as the fallback.
 
-| Table           | Columns                                                                                                                                                                      | Notes                                                                             |
-| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| `accounts`      | `id` (UUID), `public_id`, `name`, `tag`, `name_changed_at`, `role`, `ban_reason`, `ban_until`, `created_at`, `deleted_at`                                                    | `id` is the game's `persistentID`.                                                |
-| `identities`    | `provider`, `provider_user_id`, `account_id`, `created_at`                                                                                                                   | Key `(provider, provider_user_id)`. Email later is a new provider.                |
-| `sessions`      | `id`, `account_id`, `token_hash`, `created_at`, `expires_at`, `revoked_at`                                                                                                   | The refresh cookie's hash, never the cookie itself.                               |
-| `rounds`        | `game_id`, `throne_id`, `throne_name`, `throne_type`, `map`, `started_at`, `ended_at`, `humans`, `outcome`, `hegemon_account`, `winner_account`, `reign_after`, `git_commit` | One row per public throne round. Account columns are null for guests and the AI.  |
-| `round_players` | `game_id`, `account_id`, `was_hegemon`, `won`                                                                                                                                | Verified players only. Feeds "games played" and later profiles.                   |
-| `stats`         | `account_id`, `thrones_taken`, `rounds_held`, `longest_reign`, `games_played`, `updated_at`                                                                                  | A cache of `rounds`; rebuildable (§5.5). Reigns is `thrones_taken + rounds_held`. |
+| Table           | Columns                                                                                                                                                                                                     | Notes                                                                                                                                                                                                                                                  |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `accounts`      | `id` (UUID), `public_id`, `name`, `tag`, `name_changed_at`, `role`, `ban_reason`, `ban_until`, `created_at`, `deleted_at`                                                                                   | `id` is the game's `persistentID`.                                                                                                                                                                                                                     |
+| `identities`    | `provider`, `provider_user_id`, `account_id`, `created_at`                                                                                                                                                  | Key `(provider, provider_user_id)`. Email later is a new provider.                                                                                                                                                                                     |
+| `sessions`      | `id`, `account_id`, `token_hash`, `created_at`, `expires_at`, `revoked_at`                                                                                                                                  | The refresh cookie's hash, never the cookie itself.                                                                                                                                                                                                    |
+| `rounds`        | `game_id`, `throne_id`, `throne_name`, `throne_type`, `map`, `started_at`, `ended_at`, `humans`, `outcome`, `hegemon_account`, `winner_account`, `reign_after`, `git_commit`, `reign_before`, `hegemon_run` | One row per public throne round. Account columns are null for guests and the AI. `hegemon_run` is the seated Hegemon's consecutive rounds on this throne, this one included (§5.4); `reign_before` the badge they brought in, null before migration 3. |
+| `round_players` | `game_id`, `account_id`, `was_hegemon`, `won`                                                                                                                                                               | Verified players only. Feeds "games played" and later profiles.                                                                                                                                                                                        |
+| `stats`         | `account_id`, `thrones_taken`, `rounds_held`, `hegemon_rounds`, `longest_reign`, `games_played`, `updated_at`                                                                                               | A cache of `rounds`; rebuildable (§5.5). Victories is `thrones_taken + rounds_held`; reigns is `hegemon_rounds`.                                                                                                                                       |
 
 Schema changes are numbered migration files applied at boot.
 
@@ -588,6 +600,36 @@ id="page-leaderboard" inline>` in `index.html`, router name `leaderboard`; tabs 
 - **Not yet**: Google among the providers (after the privacy policy, B2's note); a weekly
   board, profiles behind a row (B7); the pixel-art nav button.
 
+### 12.6 Revised: one list, victories, reigns as rounds on the throne (2026-10-17)
+
+Tom's call before the friends test: two tabs were one too many, and the taken/held column was
+confusing. Built on `feat/piracy`.
+
+- **Rule** (A5, A15, §5.4): victories replace the old reigns number (same count, every round
+  won); reigns now count rounds played as Hegemon, won or lost; longest reign the most consecutive
+  of them on one throne. A slayer who declines the throne has a victory and nothing more; a run
+  never crosses thrones; stepping down and claiming the seat again starts a new run.
+- **API**: migration 3 (`Db.ts`) adds `rounds.reign_before`, `rounds.hegemon_run` and
+  `stats.hegemon_rounds`, then rebuilds the cache in the same transaction (`Migration.after`,
+  `rebuildStatsWithin`), so the live numbers follow the new rule on the first boot. `Results.ts`:
+  `hegemonRun` (the one rule, shared by the ingest and the rebuild, which recomputes every
+  round's run from its throne's history in order), `victories()` in place of `reigns()`,
+  `AccountStats.reigns`. `Leaderboard.ts` and `LeaderboardRoutes.ts`: `?sort=`, three orders
+  over one eligibility (a victory or a reign), 400 on an unknown sort. `/users/@me` sends
+  `player.record` (`victories`, `reigns`, `longestReign`, `gamesPlayed`) in place of
+  `player.reigns` and the split.
+- **Client**: `LeaderboardModal.ts` is one list with a `styledSelect` sort control (kept across
+  openings in a session), three number columns, the sorting one emphasised; `AccountButton` shows
+  the three numbers and the rounds played; `ReignPrompt` polls until victories move and marks
+  whichever of the three grew. Strings: `leaderboard.about_*`, `col_victories`, `sort_by`,
+  `account.victories`, `account.rounds_played`, the `win_modal.reign_*` wordings, and the help
+  page's throne rule names the three numbers.
+- **Tests**: `Leaderboard.test.ts` (the three sorts and their ties; a Hegemon who sat and lost
+  is listed with no victory; a run across rounds on one throne, never across thrones, and the
+  claim after stepping down), `Ingest.test.ts` (the new numbers per row of §5.4, `hegemonRun`
+  on its own, the rebuild recomputing runs), `LeaderboardModal.test.ts` (the sort control),
+  `ReignPrompt.test.ts` (three figures).
+
 ## 13. Tests
 
 API tests run against an in-memory database, under `tests/api/`, added to `npm test`.
@@ -596,11 +638,12 @@ API tests run against an in-memory database, under `tests/api/`, added to `npm t
   refused; logout and revoke; an expired session.
 - `Jwks.test.ts`: a token the API issues passes `verifyClientToken`; a guest ID passes in
   production as a guest; a forged token fails.
-- `Ingest.test.ts` (built, §12.4): every row of §5.4; unverified winners; idempotent repeat;
-  private and solo records kept but not recorded; a wrong API key; the read-back and the
-  pruning; the rebuild.
+- `Ingest.test.ts` (built, §12.4, §12.6): every row of §5.4; unverified winners; idempotent
+  repeat; private and solo records kept but not recorded; a wrong API key; the read-back and the
+  pruning; the rebuild, runs included; `hegemonRun` on its own.
 - `NextReign.test.ts` (core, built): the four outcomes.
-- `Leaderboard.test.ts` (built, §12.5): ordering and ties; banned and deleted accounts absent;
+- `Leaderboard.test.ts` (built, §12.5, §12.6): the three sorts, ordering and ties; a Hegemon
+  listed on reigns alone; runs within and across thrones; banned and deleted accounts absent;
   the caller's own row; the top-100 cut; the cache.
 - `Account.test.ts`: rename rules and the wait; deletion erases sign-ins and sessions and
   anonymises rounds.
@@ -618,7 +661,9 @@ API tests run against an in-memory database, under `tests/api/`, added to `npm t
 | A guest signs in while holding a reservation             | Their ID changes; the reservation lapses (§4.4).                                                  |
 | The same person signs in with Discord, later with Google | Two accounts until linking exists (B7).                                                           |
 | One account in two browsers in the same round            | The game server already keys clients on `persistentID`; the second connection replaces the first. |
-| A signed-in Hegemon wins on the timer, then steps down   | The win counts (reigns +1, streak +1); the streak ends there.                                     |
+| A signed-in Hegemon wins on the timer, then steps down   | The victory and the round seated count (victories +1, reigns +1, the run +1); the run ends there. |
+| A slayer declines the throne                             | A victory; no reign, no run.                                                                      |
+| A Hegemon quits one throne for an open seat on another   | A new run of one on the new throne; longest reign never spans thrones (A15).                      |
 | A banned player's old rounds                             | Kept as history; the account leaves the board.                                                    |
 | Server restart mid-reign                                 | Seats open, counters reset (L12). The longest reign already recorded stands.                      |
 | The provider's display name fails the name filter        | The account gets a neutral generated name and may rename at once.                                 |
@@ -636,6 +681,12 @@ API tests run against an in-memory database, under `tests/api/`, added to `npm t
 
 ## 16. Changelog
 
+- **2026-10-17** — **One list, victories, reigns as rounds on the throne** (§12.6). Tom's call:
+  the two tabs become one list with a sort control (Victories by default); the taken/held
+  column becomes Victories (every round won, throne taken or not); Reigns now count rounds played
+  as Hegemon and Longest reign the most consecutive of them on one throne, a declined throne
+  counting for nothing but the victory. A5 and A15 revised, §5.4 recounted, migration 3 rebuilds
+  the recorded numbers.
 - **2026-10-12** — **B5 built** (§12.5): `GET /leaderboard` with the caller's own row, the
   Leaderboard page beside Play with its two tabs, the win screen's reign prompt (sign-in for a
   guest winner, the numbers moving for a signed-in one), and the sign-in start shared between

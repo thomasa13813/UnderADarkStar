@@ -1,6 +1,7 @@
 import fs from "fs";
 import { DatabaseSync } from "node:sqlite";
 import path from "path";
+import { rebuildStatsWithin } from "./Results";
 
 // Under a Dark Star: the account API's database (docs/DarkStar-Accounts.md
 // §8). One SQLite file, opened by the API only, on Node's built-in module:
@@ -11,6 +12,8 @@ export interface Migration {
   id: number;
   name: string;
   sql: string;
+  // Work the SQL cannot do, run in the same transaction after it.
+  after?: (db: DatabaseSync) => void;
 }
 
 export const MIGRATIONS: readonly Migration[] = [
@@ -95,6 +98,29 @@ export const MIGRATIONS: readonly Migration[] = [
       );
     `,
   },
+  {
+    id: 3,
+    name: "reigns",
+    // Reigns became rounds played as Hegemon and longest reign the most
+    // consecutive of them on one throne (A5 and A15, revised 2026-10-17).
+    // The seated Hegemon's run is kept per round; the cache is rebuilt from
+    // the rounds so the numbers already recorded follow the new rule.
+    sql: `
+      -- The reign the seated Hegemon brought in (the record's reignBefore);
+      -- null for rounds recorded before it was kept.
+      ALTER TABLE rounds ADD COLUMN reign_before INTEGER;
+      -- The Hegemon's consecutive rounds on this throne, this one included;
+      -- 0 when the Hegemon was a guest or the AI.
+      ALTER TABLE rounds ADD COLUMN hegemon_run INTEGER NOT NULL DEFAULT 0;
+      CREATE INDEX rounds_throne ON rounds(throne_id, started_at);
+      CREATE INDEX rounds_hegemon ON rounds(hegemon_account);
+      -- Rounds played as Hegemon (reigns, A5).
+      ALTER TABLE stats ADD COLUMN hegemon_rounds INTEGER NOT NULL DEFAULT 0;
+    `,
+    after: (db) => {
+      rebuildStatsWithin(db, Date.now());
+    },
+  },
 ];
 
 export const DATABASE_FILE = "darkstar.sqlite";
@@ -131,6 +157,7 @@ export function migrate(db: DatabaseSync): number[] {
     db.exec("BEGIN");
     try {
       db.exec(m.sql);
+      m.after?.(db);
       db.prepare(
         "INSERT INTO schema_migrations (id, name, applied_at) VALUES (?, ?, ?)",
       ).run(m.id, m.name, Date.now());

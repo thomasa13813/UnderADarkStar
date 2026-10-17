@@ -7,7 +7,7 @@ import {
   MIN_ACCOUNT_USERNAME_LENGTH,
 } from "../core/validations/username";
 import { censorPlayer } from "../server/Censor";
-import { AccountStats, EMPTY_STATS, reigns } from "./Results";
+import { AccountStats, EMPTY_STATS, victories } from "./Results";
 
 // Under a Dark Star: accounts and sign-ins (docs/DarkStar-Accounts.md §4.1,
 // §4.5, §8). An account is the row behind a persistentID; a sign-in links one
@@ -192,8 +192,8 @@ export function displayName(account: AccountRow): string {
 // client and the game server parse today. The upstream fields that no longer
 // mean anything here (subscriptions, flares, friends, clans) carry their
 // empty values until UserMeResponseSchema is cut down with their last users.
-// `reigns` is the account's numbers (§5.4, §6): the board's two headline
-// values and the split behind them.
+// `record` is the account's numbers (§5.4, §6): the board's three values and
+// the rounds played.
 export function userMeResponse(
   account: AccountRow,
   now: number,
@@ -231,11 +231,10 @@ export function userMeResponse(
       friends: [],
       clans: [],
       subscription: null,
-      reigns: {
-        reigns: reigns(stats),
+      record: {
+        victories: victories(stats),
+        reigns: stats.reigns,
         longestReign: stats.longestReign,
-        thronesTaken: stats.thronesTaken,
-        roundsHeld: stats.roundsHeld,
         gamesPlayed: stats.gamesPlayed,
       },
     },

@@ -56,7 +56,11 @@ import {
 // numbers move once the record lands, or sees the last numbers read when it
 // never does.
 
-function profile(reigns: number, longest: number): UserMeResponse {
+function profile(
+  victories: number,
+  reigns: number,
+  longest: number,
+): UserMeResponse {
   return {
     user: {},
     ban: null,
@@ -68,12 +72,11 @@ function profile(reigns: number, longest: number): UserMeResponse {
       username: "Alpha.0001",
       flares: [],
       achievements: { singleplayerMap: [], player: [] },
-      reigns: {
+      record: {
+        victories,
         reigns,
         longestReign: longest,
-        thronesTaken: reigns,
-        roundsHeld: 0,
-        gamesPlayed: reigns + 2,
+        gamesPlayed: victories + 2,
       },
     },
   } as unknown as UserMeResponse;
@@ -153,10 +156,10 @@ describe("the reign prompt", () => {
 
   it("shows a signed-in winner the numbers once they move", async () => {
     auth.signedIn = true;
-    auth.cached = profile(2, 2);
+    auth.cached = profile(2, 2, 2);
     // The record has not landed on the first poll; it has on the second,
-    // and the reign grew too.
-    auth.fresh = [profile(2, 2), profile(3, 3)];
+    // and as the Hegemon held the timer, the reign numbers grew too.
+    auth.fresh = [profile(2, 2, 2), profile(3, 3, 3)];
     await mount(true);
     expect(mode()).toBe("numbers");
     expect(prompt.querySelector("[data-reign-recording]")).not.toBeNull();
@@ -171,6 +174,7 @@ describe("the reign prompt", () => {
     expect(figures()).toEqual([
       { value: "3", up: true },
       { value: "3", up: true },
+      { value: "3", up: true },
     ]);
 
     // Settled: no further reads.
@@ -178,27 +182,29 @@ describe("the reign prompt", () => {
     expect(auth.reads).toBe(2);
   });
 
-  it("marks only the reign when the throne was taken after a longer run", async () => {
+  it("marks only the victory for a slayer, whose reign numbers stand", async () => {
     auth.signedIn = true;
-    auth.cached = profile(4, 4);
-    auth.fresh = [profile(5, 4)];
+    auth.cached = profile(4, 4, 4);
+    auth.fresh = [profile(5, 4, 4)];
     await mount(true);
     await tickPoll();
     expect(figures()).toEqual([
       { value: "5", up: true },
+      { value: "4", up: false },
       { value: "4", up: false },
     ]);
   });
 
   it("gives up after the poll limit and shows the last numbers read", async () => {
     auth.signedIn = true;
-    auth.cached = profile(2, 2);
-    auth.fresh = [profile(2, 2)];
+    auth.cached = profile(2, 2, 2);
+    auth.fresh = [profile(2, 2, 2)];
     await mount(true);
     for (let i = 0; i < REIGN_POLL_LIMIT; i++) await tickPoll();
     expect(auth.reads).toBe(REIGN_POLL_LIMIT);
     expect(title()).toBe("win_modal.reign_pending");
     expect(figures()).toEqual([
+      { value: "2", up: false },
       { value: "2", up: false },
       { value: "2", up: false },
     ]);
@@ -209,21 +215,22 @@ describe("the reign prompt", () => {
   it("takes the first numbers it gets when none were cached", async () => {
     auth.signedIn = true;
     auth.cached = false;
-    auth.fresh = [profile(1, 1)];
+    auth.fresh = [profile(1, 0, 0)];
     await mount(true);
     await tickPoll();
     expect(auth.reads).toBe(1);
     expect(title()).toBe("win_modal.reign_pending");
     expect(figures()).toEqual([
       { value: "1", up: false },
-      { value: "1", up: false },
+      { value: "0", up: false },
+      { value: "0", up: false },
     ]);
   });
 
   it("stops polling when removed from the page", async () => {
     auth.signedIn = true;
-    auth.cached = profile(2, 2);
-    auth.fresh = [profile(2, 2)];
+    auth.cached = profile(2, 2, 2);
+    auth.fresh = [profile(2, 2, 2)];
     await mount(true);
     await tickPoll();
     prompt.remove();

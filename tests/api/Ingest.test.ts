@@ -11,7 +11,7 @@ import { apiConfigFromEnv } from "../../src/api/Config";
 import { openDatabase } from "../../src/api/Db";
 import { loadOrCreateSigningKey } from "../../src/api/Keys";
 import { RECORD_RETENTION_MS, RecordStore } from "../../src/api/Records";
-import { rebuildStats, statsFor } from "../../src/api/Results";
+import { hegemonRun, rebuildStats, statsFor } from "../../src/api/Results";
 import { REFRESH_COOKIE } from "../../src/api/Sessions";
 import { UserMeResponseSchema } from "../../src/core/ApiSchemas";
 import { GameType } from "../../src/core/game/Game";
@@ -114,7 +114,7 @@ async function me(h: Harness, account: Account) {
     headers: { authorization: `Bearer ${account.jwt}` },
   });
   expect(res.status).toBe(200);
-  return UserMeResponseSchema.parse(await res.json()).player.reigns!;
+  return UserMeResponseSchema.parse(await res.json()).player.record!;
 }
 
 interface PlayerSpec {
@@ -310,18 +310,17 @@ describe("POST /game/:id", () => {
         { account_id: bob.id, was_hegemon: 1, won: 0 },
       ].sort((a, b) => a.account_id.localeCompare(b.account_id)),
     );
+    // Ada's victory; Bob's round on the throne (his first on record).
     expect(await me(h, ada)).toEqual({
-      reigns: 1,
-      longestReign: 1,
-      thronesTaken: 1,
-      roundsHeld: 0,
+      victories: 1,
+      reigns: 0,
+      longestReign: 0,
       gamesPlayed: 1,
     });
     expect(await me(h, bob)).toEqual({
-      reigns: 0,
-      longestReign: 0,
-      thronesTaken: 0,
-      roundsHeld: 0,
+      victories: 0,
+      reigns: 1,
+      longestReign: 1,
       gamesPlayed: 1,
     });
     expect(h.log.info).toHaveBeenCalledWith(
@@ -330,7 +329,8 @@ describe("POST /game/:id", () => {
   });
 
   it("extends a reign on a timer win, and a later loss leaves the longest reign standing", async () => {
-    // Ada took the throne (reign 1), then holds it twice: reigns 3, longest 3.
+    // Ada takes the throne, then holds it twice: three victories, two rounds
+    // as Hegemon in one run.
     await post(
       h,
       record({
@@ -375,13 +375,13 @@ describe("POST /game/:id", () => {
       reign_after: 3,
     });
     expect(await me(h, ada)).toEqual({
-      reigns: 3,
-      longestReign: 3,
-      thronesTaken: 1,
-      roundsHeld: 2,
+      victories: 3,
+      reigns: 2,
+      longestReign: 2,
       gamesPlayed: 3,
     });
-    // Bob overthrows her: Ada's streak ends, her longest reign stays 3.
+    // Bob overthrows her: the lost round was Ada's third as Hegemon, so her
+    // reign numbers reach 3 and the run ends there.
     await post(
       h,
       record({
@@ -399,15 +399,18 @@ describe("POST /game/:id", () => {
         winner: ["player", "bobbbbbb"],
       }),
     );
-    expect(await me(h, ada)).toMatchObject({
+    expect(await me(h, ada)).toEqual({
+      victories: 3,
       reigns: 3,
       longestReign: 3,
       gamesPlayed: 4,
     });
-    expect(await me(h, bob)).toMatchObject({
+    // Bob: the victory, and his one round seated back in GAME0001.
+    expect(await me(h, bob)).toEqual({
+      victories: 1,
       reigns: 1,
       longestReign: 1,
-      thronesTaken: 1,
+      gamesPlayed: 4,
     });
   });
 
@@ -488,14 +491,14 @@ describe("POST /game/:id", () => {
       winner_account: null,
       reign_after: 0,
     });
+    // Ada's victory in round 1 and her round on the throne in round 2.
     expect(await me(h, ada)).toEqual({
+      victories: 1,
       reigns: 1,
       longestReign: 1,
-      thronesTaken: 1,
-      roundsHeld: 0,
       gamesPlayed: 3,
     });
-    expect(await me(h, bob)).toMatchObject({ reigns: 0, gamesPlayed: 0 });
+    expect(await me(h, bob)).toMatchObject({ victories: 0, gamesPlayed: 0 });
   });
 
   it("records an AI win as a round nobody is credited for", async () => {
@@ -515,7 +518,7 @@ describe("POST /game/:id", () => {
       winner_account: null,
       reign_after: 0,
     });
-    expect(await me(h, ada)).toMatchObject({ reigns: 0, gamesPlayed: 1 });
+    expect(await me(h, ada)).toMatchObject({ victories: 0, gamesPlayed: 1 });
   });
 
   it("credits nothing to a verified flag without an account behind it", async () => {
@@ -567,7 +570,7 @@ describe("POST /game/:id", () => {
     const again = await post(h, rec);
     expect(again.status).toBe(200);
     expect(await again.json()).toEqual({ ok: true, duplicate: true });
-    expect(await me(h, ada)).toMatchObject({ reigns: 1, gamesPlayed: 1 });
+    expect(await me(h, ada)).toMatchObject({ victories: 1, gamesPlayed: 1 });
     expect(
       h.db.prepare("SELECT COUNT(*) AS n FROM round_players").get(),
     ).toEqual({ n: 2 });
@@ -608,7 +611,7 @@ describe("POST /game/:id", () => {
     );
     expect(res.status).toBe(202);
     expect(round(h, "GAMEOPEN")).toBeUndefined();
-    expect(await me(h, ada)).toMatchObject({ reigns: 0, gamesPlayed: 0 });
+    expect(await me(h, ada)).toMatchObject({ victories: 0, gamesPlayed: 0 });
   });
 
   it("accepts a record far larger than the API's usual body limit", async () => {
@@ -738,21 +741,38 @@ describe("rebuildStats", () => {
       ada: statsFor(h.db, ada.id),
       bob: statsFor(h.db, bob.id),
     };
+    // Ada sat for GAME0002 and GAME0003 (one run of two); Bob for GAME0004
+    // only: the throne he took in GAME0003 counts as a victory, not a reign.
     expect(before.ada).toEqual({
       thronesTaken: 1,
       roundsHeld: 1,
+      reigns: 2,
       longestReign: 2,
       gamesPlayed: 4,
     });
     expect(before.bob).toEqual({
       thronesTaken: 1,
       roundsHeld: 1,
-      longestReign: 2,
+      reigns: 1,
+      longestReign: 1,
       gamesPlayed: 4,
     });
 
-    h.db.exec("UPDATE stats SET thrones_taken = 99, longest_reign = 99");
+    h.db.exec(
+      "UPDATE stats SET thrones_taken = 99, hegemon_rounds = 99, longest_reign = 99",
+    );
+    h.db.exec("UPDATE rounds SET hegemon_run = 7");
     expect(rebuildStats(h.db, h.clock.now)).toBe(2);
+    expect(
+      h.db
+        .prepare("SELECT game_id, hegemon_run FROM rounds ORDER BY game_id")
+        .all(),
+    ).toEqual([
+      { game_id: "GAME0001", hegemon_run: 0 },
+      { game_id: "GAME0002", hegemon_run: 1 },
+      { game_id: "GAME0003", hegemon_run: 2 },
+      { game_id: "GAME0004", hegemon_run: 1 },
+    ]);
     expect(statsFor(h.db, ada.id)).toEqual(before.ada);
     expect(statsFor(h.db, bob.id)).toEqual(before.bob);
 
@@ -766,6 +786,7 @@ describe("rebuildStats", () => {
     expect(statsFor(h.db, bob.id)).toEqual({
       thronesTaken: 0,
       roundsHeld: 0,
+      reigns: 0,
       longestReign: 0,
       gamesPlayed: 0,
     });
@@ -773,5 +794,51 @@ describe("rebuildStats", () => {
     expect(h.db.prepare("SELECT COUNT(*) AS n FROM rounds").get()).toEqual({
       n: 4,
     });
+  });
+});
+
+// The seated Hegemon's run on a throne (Accounts §5.4): the rule the ingest
+// and the rebuild share.
+describe("hegemonRun", () => {
+  const previous = (
+    hegemon: string | null,
+    winner: string | null,
+    run = 1,
+  ) => ({
+    hegemonAccount: hegemon,
+    winnerAccount: winner,
+    hegemonRun: run,
+  });
+
+  it("is nothing for a guest or AI Hegemon", () => {
+    expect(hegemonRun(null, 0, undefined)).toBe(0);
+    expect(hegemonRun(null, 3, previous("ada", "ada", 3))).toBe(0);
+  });
+
+  it("starts at one on a throne with no history, or after someone else", () => {
+    expect(hegemonRun("ada", 0, undefined)).toBe(1);
+    expect(hegemonRun("ada", 1, undefined)).toBe(1);
+    expect(hegemonRun("ada", 1, previous(null, "ada"))).toBe(1);
+    expect(hegemonRun("ada", 1, previous("bob", "ada"))).toBe(1);
+  });
+
+  it("continues when the same holder won the throne's last round and kept the seat", () => {
+    expect(hegemonRun("ada", 1, previous("ada", "ada", 1))).toBe(2);
+    expect(hegemonRun("ada", 4, previous("ada", "ada", 3))).toBe(4);
+  });
+
+  it("starts afresh when the holder stepped down and claimed the seat again", () => {
+    // reignBefore 0: the registry seated a claimant, not the heir.
+    expect(hegemonRun("ada", 0, previous("ada", "ada", 2))).toBe(1);
+  });
+
+  it("starts afresh when the holder lost the throne's last round", () => {
+    // Ada lost to Bob, who stepped down; Ada claimed the open seat.
+    expect(hegemonRun("ada", 0, previous("ada", "bob", 2))).toBe(1);
+  });
+
+  it("continues on the first two conditions alone for a round without reign_before", () => {
+    expect(hegemonRun("ada", null, previous("ada", "ada", 2))).toBe(3);
+    expect(hegemonRun("ada", null, previous("ada", "bob", 2))).toBe(1);
   });
 });

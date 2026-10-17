@@ -184,15 +184,15 @@ export const UserMeResponseSchema = z.object({
   player: z.object({
     publicId: z.string(),
     // Under a Dark Star (docs/DarkStar-Accounts.md §5.4, §6): the account's
-    // numbers. `reigns` is every round won (thrones taken plus rounds held);
-    // `longestReign` the most consecutive wins on one throne. Optional so an
-    // API that predates the results ingest still parses.
-    reigns: z
+    // numbers. `victories` is every round won, whether or not the winner took
+    // the throne; `reigns` the rounds played as Hegemon, won or lost;
+    // `longestReign` the most consecutive of them on one throne. Optional so
+    // an API that predates the results ingest still parses.
+    record: z
       .object({
+        victories: z.number().int().min(0),
         reigns: z.number().int().min(0),
         longestReign: z.number().int().min(0),
-        thronesTaken: z.number().int().min(0),
-        roundsHeld: z.number().int().min(0),
         gamesPlayed: z.number().int().min(0),
       })
       .optional(),
@@ -343,29 +343,29 @@ export const UserMeResponseSchema = z.object({
 });
 export type UserMeResponse = z.infer<typeof UserMeResponseSchema>;
 
-// Under a Dark Star: GET /leaderboard?board=reigns|longest
-// (docs/DarkStar-Accounts.md §6). The top 100 of one board, and the caller's
-// own row when they sent a token: ranked when they are on the board (rank
-// is then the same as in `entries` when they are in the top 100), unranked
-// (`rank` null) with their zeros otherwise.
-export const LEADERBOARD_BOARDS = ["reigns", "longest"] as const;
-export const LeaderboardBoardSchema = z.enum(LEADERBOARD_BOARDS);
-export type LeaderboardBoard = z.infer<typeof LeaderboardBoardSchema>;
+// Under a Dark Star: GET /leaderboard?sort=victories|reigns|longest
+// (docs/DarkStar-Accounts.md §6). The top 100 of the one list under the
+// chosen sort, and the caller's own row when they sent a token: ranked when
+// they are on the list (rank is then the same as in `entries` when they are
+// in the top 100), unranked (`rank` null) with their zeros otherwise.
+export const LEADERBOARD_SORTS = ["victories", "reigns", "longest"] as const;
+export const LeaderboardSortSchema = z.enum(LEADERBOARD_SORTS);
+export type LeaderboardSort = z.infer<typeof LeaderboardSortSchema>;
 
 export const LeaderboardEntrySchema = z.object({
   rank: z.number().int().min(1),
   publicId: z.string(),
   // Name.1234, as /users/@me gives it.
   username: z.string(),
+  // The same three numbers as /users/@me's `record`.
+  victories: z.number().int().min(0),
   reigns: z.number().int().min(0),
   longestReign: z.number().int().min(0),
-  thronesTaken: z.number().int().min(0),
-  roundsHeld: z.number().int().min(0),
 });
 export type LeaderboardEntry = z.infer<typeof LeaderboardEntrySchema>;
 
 export const LeaderboardResponseSchema = z.object({
-  board: LeaderboardBoardSchema,
+  sort: LeaderboardSortSchema,
   // When the board was computed (it is cached for a minute).
   generatedAt: z.number().int().min(0),
   entries: LeaderboardEntrySchema.array(),

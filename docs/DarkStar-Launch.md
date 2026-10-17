@@ -12,7 +12,7 @@
 - **Public thrones**: FFA and special thrones (T1–T4), with the winner's seat, map pick and the
   Thrones tab.
 - **Accounts and the leaderboard** (B1–B6): Discord and Google sign-in, guests welcome under
-  assigned names, reigns and longest reign on the board.
+  assigned names, victories, reigns and longest reign on the board.
 - **The map pool**: at least six new maps of Tom's on top of the kept ones, each map checked in
   the simulator (P3).
 - **Sound**: a legal soundtrack and the new cues (P4, Tom's plan).
@@ -305,6 +305,11 @@ _Done when_ the checklist is clean. This build is the release candidate.
 
 ## 7. Changelog
 
+- **2026-10-17** — **Leaderboard reshaped** on `feat/piracy` (Accounts doc §12.6): one list with
+  a sort control in place of two tabs; Victories (every round won, throne taken or not) in place
+  of the taken/held column; Reigns now rounds played as Hegemon and Longest reign the most
+  consecutive of them on one throne. The API's third migration rebuilds the numbers already
+  recorded, so nothing is needed on the server beyond the deploy.
 - **2026-10-17** — **Before the friends test.** The help page's rules gain a Piracy section and
   the freighter stat reads _Raid Gold/min_; the FFA throne rotation draws every map once per
   cycle instead of favouring the inherited maps (Design changelog, same day). Checked the same

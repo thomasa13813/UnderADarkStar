@@ -14,15 +14,15 @@ import { homeHref, translateText } from "../../Utils";
 
 // Under a Dark Star: the win screen's reign prompt (docs/DarkStar-Accounts.md
 // §6, accounts step B5). Shown to the player who won a public throne round.
-// A guest is told their reign was not recorded and offered the sign-in
+// A guest is told their victory was not recorded and offered the sign-in
 // providers (the sign-in lands on the home page: the round is over). A
 // signed-in winner sees their numbers change: the game server posts the
-// record once the winner vote resolves, so the account's reigns are polled
-// for a short while until they move, then shown with the gain marked. If
+// record once the winner vote resolves, so the account's victories are polled
+// for a short while until they move, then shown with the gains marked. If
 // they never move in that time (the API is down, §14), the last numbers
 // read are shown without a mark.
 
-type Numbers = NonNullable<UserMeResponse["player"]["reigns"]>;
+type Numbers = NonNullable<UserMeResponse["player"]["record"]>;
 
 export const REIGN_POLL_MS = 3000;
 export const REIGN_POLL_LIMIT = 12;
@@ -70,7 +70,7 @@ export class ReignPrompt extends LitElement {
         return;
       }
       const me = await getUserMe();
-      this.baseline = me === false ? null : (me.player.reigns ?? null);
+      this.baseline = me === false ? null : (me.player.record ?? null);
       this.signedIn = true;
       this.poll();
     } catch (error) {
@@ -84,11 +84,13 @@ export class ReignPrompt extends LitElement {
       this.timer = null;
       this.polls++;
       const me = await fetchUserMeUncached();
-      const numbers = me === false ? null : (me.player.reigns ?? null);
+      const numbers = me === false ? null : (me.player.record ?? null);
       if (numbers !== null) this.latest = numbers;
+      // The credited winner always gains a victory; the reign numbers only
+      // move for a Hegemon who held the timer.
       const moved =
         numbers !== null &&
-        (this.baseline === null || numbers.reigns > this.baseline.reigns);
+        (this.baseline === null || numbers.victories > this.baseline.victories);
       if (moved || this.polls >= REIGN_POLL_LIMIT) {
         this.settled = true;
         return;
@@ -158,10 +160,9 @@ export class ReignPrompt extends LitElement {
         ${translateText("win_modal.reign_recording")}
       </p>`;
     }
-    const gained =
-      this.baseline !== null && shown.reigns > this.baseline.reigns;
-    const longer =
-      this.baseline !== null && shown.longestReign > this.baseline.longestReign;
+    const up = (key: keyof Numbers) =>
+      this.baseline !== null && shown[key] > this.baseline[key];
+    const gained = up("victories");
     const figure = (value: number, up: boolean, label: string) => html`
       <div>
         <div class="text-lg font-semibold leading-tight text-white">
@@ -183,10 +184,11 @@ export class ReignPrompt extends LitElement {
         )}
       </span>
       <div class="flex gap-5" data-reign-numbers>
-        ${figure(shown.reigns, gained, translateText("account.reigns"))}
+        ${figure(shown.victories, gained, translateText("account.victories"))}
+        ${figure(shown.reigns, up("reigns"), translateText("account.reigns"))}
         ${figure(
           shown.longestReign,
-          longer,
+          up("longestReign"),
           translateText("account.longest_reign"),
         )}
       </div>

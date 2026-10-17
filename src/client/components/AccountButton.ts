@@ -311,42 +311,36 @@ export class AccountButton extends LitElement {
     `;
   }
 
-  // The account's numbers (Accounts §6): reigns and longest reign as the
-  // board shows them, the split beneath. An API without the results ingest
-  // sends none, and the panel says the numbers are still to come.
+  // The account's numbers (Accounts §6): victories, reigns and longest reign
+  // as the leaderboard shows them, the rounds played beneath. An API without
+  // the results ingest sends none, and the panel says the numbers are still
+  // to come.
   private renderNumbers(me: UserMeResponse): TemplateResult {
-    const n = me.player.reigns;
+    const n = me.player.record;
     if (n === undefined) {
       return html`<p class="px-3 pb-2 text-xs text-white/50">
         ${translateText("account.numbers_soon")}
       </p>`;
     }
+    const figure = (value: number, label: string) => html`
+      <div>
+        <div class="text-lg font-semibold leading-tight text-white">
+          ${value}
+        </div>
+        <div class="text-[11px] uppercase tracking-wider text-white/50">
+          ${label}
+        </div>
+      </div>
+    `;
     return html`
       <div id="account-numbers" class="px-3 pb-2">
         <div class="flex gap-4">
-          <div>
-            <div class="text-lg font-semibold leading-tight text-white">
-              ${n.reigns}
-            </div>
-            <div class="text-[11px] uppercase tracking-wider text-white/50">
-              ${translateText("account.reigns")}
-            </div>
-          </div>
-          <div>
-            <div class="text-lg font-semibold leading-tight text-white">
-              ${n.longestReign}
-            </div>
-            <div class="text-[11px] uppercase tracking-wider text-white/50">
-              ${translateText("account.longest_reign")}
-            </div>
-          </div>
+          ${figure(n.victories, translateText("account.victories"))}
+          ${figure(n.reigns, translateText("account.reigns"))}
+          ${figure(n.longestReign, translateText("account.longest_reign"))}
         </div>
         <div class="mt-1 text-xs text-white/50">
-          ${translateText("account.numbers_split", {
-            taken: n.thronesTaken,
-            held: n.roundsHeld,
-            played: n.gamesPlayed,
-          })}
+          ${translateText("account.rounds_played", { played: n.gamesPlayed })}
         </div>
       </div>
     `;

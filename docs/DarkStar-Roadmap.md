@@ -398,8 +398,10 @@ anything richer can wait. **Login:** Discord and Google at launch, built so an e
 added later (an account may carry several linked identities). **Guests** may play public rounds and
 hold a throne (L3 stands); a guest's reign is simply not recorded. **Every public throne round
 counts**, including the two-human minimum of L9; no higher bar for the leaderboard. **The board:**
-reigns (every round won is one reign, by overthrow or by holding to the timer) and longest reign
-(most consecutive wins), with thrones taken and rounds held kept as the split. **Names:** an
+victories (every round won, by overthrow or by holding to the timer, whether or not the winner
+takes the throne), reigns (rounds played as Hegemon) and longest reign (the most consecutive of
+them on one throne), one list sorted by any of the three. (Revised 2026-10-17; until then reigns
+meant wins, with thrones taken and rounds held shown as the split. Accounts doc A5, A15.) **Names:** an
 account name carries a four-digit tag and a signed-in player may play under any name; a guest is
 given `Anon` plus five digits and cannot choose. Known and accepted: the server does not run the simulation, so the winner it
 records is the majority vote of the clients in the game (`GameServer.handleWinner`, one vote per

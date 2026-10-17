@@ -1,7 +1,7 @@
 import {
-  LeaderboardBoard,
   LeaderboardResponse,
   LeaderboardResponseSchema,
+  LeaderboardSort,
 } from "../core/ApiSchemas";
 import { getApiBase } from "./ApiBase";
 import { getAuthHeader } from "./Auth";
@@ -14,17 +14,17 @@ import { getAuthHeader } from "./Auth";
 
 export const LEADERBOARD_TIMEOUT_MS = 10_000;
 
-// The board, or null when the API could not be reached or answered with
-// something else: the page then says so and offers a retry.
+// The list under one sort, or null when the API could not be reached or
+// answered with something else: the page then says so and offers a retry.
 export async function fetchLeaderboard(
-  board: LeaderboardBoard,
+  sort: LeaderboardSort,
 ): Promise<LeaderboardResponse | null> {
   try {
     const headers: Record<string, string> = {};
     const auth = await getAuthHeader();
     if (auth !== "") headers.authorization = auth;
     const response = await fetch(
-      `${getApiBase()}/leaderboard?board=${encodeURIComponent(board)}`,
+      `${getApiBase()}/leaderboard?sort=${encodeURIComponent(sort)}`,
       { headers, signal: AbortSignal.timeout(LEADERBOARD_TIMEOUT_MS) },
     );
     if (!response.ok) {

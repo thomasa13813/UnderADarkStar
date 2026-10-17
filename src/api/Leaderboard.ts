@@ -1,13 +1,15 @@
 import { DatabaseSync } from "node:sqlite";
-import { LeaderboardBoard, LeaderboardEntry } from "../core/ApiSchemas";
+import { LeaderboardEntry, LeaderboardSort } from "../core/ApiSchemas";
 
-// Under a Dark Star: the leaderboard (docs/DarkStar-Accounts.md §6). Two
-// boards over the same `stats` cache: Reigns (every round won, thrones
-// taken plus rounds held) and Longest reign (the most consecutive wins on
-// one throne). An account is on a board once it has won a round; banned and
+// Under a Dark Star: the leaderboard (docs/DarkStar-Accounts.md §6). One
+// list over the `stats` cache with three numbers per account: victories
+// (every round won, whether or not the winner took the throne), reigns
+// (rounds played as Hegemon, won or lost) and longest reign (the most
+// consecutive of them on one throne). The caller picks which number ranks
+// the list. An account is on it once it has a victory or a reign; banned and
 // deleted accounts are left off (§10) without touching their rows, so a ban
-// lifted puts them back. Ranks are shared on a tie of the board's number
-// (1, 2, 2, 4); the other number and then the name settle display order.
+// lifted puts them back. Ranks are shared on a tie of the sorting number
+// (1, 2, 2, 4); the other numbers and then the name settle display order.
 
 export const LEADERBOARD_SIZE = 100;
 
@@ -18,35 +20,37 @@ interface Row {
   public_id: string;
   name: string;
   tag: string;
-  thrones_taken: number;
-  rounds_held: number;
+  victories: number;
+  reigns: number;
   longest_reign: number;
 }
 
-// A board's headline number and the one that orders a shared rank.
-function columns(board: LeaderboardBoard): { lead: string; next: string } {
-  return board === "reigns"
-    ? { lead: "reigns", next: "longest_reign" }
-    : { lead: "longest_reign", next: "reigns" };
-}
+// The column a sort ranks on, and the order of the others behind it.
+const COLUMNS: Record<LeaderboardSort, string[]> = {
+  victories: ["victories", "reigns", "longest_reign"],
+  reigns: ["reigns", "longest_reign", "victories"],
+  longest: ["longest_reign", "reigns", "victories"],
+};
 
-// One query per board: the eligible accounts ranked over the whole table,
-// so a rank read for one account agrees with the rank in the top list. The
-// rank is on the headline number alone (two players with three reigns share
-// a rank whatever their longest reigns); the other number is display order.
-function rankedSql(board: LeaderboardBoard): string {
-  const { lead, next } = columns(board);
+// One query per sort: the eligible accounts ranked over the whole table, so
+// a rank read for one account agrees with the rank in the top list. The
+// rank is on the sorting number alone (two players with three victories
+// share a rank whatever their reigns); the other numbers are display order.
+function rankedSql(sort: LeaderboardSort): string {
+  const [lead, second, third] = COLUMNS[sort];
   return `
     SELECT
       RANK() OVER (ORDER BY s.${lead} DESC) AS rank,
-      s.${next} AS next,
+      s.${second} AS second, s.${third} AS third,
       a.public_id, a.name, a.tag,
-      s.thrones_taken, s.rounds_held, s.longest_reign
+      s.victories, s.reigns, s.longest_reign
     FROM (
-      SELECT *, thrones_taken + rounds_held AS reigns FROM stats
+      SELECT thrones_taken + rounds_held AS victories,
+        hegemon_rounds AS reigns, longest_reign, account_id
+      FROM stats
     ) s
     JOIN accounts a ON a.id = s.account_id
-    WHERE s.reigns > 0
+    WHERE (s.victories > 0 OR s.reigns > 0)
       AND a.deleted_at IS NULL
       AND ((a.ban_reason IS NULL AND a.ban_until IS NULL)
            OR (a.ban_until IS NOT NULL AND a.ban_until <= ?))
@@ -58,43 +62,42 @@ function entry(row: Row): LeaderboardEntry {
     rank: Number(row.rank),
     publicId: row.public_id,
     username: `${row.name}.${row.tag}`,
-    reigns: row.thrones_taken + row.rounds_held,
+    victories: row.victories,
+    reigns: row.reigns,
     longestReign: row.longest_reign,
-    thronesTaken: row.thrones_taken,
-    roundsHeld: row.rounds_held,
   };
 }
 
-// The top of a board, in display order.
+// The top of the list under one sort, in display order.
 export function leaderboard(
   db: DatabaseSync,
-  board: LeaderboardBoard,
+  sort: LeaderboardSort,
   now: number,
   limit: number = LEADERBOARD_SIZE,
 ): LeaderboardEntry[] {
   const rows = db
     .prepare(
-      `SELECT * FROM (${rankedSql(board)})
-       ORDER BY rank, next DESC, name COLLATE NOCASE, tag
+      `SELECT * FROM (${rankedSql(sort)})
+       ORDER BY rank, second DESC, third DESC, name COLLATE NOCASE, tag
        LIMIT ?`,
     )
     .all(now, limit) as unknown as Row[];
   return rows.map(entry);
 }
 
-// One account's own row: its rank on the board when it is on it, else its
-// numbers with a null rank. Null for an account that does not exist or is
-// deleted. A banned account sees itself unranked, which is what the board
-// shows everyone else.
+// One account's own row: its rank under the sort when it is on the list,
+// else its numbers with a null rank. Null for an account that does not exist
+// or is deleted. A banned account sees itself unranked, which is what the
+// list shows everyone else.
 export function ownRow(
   db: DatabaseSync,
-  board: LeaderboardBoard,
+  sort: LeaderboardSort,
   accountId: string,
   now: number,
 ): OwnRow | null {
   const ranked = db
     .prepare(
-      `SELECT r.* FROM (${rankedSql(board)}) r
+      `SELECT r.* FROM (${rankedSql(sort)}) r
        JOIN accounts a ON a.public_id = r.public_id
        WHERE a.id = ?`,
     )
@@ -103,8 +106,8 @@ export function ownRow(
   const row = db
     .prepare(
       `SELECT a.public_id, a.name, a.tag,
-         COALESCE(s.thrones_taken, 0) AS thrones_taken,
-         COALESCE(s.rounds_held, 0) AS rounds_held,
+         COALESCE(s.thrones_taken + s.rounds_held, 0) AS victories,
+         COALESCE(s.hegemon_rounds, 0) AS reigns,
          COALESCE(s.longest_reign, 0) AS longest_reign
        FROM accounts a
        LEFT JOIN stats s ON s.account_id = a.id

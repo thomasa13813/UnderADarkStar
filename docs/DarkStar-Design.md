@@ -2096,6 +2096,14 @@ hydrogen-bomb removal (closed by S6).
 
 ## 11. Changelog
 
+- **2026-10-17** — **Leaderboard: one list, victories, reigns as rounds on the throne** (Accounts
+  doc §12.6, A5 and A15 revised). Tom's call: the two tabs become one list with a sort control
+  (Victories by default, Reigns, Longest reign) and the taken/held column goes. **Victories** is
+  every round won, whether or not the winner takes the throne; **Reigns** now count rounds played
+  as Hegemon, won or lost, so a winner who always declines the throne has many victories and no
+  reign; **Longest reign** is the most consecutive rounds as Hegemon on one throne, never carried
+  across thrones. The throne card's badge keeps its own counter (Lobbies §3.1). The recorded
+  numbers are rebuilt under the new rule by the API's third migration.
 - **2026-10-17** — **The help page explains piracy; FFA map weights equalised.** For the friends
   test of 2026-10-18. The rules page gains a _Piracy_ section (six lines, every number read from
   `PIRACY_DEFAULTS`, troops in on-screen units) after the economy it preys on; the round's
