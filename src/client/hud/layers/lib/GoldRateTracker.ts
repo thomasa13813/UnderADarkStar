@@ -2,7 +2,7 @@
  * Tracks per-player gold (and gold-source) values over a rolling window of
  * in-game time and computes per-minute rates.  Used by the leaderboard
  * "Gold Income/min", "Ship Trade Gold/min", "Train Trade Gold/min" and
- * "Piracy Gold/min" columns.
+ * "Raid Gold/min" columns.
  *
  * Time is measured in game ticks (the sim clock, 10 ticks/second), NOT wall
  * time — when the in-game timer stops (pause / frozen sim) the rates read 0

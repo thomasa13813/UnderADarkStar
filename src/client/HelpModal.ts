@@ -4,6 +4,7 @@ import { renderNumber, textDirection, translateText } from "../client/Utils";
 import { assetUrl } from "../core/AssetUrls";
 import {
   HEGEMON_DEFAULTS,
+  PIRACY_DEFAULTS,
   SHIELD_ARRAY_DEFAULTS,
   STARGATE_DEFAULTS,
 } from "../core/configuration/Config";
@@ -14,6 +15,74 @@ import "./components/Difficulties";
 import { modalHeader } from "./components/ui/ModalHeader";
 import { Platform } from "./Platform";
 import { TroubleshootingModal } from "./TroubleshootingModal";
+
+/**
+ * The rules page's sections, in reading order: each is
+ * `help_modal.rules_<name>_title` and `help_modal.rules_<name>_1..n` in
+ * en.json. Exported with {@link rulesParams} so a test can check that every
+ * string exists and every placeholder it uses is filled.
+ */
+export const RULES_SECTIONS: readonly (readonly [string, number])[] = [
+  ["round", 6],
+  ["domain", 4],
+  ["hegemon", 5],
+  ["strike", 5],
+  ["invasion", 5],
+  ["arsenal", 4],
+  ["gift", 3],
+  ["piracy", 6],
+  ["throne", 6],
+];
+
+/** The numbers the rules quote, read from the core defaults. */
+export function rulesParams(): Record<string, string | number> {
+  const h = HEGEMON_DEFAULTS;
+  const g = STARGATE_DEFAULTS;
+  const a = SHIELD_ARRAY_DEFAULTS;
+  const p = PIRACY_DEFAULTS;
+  // "1M", not "1.00M".
+  const gold = (n: number) => renderNumber(n).replace(/\.0+([KMB])$/, "$1");
+  return {
+    minutes: h.defaultRoundMinutes,
+    ceiling: h.troopCeilingPercentOfWholeMapCap,
+    refill: h.refillMinutes,
+    tax: h.shadowTaxPercent,
+    leveller: h.levellerFullPercent,
+    threat: h.levellerThreatPercentOfCeiling,
+    laststand: h.lastStandDomainLostPercent,
+    reserve: h.lastStandReservePercent,
+    raze: h.razeAttackerLossPercent / 100,
+    free: h.tyrannyFreePermille / 10,
+    floor: h.tyrannyFloorPermille / 10,
+    stall: h.invasionStallSeconds,
+    gateCost: gold(g.costGold),
+    gateBase: g.rangeBase,
+    gatePer: g.rangePerLevel,
+    gateReload: g.cooldownSeconds,
+    // The warhead prices under a Dark Star (Config.unitInfo, S6).
+    nukeCost: gold(1_000_000),
+    hCost: gold(5_000_000),
+    flag: h.punitiveFlagSeconds,
+    levyN: h.punitiveLevyPercentNuclear,
+    levyA: h.punitiveLevyPercentAntimatter,
+    pRadius: h.punitiveRadius,
+    halt: h.punitiveHaltSeconds,
+    shieldCost: gold(a.costGold),
+    shieldR: a.radius,
+    // The winner's window is server configuration (ThroneRegistry windowMs).
+    window: 30,
+    // Piracy (docs/DarkStar-Piracy.md). Troops are engine units, ten times
+    // the figure on screen.
+    pirateWait: p.respawnSeconds,
+    pirateWaitCap: p.respawnCapSeconds,
+    pirateExclusion: p.respawnExclusion,
+    raidGold: gold(p.raidGold),
+    raidTroops: p.raidTroops / 10,
+    holdCap: (p.holdCap / 10).toLocaleString("en-US"),
+    claimTiles: p.landingTiles,
+    landingClose: p.landingClosesSeconds,
+  };
+}
 
 @customElement("help-modal")
 export class HelpModal extends BaseModal {
@@ -1317,51 +1386,7 @@ export class HelpModal extends BaseModal {
   // cannot drift from the simulation. Gold is passed pre-formatted because
   // ICU would print 500000 with locale separators.
   private renderRules() {
-    const h = HEGEMON_DEFAULTS;
-    const g = STARGATE_DEFAULTS;
-    const a = SHIELD_ARRAY_DEFAULTS;
-    // "1M", not "1.00M".
-    const gold = (n: number) => renderNumber(n).replace(/\.0+([KMB])$/, "$1");
-    const params: Record<string, string | number> = {
-      minutes: h.defaultRoundMinutes,
-      ceiling: h.troopCeilingPercentOfWholeMapCap,
-      refill: h.refillMinutes,
-      tax: h.shadowTaxPercent,
-      leveller: h.levellerFullPercent,
-      threat: h.levellerThreatPercentOfCeiling,
-      laststand: h.lastStandDomainLostPercent,
-      reserve: h.lastStandReservePercent,
-      raze: h.razeAttackerLossPercent / 100,
-      free: h.tyrannyFreePermille / 10,
-      floor: h.tyrannyFloorPermille / 10,
-      stall: h.invasionStallSeconds,
-      gateCost: gold(g.costGold),
-      gateBase: g.rangeBase,
-      gatePer: g.rangePerLevel,
-      gateReload: g.cooldownSeconds,
-      // The warhead prices under a Dark Star (Config.unitInfo, S6).
-      nukeCost: gold(1_000_000),
-      hCost: gold(5_000_000),
-      flag: h.punitiveFlagSeconds,
-      levyN: h.punitiveLevyPercentNuclear,
-      levyA: h.punitiveLevyPercentAntimatter,
-      pRadius: h.punitiveRadius,
-      halt: h.punitiveHaltSeconds,
-      shieldCost: gold(a.costGold),
-      shieldR: a.radius,
-      // The winner's window is server configuration (ThroneRegistry windowMs).
-      window: 30,
-    };
-    const sections: [string, number][] = [
-      ["round", 6],
-      ["domain", 4],
-      ["hegemon", 5],
-      ["strike", 5],
-      ["invasion", 5],
-      ["arsenal", 4],
-      ["gift", 3],
-      ["throne", 6],
-    ];
+    const params = rulesParams();
     return html`
       <!-- Rules Section -->
       <div class="flex items-center gap-3 mb-3">
@@ -1392,7 +1417,7 @@ export class HelpModal extends BaseModal {
         class="bg-white/5 rounded-xl border border-white/10 px-5 py-4 mb-8"
       >
         <p class="text-sm">${translateText("help_modal.rules_intro")}</p>
-        ${sections.map(
+        ${RULES_SECTIONS.map(
           ([name, count]) => html`
             <h4 class="text-blue-100 font-semibold mt-4 mb-1">
               ${translateText(`help_modal.rules_${name}_title`)}

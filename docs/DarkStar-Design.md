@@ -2096,6 +2096,17 @@ hydrogen-bomb removal (closed by S6).
 
 ## 11. Changelog
 
+- **2026-10-17** — **The help page explains piracy; FFA map weights equalised.** For the friends
+  test of 2026-10-18. The rules page gains a _Piracy_ section (six lines, every number read from
+  `PIRACY_DEFAULTS`, troops in on-screen units) after the economy it preys on; the round's
+  elimination rule names the pirate option; the freighter stat reads _Raid Gold/min_ (Piracy
+  PR17, brought forward from slice D). `tests/client/HelpModalRules.test.ts` pins every rules
+  string and placeholder. The FFA throne rotation now draws every map in it once per cycle
+  (`ffa_frequency: 1` on the 14 maps with a public weight; Sol stays special-only, the five duel
+  maps stay out): before, the inherited maps held 36 of 71 slots and the Hegemon maps 4 each.
+  Team and special weights untouched; the cull (F17) is unchanged. Tom's standard for a launch
+  map, stated the same day: reachable deep space for commerce and piracy, no solidly land-based
+  maps.
 - **2026-10-15** — **Leftover OpenFront wordings.** Tom's call: the train is a **supply delivery** and
   the lanes a factory lays are its **trade network** (factory build-menu line, help, tutorial step,
   cosmetics, quick chat, the leaderboard's gold column; F14). A lost warship is now reported as

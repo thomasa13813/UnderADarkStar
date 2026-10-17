@@ -5,6 +5,7 @@
   "translation_key": "map.milkyway",
   "categories": ["cosmic"],
   "multiplayer_frequency": 8,
+  "ffa_frequency": 1,
   "nations": [
     {
       "coordinates": [869, 886],

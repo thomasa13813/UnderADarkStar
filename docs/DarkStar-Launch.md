@@ -296,7 +296,8 @@ _Done when_ the checklist is clean. This build is the release candidate.
    hostname from `API_DOMAIN` (default `api.<DOMAIN>`), and the page learns it from
    `BOOTSTRAP_CONFIG.apiOrigin`.
 3. ~~The launch map count~~ (at least six new maps, 2026-10-01); which of the 13 inherited maps
-   stay is still open.
+   stay is still open. Tom's standard (2026-10-17): every launch map has reachable deep space for
+   commerce and piracy; no solidly land-based maps.
 4. How many thrones to open with (suggest 3 to 5).
 5. Whether "January Games" is a legal entity yet. It matters for the Terms now and for taking
    payments later; not legal advice.
@@ -304,6 +305,14 @@ _Done when_ the checklist is clean. This build is the release candidate.
 
 ## 7. Changelog
 
+- **2026-10-17** — **Before the friends test.** The help page's rules gain a Piracy section and
+  the freighter stat reads _Raid Gold/min_; the FFA throne rotation draws every map once per
+  cycle instead of favouring the inherited maps (Design changelog, same day). Checked the same
+  day: `feat/piracy` passes the full suite, the type check and lint; the live site serves
+  `main` (3cfd5a8c), which does not include piracy. The "secrets rotated" item is a one-time
+  check that the server's env holds no value from the 2026-10-07 audit (the env pusher generates
+  `API_KEY` on the server and the signing key lives only on its volume); the test itself
+  produces no secret.
 - **2026-10-12** — **Checklist brought up to date.** Licence items and the throne launch lines
   ticked (both live). Tom's decision on F12: **no automatic defence for a Hegemon who drops or
   goes AFK**; the throne stays exactly as its player left it and may be taken. Next before the

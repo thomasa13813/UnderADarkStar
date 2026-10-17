@@ -4,6 +4,7 @@
   "translation_key": "map.bullseye",
   "categories": ["cosmic"],
   "multiplayer_frequency": 4,
+  "ffa_frequency": 1,
   "themes": ["space"],
   "hegemon": {
     "center": [900, 900],

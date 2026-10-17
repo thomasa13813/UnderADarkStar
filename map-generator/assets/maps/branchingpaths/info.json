@@ -4,6 +4,7 @@
   "translation_key": "map.branchingpaths",
   "categories": ["arcade"],
   "multiplayer_frequency": 7,
+  "ffa_frequency": 1,
   "hegemon": {
     "center": [1240, 1430],
     "radius": 193,

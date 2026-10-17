@@ -360,7 +360,8 @@ hold pays for the owner's tiles at the ordinary rate.
 - `DarkStar-Lobbies.md` **L31**: the death screen has a fourth action.
 - `DarkStar-Sound.md`: _embrace_ (the pirate alone), _raid_ (pirate and victim), _beaching_ (the
   pirate and the coast's owner).
-- `resources/lang/en.json`: _Piracy Gold/min_ → _Raid Gold/min_ (PR17).
+- `resources/lang/en.json`: _Piracy Gold/min_ → _Raid Gold/min_ (PR17). [Done 2026-10-17, with a _Piracy_
+  section on the help page's rules.]
 
 ## 11. Changelog
 
@@ -382,3 +383,7 @@ hold pays for the owner's tiles at the ordinary rate.
   same day, Tom: no selection box on the corsair (PR15); the corsair always sails at the chase's
   pace, two steps a tick (PR2); the wait is 15 s and runs from every elimination as well as every
   sinking (PR10).
+- **2026-10-17** — PR17 done ahead of slice D (_Raid Gold/min_), and the help page's rules gain a
+  _Piracy_ section with the round's elimination rule pointing at it (`HelpModal.ts`, `en.json`,
+  `tests/client/HelpModalRules.test.ts`), so the friends test can read the mechanic. Slice D
+  keeps the rest.

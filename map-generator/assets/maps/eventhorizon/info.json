@@ -4,6 +4,7 @@
   "translation_key": "map.eventhorizon",
   "categories": ["cosmic"],
   "multiplayer_frequency": 4,
+  "ffa_frequency": 1,
   "hegemon": {
     "center": [900, 900],
     "radius": 162,

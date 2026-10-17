@@ -4,6 +4,7 @@
   "translation_key": "map.joviansystem",
   "categories": ["cosmic"],
   "multiplayer_frequency": 4,
+  "ffa_frequency": 1,
   "themes": ["space"],
   "hegemon": {
     "center": [693, 1071],
