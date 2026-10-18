@@ -42,7 +42,7 @@ each frame (and animate from local time, e.g. the spawn-overlay breath).
 | `frame/derive/`           | Pure derivations that turn raw simulation state into renderer-ready shapes (attack rings, alliance clusters, relation matrix, player status, nuke telegraphs)         |
 | `frame/Upload.ts`         | `uploadFrameData(view, frame)` — single dispatch point that calls every `view.update*()` based on what's in the frame                                                 |
 | `frame/TrailManager.ts`   | Mutates the per-tile trail texture; emits dirty row range                                                                                                             |
-| `frame/RailroadCache.ts`  | Accumulates railroad events; packs every railroad as one straight trade-lane segment (`packSegments`) for `RailroadPass`                                                 |
+| `frame/RailroadCache.ts`  | Accumulates railroad events; packs every railroad as one straight trade-lane segment (`packSegments`) for `RailroadPass`                                              |
 | `gl/`                     | WebGL2 renderer internals                                                                                                                                             |
 | `gl/MapRenderer.ts`       | Public facade — what `WebGLFrameBuilder` and the client talk to                                                                                                       |
 | `gl/Renderer.ts`          | Owns all passes, runs them in order each frame, manages FBOs                                                                                                          |

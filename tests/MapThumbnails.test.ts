@@ -3,7 +3,7 @@ import {
   buildThumbnailRGBA,
   COLORS_FILE,
   currentThumbnailColors,
-} from "../scripts/generateMapThumbnails";
+} from "../scripts/mapThumbnailPixels";
 import {
   encodeTerrainTile,
   hexToRgb,

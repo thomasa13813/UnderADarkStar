@@ -25,7 +25,7 @@ case "${API_DOMAIN:-}" in
         ;;
 esac
 
-cat > "$OUT" <<EOF
+cat > "$OUT" << EOF
 server {
     listen 80;
     server_name ${API_DOMAIN};

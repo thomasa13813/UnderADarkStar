@@ -33,6 +33,7 @@ export default [
             "eslint.config.js",
             "scripts/*.mjs",
             "scripts/generateSpriteAtlases.ts",
+            "scripts/generateMapThumbnails.ts",
             "scripts/generateGalaxyMap.ts",
             "scripts/generateStarfield.ts",
             "tests/matchmaking/*.mjs",

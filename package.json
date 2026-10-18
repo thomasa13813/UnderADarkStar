@@ -36,7 +36,7 @@
     "lint:eslint": "eslint",
     "lint:eslint:fix": "eslint --fix",
     "prepare": "husky",
-    "gen-maps": "cd map-generator && go run . && npm run format",
+    "gen-maps": "cd map-generator && go run . --keep-thumbnails && npm run format",
     "map": "tsx src/scripts/makeMap.ts",
     "gen-atlases": "tsx scripts/generateSpriteAtlases.ts",
     "gen-thumbnails": "tsx scripts/generateMapThumbnails.ts",
