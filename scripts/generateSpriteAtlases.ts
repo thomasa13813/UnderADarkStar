@@ -17,13 +17,15 @@
  *   npx tsx scripts/generateSpriteAtlases.ts            # rebuild what changed
  *   npx tsx scripts/generateSpriteAtlases.ts --check    # verify, write nothing
  *   npx tsx scripts/generateSpriteAtlases.ts --rerender-icons
+ *   npx tsx scripts/generateSpriteAtlases.ts --rerender-icon=City  # one column
  *
  * Unit and fx atlases are plain PNG composites and rebuild pixel-for-pixel
  * from their sprites. Icon cells are anti-aliased SVG renders, and no two
  * rasterisers agree to the pixel, so an icon column that already exists in
  * the committed atlas is COPIED from it unchanged; only new columns (or all of
- * them with --rerender-icons) are rendered, with the Chromium that Playwright
- * ships (`npx playwright install chromium` if missing). A file whose pixels
+ * them with --rerender-icons, or the named one with --rerender-icon=<name>) are
+ * rendered, with the Chromium that Playwright ships (`npx playwright install
+ * chromium` if missing). A file whose pixels
  * did not change is left untouched, so a rebuild never churns git.
  *
  * No dependencies beyond node: the PNG codec below is enough for the flat
@@ -78,7 +80,7 @@ const ICON_CELL = 64;
 const ICON_GLYPH = 48;
 type IconColumn = { name: string; svg: string } | { name: string; png: string };
 const ICON_COLUMNS: IconColumn[] = [
-  { name: "City", svg: "CityIconWhite.svg" },
+  { name: "City", svg: "PopulationCenterIconWhite.svg" },
   { name: "Port", svg: "PortIcon.svg" },
   { name: "Factory", svg: "FactoryIconWhite.svg" },
   { name: "Defense Post", svg: "ShieldIconWhite.svg" },
@@ -355,7 +357,7 @@ function buildFxAtlas(): { image: Image; meta: object } {
  *  header), otherwise from a Chromium render of the SVG. */
 async function buildIconAtlas(
   existing: Image | null,
-  rerender: boolean,
+  rerender: (name: string) => boolean,
 ): Promise<Image> {
   const atlas = blank(ICON_CELL * ICON_COLUMNS.length, ICON_CELL);
   const toRender: number[] = [];
@@ -364,7 +366,7 @@ async function buildIconAtlas(
     if ("png" in col) {
       blit(atlas, readSprite(col.png), clip.x, 0, clip);
     } else if (
-      !rerender &&
+      !rerender(col.name) &&
       existing !== null &&
       existing.width >= clip.x + ICON_CELL
     ) {
@@ -483,7 +485,13 @@ function pixelDiff(a: Image | null, b: Image): string {
 async function main(): Promise<void> {
   const args = new Set(process.argv.slice(2));
   const check = args.has("--check");
-  const rerender = args.has("--rerender-icons");
+  const rerenderAll = args.has("--rerender-icons");
+  const rerenderOne = new Set(
+    [...args]
+      .filter((a) => a.startsWith("--rerender-icon="))
+      .map((a) => a.slice("--rerender-icon=".length)),
+  );
+  const rerender = (name: string) => rerenderAll || rerenderOne.has(name);
   let dirty = 0;
 
   const outputs: { name: string; image: Image }[] = [

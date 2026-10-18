@@ -63,10 +63,11 @@ const FLICKER_DUR_S = 1.2;
 const MIN_PERIOD_S = 0.8;
 const MAX_PERIOD_S = 6;
 
-// City glyph from resources/images/CityIcon.svg (24×24 viewBox), as baked
-// into the structure icon atlas.
-const CITY_GLYPH =
-  "M13 9a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v13h11zM6 20H4v-2h2zm0-4H4v-2h2zm0-4H4v-2h2zm5 8H8v-2h3zm0-4H8v-2h3zm0-4H8v-2h3zm3.5-6H6V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7h-3V6.5a.5.5 0 0 0-.5-.5zm7.5 7v9h-2.5v-4h-2v4H15v-9a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1z";
+// Population Center glyph from resources/images/PopulationCenterIconWhite.svg
+// (32×32 viewBox), as baked into the structure icon atlas.
+const CITY_GLYPH_FILLED =
+  "M9.5 13.5V8h3v5.5zM14 13.5V4.5h4v9zM19.5 13.5V9h3v4.5zM2.5 13h27v2.5h-27zM5 15.5C11.5 16.5 14.3 19 14.8 23.5L16 31l1.2-7.5C17.7 19 20.5 16.5 27 15.5z";
+const CITY_GLYPH_DOME = "M4 13.5A12 11 0 0 1 28 13.5";
 
 // Grayscale sprite templates from resources/sprites, by unit.frag.glsl band:
 // L = 180 (light → territory color), M = 130 (mid → spawn color),
@@ -487,9 +488,19 @@ function structuresScene(
       <circle data-fill cx="0.5" cy="0.5" r="0.39" fill=${paint.fill}>${paint.anim}</circle>
       <g clip-path="url(#${id}-fill)">
         <g
-          transform="translate(${(1 - glyphSize) / 2} ${(1 - glyphSize) / 2}) scale(${glyphSize / 24})"
+          transform="translate(${(1 - glyphSize) / 2} ${(1 - glyphSize) / 2}) scale(${glyphSize / 32})"
         >
-          <path data-glyph d=${CITY_GLYPH} fill="#fff"></path>
+          <g data-glyph fill="none" stroke="#fff" stroke-linecap="round">
+            <path d=${CITY_GLYPH_FILLED} fill="#fff" stroke="none"></path>
+            <path d=${CITY_GLYPH_DOME} stroke-width="2.4"></path>
+            <ellipse
+              cx="16"
+              cy="21.5"
+              rx="9.5"
+              ry="2.2"
+              stroke-width="2.2"
+            ></ellipse>
+          </g>
         </g>
       </g>`,
   );
