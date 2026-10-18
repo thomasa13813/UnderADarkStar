@@ -96,9 +96,9 @@ account; linking a second login to an existing account, and email as a third pro
    `api.<DOMAIN>/auth/login/<provider>`.
 2. The API sends them to the provider with a one-time state value; the provider sends them back to
    `api.<DOMAIN>/auth/callback/<provider>` with a code.
-3. The API exchanges the code for the provider's user ID (Discord scope `identify`; Google scope
-   `openid` plus `profile` for a starting name). It finds the account for that sign-in or creates
-   one.
+3. The API exchanges the code for the provider's user ID (Discord scope `identify`; Google scopes
+   `openid profile`, never `email`: the ID, `sub`, and the name for a starting account name). It
+   finds the account for that sign-in or creates one.
 4. The API sets the **refresh cookie** (HttpOnly, Secure, SameSite=Lax, path `/auth`, 30 days) and
    sends the browser back to the game.
 5. The game calls `POST /auth/refresh` (`Auth.ts` does this today) and receives a 15-minute token.
@@ -261,6 +261,7 @@ What the game server and client call at `api.<DOMAIN>`, and what answers at laun
 | ------------------------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `GET /.well-known/jwks.json`                                  | game server | The public signing key.                                                                                                                                                  |
 | `GET /auth/login/:provider`, `/callback/…`                    | browser     | New. Discord, Google, and `dev` in dev only.                                                                                                                             |
+| `GET /auth/providers`                                         | client      | The providers this API offers (`{ providers: [...] }`); the page shows Google's button only when it is listed.                                                           |
 | `POST /auth/refresh`, `/logout`, `/revoke`                    | client      | Rotate the cookie and issue a token; end this session; end every session.                                                                                                |
 | `GET /users/@me`                                              | both        | Account name, public ID, ban, the numbers. `UserMeResponseSchema` is cut to these.                                                                                       |
 | `PUT /users/@me/username`, `DELETE /users/@me`                | client      | Rename (A13); delete the account (A17).                                                                                                                                  |
@@ -340,7 +341,7 @@ Schema changes are numbered migration files applied at boot.
   account and the board; this is the one part of the system that is not rebuildable.
 - **Google's rule.** A Google sign-in cannot leave test mode until the app has a public privacy
   policy on a verified domain. So the legal pages come before Google sign-in goes live; Discord
-  has no such gate.
+  has no such gate. The provider is built (§12.7) and stays off until its two keys are set.
 
 ## 11. Configuration
 
@@ -350,7 +351,7 @@ Schema changes are numbered migration files applied at boot.
 | `API_DOMAIN`                                 | both programs    | The API's hostname when it is not `api.<DOMAIN>`. At launch `darkstar-api.january-games.com` beside `DOMAIN=darkstar.january-games.com` (Launch §6.2: the free certificate covers one level). The page learns it as `BOOTSTRAP_CONFIG.apiOrigin`. |
 | `API_KEY`                                    | both programs    | Shared secret for server-to-API calls. Already exists.                                                                                                                                                                                            |
 | `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET` | API              | From a Discord developer application (Tom creates it).                                                                                                                                                                                            |
-| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`   | API              | From a Google Cloud OAuth client (Tom creates it).                                                                                                                                                                                                |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`   | API              | From a Google Cloud OAuth client (Tom creates it; Services doc §2.5). Optional: both empty and Google is not offered; one without the other stops the API at boot.                                                                                |
 | `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | game server, API | From the Cloudflare dashboard. The site key already exists.                                                                                                                                                                                       |
 | `DATA_DIR`                                   | API              | `/data` in the container; `.data/` (git-ignored) in dev.                                                                                                                                                                                          |
 | Record retention, name-change wait           | API constants    | 30 days each.                                                                                                                                                                                                                                     |
@@ -597,7 +598,8 @@ id="page-leaderboard" inline>` in `index.html`, router name `leaderboard`; tabs 
   Hegemon; not the overthrown, a bystander, a slayer's teammate, or anyone off a throne round).
   `tests/client/NavBars.leaderboard.test.ts` (the item after Play in both bars, its translation
   hooks, the highlight).
-- **Not yet**: Google among the providers (after the privacy policy, B2's note); a weekly
+- **Not yet**: Google among the providers (after the privacy policy, B2's note; built since,
+  §12.7); a weekly
   board, profiles behind a row (B7); the pixel-art nav button.
 
 ### 12.6 Revised: one list, victories, reigns as rounds on the throne (2026-10-17)
@@ -629,6 +631,34 @@ confusing. Built on `feat/piracy`.
   claim after stepping down), `Ingest.test.ts` (the new numbers per row of §5.4, `hegemonRun`
   on its own, the rebuild recomputing runs), `LeaderboardModal.test.ts` (the sort control),
   `ReignPrompt.test.ts` (three figures).
+
+### 12.7 As built: the Google provider (2026-10-17)
+
+Built once the Privacy Policy and Terms were drafted (they promise exactly what this keeps). Off
+until `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are both set; the Google Cloud setup and the
+redirect URIs are in the Services doc, §2.5.
+
+- **API**: `Providers.ts` `googleProvider`, the same OAuth2 authorization-code flow as Discord's:
+  `/auth/login/google` sends the browser to `accounts.google.com/o/oauth2/v2/auth` with scope
+  `openid profile` and the state value; `/auth/callback/google` exchanges the code at
+  `oauth2.googleapis.com/token` (server to server, with the secret), then reads
+  `openidconnect.googleapis.com/v1/userinfo` with the access token. Only `sub` (stored as
+  `provider_user_id`) and `name` (the starting account name, through `accountNameFrom`) are read;
+  the picture, the given and family names and the ID token are dropped. No email is ever asked
+  for. A missing name gives `Player`; a missing `sub` fails the sign-in. `Config.ts`:
+  `google` credentials, both keys or neither. `AuthRoutes.ts`: `GET /auth/providers`, the names
+  this API offers. `deploy/env.example` and `deploy/push-env.sh`: the two keys, optional.
+- **Client**: `SignIn.ts` adds `google` to `SignInProvider`, `googleIcon()` (Google's standard
+  four-colour G, as its branding rules ask), and `loadSignInProviders()`, which asks
+  `/auth/providers` once; `signInProviders()` lists Google after Discord only when the API does.
+  `AccountButton` loads the list on connect and re-renders; `ReignPrompt` awaits it before showing
+  its buttons. The panel says "Signed in with Google". String: `account.provider_google`.
+- **Tests**: `tests/api/Auth.test.ts` "auth routes (google provider)": the round trip against a
+  stubbed Google (scope, client id, secret, redirect URI, bearer token, only the ID and name
+  stored, `provider: "google"` in the token, the same account on a second sign-in); state
+  mismatch and denial; a refused code; no name; no `sub`; `/auth/providers`. "providers offered":
+  no Google without keys (login, callback and the list), half a Google refused, the production
+  callback URI. `ApiSkeleton.test.ts`: `google: null` by default.
 
 ## 13. Tests
 
@@ -681,6 +711,10 @@ API tests run against an in-memory database, under `tests/api/`, added to `npm t
 - **Q5 — Record retention.** 30 days of full game records (A19), or none at all?
 
 ## 16. Changelog
+
+- **2026-10-17** — **The Google provider built** (§12.7): scopes `openid profile` only, the
+  Google `sub` and name kept and nothing else, off until both keys are set; `GET /auth/providers`
+  so the page shows Google's button only when the API offers it.
 
 - **2026-10-17** — **One list, victories, reigns as rounds on the throne** (§12.6). Tom's call:
   the two tabs become one list with a sort control (Victories by default); the taken/held

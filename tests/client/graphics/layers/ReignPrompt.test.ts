@@ -27,6 +27,7 @@ vi.mock("../../../../src/client/Api", () => ({
 
 vi.mock("../../../../src/client/SignIn", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../../../src/client/SignIn")>()),
+  loadSignInProviders: async () => {},
   signInProviders: () => ["discord", "dev"],
   startSignInWith: vi.fn(
     (provider: string, options?: { redirectTo?: string }) => {

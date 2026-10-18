@@ -6,6 +6,7 @@ import { invalidateUserMe } from "../Api";
 import { logOut, userAuth } from "../Auth";
 import { showInGameAlert } from "../InGameModal";
 import {
+  loadSignInProviders,
   providerIcon,
   providerLabel,
   signInProviders,
@@ -46,6 +47,7 @@ export class AccountButton extends LitElement {
       capture: true,
     });
     this.noticeFailedSignIn();
+    void loadSignInProviders().then(() => this.requestUpdate());
   }
 
   disconnectedCallback() {
@@ -253,9 +255,11 @@ export class AccountButton extends LitElement {
     const providerKey =
       this.provider === "discord"
         ? "account.provider_discord"
-        : this.provider === "dev"
-          ? "account.provider_dev"
-          : null;
+        : this.provider === "google"
+          ? "account.provider_google"
+          : this.provider === "dev"
+            ? "account.provider_dev"
+            : null;
     return html`
       <div
         id="account-panel"

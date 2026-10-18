@@ -9,7 +9,9 @@
 # never in the repository).
 #
 # Reads DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, TURNSTILE_SITE_KEY,
-# TURNSTILE_SECRET_KEY and TUNNEL_TOKEN from ./.env (git-ignored), generates
+# TURNSTILE_SECRET_KEY and TUNNEL_TOKEN from ./.env (git-ignored), and
+# GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET when they are there (Google sign-in
+# is optional: empty keys leave it off), generates
 # a fresh API_KEY, fills in deploy/env.example's fixed values, and uploads the
 # result to /opt/darkstar/.env (mode 600). Nothing is printed: no secret ever
 # appears in a terminal or a chat log. An existing server file is kept as
@@ -50,6 +52,8 @@ DISCORD_CLIENT_SECRET="$(need DISCORD_CLIENT_SECRET)"
 TURNSTILE_SITE_KEY="$(need TURNSTILE_SITE_KEY)"
 TURNSTILE_SECRET_KEY="$(need TURNSTILE_SECRET_KEY)"
 TUNNEL_TOKEN="$(need TUNNEL_TOKEN)"
+GOOGLE_CLIENT_ID="$(val GOOGLE_CLIENT_ID)"
+GOOGLE_CLIENT_SECRET="$(val GOOGLE_CLIENT_SECRET)"
 DEPLOY_BRANCH="$(val DEPLOY_BRANCH)"
 DEPLOY_BRANCH="${DEPLOY_BRANCH:-main}"
 
@@ -77,6 +81,8 @@ TURNSTILE_SITE_KEY=$TURNSTILE_SITE_KEY
 TURNSTILE_SECRET_KEY=$TURNSTILE_SECRET_KEY
 DISCORD_CLIENT_ID=$DISCORD_CLIENT_ID
 DISCORD_CLIENT_SECRET=$DISCORD_CLIENT_SECRET
+GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID
+GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET
 DATA_DIR=/data
 EOF
 

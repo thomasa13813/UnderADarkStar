@@ -4,6 +4,7 @@ import { UserMeResponse } from "../../../core/ApiSchemas";
 import { fetchUserMeUncached, getUserMe } from "../../Api";
 import { isLoggedIn } from "../../Auth";
 import {
+  loadSignInProviders,
   providerIcon,
   providerLabel,
   SignInProvider,
@@ -65,6 +66,7 @@ export class ReignPrompt extends LitElement {
     try {
       const signedIn = await isLoggedIn();
       if (!signedIn) {
+        await loadSignInProviders();
         this.providers = signInProviders();
         this.signedIn = false;
         return;

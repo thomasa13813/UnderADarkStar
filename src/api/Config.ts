@@ -37,6 +37,9 @@ export interface ApiConfig {
   // then not offered, which is how a fresh checkout runs with the dev
   // provider alone.
   discord: ProviderCredentials | null;
+  // Google sign-in (§4.2), the same way: null, and not offered, unless both
+  // GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are set.
+  google: ProviderCredentials | null;
   // Cloudflare Turnstile's secret, for the join bot check (§7, join_verify).
   // Required outside dev; in dev it may be absent, and every token passes.
   turnstileSecret: string | null;
@@ -88,6 +91,11 @@ export function apiConfigFromEnv(
       "DISCORD",
       env.DISCORD_CLIENT_ID,
       env.DISCORD_CLIENT_SECRET,
+    ),
+    google: providerCredentials(
+      "GOOGLE",
+      env.GOOGLE_CLIENT_ID,
+      env.GOOGLE_CLIENT_SECRET,
     ),
     turnstileSecret,
   };

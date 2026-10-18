@@ -55,6 +55,7 @@ describe("api config", () => {
       apiKey: "test-key",
       siteOrigin: "http://localhost:9000",
       discord: null,
+      google: null,
       turnstileSecret: null,
     });
     expect(issuerFor(config)).toBe("http://localhost:8787");

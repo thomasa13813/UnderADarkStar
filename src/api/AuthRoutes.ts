@@ -101,6 +101,12 @@ export function mountAuthRoutes(app: Express, deps: AuthDeps): void {
     res.redirect(302, redirectTo + SIGN_IN_FAILED_FRAGMENT);
   };
 
+  // The providers this API offers, so the page shows only buttons that work
+  // (Google stays hidden until its keys are set).
+  app.get("/auth/providers", (_req, res) => {
+    res.json({ providers: [...providers.keys()] });
+  });
+
   app.get("/auth/login/:provider", async (req, res, next) => {
     try {
       const provider = providers.get(String(req.params.provider));
