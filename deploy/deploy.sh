@@ -42,7 +42,7 @@ GIT_COMMIT="$COMMIT" $COMPOSE up -d --no-build
 
 echo "== waiting for the health check"
 i=0
-until [ "$(docker inspect -f '{{.State.Health.Status}}' "$($COMPOSE ps -q game)" 2>/dev/null)" = "healthy" ]; do
+until [ "$(docker inspect -f '{{.State.Health.Status}}' "$($COMPOSE ps -q game)" 2> /dev/null)" = "healthy" ]; do
     i=$((i + 1))
     if [ "$i" -gt 24 ]; then
         echo "the game container did not become healthy; recent logs:" >&2
@@ -54,6 +54,6 @@ done
 echo "== healthy"
 
 echo "== pruning old images"
-docker image prune -f >/dev/null
+docker image prune -f > /dev/null
 
 echo "== deployed $COMMIT"

@@ -56,6 +56,12 @@ var mapsFlag string
 // workersFlag controls how many maps are processed concurrently, bounding peak memory usage.
 var workersFlag int
 
+// keepThumbnailsFlag leaves an existing thumbnail.webp alone. The committed
+// thumbnails are drawn in the game's terrain colors by
+// scripts/generateMapThumbnails.ts, so `npm run gen-maps` must not replace
+// them with this generator's own; a new map still gets one here.
+var keepThumbnailsFlag bool
+
 // logFlags holds all the flags related to configuring the map-generator logging
 var logFlags LogFlags
 
@@ -158,8 +164,11 @@ func processMap(ctx context.Context, name string, isTest bool) (string, error) {
 	if err := os.WriteFile(filepath.Join(mapDir, "map16x.bin"), result.Map16x.Data, 0644); err != nil {
 		return "", fmt.Errorf("failed to write combined binary for %s: %w", name, err)
 	}
-	if err := os.WriteFile(filepath.Join(mapDir, "thumbnail.webp"), result.Thumbnail, 0644); err != nil {
-		return "", fmt.Errorf("failed to write thumbnail for %s: %w", name, err)
+	thumbnailPath := filepath.Join(mapDir, "thumbnail.webp")
+	if _, statErr := os.Stat(thumbnailPath); !keepThumbnailsFlag || statErr != nil {
+		if err := os.WriteFile(thumbnailPath, result.Thumbnail, 0644); err != nil {
+			return "", fmt.Errorf("failed to write thumbnail for %s: %w", name, err)
+		}
 	}
 
 	// Copy layer PNGs and validate them.
@@ -297,6 +306,7 @@ func loadTerrainMaps() ([]string, error) {
 func main() {
 	flag.StringVar(&mapsFlag, "maps", "", "optional comma-separated list of maps to process. ex: --maps=world,eastasia,big_plains")
 	flag.IntVar(&workersFlag, "workers", 4, "number of maps to process concurrently. reduce to lower peak memory usage.")
+	flag.BoolVar(&keepThumbnailsFlag, "keep-thumbnails", false, "leave an existing thumbnail.webp unchanged (used by npm run gen-maps).")
 	flag.StringVar(&logFlags.logLevel, "log-level", "", "Explicitly sets the log level to one of: ALL, DEBUG, INFO (default), WARN, ERROR.")
 	flag.BoolVar(&logFlags.verbose, "verbose", false, "Adds additional logging and prefixes logs with the [mapname].  Alias of log-level=DEBUG.")
 	flag.BoolVar(&logFlags.verbose, "v", false, "-verbose shorthand")
