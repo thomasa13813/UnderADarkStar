@@ -17,7 +17,8 @@ import { executeTicks } from "./util/utils";
 
 // Gifts (H18, docs/DarkStar-Design.md §6.14): the Hegemon builds on a
 // challenger's land at its own cost; the host owns the structure from the
-// start and cannot refuse.
+// start and cannot refuse. The throne pays the flat first-building price
+// whatever the host already owns (Tom, 2026-10-17).
 
 let game: Game;
 let hegemon: Player;
@@ -90,13 +91,40 @@ describe("The gift menu (H18)", () => {
       const mine = own.find((u) => u.type === type)!;
       const theirs = gifted.find((u) => u.type === type)!;
       expect(theirs.canBuild).toBe(mine.canBuild);
-      expect(theirs.cost).toBe(mine.cost); // the host's price, not the throne's
+      // A host with nothing yet pays the first-building price, as the throne
+      // always does.
+      expect(theirs.cost).toBe(mine.cost);
     }
     // The Hegemon's own list there is empty of structures (H2) — the gift
     // list is the host's, never the Hegemon's.
     for (const u of hegemon.buildableUnits(tile, Structures.types)) {
       expect(u.canBuild).toBe(false);
     }
+  });
+
+  test("the gift list prices every structure as the host's first", () => {
+    const tile = homeTile(east);
+    east.addGold(1_000_000_000n);
+    const first = game.config().unitInfo(UnitType.City).cost(game, east);
+    // The host builds two cities of their own; their third costs them more.
+    for (let i = 0; i < 2; i++) {
+      east.buildUnit(
+        UnitType.City,
+        game.ref(game.x(tile) + i * 4, game.y(tile) + 3),
+        {},
+      );
+    }
+    const own = east.buildableUnits(tile, [UnitType.City])[0];
+    expect(own.cost).toBeGreaterThan(first);
+    // The throne's bill is the first-building price, and so is every step
+    // of a bulk upgrade.
+    const gifted = east.buildableUnits(tile, [UnitType.City], hegemon)[0];
+    expect(gifted.cost).toBe(first);
+    expect(gifted.canUpgrade).not.toBe(false);
+    gifted.upgradeCosts!.forEach((total, n) => {
+      expect(total).toBe(first * BigInt(n + 1));
+    });
+    expect(own.upgradeCosts![1]).toBeGreaterThan(first * 2n);
   });
 
   test("a throne that cannot pay is offered nothing", () => {
@@ -112,7 +140,7 @@ describe("The gift menu (H18)", () => {
 });
 
 describe("Placing a gift (H18)", () => {
-  test("the host owns it from the start; the throne pays the host's price", () => {
+  test("the host owns it from the start; the throne pays the first-building price", () => {
     const tile = homeTile(east);
     const cost = game.config().unitInfo(UnitType.City).cost(game, east);
     const throneGold = hegemon.gold();
@@ -127,11 +155,15 @@ describe("Placing a gift (H18)", () => {
     expect(hegemon.units(UnitType.City)).toHaveLength(0);
     expect(hegemon.gold()).toBe(throneGold - cost);
     expect(east.gold()).toBe(hostGold);
-    // Counted as the host's build: their next city costs more.
+    // Counted as the host's build: their next city costs them more, but the
+    // throne's next gift of one costs the same again.
     expect(east.unitsConstructed(UnitType.City)).toBe(1);
     expect(
       game.config().unitInfo(UnitType.City).cost(game, east),
     ).toBeGreaterThan(cost);
+    expect(
+      game.config().unitInfo(UnitType.City).cost(game, east, 0, hegemon),
+    ).toBe(cost);
 
     // Built like any other: under construction, then live.
     expect(cities[0].isUnderConstruction()).toBe(true);
@@ -168,7 +200,13 @@ describe("Placing a gift (H18)", () => {
     const shown = messagesFor(east);
     expect(city.level()).toBe(3);
     expect(east.units(UnitType.City)).toHaveLength(1);
-    expect(hegemon.gold()).toBeLessThan(throneGold);
+    // Two steps at the flat first-building price, though the host has one
+    // city built and another level on it.
+    const first = game
+      .config()
+      .unitInfo(UnitType.City)
+      .cost(game, east, 0, hegemon);
+    expect(hegemon.gold()).toBe(throneGold - first * 2n);
     expect(east.gold()).toBe(hostGold);
     expect(shown.map((m) => m.message)).toContain(
       "events_display.dark_star_gift_upgrade",

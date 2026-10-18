@@ -252,7 +252,11 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   rival who is falling behind. [Built 2026-09-25, §6.14] Placement runs through the host's own
   rules with the throne as payer; a gift may also upgrade the host's existing structure; every
   challenger can receive one, Barons included; the host is told; the Gift takes the ally slot of the
-  Hegemon's radial menu on a challenger's tile.
+  Hegemon's radial menu on a challenger's tile. [Revised 2026-10-17] **The throne pays the flat
+  first-building price**, whatever the host already owns and however many upgrade steps are bought
+  at once: a gifted fourth city costs the Hegemon what a first one does. The escalating count
+  (cities, ports, factories, defence posts) is the builder's own burden, not the giver's; the gift
+  still counts as the host's build, so the host's own next one costs them more.
 - **H19 — Missile launches invite a punitive strike.** [Decided 2026-09-26; built the same day,
   §6.16] A challenger who fires a
   missile from a silo (Nuclear or Antimatter Warhead, S6; the target does not matter, the Dark Star
@@ -1367,8 +1371,12 @@ host gets **one event line**.
 - **Placement is the host's, the bill is the throne's.** `Player.buildableUnits`, `canBuild`,
   `findUnitToUpgrade`, `canUpgradeUnit`, `upgradeUnit` and `buildUnit` gained an optional **payer**
   (default: the player itself). Affordability is judged against the payer's gold and the payer is
-  charged; the cost is always the host's own — their structure count, as if they had built it — and
-  the build is recorded against the host (`recordUnitConstructed`), so their next one costs more.
+  charged; the build is recorded against the host (`recordUnitConstructed`), so their next one
+  costs more. [Revised 2026-10-17] The cost was the host's own — their structure count, as if they
+  had built it — and is now the **flat first-building price** whenever the payer is not the
+  builder: `UnitInfo.cost` gained a fourth argument, the payer, and `costWrapper` in `Config.ts`
+  prices a gift at count zero, ignoring the bulk-upgrade step too, so every step of a gifted
+  upgrade costs the same. The infinite-gold cheat is judged against the payer.
   Everything the host could not do, the throne cannot gift: H2 keeps the Dark Star empty even for
   an invader's held tiles, and the Hegemon's own list stays refused (`canBuildUnitType`).
 - **The order.** A new intent `gift_unit` `{ unit, tile, host, amount? }`, appended to the intent
@@ -2136,6 +2144,10 @@ hydrogen-bomb removal (closed by S6).
 
 ## 11. Changelog
 
+- **2026-10-17, gifts** — **A gift costs the throne the first-building price.** Tom's call: the
+  Hegemon's gift (H18) no longer pays the host's escalating price for cities, ports, factories and
+  defence posts; it always pays as for the host's first of that kind, each bulk-upgrade step
+  included. H18, §6.14.
 - **2026-10-17, map** — **Polar.** Earth from above the north pole: the Arctic as the Dark Star,
   Antarctica as an unbroken ring at the rim, void beyond it, Natural Earth coasts, waterways and
   ranges, the radius a 0.7 power of the distance from the pole so the north is not squashed
