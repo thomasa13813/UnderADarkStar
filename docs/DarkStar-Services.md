@@ -107,8 +107,70 @@ Two unrelated things under one account.
 
 ### 2.5 Google
 
-- **Later:** a Google Cloud OAuth client for "Sign in with Google" (Launch doc, Stage 6). Google
-  requires a public privacy policy on a verified domain before that can leave test mode.
+A Google Cloud OAuth client for "Sign in with Google" (Launch doc, Stage 6). Google tells our API
+who the player is: their Google account ID (`sub`) and name, nothing else (scopes `openid
+profile`; never `email`). That is exactly what the Privacy Policy (§6 of `privacy.html`) promises,
+so the scopes must never grow without the policy changing first. Needs a client ID (public) and a
+secret. The code is built (Accounts doc §12.7) and **off** until both keys are set.
+
+- **The redirects** (Authorized redirect URIs on the OAuth client):
+  `http://localhost:8787/auth/callback/google` for development and
+  `https://darkstar-api.january-games.com/auth/callback/google` for production. As with Discord,
+  a sign-in fails with a Google error page (`redirect_uri_mismatch`) if the API's address changes
+  and this list is not updated. No "Authorized JavaScript origins" are needed: the browser never
+  talks to Google's scripts, only the API does.
+- **Test mode.** Until Google approves the app, only the test users listed on the client can sign
+  in. Google requires the privacy policy to be public on a verified domain before the app can be
+  published. While in test mode, leave the keys off the production server (so players never see a
+  button that refuses them) and try it in dev.
+- **If Google is down:** as Discord: sign-in with Google fails; guests and signed-in sessions
+  carry on.
+
+**Setting it up (Tom, in a browser, once).** Google renames these pages from time to time; the
+names below are those of the "Google Auth Platform" menu.
+
+1. Open <https://console.cloud.google.com/>, signed in with the Google account that should own
+   the app. At the top, click the project picker → **New project**. Name: `Under a Dark Star`.
+   **Create**, then make sure the new project is selected in the picker.
+2. Open <https://console.cloud.google.com/auth/overview> and click **Get started**.
+   - App name: `Under a Dark Star`. User support email: `hello@january-games.com` (if the list
+     offers only your own address, pick it here and change it later under **Branding**).
+   - Audience: **External**.
+   - Contact information: `hello@january-games.com`. Agree to the policy, **Create**.
+3. **Branding** (left menu). Fill in, then **Save**:
+   - App home page: `https://darkstar.january-games.com`
+   - Privacy policy: `https://darkstar.january-games.com/privacy.html`
+   - Terms of service: `https://darkstar.january-games.com/terms.html`
+   - Authorized domains: **Add domain** → `january-games.com`
+4. **Data access** (left menu) → **Add or remove scopes**. Tick exactly two: `openid` and
+   `.../auth/userinfo.profile`. Leave `.../auth/userinfo.email` **unticked**. **Update**, then
+   **Save**.
+5. **Audience** (left menu). Leave Publishing status on **Testing**. Under **Test users** →
+   **Add users**, add your own Google address (and any friend who will try it). **Save**.
+6. **Clients** (left menu) → **Create client**.
+   - Application type: **Web application**. Name: `DarkStar API`.
+   - Authorized JavaScript origins: leave empty.
+   - Authorized redirect URIs: **Add URI** twice and paste
+     `http://localhost:8787/auth/callback/google` and
+     `https://darkstar-api.january-games.com/auth/callback/google`.
+   - **Create**. A box shows the **Client ID** and **Client secret**. Click **Download JSON** and
+     keep the file somewhere private (Google may not show the secret again).
+7. On your PC, open the root `.env` of the repository (git-ignored; never the committed
+   `deploy/env.example`) and add two lines, pasting the values from that box after the `=`, with
+   no spaces or quotes:
+
+   ```text
+   GOOGLE_CLIENT_ID=
+   GOOGLE_CLIENT_SECRET=
+   ```
+
+   Restart `npm run dev`; the account menu now shows **Google** under Discord.
+
+8. **Going live** (after the privacy policy is deployed): **Audience** → **Publish app**, and
+   ask Google for brand verification if it offers it. Only `openid profile` are asked for, which
+   Google counts as non-sensitive, so no security review is needed. Then push the keys to the
+   server with `deploy/push-env.sh` (the exact command is in the private operations doc) and
+   redeploy.
 
 ### 2.6 Quiet dependencies
 
@@ -124,7 +186,8 @@ Things nobody signed up for that the build still needs.
 
 - **Backups** of the account database and signing key, nightly, off the server (Cloudflare R2 or
   similar). Accounts doc §10, step B6. Until then, §2.2's volume is a single point of loss.
-- **Google sign-in** (Stage 6, after the privacy policy).
+- **Google sign-in** (Stage 6, after the privacy policy). Built, off until its keys are set
+  (§2.5).
 - **An uptime check** on `/api/health` and the API's `/health` (Stage 6).
 - **itch.io** listing (open question, Launch doc §6).
 
@@ -166,16 +229,20 @@ server's data volume. Which ones there are:
 | Secret                | What it unlocks                               |
 | --------------------- | --------------------------------------------- |
 | Discord client secret | Pretending to be our sign-in                  |
+| Google client secret  | Pretending to be our sign-in                  |
 | Turnstile secret key  | Forging "this join passed the bot check"      |
 | Tunnel token          | Attaching a different server to our hostnames |
 | `API_KEY`             | Calling the API as the game server            |
 | Token signing key     | Minting login tokens for any account          |
 
-Public, not secret: the Discord client ID, the Turnstile site key and the tunnel's name. If a
+Public, not secret: the Discord and Google client IDs, the Turnstile site key and the tunnel's name. If a
 secret may have leaked, rotate it first and investigate second; the rotation steps are in the
 private operations doc.
 
 ## 5. Changelog
+
+- **2026-10-17** — §2.5 Google filled in: the provider is built (off until its keys are set),
+  the scopes, the redirect URIs and the step-by-step Google Cloud setup.
 
 - **2026-10-12** — Cut down to the architecture for the public repository. The server's address
   and access, account ownership, the secrets' locations, the troubleshooting runbook and the

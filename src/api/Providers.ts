@@ -4,9 +4,10 @@ import { ProviderIdentity } from "./Accounts";
 import { ApiConfig } from "./Config";
 
 // Under a Dark Star: the sign-in providers (docs/DarkStar-Accounts.md §4.2).
-// Discord is the launch provider; Google follows once the privacy policy is
-// live (§10); `dev` exists only when GAME_ENV=dev and signs in as any name
-// with no external service, so tests and local play can exercise accounts.
+// Discord is the launch provider; Google is built and offered once its keys
+// are set, which waits on the privacy policy being live (§10); `dev` exists
+// only when GAME_ENV=dev and signs in as any name with no external service,
+// so tests and local play can exercise accounts.
 
 export type FetchLike = (
   input: string,
@@ -45,6 +46,14 @@ export const DISCORD_AUTHORIZE_URL = "https://discord.com/oauth2/authorize";
 export const DISCORD_TOKEN_URL = "https://discord.com/api/oauth2/token";
 export const DISCORD_USER_URL = "https://discord.com/api/users/@me";
 
+export const GOOGLE_PROVIDER = "google";
+
+export const GOOGLE_AUTHORIZE_URL =
+  "https://accounts.google.com/o/oauth2/v2/auth";
+export const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
+export const GOOGLE_USERINFO_URL =
+  "https://openidconnect.googleapis.com/v1/userinfo";
+
 // The providers this configuration offers, by name.
 export function providersFor(
   config: ApiConfig,
@@ -60,6 +69,16 @@ export function providersFor(
       discordProvider(
         config.discord.clientId,
         config.discord.clientSecret,
+        fetchImpl,
+      ),
+    );
+  }
+  if (config.google !== null) {
+    providers.set(
+      GOOGLE_PROVIDER,
+      googleProvider(
+        config.google.clientId,
+        config.google.clientSecret,
         fetchImpl,
       ),
     );
@@ -142,6 +161,72 @@ function discordProvider(
         provider: DISCORD_PROVIDER,
         providerUserId: me.id,
         displayName: me.global_name ?? me.username,
+      };
+    },
+  };
+}
+
+const GoogleTokenSchema = z.object({ access_token: z.string().min(1) });
+// Only the two fields we keep are read; anything else Google sends (the
+// picture, the locale) is dropped by the parse.
+const GoogleUserInfoSchema = z.object({
+  sub: z.string().min(1),
+  name: z.string().optional(),
+});
+
+// OpenID Connect authorization code, scopes `openid profile` only: the
+// account's stable ID (`sub`) and its name, no email (the privacy policy
+// promises exactly this). Like Discord, the code is exchanged server to
+// server with the client secret, and the name comes from the userinfo
+// endpoint with the access token, so the ID token is never needed. A
+// missing name becomes the fallback account name.
+function googleProvider(
+  clientId: string,
+  clientSecret: string,
+  fetchImpl: FetchLike,
+): Provider {
+  return {
+    name: GOOGLE_PROVIDER,
+    authorizeUrl: ({ state, redirectUri }) => {
+      const params = new URLSearchParams({
+        client_id: clientId,
+        response_type: "code",
+        redirect_uri: redirectUri,
+        scope: "openid profile",
+        state,
+      });
+      return `${GOOGLE_AUTHORIZE_URL}?${params.toString()}`;
+    },
+    complete: async ({ code, redirectUri }) => {
+      const tokenResponse = await fetchImpl(GOOGLE_TOKEN_URL, {
+        method: "POST",
+        headers: { "content-type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          client_id: clientId,
+          client_secret: clientSecret,
+          grant_type: "authorization_code",
+          code,
+          redirect_uri: redirectUri,
+        }).toString(),
+      });
+      if (!tokenResponse.ok) {
+        throw new Error(
+          `google token exchange failed: ${tokenResponse.status}`,
+        );
+      }
+      const token = GoogleTokenSchema.parse(await tokenResponse.json());
+
+      const infoResponse = await fetchImpl(GOOGLE_USERINFO_URL, {
+        headers: { authorization: `Bearer ${token.access_token}` },
+      });
+      if (!infoResponse.ok) {
+        throw new Error(`google user lookup failed: ${infoResponse.status}`);
+      }
+      const info = GoogleUserInfoSchema.parse(await infoResponse.json());
+      return {
+        provider: GOOGLE_PROVIDER,
+        providerUserId: info.sub,
+        displayName: info.name ?? "",
       };
     },
   };

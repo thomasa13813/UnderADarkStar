@@ -22,6 +22,9 @@ import {
   DISCORD_TOKEN_URL,
   DISCORD_USER_URL,
   FetchLike,
+  GOOGLE_AUTHORIZE_URL,
+  GOOGLE_TOKEN_URL,
+  GOOGLE_USERINFO_URL,
 } from "../../src/api/Providers";
 import { REFRESH_COOKIE, SESSION_TTL_MS } from "../../src/api/Sessions";
 import {
@@ -41,6 +44,8 @@ const DEV_ENV = {
   API_KEY: "test-key",
   DISCORD_CLIENT_ID: "discord-app-id",
   DISCORD_CLIENT_SECRET: "discord-app-secret",
+  GOOGLE_CLIENT_ID: "google-app-id",
+  GOOGLE_CLIENT_SECRET: "google-app-secret",
 };
 
 const SITE = "http://localhost:9000";
@@ -54,6 +59,12 @@ interface Harness {
     tokenRequests: { body: URLSearchParams }[];
     userRequests: { authorization: string | undefined }[];
     user: { id: string; username: string; global_name: string | null };
+    tokenStatus: number;
+  };
+  google: {
+    tokenRequests: { body: URLSearchParams }[];
+    userRequests: { authorization: string | undefined }[];
+    user: Record<string, unknown>;
     tokenStatus: number;
   };
   close(): Promise<void>;
@@ -73,7 +84,46 @@ async function startApi(
     user: { id: "4242", username: "tomsmith", global_name: "Tom Smith" },
     tokenStatus: 200,
   };
+  // What Google's userinfo sends for `openid profile`: more than we keep.
+  const google: Harness["google"] = {
+    tokenRequests: [],
+    userRequests: [],
+    user: {
+      sub: "110248495921238986420",
+      name: "Ada Lovelace",
+      given_name: "Ada",
+      family_name: "Lovelace",
+      picture: "https://lh3.googleusercontent.com/a/photo",
+    },
+    tokenStatus: 200,
+  };
   const fakeFetch: FetchLike = async (input, init) => {
+    if (input === GOOGLE_TOKEN_URL) {
+      google.tokenRequests.push({
+        body: new URLSearchParams(String(init?.body ?? "")),
+      });
+      return new Response(
+        JSON.stringify({
+          access_token: "google-access",
+          id_token: "unused.id.token",
+          token_type: "Bearer",
+        }),
+        {
+          status: google.tokenStatus,
+          headers: { "content-type": "application/json" },
+        },
+      );
+    }
+    if (input === GOOGLE_USERINFO_URL) {
+      const headers = new Headers(init?.headers);
+      google.userRequests.push({
+        authorization: headers.get("authorization") ?? undefined,
+      });
+      return new Response(JSON.stringify(google.user), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    }
     if (input === DISCORD_TOKEN_URL) {
       discord.tokenRequests.push({
         body: new URLSearchParams(String(init?.body ?? "")),
@@ -114,6 +164,7 @@ async function startApi(
     db,
     clock,
     discord,
+    google,
     close: async () => {
       await new Promise<void>((r) => server.close(() => r()));
       db.close();
@@ -595,6 +646,185 @@ describe("auth routes (discord provider)", () => {
   });
 });
 
+describe("auth routes (google provider)", () => {
+  let h: Harness;
+  beforeEach(async () => {
+    h = await startApi();
+  });
+  afterEach(async () => {
+    await h.close();
+  });
+
+  async function beginGoogle(): Promise<{
+    state: string;
+    stateCookie: string;
+  }> {
+    const res = await fetch(
+      `${h.base}/auth/login/google?redirect=${encodeURIComponent(SITE + "/")}`,
+      { redirect: "manual" },
+    );
+    expect(res.status).toBe(302);
+    const location = new URL(res.headers.get("location")!);
+    expect(`${location.origin}${location.pathname}`).toBe(GOOGLE_AUTHORIZE_URL);
+    expect(location.searchParams.get("client_id")).toBe("google-app-id");
+    expect(location.searchParams.get("response_type")).toBe("code");
+    // The privacy policy's promise: the ID and the name, never the email.
+    expect(location.searchParams.get("scope")).toBe("openid profile");
+    expect(location.searchParams.get("redirect_uri")).toBe(
+      "http://localhost:8787/auth/callback/google",
+    );
+    const state = location.searchParams.get("state")!;
+    expect(state.length).toBeGreaterThan(10);
+    const stateCookie = setCookie(res, STATE_COOKIE)!;
+    expect(stateCookie.startsWith(`${state}.`)).toBe(true);
+    expect(setCookieHeader(res, STATE_COOKIE)).toContain("HttpOnly");
+    expect(setCookie(res, REFRESH_COOKIE)).toBeNull();
+    return { state, stateCookie };
+  }
+
+  async function callback(
+    code: string,
+    begun: { state: string; stateCookie: string },
+  ) {
+    return fetch(
+      `${h.base}/auth/callback/google?code=${code}&state=${encodeURIComponent(begun.state)}`,
+      {
+        redirect: "manual",
+        headers: { cookie: `${STATE_COOKIE}=${begun.stateCookie}` },
+      },
+    );
+  }
+
+  it("round-trips through Google and keeps only the ID and the name", async () => {
+    const back = await callback("the-code", await beginGoogle());
+    expect(back.status).toBe(302);
+    expect(back.headers.get("location")).toBe(SITE + "/");
+    expect(setCookieHeader(back, STATE_COOKIE)).toContain("Max-Age=0");
+    const cookie = setCookie(back, REFRESH_COOKIE)!;
+    expect(cookie).toBeTruthy();
+
+    expect(h.google.tokenRequests).toHaveLength(1);
+    const body = h.google.tokenRequests[0].body;
+    expect(body.get("code")).toBe("the-code");
+    expect(body.get("client_id")).toBe("google-app-id");
+    expect(body.get("client_secret")).toBe("google-app-secret");
+    expect(body.get("grant_type")).toBe("authorization_code");
+    expect(body.get("redirect_uri")).toBe(
+      "http://localhost:8787/auth/callback/google",
+    );
+    expect(h.google.userRequests[0].authorization).toBe("Bearer google-access");
+    // Discord was not asked.
+    expect(h.discord.tokenRequests).toHaveLength(0);
+
+    const identity = h.db
+      .prepare("SELECT provider, provider_user_id FROM identities")
+      .get() as { provider: string; provider_user_id: string };
+    expect(identity).toEqual({
+      provider: "google",
+      provider_user_id: "110248495921238986420",
+    });
+    const account = h.db.prepare("SELECT * FROM accounts").get() as Record<
+      string,
+      unknown
+    >;
+    expect(account.name).toBe("Ada_Lovelace");
+    // Nothing else Google sent (the picture, the given and family names)
+    // was stored anywhere.
+    const everything = JSON.stringify([
+      h.db.prepare("SELECT * FROM accounts").all(),
+      h.db.prepare("SELECT * FROM identities").all(),
+    ]);
+    expect(everything).not.toContain("googleusercontent");
+    expect(everything).not.toContain('"Ada"');
+
+    const { jwt } = (await (await refresh(h, cookie)).json()) as {
+      jwt: string;
+    };
+    const jwks = (await (
+      await fetch(`${h.base}/.well-known/jwks.json`)
+    ).json()) as {
+      keys: Parameters<typeof importJWK>[0][];
+    };
+    const { payload } = await jwtVerify(
+      jwt,
+      await importJWK(jwks.keys[0], "EdDSA"),
+    );
+    expect(payload.provider).toBe("google");
+
+    // Signing in again is the same account.
+    await callback("c2", await beginGoogle());
+    expect(
+      (
+        h.db.prepare("SELECT COUNT(*) AS n FROM accounts").get() as {
+          n: number;
+        }
+      ).n,
+    ).toBe(1);
+  });
+
+  it("refuses a callback whose state does not match, or that was denied", async () => {
+    const { stateCookie } = await beginGoogle();
+    const wrong = await callback("the-code", { state: "forged", stateCookie });
+    expect(wrong.headers.get("location")).toBe(
+      SITE + "/" + SIGN_IN_FAILED_FRAGMENT,
+    );
+    expect(setCookie(wrong, REFRESH_COOKIE)).toBeNull();
+    expect(h.google.tokenRequests).toHaveLength(0);
+
+    const begun = await beginGoogle();
+    const denied = await fetch(
+      `${h.base}/auth/callback/google?error=access_denied&state=${encodeURIComponent(begun.state)}`,
+      {
+        redirect: "manual",
+        headers: { cookie: `${STATE_COOKIE}=${begun.stateCookie}` },
+      },
+    );
+    expect(denied.headers.get("location")).toBe(
+      SITE + "/" + SIGN_IN_FAILED_FRAGMENT,
+    );
+    expect(h.db.prepare("SELECT COUNT(*) AS n FROM accounts").get()).toEqual({
+      n: 0,
+    });
+  });
+
+  it("fails closed when Google refuses the code", async () => {
+    const begun = await beginGoogle();
+    h.google.tokenStatus = 400;
+    const back = await callback("bad", begun);
+    expect(back.headers.get("location")).toBe(
+      SITE + "/" + SIGN_IN_FAILED_FRAGMENT,
+    );
+    expect(setCookie(back, REFRESH_COOKIE)).toBeNull();
+  });
+
+  it("names the account Player when Google sends no name", async () => {
+    h.google.user = { sub: "9" };
+    await callback("c", await beginGoogle());
+    expect(
+      (h.db.prepare("SELECT name FROM accounts").get() as { name: string })
+        .name,
+    ).toBe(FALLBACK_ACCOUNT_NAME);
+  });
+
+  it("fails closed when the userinfo has no sub", async () => {
+    h.google.user = { name: "No Id" };
+    const back = await callback("c", await beginGoogle());
+    expect(back.headers.get("location")).toBe(
+      SITE + "/" + SIGN_IN_FAILED_FRAGMENT,
+    );
+    expect(h.db.prepare("SELECT COUNT(*) AS n FROM accounts").get()).toEqual({
+      n: 0,
+    });
+  });
+
+  it("is listed by /auth/providers", async () => {
+    const res = await fetch(`${h.base}/auth/providers`);
+    expect(await res.json()).toEqual({
+      providers: ["dev", "discord", "google"],
+    });
+  });
+});
+
 describe("providers offered", () => {
   it("has no dev provider outside dev, and no Discord without keys", async () => {
     const prod = await startApi({
@@ -615,6 +845,20 @@ describe("providers offered", () => {
         (await fetch(`${prod.base}/auth/login/discord`, { redirect: "manual" }))
           .status,
       ).toBe(404);
+      expect(
+        (await fetch(`${prod.base}/auth/login/google`, { redirect: "manual" }))
+          .status,
+      ).toBe(404);
+      expect(
+        (
+          await fetch(`${prod.base}/auth/callback/google?code=c&state=s`, {
+            redirect: "manual",
+          })
+        ).status,
+      ).toBe(404);
+      expect(await (await fetch(`${prod.base}/auth/providers`)).json()).toEqual(
+        { providers: [] },
+      );
       expect(prod.config.siteOrigin).toBe("https://example.com");
     } finally {
       await prod.close();
@@ -653,6 +897,40 @@ describe("providers offered", () => {
         DISCORD_CLIENT_ID: "id",
       }),
     ).toThrow(/DISCORD_CLIENT_SECRET/);
+    expect(() =>
+      apiConfigFromEnv({
+        GAME_ENV: "dev",
+        DOMAIN: "localhost",
+        API_KEY: "k",
+        GOOGLE_CLIENT_SECRET: "secret",
+      }),
+    ).toThrow(/GOOGLE_CLIENT_ID/);
+  });
+
+  it("offers Google only with both keys, at the production callback", async () => {
+    const prod = await startApi({
+      GAME_ENV: "prod",
+      DOMAIN: "darkstar.january-games.com",
+      API_DOMAIN: "darkstar-api.january-games.com",
+      API_KEY: "k",
+      GOOGLE_CLIENT_ID: "id",
+      GOOGLE_CLIENT_SECRET: "secret",
+      TURNSTILE_SECRET_KEY: "s",
+    });
+    try {
+      const res = await fetch(`${prod.base}/auth/login/google`, {
+        redirect: "manual",
+      });
+      expect(res.status).toBe(302);
+      expect(
+        new URL(res.headers.get("location")!).searchParams.get("redirect_uri"),
+      ).toBe("https://darkstar-api.january-games.com/auth/callback/google");
+      expect(await (await fetch(`${prod.base}/auth/providers`)).json()).toEqual(
+        { providers: ["google"] },
+      );
+    } finally {
+      await prod.close();
+    }
   });
 });
 
