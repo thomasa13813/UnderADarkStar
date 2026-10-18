@@ -150,6 +150,73 @@ describe("requestTurnstileToken runs exactly one challenge", () => {
     expect(fake.remove).toHaveBeenCalledTimes(1);
   });
 
+  // The popup around the widget (TurnstileDialog.ts) follows these calls:
+  // open while the player has something to do, closed the moment that ends.
+  it("reports when the player has to act, and when that is over", async () => {
+    const fake = fakeTurnstile();
+    const onInteractive = vi.fn();
+
+    const promise = requestTurnstileToken(fake.api, {
+      sitekey: "site-key",
+      container: "#turnstile-container",
+      onInteractive,
+    });
+    const options = fake.options();
+    expect(onInteractive).not.toHaveBeenCalled();
+
+    options["before-interactive-callback"]?.();
+    expect(onInteractive).toHaveBeenLastCalledWith(true);
+    options["after-interactive-callback"]?.();
+    expect(onInteractive).toHaveBeenLastCalledWith(false);
+    expect(onInteractive).toHaveBeenCalledTimes(2);
+
+    options.callback?.("tok");
+    await expect(promise).resolves.toMatchObject({ token: "tok" });
+    // Settling after the player is done says nothing more.
+    expect(onInteractive).toHaveBeenCalledTimes(2);
+  });
+
+  it("closes the player's step when the request settles first", async () => {
+    vi.useFakeTimers();
+    const fake = fakeTurnstile();
+    const onInteractive = vi.fn();
+
+    const promise = requestTurnstileToken(fake.api, {
+      sitekey: "site-key",
+      container: "#turnstile-container",
+      onInteractive,
+    });
+    const options = fake.options();
+    options["before-interactive-callback"]?.();
+    expect(onInteractive).toHaveBeenLastCalledWith(true);
+
+    const assertion = expect(promise).rejects.toMatchObject({
+      code: TURNSTILE_TIMEOUT_CODE,
+    });
+    vi.advanceTimersByTime(TURNSTILE_TOKEN_TIMEOUT_MS);
+    await assertion;
+    expect(onInteractive).toHaveBeenLastCalledWith(false);
+    expect(onInteractive).toHaveBeenCalledTimes(2);
+
+    // A late Turnstile call cannot reopen it on a request that is done.
+    options["before-interactive-callback"]?.();
+    expect(onInteractive).toHaveBeenCalledTimes(2);
+  });
+
+  it("never says the player is done without saying they had to act", async () => {
+    const fake = fakeTurnstile();
+    const onInteractive = vi.fn();
+
+    const promise = requestTurnstileToken(fake.api, {
+      sitekey: "site-key",
+      container: "#turnstile-container",
+      onInteractive,
+    });
+    fake.options().callback?.("tok");
+    await promise;
+    expect(onInteractive).not.toHaveBeenCalled();
+  });
+
   it("rejects when execute throws", async () => {
     const fake = fakeTurnstile();
     fake.execute.mockImplementation(() => {

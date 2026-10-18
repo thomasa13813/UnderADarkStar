@@ -25,9 +25,9 @@ import { HostLobbyModal as HostPrivateLobbyModal } from "./HostLobbyModal";
 import { showInGameAlert, showInGameConfirm } from "./InGameModal";
 import { JoinLobbyModal } from "./JoinLobbyModal";
 import "./LangSelector";
-import "./LeaderboardModal";
 import { LangSelector } from "./LangSelector";
 import { initLayout } from "./Layout";
+import "./LeaderboardModal";
 import {
   hideMenuChrome,
   menuChromeIsTornDown,
@@ -50,9 +50,14 @@ import {
   SendUpdateGameConfigIntentEvent,
 } from "./Transport";
 import {
+  setTurnstileDialogVisible,
+  TURNSTILE_CONTAINER_SELECTOR,
+} from "./TurnstileDialog";
+import {
   requestTurnstileToken,
   resolveTurnstileToken,
   TURNSTILE_LOAD_FAILED_CODE,
+  TURNSTILE_TIMEOUT_CODE,
   TurnstileError,
   type TurnstileApi,
   type TurnstileToken,
@@ -141,6 +146,8 @@ declare global {
   // Extend the global interfaces to include your custom events
   interface DocumentEventMap {
     "join-lobby": CustomEvent<JoinLobbyEvent>;
+    // A join that died before it had a connection (see failJoin).
+    "join-failed": CustomEvent<JoinFailedEvent>;
     "kick-player": CustomEvent;
     toggle_game_start_timer: CustomEvent;
     "join-changed": CustomEvent;
@@ -150,6 +157,10 @@ declare global {
     "game-starting": CustomEvent;
     "update-game-config": CustomEvent;
   }
+}
+
+export interface JoinFailedEvent {
+  gameID: string;
 }
 
 export interface JoinLobbyEvent {
@@ -342,8 +353,9 @@ class Client {
 
     document.addEventListener("join-lobby", (event) => {
       // A rejected handshake (Turnstile alerts then rejects) never assigns
-      // lobbyHandle. Re-throw so the failure still surfaces.
+      // lobbyHandle, so nothing downstream ever hears that the join is over.
       void this.handleJoinLobby(event).catch((error) => {
+        console.error("Join failed before it had a connection", error);
         // joinInFlight has exactly the same problem: set when the join
         // committed, and cleared only on the two paths that reach a handle.
         // Left set it would silence every boot interrupt for the rest of the
@@ -351,8 +363,8 @@ class Client {
         // superseded cannot clear the flag its successor is relying on.
         if (joinOwnsInFlightFlag(this.mostRecentJoinEvent, event.timeStamp)) {
           this.joinInFlight = false;
+          this.failJoin(event.detail.gameID, error);
         }
-        throw error;
       });
     });
     document.addEventListener("leave-lobby", this.handleLeaveLobby.bind(this));
@@ -950,6 +962,20 @@ class Client {
     }
   }
 
+  // A join that died before it had a handle (the bot check refused, auth
+  // failed): the lobby pages are still showing "Connecting to lobby..." and
+  // nothing else would ever move them off it. Tell them, and tell the player
+  // why -- unless the Turnstile path already has (resolveTurnstileToken shows
+  // its own modal for the attempt that decided the join).
+  private failJoin(gameID: string, error: unknown) {
+    if (!(error instanceof TurnstileError)) {
+      void showInGameAlert(translateText("error_modal.join_failed"));
+    }
+    document.dispatchEvent(
+      new CustomEvent<JoinFailedEvent>("join-failed", { detail: { gameID } }),
+    );
+  }
+
   private async getTurnstileToken(
     lobby: JoinLobbyEvent,
   ): Promise<string | null> {
@@ -973,7 +999,9 @@ class Client {
       forceFresh: false,
       onError: (code) =>
         void showInGameAlert(
-          translateText("error_modal.turnstile_error", { code }),
+          code === TURNSTILE_TIMEOUT_CODE
+            ? translateText("error_modal.turnstile_timeout")
+            : translateText("error_modal.turnstile_error", { code }),
         ),
     });
   }
@@ -1024,9 +1052,11 @@ async function getTurnstileToken(): Promise<TurnstileToken> {
   }
 
   // The render/execute choreography (and why the callbacks go on render)
-  // lives in TurnstileToken.ts.
+  // lives in TurnstileToken.ts; the popup the widget appears in, when the
+  // check needs the player, in TurnstileDialog.ts.
   return requestTurnstileToken(turnstile, {
     sitekey: ClientEnv.turnstileSiteKey(),
-    container: "#turnstile-container",
+    container: TURNSTILE_CONTAINER_SELECTOR,
+    onInteractive: setTurnstileDialogVisible,
   });
 }

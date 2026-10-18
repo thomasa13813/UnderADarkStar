@@ -134,6 +134,40 @@
       data-i18n-aria-label="main.menu"
     ></mobile-nav-bar>
 
+    <!-- The bot check (Cloudflare Turnstile). The widget is interaction-only:
+         nothing shows while the check passes silently. When it needs the
+         player, Main.ts reveals this popup and the widget appears inside it,
+         over everything -- never over a lobby card (src/client/TurnstileDialog.ts).
+         Idles as invisible rather than hidden so the widget's iframe keeps
+         running meanwhile. Outside the main content area, which is hidden
+         in-game. -->
+    <div
+      id="turnstile-dialog"
+      class="invisible pointer-events-none fixed inset-0 z-99999 flex items-center justify-center bg-black/80 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="turnstile-dialog-title"
+    >
+      <div
+        class="w-full max-w-sm rounded-2xl border border-white/10 bg-surface p-6 shadow-2xl text-center"
+      >
+        <h2
+          id="turnstile-dialog-title"
+          class="text-lg font-bold text-white mb-2"
+          data-i18n="turnstile.title"
+        >
+          Checking your browser
+        </h2>
+        <p class="text-sm text-white/70 mb-5" data-i18n="turnstile.body">
+          Complete the check below to join the game.
+        </p>
+        <div
+          id="turnstile-container"
+          class="flex justify-center min-h-16"
+        ></div>
+      </div>
+    </div>
+
     <!-- MAIN CONTENT AREA -->
     <div
       class="in-[.in-game]:hidden flex-1 basis-full min-w-0 min-h-dvh in-[.page-open]:min-h-0 in-[.page-open]:overflow-hidden relative transition-[margin] duration-500 ease-out will-change-[margin-left] flex flex-col"
@@ -143,11 +177,6 @@
       <desktop-nav-bar
         class="sticky top-0 z-[60] in-[.page-open]:static"
       ></desktop-nav-bar>
-
-      <div
-        id="turnstile-container"
-        class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-99999"
-      ></div>
 
       <!-- Main container with responsive padding -->
       <main-layout class="contents">
