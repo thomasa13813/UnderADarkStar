@@ -104,3 +104,34 @@ describe("page-footer studio wordmark", () => {
     expect(span?.classList.contains("md:hidden")).toBe(true);
   });
 });
+
+describe("page-footer legal links", () => {
+  let footer: Footer;
+
+  beforeEach(() => {
+    if (!customElements.get("page-footer")) {
+      customElements.define("page-footer", Footer);
+    }
+    ClientEnv.reset();
+  });
+
+  afterEach(() => {
+    footer?.remove();
+    ClientEnv.reset();
+  });
+
+  // Google's OAuth review needs the privacy policy linked from the home page,
+  // and both pages are root files shipped from resources/public/.
+  it("links the Terms of Service and the Privacy Policy", async () => {
+    footer = document.createElement("page-footer") as Footer;
+    document.body.appendChild(footer);
+    await footer.updateComplete;
+
+    const terms = footer.querySelector<HTMLAnchorElement>("a.footer-terms");
+    const privacy = footer.querySelector<HTMLAnchorElement>("a.footer-privacy");
+    expect(terms?.getAttribute("href")).toBe("/terms.html");
+    expect(terms?.getAttribute("data-i18n")).toBe("main.terms");
+    expect(privacy?.getAttribute("href")).toBe("/privacy.html");
+    expect(privacy?.getAttribute("data-i18n")).toBe("main.privacy");
+  });
+});

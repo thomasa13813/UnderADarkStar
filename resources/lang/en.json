@@ -905,9 +905,11 @@
     "leaderboard": "Leaderboard",
     "menu": "Menu",
     "play": "Play",
+    "privacy": "Privacy",
     "settings": "Settings",
     "solo": "Solo",
     "source": "Source",
+    "terms": "Terms",
     "title": "Under a Dark Star",
     "troubleshooting": "Troubleshooting",
     "tutorial": "Tutorial"
@@ -1322,6 +1324,10 @@
     "unknown": "Unknown",
     "yes": "Yes"
   },
+  "turnstile": {
+    "body": "Complete the check below to join the game.",
+    "title": "Checking your browser"
+  },
   "tutorial": {
     "close": "Close tutorial",
     "complete": "You're ready! Good luck out there.",
@@ -1380,10 +1386,6 @@
       "spawn": "Tap anywhere on the map to pick where you spawn."
     },
     "title": "Tutorial"
-  },
-  "turnstile": {
-    "body": "Complete the check below to join the game.",
-    "title": "Checking your browser"
   },
   "unit_type": {
     "atom_bomb": "Nuclear Warhead",

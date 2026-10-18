@@ -675,8 +675,9 @@ API tests run against an in-memory database, under `tests/api/`, added to `npm t
   was decided 2026-10-07). The one most worth a look is A17 (deletion).
 - ~~**Q2 — Playing under another name.**~~ Answered 2026-10-01: a signed-in player may type any
   name; a guest may not and is given an `Anon` name (A13, A21).
-- **Q3 — Minimum age.** The terms need one; 13 is the usual floor for Discord and Google accounts.
-- **Q4 — A contact address** for privacy requests and ban appeals.
+- ~~**Q3 — Minimum age.**~~ 13, in the draft Terms (2026-10-17).
+- ~~**Q4 — A contact address**~~ `hello@january-games.com`, in the draft Terms and Privacy Policy
+  (2026-10-17).
 - **Q5 — Record retention.** 30 days of full game records (A19), or none at all?
 
 ## 16. Changelog

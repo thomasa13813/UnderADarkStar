@@ -56,6 +56,23 @@ export class Footer extends LitElement {
                  screens), so the attribution is never shown twice. -->
             <span class="md:hidden" data-i18n="main.by_line"></span>
             <span data-i18n="main.copyright"></span>
+            <!-- The legal pages are static files at the site root
+                 (resources/public/). Google's sign-in review needs the
+                 privacy policy linked from the home page. -->
+            <a
+              href="/terms.html"
+              target="_blank"
+              rel="noopener"
+              class="footer-terms underline hover:text-white"
+              data-i18n="main.terms"
+            ></a>
+            <a
+              href="/privacy.html"
+              target="_blank"
+              rel="noopener"
+              class="footer-privacy underline hover:text-white"
+              data-i18n="main.privacy"
+            ></a>
           </div>
         </div>
 
