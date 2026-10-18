@@ -17,14 +17,14 @@
     "nameDebug": false
   },
   "terrain": {
-    "backgroundColor": "#0b0b12",
-    "oceanColor": "#8b929e",
+    "backgroundColor": "#070910",
+    "oceanColor": "#2c3149",
     "spaceBackground": true,
-    "oceanAlpha": 0.45,
-    "sandColor": "#CCCB9E",
-    "plainsColor": "#BEDC8A",
-    "highlandColor": "#DCCB9E",
-    "mountainColor": "#e6e6e6"
+    "oceanAlpha": 0.5,
+    "sandColor": "#6cc4b8",
+    "plainsColor": "#24606a",
+    "highlandColor": "#5a58a0",
+    "mountainColor": "#d2bff7"
   },
   "falloutBloom": {
     "broilSpeedCold": 0.0018,
