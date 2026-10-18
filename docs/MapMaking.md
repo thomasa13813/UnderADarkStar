@@ -128,8 +128,10 @@ your user folder. If it cannot find it, it says so.
 
 `src/scripts/makeMap.ts` reads the PNG (`mapkit/Png.ts`), converts it (`mapkit/Convert.ts`), writes
 the Lords and the Dark Star into `info.json` (`mapkit/Info.ts`), and runs the Go map-generator
-(`map-generator/README.md`), which produces the files the game loads. Tests are in
-`tests/MapKit.test.ts`.
+(`map-generator/README.md`), which produces the files the game loads. It then redraws the map's
+thumbnail in the game's terrain colors (`scripts/generateMapThumbnails.ts`, which needs
+Playwright's Chromium; `npm run gen-thumbnails` redraws them all after a terrain color change).
+Tests are in `tests/MapKit.test.ts` and `tests/MapThumbnails.test.ts`.
 
 ## Generated drawings
 

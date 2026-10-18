@@ -1,6 +1,7 @@
 import { html, TemplateResult } from "lit";
 import { GameEnv } from "../core/configuration/Config";
 import { getApiBase } from "./ApiBase";
+import { expectSession } from "./Auth";
 import { ClientEnv } from "./ClientEnv";
 import { translateText } from "./Utils";
 
@@ -62,6 +63,7 @@ export function startSignIn(
     options.redirectTo ?? window.location.origin + window.location.pathname;
   const params = new URLSearchParams({ redirect: back });
   if (options.name !== undefined) params.set("name", options.name);
+  expectSession();
   window.location.assign(
     `${getApiBase()}/auth/login/${provider}?${params.toString()}`,
   );

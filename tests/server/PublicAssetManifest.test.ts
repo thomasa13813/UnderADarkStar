@@ -344,5 +344,8 @@ describe("PublicAssetManifest", () => {
   test("indexes the real resources/public/", () => {
     const index = buildRootFilesIndex(getPublicDir(path.resolve("resources")));
     expect(index["robots.txt"]).toBe("text/plain; charset=utf-8");
+    // The legal pages the footer links to.
+    expect(index["privacy.html"]).toBe("text/html; charset=utf-8");
+    expect(index["terms.html"]).toBe("text/html; charset=utf-8");
   });
 });

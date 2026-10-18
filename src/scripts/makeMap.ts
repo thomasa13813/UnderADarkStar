@@ -118,6 +118,16 @@ function generate(folder: string): void {
   if (!run(go, ["run", ".", `--maps=${folder}`], GENERATOR)) {
     throw new KitError("The map generator failed; its messages are above.");
   }
+  // The Go generator writes a thumbnail in its own fixed colors; redraw it in
+  // the game's terrain colors (scripts/generateMapThumbnails.ts).
+  const tsx = path.join(ROOT, "node_modules/tsx/dist/cli.mjs");
+  const thumbnails = path.join(ROOT, "scripts/generateMapThumbnails.ts");
+  if (!run(process.execPath, [tsx, thumbnails, folder], ROOT)) {
+    console.log(
+      `\nThe thumbnail for ${folder} is still the generator's green one; ` +
+        `rerun: npx tsx scripts/generateMapThumbnails.ts ${folder}`,
+    );
+  }
 }
 
 function report(title: string, lines: string[]): void {

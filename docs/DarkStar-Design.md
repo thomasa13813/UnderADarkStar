@@ -252,7 +252,11 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   rival who is falling behind. [Built 2026-09-25, §6.14] Placement runs through the host's own
   rules with the throne as payer; a gift may also upgrade the host's existing structure; every
   challenger can receive one, Barons included; the host is told; the Gift takes the ally slot of the
-  Hegemon's radial menu on a challenger's tile.
+  Hegemon's radial menu on a challenger's tile. [Revised 2026-10-17] **The throne pays the flat
+  first-building price**, whatever the host already owns and however many upgrade steps are bought
+  at once: a gifted fourth city costs the Hegemon what a first one does. The escalating count
+  (cities, ports, factories, defence posts) is the builder's own burden, not the giver's; the gift
+  still counts as the host's build, so the host's own next one costs them more.
 - **H19 — Missile launches invite a punitive strike.** [Decided 2026-09-26; built the same day,
   §6.16] A challenger who fires a
   missile from a silo (Nuclear or Antimatter Warhead, S6; the target does not matter, the Dark Star
@@ -667,8 +671,9 @@ persistence was OpenFront's closed-source API, which we do not have.
   overthrow under 15 minutes; a true equidistant first build with the exclusion at 400 (10° N
   there) went 2 of 3 at 18 minutes.
   `src/scripts/drawings/Polar.ts`.
-- **Gap:** terrain colours are global, not per-map, and map thumbnails are hard-coded
-  blue-sea/green-land in `map-generator/map_generator.go` (`getThumbnailColor`).
+- **Gap:** terrain colours are global, not per-map. Map thumbnails follow the global terrain
+  defaults: `scripts/generateMapThumbnails.ts` redraws them after the Go generator, whose own
+  `getThumbnailColor` colours are overwritten (2026-10-17).
 
 ### 5.4 Presentation
 
@@ -1366,8 +1371,12 @@ host gets **one event line**.
 - **Placement is the host's, the bill is the throne's.** `Player.buildableUnits`, `canBuild`,
   `findUnitToUpgrade`, `canUpgradeUnit`, `upgradeUnit` and `buildUnit` gained an optional **payer**
   (default: the player itself). Affordability is judged against the payer's gold and the payer is
-  charged; the cost is always the host's own — their structure count, as if they had built it — and
-  the build is recorded against the host (`recordUnitConstructed`), so their next one costs more.
+  charged; the build is recorded against the host (`recordUnitConstructed`), so their next one
+  costs more. [Revised 2026-10-17] The cost was the host's own — their structure count, as if they
+  had built it — and is now the **flat first-building price** whenever the payer is not the
+  builder: `UnitInfo.cost` gained a fourth argument, the payer, and `costWrapper` in `Config.ts`
+  prices a gift at count zero, ignoring the bulk-upgrade step too, so every step of a gifted
+  upgrade costs the same. The infinite-gold cheat is judged against the payer.
   Everything the host could not do, the throne cannot gift: H2 keeps the Dark Star empty even for
   an invader's held tiles, and the Hegemon's own list stays refused (`canBuildUnitType`).
 - **The order.** A new intent `gift_unit` `{ unit, tile, host, amount? }`, appended to the intent
@@ -2135,6 +2144,10 @@ hydrogen-bomb removal (closed by S6).
 
 ## 11. Changelog
 
+- **2026-10-17, gifts** — **A gift costs the throne the first-building price.** Tom's call: the
+  Hegemon's gift (H18) no longer pays the host's escalating price for cities, ports, factories and
+  defence posts; it always pays as for the host's first of that kind, each bulk-upgrade step
+  included. H18, §6.14.
 - **2026-10-17, map** — **Polar.** Earth from above the north pole: the Arctic as the Dark Star,
   Antarctica as an unbroken ring at the rim, void beyond it, Natural Earth coasts, waterways and
   ranges, the radius a 0.7 power of the distance from the pole so the north is not squashed
@@ -2169,6 +2182,20 @@ hydrogen-bomb removal (closed by S6).
   reign; **Longest reign** is the most consecutive rounds as Hegemon on one throne, never carried
   across thrones. The throne card's badge keeps its own counter (Lobbies §3.1). The recorded
   numbers are rebuilt under the new rule by the API's third migration.
+- **2026-10-17** — **Aurora terrain; thumbnails drawn in the game's colors.** Tom's call, from six
+  palettes compared on Event Horizon (Nebula Dust was tried first and dropped the same day): the
+  inherited grass/sand/snow land read as an Earth map, and green Barons nearly vanished on green
+  plains. The `terrain` defaults in `render-settings.json` become teal lowlands rising to violet
+  (plains `#24606a`, highland `#5a58a0`, mountain `#d2bff7`, coast `#6cc4b8`) with darker deep
+  space (`oceanColor` `#2c3149` at 0.5, `backgroundColor` `#070910`) so nebulae stand
+  off it. Players' own terrain overrides still win. The cosmetics effect preview reads its
+  backdrop from the same defaults. Map thumbnails (picker and lobby cards) are no longer the Go
+  generator's fixed green: `scripts/generateMapThumbnails.ts` (`npm run gen-thumbnails`) redraws
+  every `thumbnail.webp` from `map4x.bin` with `encodeTerrainTile()` and the defaults, space
+  still transparent, same sizes; the map kit runs it after the generator, and
+  `tests/MapThumbnails.test.ts` fails when the terrain colors change without a rerun. Not done:
+  the "Evan's pick" graphics preset keeps its own blue-and-green terrain, and a player's own
+  terrain override recolors the map but not the cards.
 - **2026-10-17** — **The help page explains piracy; FFA map weights equalised.** For the friends
   test of 2026-10-18. The rules page gains a _Piracy_ section (six lines, every number read from
   `PIRACY_DEFAULTS`, troops in on-screen units) after the economy it preys on; the round's

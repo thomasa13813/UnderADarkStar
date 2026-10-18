@@ -36,7 +36,7 @@ import "./components/InputCard";
 import "./components/LobbyPlayerView";
 import "./components/ToggleInputCard";
 import { modalHeader } from "./components/ui/ModalHeader";
-import { JoinLobbyEvent } from "./Main";
+import { JoinFailedEvent, JoinLobbyEvent } from "./Main";
 import { terrainMapFileLoader } from "./TerrainMapFileLoader";
 import {
   getBotsForCompactMap,
@@ -804,6 +804,31 @@ export class HostLobbyModal extends BaseModal {
         composed: true,
       }),
     );
+  }
+
+  // Main.ts dispatches "join-failed" when the host's own join died before it
+  // had a connection (the bot check refused, say). The lobby exists on the
+  // server with nobody in it; closing leaves it (onClose) and returns the
+  // host to the menu. Main has told them why.
+  private readonly handleJoinFailed = (event: CustomEvent<JoinFailedEvent>) => {
+    if (
+      !this.isModalOpen ||
+      !this.lobbyId ||
+      event.detail.gameID !== this.lobbyId
+    ) {
+      return;
+    }
+    this.close();
+  };
+
+  connectedCallback() {
+    super.connectedCallback();
+    document.addEventListener("join-failed", this.handleJoinFailed);
+  }
+
+  disconnectedCallback() {
+    document.removeEventListener("join-failed", this.handleJoinFailed);
+    super.disconnectedCallback();
   }
 
   // Close as part of the lobby -> game transition (e.g. auto-start of a

@@ -890,8 +890,12 @@ export class Config {
         info = {
           // A pirate's corsair costs nothing (PR3): the one ship a dead
           // player may have, paid for by being dead.
-          cost: (game: Game, player: Player, extraUnits?: number) =>
-            player.isPirate() ? 0n : cost(game, player, extraUnits),
+          cost: (
+            game: Game,
+            player: Player,
+            extraUnits?: number,
+            payer?: Player,
+          ) => (player.isPirate() ? 0n : cost(game, player, extraUnits, payer)),
           maxHealth: 1000,
         };
         break;
@@ -1102,13 +1106,21 @@ export class Config {
   private costWrapper(
     costFn: (units: number) => number,
     ...types: UnitType[]
-  ): (g: Game, p: Player, extraUnits?: number) => bigint {
-    return (game: Game, player: Player, extraUnits: number = 0) => {
-      if (
-        player.type() === PlayerType.Human &&
-        this.hasInfiniteGoldFor(player)
-      ) {
+  ): (g: Game, p: Player, extraUnits?: number, payer?: Player) => bigint {
+    return (
+      game: Game,
+      player: Player,
+      extraUnits: number = 0,
+      payer: Player = player,
+    ) => {
+      if (payer.type() === PlayerType.Human && this.hasInfiniteGoldFor(payer)) {
         return 0n;
+      }
+      // A gift (H18): the throne pays the flat first-building price, however
+      // many the host already owns and however many steps are bought at once
+      // (Tom, 2026-10-17) — the escalating count is the builder's own burden.
+      if (payer !== player) {
+        return BigInt(costFn(0));
       }
       const numUnits = types.reduce(
         (acc, type) =>

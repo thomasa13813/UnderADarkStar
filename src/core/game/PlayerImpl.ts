@@ -1568,8 +1568,7 @@ export class PlayerImpl implements Player {
   }
 
   // `payer` foots the bill (a gift, H18: the Hegemon paying for a structure
-  // the host owns from the start); the cost itself is always this player's,
-  // exactly as if they had built it.
+  // the host owns from the start, at the flat first-building price).
   buildUnit<T extends UnitType>(
     type: T,
     spawnTile: TileRef,
@@ -1582,7 +1581,7 @@ export class PlayerImpl implements Player {
       );
     }
 
-    const cost = this.mg.unitInfo(type).cost(this.mg, this);
+    const cost = this.mg.unitInfo(type).cost(this.mg, this, 0, payer);
     const b = new UnitImpl(
       type,
       this.mg,
@@ -1632,8 +1631,8 @@ export class PlayerImpl implements Player {
     return closest?.unit ?? false;
   }
 
-  // `payer` is whose gold is checked (a gift's Hegemon, H18); the cost is
-  // always this player's own.
+  // `payer` is whose gold is checked (a gift's Hegemon, H18, at the flat
+  // first-building price).
   private canBuildUnitType(
     unitType: UnitType,
     knownCost: Gold | null = null,
@@ -1659,7 +1658,8 @@ export class PlayerImpl implements Player {
     if (this.isPirate() && unitType === UnitType.Warship) {
       return true;
     }
-    const cost = knownCost ?? this.mg.unitInfo(unitType).cost(this.mg, this);
+    const cost =
+      knownCost ?? this.mg.unitInfo(unitType).cost(this.mg, this, 0, payer);
     if (payer.gold() < cost) {
       return false;
     }
@@ -1704,7 +1704,7 @@ export class PlayerImpl implements Player {
   }
 
   upgradeUnit(unit: Unit, payer: Player = this) {
-    const cost = this.mg.unitInfo(unit.type()).cost(this.mg, this);
+    const cost = this.mg.unitInfo(unit.type()).cost(this.mg, this, 0, payer);
     payer.removeGold(cost);
     unit.increaseLevel();
     this.recordUnitConstructed(unit.type());
@@ -1731,7 +1731,7 @@ export class PlayerImpl implements Player {
     for (let i = 0; i < len; i++) {
       const u = units[i];
 
-      const cost = config.unitInfo(u).cost(mg, this);
+      const cost = config.unitInfo(u).cost(mg, this, 0, payer);
       let canUpgrade: number | false = false;
       let canBuild: TileRef | false = false;
 
@@ -1756,13 +1756,14 @@ export class PlayerImpl implements Player {
 
       // Cumulative bulk-upgrade totals. Each upgrade raises the unit's level
       // and the constructed count, so step n costs the same as if the player
-      // already had n extra units — cost(mg, this, n).
+      // already had n extra units — cost(mg, this, n). A gift's steps are all
+      // at the flat price (H18).
       let upgradeCosts: Gold[] | undefined;
       if (canUpgrade !== false) {
         upgradeCosts = new Array<Gold>(MAX_UPGRADE_AMOUNT);
         let total = 0n;
         for (let n = 0; n < MAX_UPGRADE_AMOUNT; n++) {
-          total += config.unitInfo(u).cost(mg, this, n);
+          total += config.unitInfo(u).cost(mg, this, n, payer);
           upgradeCosts[n] = total;
         }
       }

@@ -32,7 +32,7 @@ import {
 } from "../core/game/Game";
 import { getApiBase } from "./Api";
 import { PublicLobbySocket } from "./LobbySocket";
-import { JoinLobbyEvent } from "./Main";
+import { JoinFailedEvent, JoinLobbyEvent } from "./Main";
 import { ensureServerList, redirectToGameVersion } from "./ServerList";
 import { terrainMapFileLoader } from "./TerrainMapFileLoader";
 import { findLobby } from "./ThroneLine";
@@ -769,13 +769,30 @@ export class JoinLobbyModal extends BaseModal {
     this.isConnecting = true;
   }
 
+  // Main.ts dispatches "join-failed" when a join died before it had a
+  // connection (the bot check refused, say). Nothing else reaches this page
+  // then, so it would sit on "Connecting to lobby..." for good. Main has told
+  // the player why; this just takes the page down.
+  private readonly handleJoinFailed = (event: CustomEvent<JoinFailedEvent>) => {
+    if (
+      !this.isModalOpen ||
+      !this.currentLobbyId ||
+      event.detail.gameID !== this.currentLobbyId
+    ) {
+      return;
+    }
+    this.closeAndLeave();
+  };
+
   connectedCallback() {
     super.connectedCallback();
     document.addEventListener("game-starting", this.handleGameStarting);
+    document.addEventListener("join-failed", this.handleJoinFailed);
   }
 
   disconnectedCallback() {
     document.removeEventListener("game-starting", this.handleGameStarting);
+    document.removeEventListener("join-failed", this.handleJoinFailed);
     this.hostedLobbySocket.stop();
     this.clearCountdownTimer();
     this.stopLobbyUpdates();

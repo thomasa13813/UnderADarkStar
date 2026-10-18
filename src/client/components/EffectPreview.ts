@@ -14,6 +14,7 @@ import {
   StructuresEffectAttributes,
   TrailEffectAttributes,
 } from "../../core/CosmeticSchemas";
+import renderDefaults from "../render/gl/render-settings.json";
 
 // ---------------------------------------------------------------------------
 // Scene previews — a tiny slice of the map, in tile units, drawn the way the
@@ -32,9 +33,14 @@ export type SceneEffect = Exclude<Effect, { effectType: "nukeExplosion" }>;
 const PLAYER = colord("#4ade80");
 const PLAYER_COLOR = PLAYER.toHex();
 const BORDER_COLOR = PLAYER.darken(0.125).toHex();
-// Terrain (render-settings.json): deep water and plains.
-const WATER = "#4785b5";
-const PLAINS = "#bedc8a";
+// Terrain (render-settings.json): deep space and plains. Deep space is the
+// ocean color at oceanAlpha over the background, without the starfield.
+const WATER = mixRgb(
+  renderDefaults.terrain.backgroundColor,
+  renderDefaults.terrain.oceanColor,
+  renderDefaults.terrain.oceanAlpha,
+);
+const PLAINS = renderDefaults.terrain.plainsColor;
 // Territory and trails paint over terrain at mapOverlay.territoryAlpha /
 // trailAlpha.
 const TERRITORY_ALPHA = 0.588;

@@ -39,6 +39,7 @@
     "gen-maps": "cd map-generator && go run . && npm run format",
     "map": "tsx src/scripts/makeMap.ts",
     "gen-atlases": "tsx scripts/generateSpriteAtlases.ts",
+    "gen-thumbnails": "tsx scripts/generateMapThumbnails.ts",
     "inst": "npm ci --ignore-scripts"
   },
   "lint-staged": {

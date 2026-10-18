@@ -181,7 +181,15 @@ export const MAX_UPGRADE_AMOUNT = 50;
 export interface UnitInfo {
   // extraUnits shifts the cost curve as if the player already had that many
   // additional units/levels — used to price the later steps of a bulk upgrade.
-  cost: (game: Game, player: Player, extraUnits?: number) => Gold;
+  // `payer` (default: the player) is who is charged: a gift (H18, the Hegemon
+  // paying for a challenger's structure) is priced as the host's first of its
+  // kind, whatever the host already has and however many steps are bought.
+  cost: (
+    game: Game,
+    player: Player,
+    extraUnits?: number,
+    payer?: Player,
+  ) => Gold;
   maxHealth?: number;
   damage?: number;
   constructionDuration?: number;
@@ -813,8 +821,8 @@ export interface Player {
   // of the player's built gates has it in range.
   stargateFor(tile: TileRef): GateShotOption | null;
   // `payer` (default: this player) is whose gold is checked and charged —
-  // a gift (H18) is the Hegemon paying for what the host builds and owns.
-  // The cost is always this player's own, as if they had built it.
+  // a gift (H18) is the Hegemon paying for what the host builds and owns, at
+  // the flat first-building price (UnitInfo.cost).
   buildableUnits(
     tile: TileRef | null,
     units?: readonly PlayerBuildableUnitType[],

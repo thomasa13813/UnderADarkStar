@@ -220,7 +220,22 @@ _Done when_ nothing a player sees or hears is a placeholder.
       restore actually tried.
 - [ ] **Legal pages**: Terms of Service and Privacy Policy, linked from the footer, with a contact
       address. Then publish the Google sign-in (it needs the privacy policy on the live domain)
-      and add the Google provider to production.
+      and add the Google provider to production. Drafted 2026-10-17 (below), awaiting Tom's
+      approval and a deploy; the Google provider is not built yet.
+
+  **As drafted (2026-10-17).** `resources/public/privacy.html` and `terms.html`, served at
+  `/privacy.html` and `/terms.html` as root files, linked from the footer (`main.terms`,
+  `main.privacy`). Written by January Games, LLC (a Minnesota LLC), Minnesota law and courts,
+  minimum age 13, US$50 liability cap. The policy describes the code as it is: provider ID and
+  name only (Discord `identify`, Google basic profile, no email), the `ds_refresh` and `ds_oauth`
+  cookies, browser storage, anonymised IPs in logs, IPs to Turnstile, 30-day game records, a public
+  board; no ads, analytics or tracking cookies, hence no banner. It promises deletion on request
+  by email within 45 days, since B6's delete button is not built. Root `.html` files now get a
+  five-minute cache (`StaticAssetCache.ts`) instead of express.static's one year. **Ads will need
+  a revision first**: an ads section naming the network, a consent tool for EEA/UK visitors, an
+  opt-out link for US state laws, no personalised ads for minors, and `ads.txt`. Not legal
+  advice; a lawyer's review is worth it before ads or payments.
+
 - [x] **Help and tutorial** rewritten for the Hegemon rules; the solo screen explains the throne.
       Built 2026-10-04 in three parts (below): the help page's rulebook, the in-game tutorial,
       and a one-line note under the solo screen's "Play as the Hegemon" toggle.
@@ -300,12 +315,16 @@ _Done when_ the checklist is clean. This build is the release candidate.
    stay is still open. Tom's standard (2026-10-17): every launch map has reachable deep space for
    commerce and piracy; no solidly land-based maps.
 4. How many thrones to open with (suggest 3 to 5).
-5. Whether "January Games" is a legal entity yet. It matters for the Terms now and for taking
-   payments later; not legal advice.
+5. ~~Whether "January Games" is a legal entity yet.~~ Answered 2026-10-17: January Games, LLC,
+   incorporated in Minnesota; the Terms and Privacy Policy name it.
 6. An itch.io listing at launch, or after the first week?
 
 ## 7. Changelog
 
+- **2026-10-17, evening** — **Legal pages drafted** (Stage 6): Terms of Service and Privacy
+  Policy as root pages linked from the footer, written for January Games, LLC under Minnesota
+  law; open question 5 answered. They await Tom's reading and a deploy before the Google OAuth
+  client can be published.
 - **2026-10-17, later** — **Stage 7 trimmed:** no restart in the middle of the friends test
   (Tom). The live site serves `main` at 8fcf9c4e with piracy on for every public throne; the
   piracy cues (`embrace`, `beaching`) and the slice D doc amendments landed after it and need a

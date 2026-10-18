@@ -31,6 +31,13 @@ export interface TurnstileRenderOptions {
   execution?: "render" | "execute";
   callback?: (token: string) => void;
   "error-callback"?: (errorCode: string) => void;
+  /**
+   * The challenge is about to need the player: with appearance
+   * "interaction-only" this is the moment the widget becomes visible.
+   */
+  "before-interactive-callback"?: () => void;
+  /** The player's part is over and the widget hides itself again. */
+  "after-interactive-callback"?: () => void;
 }
 
 export interface TurnstileApi {
@@ -101,6 +108,13 @@ export function requestTurnstileToken(
     container: string | HTMLElement;
     timeoutMs?: number;
     now?: () => number;
+    /**
+     * Called with true when the challenge needs the player (the widget is
+     * about to show), and with false once it no longer does -- whether
+     * Turnstile said so or the request settled first. Never true after the
+     * request has settled, and never false without a true before it.
+     */
+    onInteractive?: (needsPlayer: boolean) => void;
   },
 ): Promise<TurnstileToken> {
   const timeoutMs = options.timeoutMs ?? TURNSTILE_TOKEN_TIMEOUT_MS;
@@ -110,7 +124,18 @@ export function requestTurnstileToken(
     let widgetId: string | undefined;
     let removed = false;
     let settled = false;
+    let interactive = false;
     let timer: ReturnType<typeof setTimeout> | undefined = undefined;
+
+    // The popup around the widget follows this flag: open while the player
+    // has something to do, closed the moment that is over. A timeout or an
+    // error while the player is still looking at it closes it too (settle),
+    // and a late Turnstile call cannot reopen it on a request that is done.
+    const setInteractive = (on: boolean) => {
+      if (on === interactive || (on && settled)) return;
+      interactive = on;
+      options.onInteractive?.(on);
+    };
 
     // Turnstile can still call back after we are done with the widget (a late
     // error after a timeout, say). Removing once and settling once means such
@@ -130,6 +155,7 @@ export function requestTurnstileToken(
       if (settled) return;
       settled = true;
       if (timer !== undefined) clearTimeout(timer);
+      setInteractive(false);
       removeWidget();
       finish();
     };
@@ -143,11 +169,13 @@ export function requestTurnstileToken(
         sitekey: options.sitekey,
         size: "normal",
         appearance: "interaction-only",
-        theme: "light",
+        theme: "dark",
         execution: "execute",
         callback: (token: string) => succeed(token),
         "error-callback": (errorCode: string) =>
           fail(new TurnstileError(errorCode ?? "unknown")),
+        "before-interactive-callback": () => setInteractive(true),
+        "after-interactive-callback": () => setInteractive(false),
       });
     } catch (error) {
       fail(error);

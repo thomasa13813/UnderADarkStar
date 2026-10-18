@@ -4,7 +4,7 @@ import fs from "fs/promises";
 import { buildAssetUrl } from "../core/AssetUrls";
 import { setNoStoreHeaders } from "./NoStoreHeaders";
 import { getRuntimeAssetManifest } from "./RuntimeAssetManifest";
-import { ServerEnv } from "./ServerEnv";
+import { apiOriginFor, ServerEnv } from "./ServerEnv";
 
 const APP_SHELL_CACHE_CONTROL =
   "public, max-age=0, s-maxage=300, stale-while-revalidate=86400, stale-if-error=86400";
@@ -102,10 +102,10 @@ export async function renderHtmlContent(
         : JSON.stringify(ServerEnv.stripePublishableKey()),
     manifestHref: buildAssetUrl("manifest.json", assetManifest, cdnBase),
     faviconHref: buildAssetUrl("images/Favicon.svg", assetManifest, cdnBase),
-    gameplayScreenshotUrl: buildAssetUrl(
-      "images/GameplayScreenshot.png",
-      assetManifest,
-      cdnBase,
+    // Absolute: the apps that unfurl a shared link (iMessage, Slack, some
+    // Discord paths) do not resolve a relative og:image against the page.
+    gameplayScreenshotUrl: absoluteSiteUrl(
+      buildAssetUrl("images/GameplayScreenshot.png", assetManifest, cdnBase),
     ),
     backgroundImageUrl: buildAssetUrl(
       "images/background.png",
@@ -113,6 +113,16 @@ export async function renderHtmlContent(
       cdnBase,
     ),
   });
+}
+
+// A page-relative URL made absolute against the page's own origin (the site
+// host, else this server's public host, else DOMAIN). Already-absolute URLs
+// (a CDN_BASE asset) pass through; with no host configured it stays relative.
+export function absoluteSiteUrl(url: string): string {
+  const host =
+    ServerEnv.siteHost() ?? ServerEnv.publicHost() ?? ServerEnv.domain();
+  if (host === "") return url;
+  return new URL(url, apiOriginFor(host)).toString();
 }
 
 export async function getAppShellContent(htmlPath: string): Promise<string> {

@@ -14,6 +14,15 @@ describe("StaticAssetCache", () => {
     ).toBe("public, max-age=31536000, immutable");
   });
 
+  test("keeps root HTML pages on a short cache", () => {
+    expect(getStaticAssetCacheControl("/privacy.html")).toBe(
+      "public, max-age=300",
+    );
+    expect(getStaticAssetCacheControl("/terms.html?v=2")).toBe(
+      "public, max-age=300",
+    );
+  });
+
   test("does not mark other paths as immutable", () => {
     expect(getStaticAssetCacheControl("/manifest.json")).toBeUndefined();
     expect(getStaticAssetCacheControl("/api/health")).toBeUndefined();
