@@ -70,6 +70,19 @@ describe("RenderHtml", () => {
     expect(second).not.toContain('"second"');
   });
 
+  test("gives link previews an absolute image URL", async () => {
+    vi.stubEnv("DOMAIN", "darkstar.example.com");
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "render-html-"));
+    const htmlPath = path.join(tempDir, "index.html");
+    await fs.writeFile(htmlPath, "<%- gameplayScreenshotUrl %>", "utf8");
+
+    const rendered = await renderHtmlContent(htmlPath);
+
+    expect(rendered).toMatch(
+      /^https:\/\/darkstar\.example\.com\/.*GameplayScreenshot/,
+    );
+  });
+
   test("injects the one-entry map and own instance letter", async () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "render-html-"));
     const htmlPath = path.join(tempDir, "index.html");

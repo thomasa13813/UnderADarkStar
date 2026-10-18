@@ -9,6 +9,12 @@ import { generateCryptoRandomUUID } from "./Utils";
 export type UserAuth = { jwt: string; claims: TokenPayload } | false;
 
 const PERSISTENT_ID_KEY = "player_persistent_id";
+// Under a Dark Star: "none" once this browser is known to hold no refresh
+// cookie, so a guest's page load skips POST /auth/refresh (which can only
+// answer 401) instead of logging the failure on every visit. The cookie
+// itself is HttpOnly and on the API's host, so the page cannot look for it.
+// Absent means unknown and refreshes as before; starting a sign-in clears it.
+const SESSION_HINT_KEY = "darkstar_session_hint";
 
 let __jwt: string | null = null;
 let __refreshPromise: Promise<void> | null = null;
@@ -74,6 +80,9 @@ export function clearLocalSession(): void {
   // the guest a new name on every visit. Only an actual sign-out forgets
   // it: the account's identity should not leak into the guest that follows.
   if (hadSession) localStorage.removeItem(PERSISTENT_ID_KEY);
+  // Every path here ends the cookie too (logout, revoke, deletion, a refresh
+  // the API refused), so there is nothing left to refresh.
+  setSessionHint("none");
   // Switch cosmetics back to the logged-out scope. The player's own
   // selections stay stored under their publicId and are restored on the
   // next login (#4955).
@@ -175,7 +184,31 @@ export async function userAuth(
   }
 }
 
+function setSessionHint(value: "none" | null): void {
+  try {
+    if (value === null) localStorage.removeItem(SESSION_HINT_KEY);
+    else localStorage.setItem(SESSION_HINT_KEY, value);
+  } catch {
+    // Storage blocked: the hint is an optimisation, refreshing still works.
+  }
+}
+
+function knownGuest(): boolean {
+  try {
+    return localStorage.getItem(SESSION_HINT_KEY) === "none";
+  } catch {
+    return false;
+  }
+}
+
+// Called just before the page navigates to the API's login route: the
+// browser is about to receive a refresh cookie, so the next load must ask.
+export function expectSession(): void {
+  setSessionHint(null);
+}
+
 async function refreshJwt(): Promise<void> {
+  if (knownGuest()) return;
   if (__refreshPromise) {
     return __refreshPromise;
   }

@@ -282,10 +282,10 @@ describe("api app", () => {
     expect(typeof body.keys[0].x).toBe("string");
   });
 
-  it("tells the client there is no cluster list, with a 404 it reads as reachable", async () => {
+  it("tells the client there is no cluster list, with an empty one it reads as reachable", async () => {
     const res = await fetch(`${base}/cluster.json?site=localhost%3A9000`);
-    expect(res.status).toBe(404);
-    expect(await res.json()).toMatchObject({ error: expect.any(String) });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ servers: {} });
   });
 
   it("answers unknown routes with a JSON 404", async () => {

@@ -12,8 +12,8 @@ import { mountResultRoutes } from "./ResultRoutes";
 // Under a Dark Star: the account API (docs/DarkStar-Accounts.md §3, §7), the
 // small service that replaces OpenFront's closed one. B1 is the skeleton: it
 // serves its signing key, answers the health check, and tells the client
-// there is no cluster list (which the client reads as "reachable, one
-// server"). B2 adds sign-in, sessions and /users/@me (AuthRoutes.ts), B3 the
+// there is no cluster list (an empty one, which the client reads as
+// "reachable, one server"). B2 adds sign-in, sessions and /users/@me (AuthRoutes.ts), B3 the
 // join path (JoinRoutes.ts), B4 the results (ResultRoutes.ts), B5 the
 // board (LeaderboardRoutes.ts).
 //
@@ -74,10 +74,12 @@ export function createApiApp(deps: ApiDeps): Express {
   });
 
   // There is one server and no registry (A7). The client's poll of this
-  // (ServerList) treats a 404 as a reachable backend with no list and keeps
-  // the page's own server values; anything 5xx would count as an outage.
+  // (ServerList) doubles as its "is the backend up" check, so it stays; an
+  // empty list reads as a reachable backend with no list, and the page keeps
+  // its own server values. A 200 rather than the 404 it once was, so the
+  // poll does not print an error in the console every beat.
   app.get("/cluster.json", (_req, res) => {
-    res.status(404).json({ error: "no cluster list: single server" });
+    res.json({ servers: {} });
   });
 
   mountAuthRoutes(app, deps);
