@@ -677,7 +677,7 @@ export class GameModeSelector extends LitElement {
         <button
           @click=${this.openDetailedView}
           ?disabled=${!this.inputValid}
-          class="group/upcoming flex w-full items-center justify-between gap-2 rounded-lg border border-white/10 bg-white/[0.04] py-1.5 pl-2.5 pr-1.5 transition-colors hover:border-malibu-blue/50 hover:bg-malibu-blue/15 ${this
+          class="group/upcoming flex w-full items-center justify-between gap-2 rounded-lg border border-white/10 bg-white/[0.04] py-1.5 pl-2.5 pr-1.5 transition-colors hover:border-purple-500/50 hover:bg-purple-500/15 ${this
             .inputValid
             ? ""
             : DISABLED}"
@@ -687,7 +687,7 @@ export class GameModeSelector extends LitElement {
             >${translateText("public_lobby.upcoming")}</span
           >
           <span
-            class="flex shrink-0 items-center gap-0.5 rounded bg-malibu-blue py-0.5 pl-2 pr-1 text-xs font-bold uppercase tracking-wider text-white group-hover/upcoming:bg-aquarius"
+            class="flex shrink-0 items-center gap-0.5 rounded border border-purple-500 bg-black/80 py-0.5 pl-2 pr-1 text-xs font-bold uppercase tracking-wider text-white group-hover/upcoming:border-purple-400 group-hover/upcoming:bg-purple-500/20"
           >
             ${count > 0
               ? translateText("public_lobby.see_all", { count })

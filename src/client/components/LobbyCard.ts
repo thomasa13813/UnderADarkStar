@@ -145,8 +145,10 @@ export interface LobbyCardOptions {
  * them direct flex children of the row: wrapped in a block, a pill picks up a
  * line box and renders short and low.
  */
+// Brand pills (Tom, 2026-10-17): black with the purple of the pixel-art
+// buttons for a border, instead of the engine's blue.
 const PILL =
-  "rounded bg-malibu-blue px-2 py-1 text-xs font-bold tracking-widest text-white";
+  "rounded border border-purple-500 bg-black/80 px-2 py-1 text-xs font-bold tracking-widest text-white";
 // No backdrop-filter anywhere in the card: under a transformed ancestor
 // Chrome clips it with a separate mask and the map leaks at the corners.
 const BADGE = "rounded bg-black/70";
