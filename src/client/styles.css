@@ -11,6 +11,11 @@
   /* The display face: Tektur (P1 step E, chosen 2026-10-07), with Overpass
      Bold as the fallback. Both come from resources/fonts/, loaded in Main.ts. */
   --font-display: "Tektur", "Overpass", Inter, Arial, sans-serif;
+  /* Tektur is the default face too (2026-10-20): Tailwind's preflight gives
+     html --font-sans, so every page and component inherits it. Non-Latin
+     text falls through to the system face, not to Overpass, which is only
+     loaded in bold. */
+  --font-sans: "Tektur", ui-sans-serif, system-ui, sans-serif;
 
   /* Palette inherited from upstream; P2 replaces it with the deep-space set. */
   --color-malibu-blue: #0084d1;

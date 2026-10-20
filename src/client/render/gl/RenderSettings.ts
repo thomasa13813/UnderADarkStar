@@ -252,7 +252,7 @@ export interface RenderSettings {
     /** MSDF outline width in px; unused by the classic bitmap font. */
     outlineWidth: number;
     offsetY: number;
-    /** true = round_6x6_modified bitmap font, false = overpass-bold MSDF. */
+    /** true = round_6x6_modified bitmap font, false = Tektur Bold MSDF. */
     classicFont: boolean;
   };
   bar: {

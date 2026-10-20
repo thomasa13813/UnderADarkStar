@@ -6,7 +6,7 @@ uniform float uDistRange;
 uniform float uOutlineWidth;
 uniform int   uHighlightMask;
 uniform float uHighlightDimAlpha;
-uniform int   uClassic; // 1 = round_6x6 bitmap font, 0 = overpass MSDF
+uniform int   uClassic; // 1 = round_6x6 bitmap font, 0 = Tektur Bold MSDF
 
 in vec2 vUV;
 flat in float vAlive;
@@ -31,7 +31,7 @@ void main() {
     color = texel.rgb;
     alpha = texel.a;
   } else {
-    // overpass-bold MSDF: white fill with a synthesized dark outline.
+    // Tektur Bold MSDF: white fill with a synthesized dark outline.
     vec3 msd = texture(uAtlas, vUV).rgb;
     float sd = median(msd.r, msd.g, msd.b);
 

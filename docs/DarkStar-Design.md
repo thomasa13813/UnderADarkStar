@@ -2144,6 +2144,16 @@ hydrogen-bomb removal (closed by S6).
 
 ## 11. Changelog
 
+- **2026-10-20, font** — **Tektur is the default face, not only the display face.** Tom's call:
+  `--font-sans` in `styles.css` names Tektur (system sans behind it for scripts its Latin subsets
+  lack), so the whole UI inherits it; the radial menu's labels and the floating map text
+  (`TextIndicator`) draw in it too. **The map labels follow the same day** (Tom): the WebGL MSDF
+  atlas (`resources/atlases/msdf-atlas.*`) is rebuilt from Tektur Bold, so the Hegemon's,
+  Lords', Barons' and players' names and troop counts, structure levels and world text are Tektur.
+  Same size, range and glyph set as the Overpass atlas it replaces, baseline normalised to the old
+  y=36, Tektur's own GPOS kerning (902 pairs); the recipe is `scripts/msdf-atlas/README.md`. Kept as
+  they were: `font-mono` for keys, codes and numbers, and the legal pages' plain face. Attribution
+  unchanged in kind: `CREDITS.md` and `Tektur-OFL.txt` already cover it.
 - **2026-10-18, names** — **Cities are Population Centers, factories are Industrial Zones.** Tom's
   call, display strings only (code keeps `UnitType.City` / `UnitType.Factory`). The Population
   Center has a new icon from Tom's sketch — a hab dome over three towers on a deck, a funnel

@@ -627,7 +627,7 @@ export class RadialMenu implements Controller {
             .attr("y", arc.centroid(d)[1])
             .attr("fill", "white")
             .attr("font-size", d.data.fontSize ?? "12px")
-            .attr("font-family", "Arial, sans-serif")
+            .attr("font-family", "Tektur, sans-serif")
             .style("opacity", disabled ? 0.5 : 1)
             .text(d.data.text);
         } else {

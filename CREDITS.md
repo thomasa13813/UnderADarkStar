@@ -44,10 +44,12 @@ open licence and are not in this repository. See [LICENSING.md](LICENSING.md).
   silent placeholder until a cue of our own lands (roadmap P4).
 - **Fonts** (`resources/fonts/`), both under the
   [SIL Open Font License 1.1](https://openfontlicense.org/), each with its
-  licence text beside it: Tektur, the display face, © 2023 The Tektur Project
-  Authors (<https://github.com/hyvyys/Tektur>, `Tektur-OFL.txt`); and
-  Overpass, used in the game and as the fallback, © 2021 The Overpass Project
-  Authors (<https://github.com/RedHatOfficial/Overpass>, `Overpass-OFL.txt`).
+  licence text beside it: Tektur, the game's typeface, © 2023 The Tektur Project
+  Authors (<https://github.com/hyvyys/Tektur>, `Tektur-OFL.txt`), also drawn
+  from Tektur Bold into the map-label atlas `resources/atlases/msdf-atlas.png`
+  (recipe in `scripts/msdf-atlas/`); and Overpass, the headings' fallback,
+  © 2021 The Overpass Project Authors
+  (<https://github.com/RedHatOfficial/Overpass>, `Overpass-OFL.txt`).
 
 ## Map data
 

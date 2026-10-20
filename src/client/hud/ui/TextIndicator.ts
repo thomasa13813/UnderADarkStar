@@ -6,7 +6,7 @@ const MIN_TEXT_ZOOM = 1.1;
 
 export class TextIndicator implements UIElement {
   private fontSize: number = 8;
-  private font: string = "Overpass, sans-serif";
+  private font: string = "Tektur, sans-serif";
   private cell: Cell;
   private lifeTime: number = 0;
 

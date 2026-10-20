@@ -5,7 +5,7 @@
  * switchable at runtime via settings.structureLevel.classicFont:
  *   - classic: the round_6x6_modified bitmap font (white digits with a
  *     baked-in dark outline), matching the v31 StructureLayer look.
- *   - new: the overpass-bold MSDF font shared with NamePass.
+ *   - new: the Tektur Bold MSDF font shared with NamePass.
  * Both fonts are loaded up front; draw() binds the active one. One instanced
  * draw call per frame.
  *
@@ -198,7 +198,7 @@ export class StructureLevelPass {
       atlasReady: false,
     };
 
-    // New MSDF font (overpass-bold) — same atlas/data as NamePass.
+    // New MSDF font (Tektur Bold) — same atlas/data as NamePass.
     const msdfAtlas = parseAtlasData();
     this.msdf = {
       glyph: buildGlyphTables(msdfAtlas.chars),
