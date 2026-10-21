@@ -241,6 +241,12 @@ winner. That is not launch work; it is the answer if farming or disputes become 
   bottom when they are outside the top 100; a player with nothing recorded is told how to get on
   the list, a guest to sign in. The account panel shows the same numbers and links to the page.
   (Until 2026-10-17: two tabs, Reigns and Longest reign, with a taken/held column.)
+- **Home-page panel (2026-10-20):** to draw players into the rankings, the leaderboard sits on the
+  home page itself: a card to the right of the menu on wide screens (xl and up) and under it on
+  narrower ones, showing the top ten as the same table (all three numbers per row, the sort
+  dropdown, the sorting column emphasised), the own row highlighted or pinned, the same hints,
+  and a "See the top 100" link to the full page. The desktop nav bar no longer has a Leaderboard
+  item; the mobile menu keeps one.
 - **Win screen:** the player a public throne round credits (the slayer, or the Hegemon holding to
   the timer) gets the reign prompt. A guest sees "Sign in to record your victories" with the
   provider buttons (the sign-in lands on the home page: the round is over). A signed-in winner
@@ -712,6 +718,8 @@ API tests run against an in-memory database, under `tests/api/`, added to `npm t
 
 ## 16. Changelog
 
+- **2026-10-20** — The leaderboard moves onto the home page beside the menu (§6, Tom's request:
+  more attention, more competition); the desktop nav item is gone, the full page stays.
 - **2026-10-17** — **The Google provider built** (§12.7): scopes `openid profile` only, the
   Google `sub` and name kept and nothing else, off until both keys are set; `GET /auth/providers`
   so the page shows Google's button only when the API offers it.

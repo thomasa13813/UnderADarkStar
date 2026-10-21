@@ -86,20 +86,8 @@ export class DesktopNavBar extends LitElement {
             draggable="false"
           />
         </button>
-        <!-- The leaderboard page (Accounts doc §6): a text item until Tom
-             draws it a pixel-art button like Play's. -->
-        <button
-          class="nav-menu-item ${currentPage === "page-leaderboard"
-            ? "active"
-            : ""} inline-flex items-center cursor-pointer select-none rounded-sm px-1 text-lg font-bold uppercase tracking-[0.08em] text-white/70 transition-all duration-200 hover:text-malibu-blue hover:drop-shadow-[0_0_12px_rgba(168,85,247,0.45)] [&.active]:text-malibu-blue [&.active]:drop-shadow-[0_0_12px_rgba(168,85,247,0.45)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-malibu-blue/60"
-          data-page="page-leaderboard"
-          title=${translateText("main.leaderboard")}
-          data-i18n-title="main.leaderboard"
-        >
-          <span data-i18n="main.leaderboard"
-            >${translateText("main.leaderboard")}</span
-          >
-        </button>
+        <!-- The leaderboard is no longer a nav item: it sits on the home
+             page beside the menu (<leaderboard-panel>, 2026-10-20). -->
         <!-- Utility cluster: help and settings are utility affordances rather
              than page links, so they sit behind a divider. -->
         <div class="flex items-center gap-1 pl-5 ml-1 border-l border-white/10">

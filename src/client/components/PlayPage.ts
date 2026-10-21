@@ -1,6 +1,7 @@
 import { LitElement, html } from "lit";
 import { customElement } from "lit/decorators.js";
 import "./AccountButton";
+import "./LeaderboardPanel";
 import "./NavUtilityIcons";
 
 @customElement("play-page")
@@ -13,7 +14,7 @@ export class PlayPage extends LitElement {
     return html`
       <div
         id="page-play"
-        class="flex flex-col gap-2 w-full px-0 lg:px-4 min-h-0"
+        class="flex flex-col gap-2 w-full px-0 lg:px-4 min-h-0 xl:grid xl:grid-cols-[minmax(0,1fr)_24rem] xl:grid-rows-[auto_1fr] xl:gap-x-8"
       >
         <!-- Mobile: Fixed top bar -->
         <div
@@ -90,6 +91,12 @@ export class PlayPage extends LitElement {
         </div>
 
         <game-mode-selector></game-mode-selector>
+
+        <!-- The leaderboard: right of the menu on wide screens, under it
+             on narrow ones (Accounts doc §6). -->
+        <leaderboard-panel
+          class="block pb-4 sm:pb-0 xl:col-start-2 xl:row-start-1 xl:row-span-2"
+        ></leaderboard-panel>
       </div>
     `;
   }
