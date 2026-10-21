@@ -11,10 +11,13 @@ export class PlayPage extends LitElement {
   }
 
   render() {
+    // The xl grid is gated on :not(.hidden): showPage() hides this page with
+    // the `hidden` class, and a bare xl:grid outranks it, which left the menu
+    // and leaderboard showing behind every lobby on wide screens.
     return html`
       <div
         id="page-play"
-        class="flex flex-col gap-2 w-full px-0 lg:px-4 min-h-0 xl:grid xl:grid-cols-[minmax(0,1fr)_24rem] xl:grid-rows-[auto_1fr] xl:gap-x-8"
+        class="flex flex-col gap-2 w-full px-0 lg:px-4 min-h-0 xl:[&:not(.hidden)]:grid xl:grid-cols-[minmax(0,1fr)_24rem] xl:grid-rows-[auto_1fr] xl:gap-x-8"
       >
         <!-- Mobile: Fixed top bar -->
         <div

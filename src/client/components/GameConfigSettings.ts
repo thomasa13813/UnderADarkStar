@@ -209,6 +209,8 @@ export interface GameConfigSettingsData {
     randomMapDivider?: boolean;
     showMedals?: boolean;
     mapWins?: Map<GameMapType, Set<Difficulty>>;
+    // Maps in a folder that closes on a pick (solo and private lobbies).
+    collapsible?: boolean;
   };
   difficulty: {
     selected: Difficulty;
@@ -469,6 +471,7 @@ export class GameConfigSettings extends LitElement {
             .onSelectMap=${this.handleSelectMap}
             .onSelectRandom=${this.handleSelectRandom}
             .searchQuery=${this.mapSearchQuery}
+            .collapsible=${settings.map.collapsible ?? false}
           ></map-picker>`,
           undefined,
           this.renderMapSearchInput(),

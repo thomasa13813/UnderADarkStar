@@ -517,6 +517,7 @@ export class HostLobbyModal extends BaseModal {
                 selected: this.selectedMap,
                 useRandom: this.useRandomMap,
                 randomMapDivider: true,
+                collapsible: true,
               },
               difficulty: {
                 selected: this.selectedDifficulty,

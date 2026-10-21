@@ -475,6 +475,7 @@ export class SinglePlayerModal extends BaseModal {
                 useRandom: this.useRandomMap,
                 showMedals: this.showAchievements,
                 mapWins: this.mapWins,
+                collapsible: true,
               },
               difficulty: {
                 selected: this.selectedDifficulty,

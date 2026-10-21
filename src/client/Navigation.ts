@@ -2,6 +2,13 @@
 // Navigation is imported, and the element boots a lobby socket on connect.
 import type { GameModeSelector } from "./GameModeSelector";
 
+// Pages a click outside the panel does not close (see initNavigation).
+const BACK_ARROW_ONLY_PAGES = new Set([
+  "page-single-player",
+  "page-host-lobby",
+  "page-join-lobby",
+]);
+
 export function closeMobileSidebar() {
   const sidebar = document.getElementById("sidebar-menu");
   const backdrop = document.getElementById("mobile-menu-backdrop");
@@ -150,6 +157,10 @@ export function initNavigation() {
             const openModal = document.querySelector(
               ".page-content:not(.hidden)",
             ) as any;
+
+            // The game setup pages leave only by their back arrow: a stray
+            // click beside the panel threw playtesters back to the main menu.
+            if (openModal && BACK_ARROW_ONLY_PAGES.has(openModal.id)) return;
 
             if (openModal && typeof openModal.close === "function") {
               // Check confirmation guard before closing

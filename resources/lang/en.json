@@ -466,7 +466,7 @@
     "piracy": "Piracy",
     "piracy_desc": "An eliminated challenger may stay in the round as a corsair, raiding freighters, and beach it to return.",
     "play_as_hegemon": "Play as the Hegemon",
-    "play_as_hegemon_desc": "Every game has a Dark Star. The AI holds the throne unless you take the seat.",
+    "play_as_hegemon_desc": "Every game has a Hegemon. The AI holds the throne unless you take the seat.",
     "random_spawn": "Random spawn",
     "start": "Start Game",
     "starting": "Starting…",
@@ -967,6 +967,9 @@
   "map_component": {
     "error": "Error",
     "favorite": "Add to favourites",
+    "folder": "Maps",
+    "folder_change": "Change",
+    "folder_close": "Close",
     "no_results": "No maps found",
     "search_maps": "Search maps...",
     "search_results": "Search Results",
