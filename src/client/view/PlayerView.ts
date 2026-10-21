@@ -83,7 +83,6 @@ function stateFromUpdate(pu: PlayerUpdate): PlayerState {
     isPirate: pu.isPirate ?? false,
     pirateRespawnAt: pu.pirateRespawnAt ?? 0,
     pirateLanding: pu.pirateLanding ?? null,
-    corsairSunkTile: pu.corsairSunkTile ?? null,
     killedBy: pu.killedBy ?? null,
     deathPosition: pu.deathPosition ?? null,
     tilesOwned: pu.tilesOwned!,
@@ -766,9 +765,6 @@ export class PlayerView {
   }
   pirateLanding(): number | null {
     return this.state.pirateLanding;
-  }
-  corsairSunkTile(): number | null {
-    return this.state.corsairSunkTile;
   }
 
   lastDeleteUnitTick(): Tick {

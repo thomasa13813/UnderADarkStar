@@ -75,7 +75,6 @@ export function rulesParams(): Record<string, string | number> {
     // the figure on screen.
     pirateWait: p.respawnSeconds,
     pirateWaitCap: p.respawnCapSeconds,
-    pirateExclusion: p.respawnExclusion,
     raidGold: gold(p.raidGold),
     raidTroops: p.raidTroops / 10,
     holdCap: (p.holdCap / 10).toLocaleString("en-US"),

@@ -736,7 +736,7 @@
     "rules_piracy_2": "A pirate commands one ship, the corsair, and nothing else: no territory, no building, no alliances. Click deep space outside the Dark Star and its moat to launch it, {pirateWait} seconds after the elimination. At sea it flies no name and no colours: everyone sees only a pirate ship.",
     "rules_piracy_3": "Click deep space to send the corsair there on patrol; click nebula to send it ashore. On patrol it hunts freighters: each one it catches is scuttled, the pirate pockets {raidGold} gold, and {raidTroops} troops go into the hold, which carries at most {holdCap}. It never fires on fleets but trades shots with Destroyers in range.",
     "rules_piracy_4": "Beaching the corsair claims {claimTiles} tiles around the landing for free, structures excluded, and sends the hold ashore as an attack on the coast's owner. The pirate is a challenger again, in their own name and colours, with no spawn protection. The Dark Star, a player still under spawn protection and a teammate's coast are closed to landings, and landings stop in the round's last {landingClose} seconds.",
-    "rules_piracy_5": "A sunk corsair loses its whole hold; the raid gold stays with the player. The next corsair launches after a wait that doubles with every sinking, from {pirateWait} seconds up to {pirateWaitCap}, and must launch at least {pirateExclusion} tiles from where the last one sank. It heals slowly anywhere in deep space and never docks.",
+    "rules_piracy_5": "A sunk corsair loses its whole hold; the raid gold stays with the player. The next corsair launches after a wait that doubles with every sinking, from {pirateWait} seconds up to {pirateWaitCap}. It heals slowly anywhere in deep space and never docks.",
     "rules_piracy_6": "A pirate at sea cannot win the round; a returned challenger can, like anyone. A pirate who leaves the game has the corsair scuttled, and a returned challenger who falls again may embrace piracy again.",
     "rules_piracy_title": "Piracy",
     "rules_round_1": "A round ends in exactly two ways: the Hegemon is eliminated, or the timer runs out ({minutes} minutes by default). There is no victory by owning a share of the map.",
@@ -1036,7 +1036,6 @@
     "raid_gold": "Raid gold",
     "refused_dark_star": "Not in the Dark Star's water",
     "refused_land": "A corsair launches in deep space, not on nebula",
-    "refused_too_close": "Too close to where the last corsair sank",
     "refused_wait": "The next corsair is not ready yet",
     "title": "Pirate"
   },

@@ -12,8 +12,7 @@ import { WarshipExecution } from "./WarshipExecution";
 // but a challenger (the Hegemon's fall ends the round, Lords and Barons do
 // not pirate); a player who is alive, has not spawned, or whose round is
 // over; a pirate who still has a corsair; and any tile the pirate branch of
-// PlayerImpl.warshipSpawn refuses (land, the disc, the moat, the cooldown,
-// the exclusion around the last sinking). The client says why; the sim
+// PlayerImpl.warshipSpawn refuses (land, the disc, the moat, the cooldown). The client says why; the sim
 // only declines.
 //
 // The work is done from tick(), not init(): an execution added during the
@@ -71,7 +70,6 @@ export class EmbracePiracyExecution implements Execution {
     const corsair = player.buildUnit(UnitType.Warship, spawn, {
       patrolTile: spawn,
     });
-    player.recordCorsairSpawned();
     mg.addExecution(new WarshipExecution(corsair));
   }
 

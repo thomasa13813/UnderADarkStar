@@ -723,17 +723,13 @@ export interface Player {
   embracePiracy(): void;
   endPiracy(): void;
   // PR10: sinkings this round (the cooldown doubles with each), the tick the
-  // next corsair may spawn, and where the last one went down (the next spawn
-  // keeps its distance). The count persists across returns.
+  // next corsair may spawn. The count persists across returns.
   pirateSinkings(): number;
   pirateRespawnAt(): Tick;
-  corsairSunkTile(): TileRef | undefined;
-  recordCorsairSunk(tile: TileRef): void;
+  recordCorsairSunk(): void;
   // Called when the player is eliminated: the same wait before the first
   // corsair as between corsairs (every phase transition, Tom 2026-10-15).
   recordEliminated(): void;
-  // Called when a corsair spawns: the sinking's exclusion is spent.
-  recordCorsairSpawned(): void;
   // PR14: raids and landings this round, for a later leaderboard line.
   pirateRaids(): number;
   recordPirateRaid(): void;

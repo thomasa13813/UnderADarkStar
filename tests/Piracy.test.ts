@@ -16,7 +16,6 @@ import {
   Unit,
   UnitType,
 } from "../src/core/game/Game";
-import { PlayerImpl } from "../src/core/game/PlayerImpl";
 
 import {
   DisplayMessageUpdate,
@@ -449,14 +448,7 @@ describe("Sinking and return (PR10)", () => {
     return ship!;
   }
 
-  // The exclusion is 150 tiles; this map is 16. Off unless a test says.
-  function noExclusion() {
-    const cfg = game.config().piracyConfig();
-    game.config().piracyConfig = () => ({ ...cfg, respawnExclusion: 0 });
-  }
-
   test("the hold goes down with the ship; the purse stays", () => {
-    noExclusion();
     eliminate(pirate);
     const ship = embrace(pirate, 12, 8)!;
     ship.setTroops(1_200);
@@ -467,19 +459,12 @@ describe("Sinking and return (PR10)", () => {
     expect(pirate.gold()).toBe(30_000n);
     expect(pirate.pirateSinkings()).toBe(1);
     expect(pirate.pirateRespawnAt()).toBe(sunkAt + 150);
-    expect(pirate.corsairSunkTile()).toBe(game.ref(12, 8));
-    // The client reads the sinking off the wire, to say why a respawn click
-    // inside the exclusion was refused.
-    expect((pirate as PlayerImpl).toUpdate()?.corsairSunkTile).toBe(
-      game.ref(12, 8),
-    );
     const next = expectRefusedThenAllowed();
     expect(next.troops()).toBe(0);
     expect(pirate.gold()).toBe(30_000n);
   });
 
   test("the cooldown doubles with each sinking and caps at two minutes", () => {
-    noExclusion();
     eliminate(pirate);
     let ship = embrace(pirate, 12, 8)!;
     const waits = [150, 300, 600, 1200, 1200];
@@ -492,28 +477,19 @@ describe("Sinking and return (PR10)", () => {
     expect(pirate.pirateSinkings()).toBe(waits.length);
   });
 
-  test("the next corsair keeps its distance from the sinking", () => {
+  test("the next corsair may launch where the last one sank", () => {
     const cfg = game.config().piracyConfig();
-    game.config().piracyConfig = () => ({
-      ...cfg,
-      respawnSeconds: 1,
-      respawnExclusion: 6,
-    });
+    game.config().piracyConfig = () => ({ ...cfg, respawnSeconds: 1 });
     eliminate(pirate);
     const ship = embrace(pirate, 12, 8)!;
     sink(ship, north);
     executeTicks(game, 10);
-    // Within six tiles of (12, 8): refused. Beyond: taken.
-    expect(pirate.canBuild(UnitType.Warship, game.ref(12, 8))).toBe(false);
-    expect(pirate.canBuild(UnitType.Warship, game.ref(14, 12))).toBe(false);
-    expect(pirate.canBuild(UnitType.Warship, game.ref(12, 15))).toBe(
-      game.ref(12, 15),
+    expect(pirate.canBuild(UnitType.Warship, game.ref(12, 8))).toBe(
+      game.ref(12, 8),
     );
-    const next = embrace(pirate, 12, 15)!;
+    const next = embrace(pirate, 12, 8)!;
     expect(next).toBeDefined();
-    expect(next.tile()).toBe(game.ref(12, 15));
-    // The exclusion is spent with the spawn.
-    expect(pirate.corsairSunkTile()).toBeUndefined();
+    expect(next.tile()).toBe(game.ref(12, 8));
   });
 
   test("the sinking count persists across a scuttle", () => {
@@ -1009,7 +985,6 @@ describe("Dying again", () => {
     game.config().piracyConfig = () => ({
       ...cfg,
       landingTiles: 20,
-      respawnExclusion: 0,
     });
     eliminate(pirate);
     let ship = embrace(pirate, 10, 8)!;

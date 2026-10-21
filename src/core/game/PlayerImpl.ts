@@ -204,7 +204,6 @@ export class PlayerImpl implements Player {
   private _pirate = false;
   private _pirateSinkings = 0;
   private _pirateRespawnAt: Tick = 0;
-  private _corsairSunkTile: TileRef | undefined;
   private _pirateRaids = 0;
   private _pirateLandings = 0;
   private _pirateLanding: TileRef | undefined;
@@ -462,7 +461,6 @@ export class PlayerImpl implements Player {
       isPirate: this._pirate,
       pirateRespawnAt: this._pirateRespawnAt,
       pirateLanding: this._pirateLanding ?? null,
-      corsairSunkTile: this._corsairSunkTile ?? null,
     };
   }
 
@@ -840,14 +838,9 @@ export class PlayerImpl implements Player {
     return this._pirateRespawnAt;
   }
 
-  corsairSunkTile(): TileRef | undefined {
-    return this._corsairSunkTile;
-  }
-
   // PR10: the whole hold went down with the ship (it was on the unit); the
-  // wait doubles with each sinking this round, capped, and the next corsair
-  // keeps its distance from here. Integer ticks only.
-  recordCorsairSunk(tile: TileRef): void {
+  // wait doubles with each sinking this round, capped. Integer ticks only.
+  recordCorsairSunk(): void {
     const cfg = this.mg.config().piracyConfig();
     this._pirateSinkings++;
     let seconds = cfg.respawnSeconds;
@@ -857,11 +850,6 @@ export class PlayerImpl implements Player {
     }
     seconds = Math.min(seconds, cfg.respawnCapSeconds);
     this._pirateRespawnAt = this.mg.ticks() + seconds * 10;
-    this._corsairSunkTile = tile;
-  }
-
-  recordCorsairSpawned(): void {
-    this._corsairSunkTile = undefined;
   }
 
   // An elimination starts the base wait (no doubling: that is for
@@ -1962,7 +1950,7 @@ export class PlayerImpl implements Player {
     }
     // A pirate's corsair spawns where the pirate points (PR3): any deep
     // space outside the Dark Star and its moat, once the cooldown has run
-    // (PR10) and never within the exclusion of where the last one sank.
+    // (PR10).
     if (this.isPirate()) {
       const mg = this.mg;
       if (mg.isInDarkStar(tile) || mg.isInMoat(tile)) {
@@ -1970,13 +1958,6 @@ export class PlayerImpl implements Player {
       }
       if (mg.ticks() < this._pirateRespawnAt) {
         return false;
-      }
-      const sunk = this._corsairSunkTile;
-      if (sunk !== undefined) {
-        const r = mg.config().piracyConfig().respawnExclusion;
-        if (mg.euclideanDistSquared(tile, sunk) < r * r) {
-          return false;
-        }
       }
       return tile;
     }

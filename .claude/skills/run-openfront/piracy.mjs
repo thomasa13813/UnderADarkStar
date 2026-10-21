@@ -56,7 +56,6 @@ const me = () =>
       gold: String(p.gold()),
       respawnAt: p.pirateRespawnAt(),
       landing: p.pirateLanding(),
-      sunk: p.corsairSunkTile(),
       ship: ship
         ? {
             id: ship.id(),

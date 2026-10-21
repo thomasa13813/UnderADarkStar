@@ -348,7 +348,7 @@ export class UnitImpl implements Unit {
       displayMessage !== false &&
       this._owner.isPirate()
     ) {
-      this._owner.recordCorsairSunk(this._tile);
+      this._owner.recordCorsairSunk();
     }
 
     this._owner._units = this._owner._units.filter((b) => b !== this);

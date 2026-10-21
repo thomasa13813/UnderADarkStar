@@ -205,8 +205,8 @@ round would not otherwise have.
 - **PR10 — Death and return. [Decided]** A sunk corsair loses its **whole** hold (Tom: no mercy
   for pirates); the purse stays with the
   player. The pirate may spawn another after `pirateRespawnSeconds` (**15**) **doubling with each
-  sinking** in the round (15, 30, 60 s…, capped at `pirateRespawnCapSeconds`, **120**), and never
-  within `pirateRespawnExclusion` (**150** tiles) of the tile where it was sunk. **The same wait
+  sinking** in the round (15, 30, 60 s…, capped at `pirateRespawnCapSeconds`, **120**), anywhere in deep space outside the disc and
+  moat, including where it was sunk (the 150-tile exclusion was dropped, Tom 2026-10-20). **The same wait
   runs from every elimination** [Tom 2026-10-15]: a player who has just died waits 15 s before
   their first corsair, and a returned pirate who falls again waits again, so no one can land,
   be overwhelmed and relaunch in the same breath. Every phase transition, player to corsair or
@@ -250,7 +250,6 @@ round would not otherwise have.
 | `pirateLandingTiles`          | 100          | Exactly the engine's mop-up threshold: the bare minimum not to be popped on arrival, and no more (decision 3).      |
 | `pirateRespawnSeconds`        | 15           | Tom's figure (2026-10-15), after an elimination and after the first sinking.                                        |
 | `pirateRespawnCapSeconds`     | 120          | The doubling stops here: a pirate sunk five times waits two minutes, not forever.                                   |
-| `pirateRespawnExclusion`      | 150          | The warship's passive-healing range: far enough that "die and come straight back" is a voyage, not a respawn.       |
 | `pirateLandingClosesSeconds`  | 60           | Closes the last-minute padding without touching raids.                                                              |
 | `pirateRaidGold`              | 10,000       | Tom's figure. Flat so the purse reads simply; 25 raids buy a destroyer.                                             |
 | `pirateHealEveryTicks`        | 3            | A third of a harbour's passive heal (1 a tick): whole again in ~5 min, so a hurt corsair hides rather than lands.   |
@@ -394,3 +393,7 @@ hold pays for the owner's tiles at the ordinary rate.
   L31 amended, the glossary rows; and Tom's call that **no piracy data is tracked** (PR14: the
   counters stay unread, no leaderboard line). Left of slice D: the as-built note in the design
   doc's §6 and the Lords check that a scuttle still triggers retaliation.
+- **2026-10-20** — Tom: the respawn exclusion is gone (PR10). A sunk pirate may launch the next
+  corsair anywhere a first one may, wreck site included, and the "too close" toast is removed;
+  the wait alone separates corsairs. `respawnExclusion` and the sinking tile left the config, the
+  player state and the wire.

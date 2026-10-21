@@ -21,7 +21,6 @@ function makePlayerState(overrides: Partial<PlayerState> = {}): PlayerState {
     isPirate: false,
     pirateRespawnAt: 0,
     pirateLanding: null,
-    corsairSunkTile: null,
     killedBy: null,
     deathPosition: null,
     tilesOwned: 0,

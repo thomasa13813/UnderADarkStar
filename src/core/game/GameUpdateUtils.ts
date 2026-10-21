@@ -59,7 +59,6 @@ export function diffPlayerUpdate(
     prev.isPirate === next.isPirate &&
     prev.pirateRespawnAt === next.pirateRespawnAt &&
     prev.pirateLanding === next.pirateLanding &&
-    prev.corsairSunkTile === next.corsairSunkTile &&
     prev.hasSpawned === next.hasSpawned &&
     prev.spawnTile === next.spawnTile &&
     prev.betrayals === next.betrayals &&
@@ -150,10 +149,6 @@ export function diffPlayerUpdate(
     prev.pirateRespawnAt === next.pirateRespawnAt,
   );
   setIfDifferent("pirateLanding", prev.pirateLanding === next.pirateLanding);
-  setIfDifferent(
-    "corsairSunkTile",
-    prev.corsairSunkTile === next.corsairSunkTile,
-  );
   setIfDifferent("allies", numberArrayEqual(prev.allies, next.allies));
   setIfDifferent("targets", numberArrayEqual(prev.targets, next.targets));
   setIfDifferent(
@@ -206,8 +201,6 @@ export function applyStateUpdate(target: PlayerState, pu: PlayerUpdate): void {
   if (pu.pirateRespawnAt !== undefined)
     target.pirateRespawnAt = pu.pirateRespawnAt;
   if (pu.pirateLanding !== undefined) target.pirateLanding = pu.pirateLanding;
-  if (pu.corsairSunkTile !== undefined)
-    target.corsairSunkTile = pu.corsairSunkTile;
   if (pu.tilesOwned !== undefined) target.tilesOwned = pu.tilesOwned;
   if (pu.gold !== undefined) target.gold = Number(pu.gold);
   if (pu.tradeGold !== undefined) target.tradeGold = Number(pu.tradeGold);

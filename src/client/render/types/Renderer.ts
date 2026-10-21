@@ -71,8 +71,6 @@ export interface PlayerState {
   pirateRespawnAt: number;
   /** Piracy: the shore a landing is under way to (null = none). */
   pirateLanding: number | null;
-  /** Piracy: where the last corsair sank (null = none). */
-  corsairSunkTile: number | null;
   tilesOwned: number;
   gold: number;
   /** Cumulative ship-trade revenue (live, from PlayerUpdate). */

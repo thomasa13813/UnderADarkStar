@@ -111,7 +111,7 @@ export class PiracyController implements Controller {
   }
 
   // The spawn click (PR3, PR10): deep space outside the Dark Star and its
-  // moat, after the wait, away from the last sinking. Each refusal the sim
+  // moat, after the wait. Each refusal the sim
   // would make silently gets its line here.
   private launch(me: PlayerView, tile: TileRef) {
     if (!this.game.isWater(tile)) {
@@ -125,16 +125,6 @@ export class PiracyController implements Controller {
     if (this.game.ticks() < me.pirateRespawnAt()) {
       showToast(translateText("piracy.refused_wait"), "red");
       return;
-    }
-    const sunk = me.corsairSunkTile();
-    if (sunk !== null) {
-      const r = this.game.config().piracyConfig().respawnExclusion;
-      const dx = this.game.x(tile) - this.game.x(sunk);
-      const dy = this.game.y(tile) - this.game.y(sunk);
-      if (dx * dx + dy * dy < r * r) {
-        showToast(translateText("piracy.refused_too_close"), "red");
-        return;
-      }
     }
     this.eventBus.emit(new SendEmbracePiracyIntentEvent(tile));
   }

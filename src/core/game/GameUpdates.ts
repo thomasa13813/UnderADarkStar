@@ -286,8 +286,6 @@ export interface PlayerUpdate {
   pirateRespawnAt?: Tick;
   /** Piracy: the shore a landing is under way to (null = none). */
   pirateLanding?: TileRef | null;
-  /** Piracy: where the last corsair sank (null = none); the next spawn keeps its distance. */
-  corsairSunkTile?: TileRef | null;
   lastDeleteUnitTick?: Tick;
   isLobbyCreator?: boolean;
   isHegemon?: boolean;

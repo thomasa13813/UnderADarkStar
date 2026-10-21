@@ -337,11 +337,9 @@ export const PIRACY_DEFAULTS = {
   // popped on arrival, and nothing more.
   landingTiles: 100,
   // PR10: the wait before a corsair may launch, after an elimination and
-  // after a sinking (doubling with each sinking, capped); and the distance
-  // from the sinking the next corsair must keep.
+  // after a sinking (doubling with each sinking, capped).
   respawnSeconds: 15,
   respawnCapSeconds: 120,
-  respawnExclusion: 150,
   // PR12: landings are refused this close to the round's end.
   landingClosesSeconds: 60,
   // PR11: one health every this many ticks, anywhere in deep space (a third
