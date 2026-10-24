@@ -21,6 +21,7 @@ import {
   calculateBoundingBoxCenter,
 } from "../../Util";
 import { AttackExecution } from "../AttackExecution";
+import { CounterStrikeExecution } from "../CounterStrikeExecution";
 import { DonateTroopsExecution } from "../DonateTroopExecution";
 import { NationAllianceBehavior } from "../nation/NationAllianceBehavior";
 import {
@@ -35,6 +36,8 @@ import { TransportShipExecution } from "../TransportShipExecution";
 import { closestTwoTiles } from "../Util";
 
 // Reusable neighbor buffer for hot loops; the simulation is single-threaded.
+// Share of its troops an AI offers against a landed Hegemon strike (H17).
+const STRIKE_COUNTER_SHARE = 0.5;
 const NEIGHBOR_SCRATCH: TileRef[] = [0, 0, 0, 0];
 
 export class AiAttackBehavior {
@@ -55,6 +58,7 @@ export class AiAttackBehavior {
     if (this.player === null || this.allianceBehavior === undefined) {
       throw new Error("not initialized");
     }
+    if (this.counterStrike()) return;
 
     // Neighbor visit order matters here: the set's insertion order feeds the
     // stable troop-count sort below, so ties keep border-discovery order.
@@ -411,10 +415,28 @@ export class AiAttackBehavior {
     return ratio >= this.triggerRatio;
   }
 
+  // A landed Hegemon strike is answered before anything else, whatever the
+  // reserve, by cancelling it (H17): a share of the army is offered and only
+  // what the strike costs is spent.
+  counterStrike(): boolean {
+    if (!this.player.incomingAttacks().some((a) => a.isStrike())) return false;
+    this.game.addExecution(
+      new CounterStrikeExecution(
+        this.player,
+        this.player.troops() * STRIKE_COUNTER_SHARE,
+      ),
+    );
+    return true;
+  }
+
   findIncomingAttackPlayer(): Player | null {
+    // A strike is not fought by attacking the Hegemon (H17): see retaliate.
     let incomingAttacks = this.player
       .incomingAttacks()
-      .filter((attack) => !this.player.isFriendly(attack.attacker()));
+      .filter(
+        (attack) =>
+          !attack.isStrike() && !this.player.isFriendly(attack.attacker()),
+      );
     // Ignore bot attacks if we are not a bot.
     if (this.player.type() !== PlayerType.Bot) {
       incomingAttacks = incomingAttacks.filter(
@@ -726,6 +748,7 @@ export class AiAttackBehavior {
   }
 
   attackRandomTarget() {
+    if (this.counterStrike()) return;
     // Save up troops until we reach the trigger ratio
     if (!this.hasTriggerRatioTroops()) return;
 

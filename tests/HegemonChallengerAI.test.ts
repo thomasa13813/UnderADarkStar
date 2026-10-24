@@ -1,4 +1,6 @@
 import { NationHegemonBehavior } from "../src/core/execution/nation/NationHegemonBehavior";
+import { RazeExecution } from "../src/core/execution/RazeExecution";
+import { AiAttackBehavior } from "../src/core/execution/utils/AiAttackBehavior";
 import {
   Game,
   Player,
@@ -6,6 +8,7 @@ import {
   PlayerType,
   UnitType,
 } from "../src/core/game/Game";
+import { PseudoRandom } from "../src/core/PseudoRandom";
 import { setup } from "./util/Setup";
 import { executeTicks } from "./util/utils";
 
@@ -124,5 +127,34 @@ describe("AI challengers treat the throne as the objective", () => {
     expect(new NationHegemonBehavior(plain, solo).considerInvasion()).toBe(
       false,
     );
+  });
+});
+
+describe("AI challengers against a strike (H17)", () => {
+  test("a struck Lord cancels a landed strike with half its army, spending only what it costs", () => {
+    // Large enough to be struck without tyranny (3% of the map's land).
+    const g = game.darkStar()!;
+    const outer = g.radius + g.moatWidth;
+    game.forEachTile((tile) => {
+      const dx = game.x(tile) - g.cx - outer;
+      if (dx >= 0 && dx < 40 && Math.abs(game.y(tile) - g.cy) < 20) {
+        if (game.isLand(tile)) east.conquer(tile);
+      }
+    });
+    const ai = new AiAttackBehavior(new PseudoRandom(1), game, east, 0, 0, 0);
+    expect(ai.counterStrike()).toBe(false);
+    game.addExecution(
+      new RazeExecution(hegemon, Array.from(east.tiles())[0], 20_000),
+    );
+    for (let i = 0; i < 300 && hegemon.outgoingAttacks().length === 0; i++) {
+      game.executeNextTick();
+    }
+    expect(hegemon.outgoingAttacks()).toHaveLength(1);
+    east.setTroops(1_000_000);
+    expect(ai.counterStrike()).toBe(true);
+    executeTicks(game, 3);
+    expect(hegemon.outgoingAttacks()).toHaveLength(0);
+    expect(game.hegemonBubbleTiles()).toBe(0);
+    expect(east.troops()).toBeGreaterThan(1_000_000 - 25_000);
   });
 });

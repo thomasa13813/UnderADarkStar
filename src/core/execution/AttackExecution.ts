@@ -37,7 +37,6 @@ export class AttackExecution implements Execution {
   private ownerSmallID: number;
   private targetSmallID: number;
   private ownerIsHegemon = false;
-  private strike: Attack | null = null;
   // Reusable neighbor buffers to avoid closures/allocation in hot loops.
   private nbuf: TileRef[] = [0, 0, 0, 0];
   private nbuf2: TileRef[] = [0, 0, 0, 0];
@@ -113,15 +112,14 @@ export class AttackExecution implements Execution {
       this.active = false;
       return;
     }
-    // Over land the Hegemon can only be reached across a strike's bubble
-    // (H17), which is the struck player's fight alone; the invader's land
-    // attack reaches the Dark Star from the tiles it holds.
+    // Over land the Hegemon can only be reached by the invader, from the
+    // Dark Star tiles it holds. A strike's bubble is never fought over: the
+    // struck player cancels the strike instead (H17, CounterStrikeExecution).
     if (
       this.target.isPlayer() &&
       this.target.isHegemon() &&
       this.sourceTile === null &&
-      this._owner.domainTilesHeld() === 0 &&
-      !this._owner.isStruckBy(this.target)
+      this._owner.domainTilesHeld() === 0
     ) {
       this.active = false;
       return;
@@ -155,7 +153,7 @@ export class AttackExecution implements Execution {
     this.mg.stats().attack(this._owner, this.target, this.startTroops);
 
     for (const incoming of this._owner.incomingAttacks()) {
-      // A Hegemon's strike is fought over its bubble (H17), never cancelled.
+      // A Hegemon's strike is cancelled by its own order (H17), not here.
       if (incoming.attacker() === this.target && !incoming.isStrike()) {
         // Target has opposing attack, cancel them out
         if (incoming.troops() > this.attack.troops()) {
@@ -292,15 +290,6 @@ export class AttackExecution implements Execution {
       return;
     }
 
-    // Fighting a Hegemon's strike (H17): its bubble beyond the moat is held
-    // and paid for by the strike's own troops, not the Dark Star's.
-    this.strike =
-      targetPlayer !== null && targetPlayer.isHegemon()
-        ? (this._owner
-            .incomingAttacks()
-            .find((a) => a.isStrike() && a.attacker() === targetPlayer) ?? null)
-        : null;
-
     const borderSize = this.attack.borderSize() + this.random.nextInt(0, 5);
     // Each tile consumes a fraction of the tick; conquer until it is spent.
     let tickBudget = 1;
@@ -343,11 +332,10 @@ export class AttackExecution implements Execution {
       if (this.ownerIsHegemon && !this.mg.isInDarkStar(tileToConquer)) {
         continue;
       }
-      // A strike's bubble is fought over only by the player it is striking.
+      // A strike's bubble is never fought over (H17).
       if (
         targetPlayer !== null &&
         targetPlayer.isHegemon() &&
-        this.strike === null &&
         !this.mg.isInDarkStar(tileToConquer)
       ) {
         continue;
@@ -361,9 +349,7 @@ export class AttackExecution implements Execution {
       tickBudget -= tickFraction;
       troopCount -= attackerTroopLoss;
       this.attack.setTroops(troopCount);
-      if (this.strike !== null && !this.mg.isInDarkStar(tileToConquer)) {
-        this.strike.setTroops(this.strike.troops() - defenderTroopLoss);
-      } else if (targetPlayer) {
+      if (targetPlayer) {
         targetPlayer.removeTroops(defenderTroopLoss);
       }
       this._owner.conquer(tileToConquer);
@@ -377,7 +363,6 @@ export class AttackExecution implements Execution {
     borderSize: number,
   ): AttackLogicInput {
     const defender = this.target.isPlayer() ? this.target : null;
-    const bubble = this.strike !== null && !this.mg.isInDarkStar(tile);
     // Same test as scanning nearbyUnits() for a post owned by the defender
     // (active, not under construction, within range), without building a
     // result array per conquered tile — this runs for every tile of every
@@ -406,15 +391,11 @@ export class AttackExecution implements Execution {
               // The Hegemon's strength is decoupled from its territory (H5):
               // it is always costed as if it held the whole domain, so each
               // tile lost bleeds the same share of its troops.
-              numTiles: bubble
-                ? Math.max(
-                    this.mg.hegemonBubbleTiles(),
-                    this.mg.config().hegemonConfig().razeBubbleMinTiles,
-                  )
-                : ((defender.isHegemon()
-                    ? this.mg.darkStar()?.domainTileCount
-                    : undefined) ?? defender.numTilesOwned()),
-              troops: bubble ? this.strike!.troops() : defender.troops(),
+              numTiles:
+                (defender.isHegemon()
+                  ? this.mg.darkStar()?.domainTileCount
+                  : undefined) ?? defender.numTilesOwned(),
+              troops: defender.troops(),
               isTraitor: defender.isTraitor(),
               isDisconnectedTeammate:
                 defender.isDisconnected() && this._owner.isOnSameTeam(defender),

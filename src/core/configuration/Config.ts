@@ -439,12 +439,14 @@ export const HEGEMON_DEFAULTS = {
   // (100 = no change) — the fortress multipliers, turned against the throne.
   razeAttackerLossPercent: 300,
   razeSlowPercent: 300,
-  // Fighting a strike (H17): its bubble is defended by the strike's own
-  // troops at their density over the bubble — but a bubble is never costed as
-  // smaller than this, or a fresh landing (a million troops on a handful of
-  // tiles) would lose a fraction of the whole strike to every tile retaken
-  // and die in a second to any standing army.
-  razeBubbleMinTiles: 200,
+  // Fighting a strike (H17, 2026-10-24): troops the struck player commits
+  // cancel the strike's troops, as opposing attacks cancel. A strike up to
+  // this share of its target's troop ceiling is cancelled one for one; a
+  // bigger one is disproportionate, and each troop committed against it
+  // cancels (strike troops at launch) / (this share of the ceiling) of it.
+  // So a target can always cancel a whole strike with this share of its
+  // ceiling, whatever the throne sends.
+  strikeCounterCeilingPercent: 100,
   // Tyranny: a strike's troop cost is scaled by the target's share of the
   // map's land (permille, Dark Star tiles not counted). No penalty at
   // tyrannyFreePermille and above; the cost rises without limit towards
@@ -454,11 +456,14 @@ export const HEGEMON_DEFAULTS = {
   tyrannyFreePermille: 30,
   // An AI Hegemon's leveller strikes (H11): once its troops have sat at this
   // share of the ceiling for long enough and nobody is invading, it strikes
-  // the challenger with the largest troop capacity, provided they are a real
-  // threat (capacity as a share of the Hegemon's ceiling). The strike is
-  // recalled once the target's capacity has fallen to
-  // levellerRecallPercentOfRival of the next strongest challenger's, and the
-  // next strike waits out the cooldown.
+  // the most threatening challenger, provided they are a real threat
+  // (capacity as a share of the Hegemon's ceiling). Threat is a weighted sum
+  // of the challenger's share of the map's land and its troop capacity as a
+  // share of the Hegemon's ceiling (both permille); in team games teammates
+  // add up, and the strongest team is struck at its strongest member. The
+  // strike is recalled once the target's threat (its team's, in team games)
+  // has fallen to levellerRecallPercentOfRival of the next strongest's, and
+  // the next strike waits out the cooldown.
   // 75 (from 95, 2026-09-27): with the flat refill the throne rarely tops
   // up again after a strike, and Tom wants it engaging the galaxy without
   // dipping below three quarters of its pool to do so.
@@ -468,13 +473,17 @@ export const HEGEMON_DEFAULTS = {
   levellerStrikePercent: 25,
   levellerRecallPercentOfRival: 85,
   levellerCooldownSeconds: 90,
+  // Equal weights (2026-10-24): capacity alone is mostly cities (a city
+  // level adds a flat 250k, land only tiles^0.6), so a small built-up
+  // challenger outranked one with twice its land.
+  levellerLandWeight: 1,
+  levellerCapacityWeight: 1,
   // Punitive strikes (H19): a missile launch flags the silo for this long
   // after its latest launch; the Hegemon may answer with a strike funded by a
   // levy on every living challenger's troops at home (a share by warhead:
   // Nuclear = the atom bomb, Antimatter = the hydrogen bomb). The strike
   // razes only within punitiveRadius of the silo (the Nuclear Warhead's outer
-  // blast radius), then halts for punitiveHaltSeconds before its bubble
-  // pops; a retaken bubble tile during the halt resumes it. An AI Hegemon
+  // blast radius), and pops when nothing within it is left. An AI Hegemon
   // strikes every flag except on a challenger holding less than this share
   // of the map's land (permille).
   punitiveFlagSeconds: 30,
@@ -483,7 +492,6 @@ export const HEGEMON_DEFAULTS = {
   // 34 = the Nuclear Warhead's outer blast (30) with 25% more area (Tom,
   // 2026-09-26: the first cut felt weak).
   punitiveRadius: 34,
-  punitiveHaltSeconds: 5,
   punitiveAIMinLandPermille: 50,
   // AI challengers (Nations) treat the throne as the objective
   // (NationHegemonBehavior). A nation invades once its troops reach this share

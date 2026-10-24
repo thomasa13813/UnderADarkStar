@@ -118,6 +118,11 @@ export class SendPunitiveStrikeIntentEvent implements GameEvent {
   constructor(public readonly tile: TileRef) {}
 }
 
+// Troops committed against a landed Hegemon strike on us (H17).
+export class SendCounterStrikeIntentEvent implements GameEvent {
+  constructor(public readonly troops: number) {}
+}
+
 // A stargate shot at a tile (C4): the nearest ready gate in range fires it.
 export class SendGateShotIntentEvent implements GameEvent {
   constructor(
@@ -373,6 +378,9 @@ export class Transport {
     this.subscribe(SendStrikeIntentEvent, (e) => this.onSendStrikeIntent(e));
     this.subscribe(SendPunitiveStrikeIntentEvent, (e) =>
       this.onSendPunitiveStrikeIntent(e),
+    );
+    this.subscribe(SendCounterStrikeIntentEvent, (e) =>
+      this.onSendCounterStrikeIntent(e),
     );
     this.subscribe(SendGateShotIntentEvent, (e) =>
       this.onSendGateShotIntent(e),
@@ -856,6 +864,13 @@ export class Transport {
     this.sendIntent({
       type: "strike",
       tile: event.tile,
+      troops: event.troops,
+    });
+  }
+
+  private onSendCounterStrikeIntent(event: SendCounterStrikeIntentEvent) {
+    this.sendIntent({
+      type: "counter_strike",
       troops: event.troops,
     });
   }

@@ -1,4 +1,5 @@
 import {
+  ColoredTeams,
   Execution,
   Game,
   GameType,
@@ -177,8 +178,10 @@ export class HegemonExecution implements Execution {
   }
 
   // H11/H15, the AI's balance-of-power role: idle at full strength, it strikes
-  // the strongest challenger, and brings the strike home once they are no
-  // longer the strongest — or the moment the Dark Star itself is invaded.
+  // the most threatening challenger (team, in team games), and calls the
+  // strike off once they are no longer the strongest. A strike's troops never
+  // come home (H17), so a recall only spares the target; an invasion of the
+  // Dark Star leaves a live strike razing (2026-10-24).
   private punish(hegemon: Player, ticks: number): void {
     const mg = this.mg!;
     const cfg = mg.config().hegemonConfig();
@@ -187,7 +190,6 @@ export class HegemonExecution implements Execution {
       this.lastStrikeEndTick = ticks;
     }
     if (mg.darkStarInvader() !== null) {
-      this.strike?.recall();
       this.fullSinceTick = null;
       return;
     }
@@ -200,29 +202,48 @@ export class HegemonExecution implements Execution {
       this.fullSinceTick ??= ticks;
     }
 
-    // Strongest by troop CAPACITY (land and cities), not troops in hand: those
-    // swing by millions as a challenger spends them, and measured on World the
+    // Strongest by threat (land and capacity), not troops in hand: those swing
+    // by millions as a challenger spends them, and measured on World the
     // leader by troops changed every few seconds, recalling every strike.
-    let strongest: Player | null = null;
-    let strongestCap = 0;
-    let rivalCap = 0; // the strongest challenger other than the strike's target
-    const struck = this.strike?.targetPlayer() ?? null;
+    // Teammates are one threat; a Baron, or anyone teamless, stands alone.
+    const factions = new Map<
+      unknown,
+      { threat: number; cap: number; top: Player; topThreat: number }
+    >();
     for (const p of mg.players()) {
       if (p === hegemon || !p.isAlive()) continue;
+      const threat = this.threat(p, ceiling);
       const cap = mg.config().maxTroops(p);
-      if (cap > strongestCap) {
-        strongest = p;
-        strongestCap = cap;
+      const key = this.factionOf(p);
+      const f = factions.get(key);
+      if (f === undefined) {
+        factions.set(key, { threat, cap, top: p, topThreat: threat });
+        continue;
       }
-      if (p !== struck && cap > rivalCap) rivalCap = cap;
+      f.threat += threat;
+      f.cap += cap;
+      if (threat > f.topThreat) {
+        f.top = p;
+        f.topThreat = threat;
+      }
+    }
+    const struck = this.strike?.targetPlayer() ?? null;
+    const struckFaction = struck === null ? null : this.factionOf(struck);
+    let strongest: { threat: number; cap: number; top: Player } | null = null;
+    let rivalThreat = 0; // the strongest faction other than the strike target's
+    for (const [key, f] of factions) {
+      if (strongest === null || f.threat > strongest.threat) strongest = f;
+      if (key !== struckFaction && f.threat > rivalThreat) {
+        rivalThreat = f.threat;
+      }
     }
     if (this.strike !== null && struck !== null) {
       // Cut down to clearly below the runner-up, not merely level with them:
       // with close leaders, one razed city would otherwise end every strike.
+      const struckThreat = factions.get(struckFaction)?.threat ?? 0;
       if (
         !struck.isAlive() ||
-        mg.config().maxTroops(struck) * 100 <
-          rivalCap * cfg.levellerRecallPercentOfRival
+        struckThreat * 100 < rivalThreat * cfg.levellerRecallPercentOfRival
       ) {
         this.strike.recall();
       }
@@ -233,11 +254,11 @@ export class HegemonExecution implements Execution {
       this.fullSinceTick === null ||
       ticks - this.fullSinceTick < cfg.levellerFullSeconds * 10 ||
       ticks - this.lastStrikeEndTick < cfg.levellerCooldownSeconds * 10 ||
-      strongestCap * 100 < ceiling * cfg.levellerThreatPercentOfCeiling
+      strongest.cap * 100 < ceiling * cfg.levellerThreatPercentOfCeiling
     ) {
       return;
     }
-    const aim = this.aimAt(strongest);
+    const aim = this.aimAt(strongest.top);
     if (aim === null) return;
     this.strike = new RazeExecution(
       hegemon,
@@ -246,6 +267,27 @@ export class HegemonExecution implements Execution {
     );
     mg.addExecution(this.strike);
     this.fullSinceTick = null;
+  }
+
+  // H11's threat: the challenger's share of the map's land (Dark Star tiles
+  // not counted) and its troop capacity as a share of the Hegemon's ceiling,
+  // both permille, weighted. Capacity alone is mostly cities, so it let a
+  // small, built-up challenger outrank one with twice its land.
+  private threat(p: Player, ceiling: number): number {
+    const mg = this.mg!;
+    const cfg = mg.config().hegemonConfig();
+    const land = Math.floor(
+      ((p.numTilesOwned() - p.domainTilesHeld()) * 1000) / mg.numLandTiles(),
+    );
+    const cap = Math.floor((mg.config().maxTroops(p) * 1000) / ceiling);
+    return land * cfg.levellerLandWeight + cap * cfg.levellerCapacityWeight;
+  }
+
+  // Who a challenger's threat adds up with: its team, or itself alone (the
+  // Barons share a team in team games but do not act as one).
+  private factionOf(p: Player): unknown {
+    const team = p.team();
+    return team === null || team === ColoredTeams.Bot ? p : team;
   }
 
   // The target's greatest city: land is soon resettled, so the lasting harm of
@@ -304,8 +346,7 @@ export class HegemonExecution implements Execution {
 
     // The last stand (M4): the throne truly threatened, an AI Hegemon goes
     // all in — every second, everything above its reserve — and stays in
-    // until the invader is gone. Its leveller strike is already recalled on
-    // any landing (punish). A human Hegemon has the same tools by hand.
+    // until the invader is gone. A human Hegemon has the same tools by hand.
     if (hegemon.type() !== PlayerType.Human) {
       const g = mg.darkStar()!;
       if (

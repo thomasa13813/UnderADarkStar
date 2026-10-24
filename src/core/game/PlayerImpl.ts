@@ -2288,14 +2288,9 @@ export class PlayerImpl implements Player {
     if (this.isHegemon() && !this.mg.isInDarkStar(tile)) {
       return false;
     }
-    // The Hegemon's land beyond the moat is a strike's bubble (H17): only the
-    // player it is striking may fight over it.
-    if (
-      owner.isPlayer() &&
-      owner.isHegemon() &&
-      !this.mg.isInDarkStar(tile) &&
-      !this.isStruckBy(owner)
-    ) {
+    // The Hegemon's land beyond the moat is a strike's bubble (H17): nobody
+    // fights over it; the struck player cancels the strike instead.
+    if (owner.isPlayer() && owner.isHegemon() && !this.mg.isInDarkStar(tile)) {
       return false;
     }
 

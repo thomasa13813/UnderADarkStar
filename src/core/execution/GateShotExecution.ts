@@ -64,14 +64,9 @@ export class GateShotExecution implements Execution, GateShotInFlight {
       this.active = false;
       return;
     }
-    // The Hegemon's land beyond the moat is a strike's bubble: only the
-    // struck player may land on it (H17).
-    if (
-      owner.isPlayer() &&
-      owner.isHegemon() &&
-      !mg.isInDarkStar(this.ref) &&
-      !mg.hegemonStrikeOn(player)
-    ) {
+    // The Hegemon's land beyond the moat is a strike's bubble: nobody may
+    // land on it (H17).
+    if (owner.isPlayer() && owner.isHegemon() && !mg.isInDarkStar(this.ref)) {
       this.active = false;
       return;
     }

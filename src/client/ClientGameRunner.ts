@@ -61,6 +61,7 @@ import {
   SendAttackIntentEvent,
   SendBoatAttackIntentEvent,
   SendBreakAllianceIntentEvent,
+  SendCounterStrikeIntentEvent,
   SendHashEvent,
   SendPunitiveStrikeIntentEvent,
   SendSpawnIntentEvent,
@@ -1248,6 +1249,13 @@ export class ClientGameRunner {
               this.myPlayer!.troops() * this.renderer.uiState.attackRatio,
             ),
           );
+        } else if (this.isBubbleOfStrikeOnMe(tile)) {
+          // Clicking the bubble commits troops against the strike (H17).
+          this.eventBus.emit(
+            new SendCounterStrikeIntentEvent(
+              this.myPlayer!.troops() * this.renderer.uiState.attackRatio,
+            ),
+          );
         } else if (this.canAutoBoat(actions.buildableUnits, tile)) {
           this.sendBoatAttackIntent(tile);
         }
@@ -1458,6 +1466,19 @@ export class ClientGameRunner {
       });
   }
 
+  // A Hegemon tile beyond the moat while a strike on me has landed: the
+  // bubble, which is cancelled rather than attacked (H17).
+  private isBubbleOfStrikeOnMe(tile: TileRef): boolean {
+    const owner = this.gameView.owner(tile);
+    if (!(owner instanceof PlayerView) || !owner.isHegemon()) return false;
+    if (this.gameView.isInDarkStar(tile)) return false;
+    return (
+      this.myPlayer
+        ?.incomingAttacks()
+        .some((a) => a.isStrike && a.landsAtTick === undefined) ?? false
+    );
+  }
+
   private doRetaliateAttackMostRecent(): void {
     if (
       !this.isActive ||
@@ -1490,6 +1511,15 @@ export class ClientGameRunner {
     ) as PlayerView;
     if (!attacker) return;
 
+    if (mostRecentAttack.isStrike) {
+      if (mostRecentAttack.landsAtTick !== undefined) return;
+      this.eventBus.emit(
+        new SendCounterStrikeIntentEvent(
+          this.renderer.uiState.attackRatio * this.myPlayer.troops(),
+        ),
+      );
+      return;
+    }
     const counterTroops = Math.min(
       mostRecentAttack.troops,
       this.renderer.uiState.attackRatio * this.myPlayer.troops(),

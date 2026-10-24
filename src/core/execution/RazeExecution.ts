@@ -24,24 +24,24 @@ import { PathStatus } from "../pathfinding/types";
 import { PseudoRandom } from "../PseudoRandom";
 import { FlatBinaryHeap } from "./utils/FlatBinaryHeap";
 
-const malusForRetreat = 25;
-
 // A Hegemon strike (H8, H16, H17 in docs/DarkStar-Design.md).
 //
 // The Hegemon borders nobody (the moat), so a strike flies from the Dark
 // Star's centre to the tile it was aimed at as a Projectile unit on the nuke's
 // arc (NukeExecution is the model: the Parabola pathfinder steps it each tick
 // and a motion plan lets the client draw it between ticks), and lands the
-// tick it arrives. A recall in flight simply removes it. From there it is an ordinary
-// conquest: the land it takes is the strike's BUBBLE, Hegemon-owned while the
-// strike lasts, and the target fights it like any other invader — by taking
-// the bubble back over land (AttackExecution; the bubble is defended by the
-// strike's own troops, never by the Dark Star's). When the strike ends — its
-// troops spent, the target beneath the tyranny floor, nothing left in reach,
-// recalled, or the Hegemon fallen — the bubble POPS: every tile in it that is
-// still the Hegemon's reverts to neutral, and the structures the bubble
+// tick it arrives. From there it is an ordinary conquest with one front: the
+// land it takes is the strike's BUBBLE, Hegemon-owned while the strike lasts
+// and never retaken. The target fights it as any attack is fought, by
+// cancelling it: troops it commits (CounterStrikeExecution) cancel the
+// strike's troops, one for one up to a strike the size of the target's troop
+// ceiling and at a better rate against a bigger one (counter()). When the
+// strike stops advancing — its troops spent or cancelled, the target beneath
+// the tyranny floor, nothing left in reach, recalled, or the Hegemon fallen —
+// the bubble POPS: all of it reverts to neutral, and the structures it
 // captured die with it (PlayerExecution deletes units on unowned land). The
-// Hegemon never keeps land beyond the Dark Star.
+// Hegemon never keeps land beyond the Dark Star, and a strike's troops never
+// come home (2026-10-24): recalled or spent, they are gone.
 //
 // Not all of the Hegemon's land beyond the moat was taken by a strike: the
 // engine hands the Hegemon any pocket of the target's land a jagged bubble
@@ -58,11 +58,8 @@ const malusForRetreat = 25;
 // it answers a missile launch, aimed at the silo that fired (flagged by
 // NukeExecution), and its troops are a LEVY on every living challenger's
 // troops at home rather than the throne's own. It pays no tyranny multiplier
-// but razes only within punitiveRadius of the silo; when nothing within
-// reach is left (or the target is down to the tyranny floor) it HALTS for
-// punitiveHaltSeconds, resuming if the target retakes a bubble tile in that
-// time, and otherwise pops. It cannot be recalled, and whatever troops are
-// left when it ends are burnt — never the throne's.
+// but razes only within punitiveRadius of the silo and pops when nothing
+// within reach is left. It cannot be recalled.
 export class RazeExecution implements Execution, StrikeInFlight, HegemonStrike {
   private active = true;
   private mg: Game;
@@ -85,13 +82,13 @@ export class RazeExecution implements Execution, StrikeInFlight, HegemonStrike {
   private nbuf: TileRef[] = [0, 0, 0, 0];
   private nbuf2: TileRef[] = [0, 0, 0, 0];
 
-  // Punitive strikes (H19): the flag answered, the reach and the halt.
+  // Punitive strikes (H19): the flag answered and the reach.
   private punitive: {
     warhead: Warhead;
     radiusSquared: number;
-    haltTicks: number;
   } | null = null;
-  private haltedAt: number | null = null;
+  // Strike troops one troop committed against it cancels (counter()).
+  private counterRate = 1;
 
   constructor(
     private hegemon: Player,
@@ -242,7 +239,6 @@ export class RazeExecution implements Execution, StrikeInFlight, HegemonStrike {
       this.punitive = {
         warhead: flag.warhead,
         radiusSquared: cfg.punitiveRadius * cfg.punitiveRadius,
-        haltTicks: cfg.punitiveHaltSeconds * 10,
       };
       this.troops = this.levy(owner, flag.warhead);
       // Answered: the player's other flags are spent with this one.
@@ -259,6 +255,13 @@ export class RazeExecution implements Execution, StrikeInFlight, HegemonStrike {
       this.active = false;
       return;
     }
+    // Disproportion (H17): a strike bigger than the share of its target's
+    // ceiling it could ever field is cancelled at a better rate.
+    const ceiling =
+      (mg.config().maxTroops(owner) *
+        mg.config().hegemonConfig().strikeCounterCeilingPercent) /
+      100;
+    this.counterRate = ceiling > 0 ? Math.max(1, this.troops / ceiling) : 1;
 
     this.launch(ticks, mg.ref(geometry.cx, geometry.cy));
 
@@ -386,16 +389,39 @@ export class RazeExecution implements Execution, StrikeInFlight, HegemonStrike {
     return this.punitiveStrike;
   }
 
-  // Bring the strike home now (the AI's recall; a human cancels the attack).
-  // A punitive strike is the galaxy's and never comes home (H19).
+  // Call the strike off (the AI's recall; a human cancels the attack). Its
+  // troops are lost, in flight or on the ground. A punitive strike is the
+  // galaxy's, not the throne's to call off (H19).
   recall(): void {
     if (!this.active || this.punitiveStrike) return;
     if (this.attack === null) {
-      this.comeHome(this.troops ?? 0);
+      this.calledOff(this.troops ?? 0);
+      this.end();
       return;
     }
     this.attack.orderRetreat();
     this.attack.executeRetreat();
+  }
+
+  // The struck player's troops against the landed strike: each cancels
+  // counterRate of the strike's, and only what it takes to cancel the strike
+  // is spent. A strike cancelled to nothing pops on its next tick.
+  counter(troops: number): number {
+    if (!this.active || this.attack === null || troops <= 0) return 0;
+    const strikeTroops = this.attack.troops();
+    const spent = Math.min(troops, Math.ceil(strikeTroops / this.counterRate));
+    this.attack.setTroops(Math.max(0, strikeTroops - spent * this.counterRate));
+    return spent;
+  }
+
+  private calledOff(troops: number): void {
+    this.mg.displayMessage(
+      "events_display.dark_star_strike_called_off",
+      MessageType.ATTACK_CANCELLED,
+      this.hegemon.id(),
+      undefined,
+      { troops: renderTroops(troops), name: this.target.displayName() },
+    );
   }
 
   tick(ticks: number): void {
@@ -409,13 +435,13 @@ export class RazeExecution implements Execution, StrikeInFlight, HegemonStrike {
       }
       if (this.projectile !== null && !this.projectile.isActive()) {
         // Something else removed the unit (the Hegemon's death sweep).
-        this.comeHome(this.troops ?? 0);
+        this.end();
         return;
       }
       if (this.punitive !== null && this.mg.owner(this.ref) !== this.target) {
         // The gate changed hands in flight (H19, 2026-10-12): the punishment
         // was the launcher's owner's, not the captor's, so the strike is
-        // cancelled on the spot. The levy stays spent: comeHome burns it.
+        // cancelled on the spot, and the levy is spent.
         this.mg.displayMessage(
           "events_display.dark_star_punitive_lost",
           MessageType.ATTACK_CANCELLED,
@@ -423,7 +449,7 @@ export class RazeExecution implements Execution, StrikeInFlight, HegemonStrike {
           undefined,
           { name: this.target.displayName() },
         );
-        this.comeHome(this.troops ?? 0);
+        this.end();
         return;
       }
       if (!this.fly()) return;
@@ -440,18 +466,9 @@ export class RazeExecution implements Execution, StrikeInFlight, HegemonStrike {
       return;
     }
     if (attack.retreated()) {
-      const deaths = attack.troops() * (malusForRetreat / 100);
-      this.mg.displayMessage(
-        "events_display.attack_cancelled_retreat",
-        MessageType.ATTACK_CANCELLED,
-        this.hegemon.id(),
-        undefined,
-        { troops: renderTroops(deaths) },
-      );
-      this.mg
-        .stats()
-        .attackCancel(this.hegemon, this.target, attack.troops() - deaths);
-      this.comeHome(attack.troops() - deaths);
+      this.calledOff(attack.troops());
+      this.mg.stats().attackCancel(this.hegemon, this.target, 0);
+      this.end();
       return;
     }
     if (attack.retreating()) return;
@@ -462,57 +479,28 @@ export class RazeExecution implements Execution, StrikeInFlight, HegemonStrike {
     }
 
     const cfg = this.mg.config().hegemonConfig();
-    // The target's counter-attack spends these too (AttackExecution).
+    // The target's counter (counter()) and its Armies spend these too.
     let troopCount = attack.troops();
-
-    // A halted punitive strike (H19): the target fighting back resumes it;
-    // an undisturbed halt, or the bubble ground down, ends it.
-    if (this.haltedAt !== null && this.punitive !== null) {
-      if (troopCount >= 1 && this.bubbleBreached()) {
-        this.haltedAt = null;
-        this.refreshFrontier();
-      } else if (
-        troopCount < 1 ||
-        ticks - this.haltedAt >= this.punitive.haltTicks
-      ) {
-        this.pop();
-        attack.delete();
-        this.active = false;
-        return;
-      } else {
-        return;
-      }
-    }
 
     const borderSize = attack.borderSize() + this.random.nextInt(0, 5);
     let tickBudget = 1;
     while (tickBudget > 0) {
       if (troopCount < 1) {
-        this.pop();
-        attack.delete();
-        this.active = false;
+        this.end();
         return;
       }
       let tyranny = this.tyrannyPercent(this.target);
       if (tyranny !== null && this.punitive !== null) tyranny = 100;
       if (tyranny === null) {
-        // Struck down to the floor: the target is beneath the throne's notice
-        // — a punitive strike holds there, then pops.
-        if (this.punitive !== null) {
-          this.halt(ticks);
-          return;
-        }
-        this.comeHome(troopCount);
+        // Struck down to the floor: the target is beneath the throne's notice.
+        this.end();
         return;
       }
       if (this.toConquer.size() === 0) {
         this.refreshFrontier();
         if (this.toConquer.size() === 0) {
-          if (this.punitive !== null) {
-            this.halt(ticks);
-            return;
-          }
-          this.comeHome(troopCount);
+          // Nothing left in reach: no longer advancing, so it pops.
+          this.end();
           return;
         }
       }
@@ -547,8 +535,9 @@ export class RazeExecution implements Execution, StrikeInFlight, HegemonStrike {
       this.mg.owner(this.ref) !== this.target ||
       !this.hegemon.canAttackPlayer(this.target)
     ) {
-      // The tile changed hands in flight: nothing to strike.
-      this.comeHome(troops);
+      // The tile changed hands in flight: nothing to strike, and the troops
+      // are lost with it.
+      this.end();
       return;
     }
     this.landed();
@@ -622,27 +611,13 @@ export class RazeExecution implements Execution, StrikeInFlight, HegemonStrike {
     }
   }
 
-  // Survivors return to the Dark Star — unless they were levied (H19): a
-  // punitive strike's leftover troops are burnt, never the throne's.
-  private comeHome(troops: number): void {
+  // The strike is over: the bubble pops and whatever troops it still had
+  // are lost. They never return to the Dark Star.
+  private end(): void {
     this.landed();
     this.pop();
-    if (!this.punitiveStrike) this.hegemon.addTroops(troops);
     this.attack?.delete();
     this.active = false;
-  }
-
-  // A punitive strike with nothing left within reach waits out the halt,
-  // then pops; the target retaking any bubble tile meanwhile resumes it.
-  private halt(ticks: number): void {
-    this.haltedAt = ticks;
-  }
-
-  private bubbleBreached(): boolean {
-    for (const tile of this.bubble) {
-      if (this.map.ownerID(tile) !== this.hegemonSmallID) return true;
-    }
-    return false;
   }
 
   // The galaxy pays for a punitive strike (H19): a share of every living

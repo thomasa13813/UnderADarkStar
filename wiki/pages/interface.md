@@ -21,7 +21,8 @@ The latest events, requests and quick chat messages:
 - **Attacks.** Incoming attacks and your own outgoing ones. Click a message to center the view on
   the attack, warhead or fleet. Click the red X to retreat, which costs a quarter of the attacking
   troops. A recalled fleet returns to its starting point and attacks there if the nebula has been
-  captured since. Warheads can't be recalled once launched; Stargate shots and strikes can.
+  captured since. Warheads can't be recalled once launched; Stargate shots can. A strike can be called off, but
+  its troops are lost.
 - **Alliance requests** to accept or reject. **Focus** moves the view to the player who sent it.
 - **Quick chat** messages you sent and received.
 - **Army reports:** how many troops your Armies' shots killed, or how many you lost to someone

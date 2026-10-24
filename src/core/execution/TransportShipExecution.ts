@@ -102,6 +102,15 @@ export class TransportShipExecution implements Execution {
       this.active = false;
       return;
     }
+    // A strike's bubble is never fought over, by land or by fleet (H17).
+    if (
+      this.target.isPlayer() &&
+      this.target.isHegemon() &&
+      !mg.isInDarkStar(this.ref)
+    ) {
+      this.active = false;
+      return;
+    }
 
     this.troops ??= this.mg
       .config()

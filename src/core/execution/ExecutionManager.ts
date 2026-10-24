@@ -9,6 +9,7 @@ import { BreakAllianceExecution } from "./alliance/BreakAllianceExecution";
 import { AttackExecution } from "./AttackExecution";
 import { BoatRetreatExecution } from "./BoatRetreatExecution";
 import { ConstructionExecution } from "./ConstructionExecution";
+import { CounterStrikeExecution } from "./CounterStrikeExecution";
 import { DeleteUnitExecution } from "./DeleteUnitExecution";
 import { DonateGoldExecution } from "./DonateGoldExecution";
 import { DonateTroopsExecution } from "./DonateTroopExecution";
@@ -113,6 +114,9 @@ export class Executor {
       case "punitive_strike":
         // The answer to a missile launch (H19), levied from the galaxy.
         return new RazeExecution(player, intent.tile, null, true);
+      case "counter_strike":
+        // The struck player cancelling a landed strike (H17).
+        return new CounterStrikeExecution(player, intent.troops);
       case "gift_unit":
         // A gift (H18); GiftExecution refuses anyone but the Hegemon.
         return new GiftExecution(

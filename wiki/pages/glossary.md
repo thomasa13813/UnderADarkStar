@@ -19,8 +19,8 @@ See [[armies-and-destroyers]].
 **Beaching.** A pirate landing their corsair on a coast to claim a foothold and return as a
 challenger. See [[piracy]].
 
-**Bubble.** The nebula a Hegemon's strike holds while it lasts. Only the struck player may fight
-it; when it pops, the nebula becomes neutral. See [[hegemon#strikes]].
+**Bubble.** The nebula a Hegemon's strike holds while it lasts. Nobody can take it back; when
+the strike ends it pops and the nebula becomes neutral. See [[combat#strikes]].
 
 **Challenger.** Every player except the Hegemon.
 

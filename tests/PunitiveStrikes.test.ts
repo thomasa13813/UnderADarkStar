@@ -1,4 +1,4 @@
-import { AttackExecution } from "../src/core/execution/AttackExecution";
+import { CounterStrikeExecution } from "../src/core/execution/CounterStrikeExecution";
 import { Executor } from "../src/core/execution/ExecutionManager";
 import { HegemonExecution } from "../src/core/execution/HegemonExecution";
 import { NukeExecution } from "../src/core/execution/NukeExecution";
@@ -296,7 +296,7 @@ describe("The levy and the strike (H19)", () => {
     expect(troops).toBeLessThan(expected * 1.02);
   });
 
-  test("it lands on the silo, razes only within punitiveRadius, halts, then pops: silo gone, land neutral", () => {
+  test("it lands on the silo, razes only within punitiveRadius, then pops: silo gone, land neutral", () => {
     const tile = inland(east, 1);
     const silo = buildSilo(east, tile);
     fire(east, UnitType.AtomBomb);
@@ -317,7 +317,6 @@ describe("The levy and the strike (H19)", () => {
     const cfg = game.config().hegemonConfig();
     let bubblePeak = 0;
     let farthest = 0;
-    const landedAt = game.ticks();
     let ticks = 0;
     while (landed() && ticks++ < 3000) {
       game.executeNextTick();
@@ -331,11 +330,8 @@ describe("The levy and the strike (H19)", () => {
     expect(landed()).toBe(false);
     expect(farthest).toBeLessThanOrEqual(cfg.punitiveRadius ** 2);
     // With the stub combat (one troop a tile) the pocket fills, then the
-    // strike waits out the halt before popping.
+    // strike, with nothing left in reach, pops.
     expect(bubblePeak).toBeGreaterThan(100);
-    expect(game.ticks() - landedAt).toBeGreaterThan(
-      cfg.punitiveHaltSeconds * 10,
-    );
     expect(game.hegemonBubbleTiles()).toBe(0);
     // PlayerExecution clears the silo off the unowned land.
     executeTicks(game, 3);
@@ -346,33 +342,18 @@ describe("The levy and the strike (H19)", () => {
     expect(game.owner(tile).isPlayer()).toBe(false);
   });
 
-  test("the target retaking a bubble tile during the halt resumes the strike", () => {
+  test("the target cancels it by committing troops, as any strike", () => {
     const tile = inland(east, 1);
     buildSilo(east, tile);
     fire(east, UnitType.AtomBomb);
     punish(tile);
     runUntilLanded();
-    // Let it fill its radius and halt.
-    let bubble = 0;
-    let stable = 0;
-    while (stable < 5 && landed()) {
-      game.executeNextTick();
-      const now = game.hegemonBubbleTiles();
-      stable = now === bubble ? stable + 1 : 0;
-      bubble = now;
-    }
-    expect(landed()).toBe(true);
-    const haltTicks = game.config().hegemonConfig().punitiveHaltSeconds * 10;
-
-    // Fight back: a few tiles retaken puts the strike back to work.
-    east.setTroops(50_000);
-    game.addExecution(new AttackExecution(2_000, east, hegemon.id()));
     executeTicks(game, 3);
-    expect(east.outgoingAttacks()).toHaveLength(1);
-    executeTicks(game, haltTicks);
-    // Still alive well past one halt: the breach reset it.
     expect(landed()).toBe(true);
-    runUntilOver();
+    east.setTroops(5_000_000);
+    game.addExecution(new CounterStrikeExecution(east, 5_000_000));
+    executeTicks(game, 3);
+    expect(landed()).toBe(false);
     expect(game.hegemonBubbleTiles()).toBe(0);
   });
 

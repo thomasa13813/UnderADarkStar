@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Combat - Under a Dark Star Wiki</title>
+<meta name="description" content="How fighting works in Under a Dark Star - troops, attacks, what each tile costs, fronts, retreats, encirclement, fleets, the Dark Star and the Hegemon's strikes." />
+<link rel="canonical" href="https://darkstar.january-games.com/wiki/combat/" />
+<meta property="og:type" content="article" />
+<meta property="og:site_name" content="Under a Dark Star" />
+<meta property="og:title" content="Combat - Under a Dark Star Wiki" />
+<meta property="og:description" content="How fighting works in Under a Dark Star - troops, attacks, what each tile costs, fronts, retreats, encirclement, fleets, the Dark Star and the Hegemon's strikes." />
+<meta property="og:url" content="https://darkstar.january-games.com/wiki/combat/" />
+<meta name="twitter:card" content="summary" />
+<style>:root{color-scheme:dark;--bg:#0b0d14;--panel:#141824;--line:rgba(255,255,255,.1);--text:#e4e4e7;--muted:#a1a1aa;--head:#fff;--accent:#93c5fd;--accent-strong:#60a5fa}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.6}
+a{color:var(--accent)}
+a:hover{color:#bfdbfe}
+.topbar{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:16px;padding:10px 16px;background:rgba(11,13,20,.92);backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+.brand{color:var(--head);text-decoration:none;font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-size:.95rem}
+.brand span{color:var(--accent);font-weight:600}
+.topbar .spacer{flex:1}
+.play{background:var(--accent-strong);color:#0b0d14;text-decoration:none;font-weight:700;padding:6px 14px;border-radius:999px;font-size:.9rem;white-space:nowrap}
+.play:hover{background:#93c5fd;color:#0b0d14}
+.layout{display:grid;grid-template-columns:240px minmax(0,1fr);gap:40px;max-width:1120px;margin:0 auto;padding:24px 16px 64px}
+nav.side{position:sticky;top:64px;align-self:start;max-height:calc(100vh - 80px);overflow:auto;font-size:.92rem}
+nav.side h2{font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin:18px 0 6px;border:0;padding:0}
+nav.side ul{list-style:none;margin:0;padding:0}
+nav.side a{display:block;padding:3px 10px;border-radius:6px;color:var(--text);text-decoration:none}
+nav.side a:hover{background:rgba(255,255,255,.06)}
+nav.side a[aria-current]{background:rgba(96,165,250,.15);color:var(--head);font-weight:600}
+details.mobile-nav{display:none}
+main{min-width:0}
+.crumbs{font-size:.85rem;color:var(--muted);margin:0 0 4px}
+.crumbs a{color:var(--muted)}
+h1{margin:0 0 6px;font-size:2.1rem;color:var(--head);line-height:1.2}
+.lede{color:var(--muted);margin:0 0 20px;font-size:1.05rem}
+h2{margin-top:40px;padding-bottom:4px;border-bottom:1px solid var(--line);font-size:1.4rem;color:var(--head)}
+h3{margin:26px 0 6px;font-size:1.12rem;color:#f4f4f5}
+h4{margin:20px 0 4px;color:#f4f4f5}
+code{font-size:.9em;background:rgba(255,255,255,.07);padding:1px 5px;border-radius:4px}
+kbd{display:inline-block;min-width:1.6em;text-align:center;font:600 .82em/1.4 ui-monospace,monospace;padding:1px 6px;border:1px solid rgba(255,255,255,.3);border-bottom-width:2px;border-radius:5px;background:rgba(255,255,255,.06);color:var(--head)}
+.table-wrap{overflow-x:auto;margin:12px 0}
+table{width:100%;border-collapse:collapse;font-size:.93rem}
+th,td{padding:7px 9px;border:1px solid var(--line);text-align:left;vertical-align:top}
+th{background:rgba(255,255,255,.06)}
+blockquote{margin:16px 0;padding:6px 16px;background:var(--panel);border-left:3px solid var(--accent-strong);border-radius:0 8px 8px 0}
+.toc{margin:16px 0 8px;padding:10px 18px;background:var(--panel);border:1px solid var(--line);border-radius:10px;font-size:.92rem}
+.toc strong{display:block;color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;margin-bottom:4px}
+.toc ol{margin:0;padding-left:20px}
+.related{margin-top:48px;padding:14px 18px;background:var(--panel);border:1px solid var(--line);border-radius:10px}
+.related h2{margin:0 0 6px;font-size:1rem;border:0;padding:0}
+.related ul{margin:0;padding-left:20px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin:12px 0 8px;padding:0;list-style:none}
+.cards a{display:block;height:100%;padding:12px 14px;background:var(--panel);border:1px solid var(--line);border-radius:10px;text-decoration:none;color:var(--text)}
+.cards a:hover{border-color:var(--accent-strong)}
+.cards strong{display:block;color:var(--head);margin-bottom:2px}
+.cards span{font-size:.88rem;color:var(--muted)}
+footer{border-top:1px solid var(--line);padding:20px 16px 40px;text-align:center;font-size:.85rem;color:var(--muted)}
+footer a{color:var(--muted);margin:0 8px}
+@media (max-width:820px){
+.layout{display:block;padding-top:12px}
+nav.side{display:none}
+details.mobile-nav{display:block;margin-bottom:16px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 14px}
+details.mobile-nav summary{cursor:pointer;font-weight:600}
+details.mobile-nav nav.side{display:block;position:static;max-height:none}
+h1{font-size:1.7rem}
+}</style>
+</head>
+<body>
+<header class="topbar">
+<a class="brand" href="/wiki/">Under a Dark Star <span>Wiki</span></a>
+<span class="spacer"></span>
+<a class="play" href="/">Play now</a>
+</header>
+<div class="layout">
+<nav class="side" aria-label="Wiki pages"><ul><li><a href="/wiki/">Wiki home</a></li></ul><h2>Start here</h2><ul><li><a href="/wiki/getting-started/">Getting started</a></li><li><a href="/wiki/the-round/">The round</a></li><li><a href="/wiki/combat/" aria-current="page">Combat</a></li></ul><h2>The throne</h2><ul><li><a href="/wiki/hegemon/">The Hegemon</a></li><li><a href="/wiki/overthrowing-the-hegemon/">Overthrowing the Hegemon</a></li><li><a href="/wiki/thrones/">Thrones and lobbies</a></li></ul><h2>Challengers</h2><ul><li><a href="/wiki/buildings/">Buildings</a></li><li><a href="/wiki/trade/">Trade and the economy</a></li><li><a href="/wiki/armies-and-destroyers/">Armies and Destroyers</a></li><li><a href="/wiki/stargates-and-warheads/">Stargates, warheads and shields</a></li><li><a href="/wiki/piracy/">Piracy</a></li><li><a href="/wiki/alliances-and-diplomacy/">Alliances and diplomacy</a></li></ul><h2>The galaxy</h2><ul><li><a href="/wiki/galaxy/">Nebulae and deep space</a></li><li><a href="/wiki/lords-and-barons/">Lords and Barons</a></li><li><a href="/wiki/maps/">Maps</a></li></ul><h2>Reference</h2><ul><li><a href="/wiki/controls/">Controls and hotkeys</a></li><li><a href="/wiki/interface/">The game screen</a></li><li><a href="/wiki/glossary/">Glossary</a></li><li><a href="/wiki/troubleshooting/">Troubleshooting</a></li></ul></nav>
+<main>
+<details class="mobile-nav"><summary>All wiki pages</summary><nav class="side" aria-label="Wiki pages"><ul><li><a href="/wiki/">Wiki home</a></li></ul><h2>Start here</h2><ul><li><a href="/wiki/getting-started/">Getting started</a></li><li><a href="/wiki/the-round/">The round</a></li><li><a href="/wiki/combat/" aria-current="page">Combat</a></li></ul><h2>The throne</h2><ul><li><a href="/wiki/hegemon/">The Hegemon</a></li><li><a href="/wiki/overthrowing-the-hegemon/">Overthrowing the Hegemon</a></li><li><a href="/wiki/thrones/">Thrones and lobbies</a></li></ul><h2>Challengers</h2><ul><li><a href="/wiki/buildings/">Buildings</a></li><li><a href="/wiki/trade/">Trade and the economy</a></li><li><a href="/wiki/armies-and-destroyers/">Armies and Destroyers</a></li><li><a href="/wiki/stargates-and-warheads/">Stargates, warheads and shields</a></li><li><a href="/wiki/piracy/">Piracy</a></li><li><a href="/wiki/alliances-and-diplomacy/">Alliances and diplomacy</a></li></ul><h2>The galaxy</h2><ul><li><a href="/wiki/galaxy/">Nebulae and deep space</a></li><li><a href="/wiki/lords-and-barons/">Lords and Barons</a></li><li><a href="/wiki/maps/">Maps</a></li></ul><h2>Reference</h2><ul><li><a href="/wiki/controls/">Controls and hotkeys</a></li><li><a href="/wiki/interface/">The game screen</a></li><li><a href="/wiki/glossary/">Glossary</a></li><li><a href="/wiki/troubleshooting/">Troubleshooting</a></li></ul></nav></details>
+<p class="crumbs"><a href="/wiki/">Wiki</a> / Start here</p>
+<h1>Combat</h1>
+<p class="lede">How fighting works in Under a Dark Star - troops, attacks, what each tile costs, fronts, retreats, encirclement, fleets, the Dark Star and the Hegemon's strikes.</p>
+<div class="toc"><strong>On this page</strong><ol><li><a href="#troops">Troops</a></li><li><a href="#defence-is-automatic">Defence is automatic</a></li><li><a href="#launching-an-attack">Launching an attack</a></li><li><a href="#how-an-attack-advances">How an attack advances</a></li><li><a href="#what-each-tile-costs">What each tile costs</a></li><li><a href="#unclaimed-nebula">Unclaimed nebula</a></li><li><a href="#when-two-attacks-meet">When two attacks meet</a></li><li><a href="#calling-an-attack-back">Calling an attack back</a></li><li><a href="#encirclement-and-elimination">Encirclement and elimination</a></li><li><a href="#fleets-and-stargate-shots">Fleets and Stargate shots</a></li><li><a href="#armies">Armies</a></li><li><a href="#the-dark-star">The Dark Star</a></li><li><a href="#strikes">Strikes</a></li><li><a href="#situations">Situations</a></li><li><a href="#quick-reference">Quick reference</a></li></ol></div>
+<p>Everything in a round is decided by troops taking nebula one tile at a time. This page explains
+how that works, from a single attack to the fight over the Dark Star.</p>
+<h2 id="troops">Troops</h2>
+<ul>
+<li><strong>One pool.</strong> Your troops are your army, your garrison and your population at once. There are
+no separate defenders: whatever sits in your pool defends all of your territory.</li>
+<li><strong>The ceiling.</strong> Your pool can only hold so much. The ceiling grows with your territory (more
+slowly than the territory itself) and by a flat amount for every level of
+<a href="/wiki/buildings/#3-1-population-center">Population Center</a>. Barons have a third of a challenger&#39;s
+ceiling; Lords have more or less than you depending on the difficulty.</li>
+<li><strong>Regrowth.</strong> Troops regrow on their own. Growth is fastest when your pool is a little under
+half full, and slows to nothing as it nears the ceiling. A full pool earns nothing, so troops
+sitting at the ceiling are troops wasted.</li>
+<li><strong>Sent troops are gone from home.</strong> An attack takes its troops out of your pool the moment you
+launch it. While they are out they do not defend you, and they do not count towards your
+regrowth. Anything that comes home is added back to the pool.</li>
+<li><strong>Dark Star tiles count for nothing.</strong> A challenger holding part of the Dark Star gains no
+ceiling from it.</li>
+</ul>
+<h2 id="defence-is-automatic">Defence is automatic</h2>
+<p>Nobody stands guard on a tile. When an enemy takes one of your tiles, you lose your <strong>average
+troops per tile</strong>: your pool divided by the tiles you hold. So:</p>
+<ul>
+<li>Every tile you lose costs you the same, wherever the attack lands.</li>
+<li>A thinly spread empire loses little per tile, but each tile is also cheap to take.</li>
+<li>A dense pool makes every tile expensive for the attacker and every lost tile painful for you.</li>
+<li>Sending troops away (on attacks, fleets or Stargate shots) thins your pool, and with it the
+defence of every tile you own.</li>
+</ul>
+<h2 id="launching-an-attack">Launching an attack</h2>
+<ul>
+<li>Click enemy or unclaimed nebula next to your territory. The <strong>attack ratio</strong> slider sets what
+share of your pool goes.</li>
+<li><strong>Clicking again stacks.</strong> A new attack over nebula on a player absorbs every attack you
+already have on them, landed fleets and shots included, into a single attack.</li>
+<li><strong>You can fight on many fronts at once,</strong> one attack per target over nebula plus any number of
+fleets and shots.</li>
+<li>Barons send a twentieth of their troops at a time; players and Lords decide for themselves.</li>
+</ul>
+<h2 id="how-an-attack-advances">How an attack advances</h2>
+<p>An attack has a <strong>front</strong>: every enemy tile touching your territory. Each moment it takes a
+handful of front tiles, then the tiles behind them become the new front.</p>
+<ul>
+<li><strong>Pockets first.</strong> Tiles you already touch on several sides are taken first, so attacks fill in
+dents and straighten lines. Flat ground is preferred over rough ground, with a little chance
+thrown in. That is why fronts look ragged rather than ruler-straight.</li>
+<li><strong>Speed grows with the front.</strong> The longer the shared border, the more tiles fall each moment.
+A long border is overrun far faster than a narrow neck.</li>
+<li><strong>The attack ends</strong> when its troops run out, when nothing it can reach is left to take (the
+survivors come home at no cost), or when you call it back.</li>
+</ul>
+<h2 id="what-each-tile-costs">What each tile costs</h2>
+<p>Every tile taken costs the attacker some troops and some time, and costs the defender its
+average troops per tile. Five things set the price.</p>
+<h3 id="the-odds">The odds</h3>
+<p>The odds are the <strong>defender&#39;s whole pool against the troops in your attack</strong>.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Your attack against their pool</th><th>Troops lost per tile</th><th>Time per tile</th></tr></thead>
+<tbody>
+<tr><td>5:3 or better</td><td>0.6×</td><td>0.82×</td></tr>
+<tr><td>1:1</td><td>1×</td><td>1×</td></tr>
+<tr><td>1:2</td><td>2×</td><td>2×</td></tr>
+<tr><td>1:7.5</td><td>2× (no worse)</td><td>7.5×</td></tr>
+<tr><td>1:40</td><td>2×</td><td>15×</td></tr>
+</tbody></table></div>
+<ul>
+<li>Losses stop falling once you outnumber the defender about 5 to 3, and stop rising once you are
+outnumbered 2 to 1.</li>
+<li>Speed keeps falling the more you are outnumbered: a small attack against a big empire crawls.</li>
+<li>The defender&#39;s troops already out on attacks do not count. A neighbour who has just sent half
+their army at someone else is half as hard to hit.</li>
+</ul>
+<h3 id="their-density">Their density</h3>
+<p>Part of the price is a flat base, and part grows with the defender&#39;s troops per tile. As shown on
+screen, at even odds over open nebula an attacker loses about <strong>4 troops per tile, plus a third of
+a troop for every troop per tile the defender holds</strong>; the defender loses its full troops per tile:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Defender&#39;s troops per tile</th><th>Attacker loses per tile</th><th>Defender loses per tile</th></tr></thead>
+<tbody>
+<tr><td>2</td><td>about 4</td><td>2</td></tr>
+<tr><td>12</td><td>about 7</td><td>12</td></tr>
+<tr><td>50</td><td>about 19</td><td>50</td></tr>
+</tbody></table></div>
+<p>Thinly held land costs the attacker more than the defender. Densely held land costs the defender
+more than the attacker, but it is slow and the attacker needs a big stack to have good odds.</p>
+<h3 id="the-terrain">The terrain</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Nebula</th><th>Troops lost</th><th>Time</th></tr></thead>
+<tbody>
+<tr><td>Open (plains)</td><td>1×</td><td>1×</td></tr>
+<tr><td>Highland</td><td>1.25×</td><td>1.2×</td></tr>
+<tr><td>Dense (peaks)</td><td>1.5×</td><td>1.5×</td></tr>
+</tbody></table></div>
+<p>Deep space cannot be attacked over: crossing it takes a fleet or a Stargate.</p>
+<h3 id="where-the-tile-is">Where the tile is</h3>
+<ul>
+<li><strong>Defense Posts.</strong> Within 30 tiles of the defender&#39;s finished Defense Post, attackers lose
+<strong>5×</strong> the troops and advance <strong>3×</strong> slower. See <a href="/wiki/buildings/">Buildings</a>.</li>
+<li><strong>Radioactive ground.</strong> A tile hit by a warhead costs between 3× and 5× the troops and the time,
+more the less of the map is irradiated.</li>
+<li><strong>The Dark Star.</strong> A tile of the Dark Star costs the invader 3× the troops and takes
+3× as long. See <a href="/wiki/combat/#the-dark-star">below</a>.</li>
+</ul>
+<h3 id="who-is-fighting">Who is fighting</h3>
+<ul>
+<li><strong>Big empires</strong> are cheaper and faster to attack <em>from</em> and slightly cheaper to attack <em>into</em>.
+The effect is small below about a hundred thousand tiles and strongest for the largest empires
+on the biggest maps, so late rounds keep moving.</li>
+<li><strong>Traitors</strong> (see <a href="/wiki/alliances-and-diplomacy/">Alliances and diplomacy</a>) defend at half strength and a little slower for
+30 seconds after breaking an alliance.</li>
+<li><strong>Barons</strong> are easier prey: players and Lords lose 30% fewer troops taking their tiles.</li>
+</ul>
+<h2 id="unclaimed-nebula">Unclaimed nebula</h2>
+<p>Neutral nebula has no defender. Each tile costs a small flat number of troops (more on rough
+ground, half as much for Barons). Small stacks spread slowly; past a few hundred troops an attack
+spreads as fast as it can, and only a longer border makes it faster.</p>
+<h2 id="when-two-attacks-meet">When two attacks meet</h2>
+<p><strong>Opposing attacks cancel out.</strong> If you attack a player who is attacking you, your troops and
+theirs cancel one for one the moment you launch. Whoever had more keeps going with the
+difference; the other attack is gone.</p>
+<p>So the border between two players only ever moves in one direction at a time, the way the larger
+committed stack pushes. To turn a front around you must send more than is coming at you. A
+Hegemon&#39;s strike is cancelled the same way, but cancelling it never wins land back: see
+<a href="/wiki/combat/#fighting-a-strike">Fighting a strike</a>.</p>
+<h2 id="calling-an-attack-back">Calling an attack back</h2>
+<ul>
+<li>Retreat from the event panel. The troops pull out after two seconds.</li>
+<li>A retreat from a player&#39;s land <strong>costs a quarter</strong> of the attack&#39;s troops. A retreat from
+unclaimed nebula is free.</li>
+<li>An attack that simply runs out of tiles in reach comes home whole.</li>
+<li>If you ally with the player you are attacking, the attack comes home whole.</li>
+</ul>
+<h2 id="encirclement-and-elimination">Encirclement and elimination</h2>
+<ul>
+<li><strong>Surrounded pockets fall.</strong> A piece of your territory sealed in by enemies, touching neither
+deep space nor the edge of the map, is handed to the enemy around it without a fight. Your pool
+keeps its troops, but it has lost the land. Watch thin necks of nebula: cutting one can swallow
+everything behind it. A pocket founded by a Stargate shot stands for as long as its landing tile
+is held.</li>
+<li><strong>Under 100 tiles you are finished.</strong> A player whose territory drops below 100 tiles is
+eliminated by the attack that put them there. The attacker takes what it touches and the
+neighbours take the rest.</li>
+<li><strong>The Hegemon is the exception.</strong> It never falls to encirclement or the 100-tile rule; it falls
+only when its last Dark Star tile is taken. See <a href="/wiki/overthrowing-the-hegemon/">Overthrowing the Hegemon</a>.</li>
+</ul>
+<h2 id="fleets-and-stargate-shots">Fleets and Stargate shots</h2>
+<ul>
+<li><strong>A fleet</strong> carries a share of your troops across deep space and lands on the coast you chose.
+It takes the tile it lands on, then fights outward from there like any attack.</li>
+<li><strong>A Stargate shot</strong> does the same over any distance in range, nebula or deep space. See
+<a href="/wiki/stargates-and-warheads/">Stargates, warheads and shields</a>.</li>
+<li>A landing starts its own attack. It cancels against an attack coming the other way like any
+attack, and a later attack of yours over nebula on the same player absorbs it.</li>
+<li>Recalled at sea, a fleet sails home and loses a quarter of its troops on arrival. Enemy <a href="/wiki/armies-and-destroyers/">Destroyers</a> can sink it on the way.</li>
+</ul>
+<h2 id="armies">Armies</h2>
+<p>An <a href="/wiki/armies-and-destroyers/">Army</a> fires at the front of any land attack on you within
+40 tiles, once every 10 seconds. Each hit kills 10% of that
+attack&#39;s troops. Armies thin attacks down; they never attack themselves. They fire on the
+Hegemon&#39;s strikes too.</p>
+<h2 id="the-dark-star">The Dark Star</h2>
+<p>The Dark Star is a fortress, and fighting over it follows its own rules.</p>
+<ul>
+<li><strong>Getting in.</strong> Only one challenger may invade at a time: the one whose fleet or Stargate shot
+lands first. Everyone else&#39;s attacks on the Dark Star are refused or turned back until the slot
+is free. See <a href="/wiki/overthrowing-the-hegemon/">Overthrowing the Hegemon</a>.</li>
+<li><strong>Every tile is expensive.</strong> A Dark Star tile costs the invader 3× the troops and
+3× the time of an ordinary tile.</li>
+<li><strong>The Hegemon&#39;s defence never thins.</strong> The throne is always costed as if it still held the whole
+Dark Star: every tile it loses bleeds the same small share of its pool, however much it has
+already lost.</li>
+<li><strong>Counter-attacks cancel</strong> with the invader&#39;s attacks as usual: the front inside the Dark Star
+moves one way at a time.</li>
+<li><strong>A stalled invasion is thrown back.</strong> If the invader gains no tile for 5 seconds, every
+troop the throne regrows is sent against them until they are evicted. Troops donated to the
+throne while someone holds part of the Dark Star go straight into that counter-attack.</li>
+<li><strong>The killing blow.</strong> Whoever takes the last Dark Star tile wins the round.</li>
+</ul>
+<h2 id="strikes">Strikes</h2>
+<p>The Hegemon cannot attack over nebula: it borders nobody. Instead it <strong>strikes</strong>. A strike flies
+from the Dark Star&#39;s centre to any challenger tile, lands there, and razes outward. See <a href="/wiki/hegemon/">The Hegemon</a>
+for ordering one.</p>
+<ul>
+<li><strong>Expensive.</strong> Each tile costs the strike 3× the troops of an ordinary conquest and takes
+3× as long, multiplied again by <strong>tyranny</strong> against small targets: no penalty
+against a player holding 3% of the map&#39;s nebulae or more, a rising penalty below that,
+and no strike at all at 0.5% or below. The Hegemon can never eliminate anyone.</li>
+<li><strong>It drains your pool like any attack.</strong> Each tile it takes costs you your average troops per
+tile, and the odds it fights at are your pool at home against its troops.</li>
+<li><strong>The bubble.</strong> The nebula a strike holds is its <strong>bubble</strong>. It belongs to the Hegemon while
+the strike lasts and <strong>cannot be taken back</strong>, by you or anyone else. Buildings in it are
+captured.</li>
+<li><strong>The end.</strong> A strike ends the moment it stops advancing: its troops are spent or cancelled,
+nothing is left in its reach, you are struck down to the tyranny floor, the Hegemon calls it off
+or the Hegemon falls. The bubble then <strong>pops</strong>: all of it becomes unclaimed nebula, free for
+anyone, and every building in it is destroyed.</li>
+<li><strong>Its troops never come home.</strong> Whatever a strike still has when it ends is lost, and so is a
+strike the Hegemon calls off, in flight or on the ground.</li>
+<li>Defense Posts and Armies work against strikes. Shield Arrays do not: a strike is troops, not a
+missile.</li>
+</ul>
+<h3 id="fighting-a-strike">Fighting a strike</h3>
+<p>Fight a landed strike with <strong>Counter-attack</strong> in the event panel, or by clicking the bubble. The
+attack ratio slider sets how many troops you offer.</p>
+<ul>
+<li><strong>Your troops cancel the strike&#39;s</strong>, the way opposing attacks cancel. Only what it takes to
+cancel the strike leaves your pool; the rest stay home.</li>
+<li><strong>One for one, unless the throne overreaches.</strong> A strike no bigger than
+100% of your troop ceiling is cancelled troop for troop. Against a bigger strike
+each of your troops cancels more: a strike four times your ceiling is cancelled four for one.
+You can always cancel a whole strike with 100% of your ceiling, whatever the
+Hegemon sends.</li>
+<li><strong>There is one front, and it only moves outward.</strong> Countering does not win land back. It
+shrinks the strike, which slows it, and ends it the moment it is cancelled. What it has already
+taken is lost when it pops.</li>
+<li><strong>Answer fast.</strong> A strike always destroys the nebula around where it lands; how much more it
+takes depends on how quickly, and how heavily, you commit troops against it.</li>
+<li>You cannot counter a strike still in flight: wait for it to land.</li>
+</ul>
+<h3 id="punitive-strikes">Punitive strikes</h3>
+<p>A missile launch lets the Hegemon answer with a <strong>punitive strike</strong> on the launcher. It fights by
+the same rules with two differences: its troops are a levy taken from every challenger, and it
+pays no tyranny but razes only within 34 tiles of the launcher. It cannot be called off.
+See <a href="/wiki/hegemon/#punitive-strikes">Punitive strikes</a>.</p>
+<h2 id="situations">Situations</h2>
+<ul>
+<li><strong>Two neighbours at war, one front.</strong> Whoever commits more pushes; the other side&#39;s counter
+cancels against it. The winner is decided by the stacks, the terrain, Defense Posts and Armies.</li>
+<li><strong>Fighting on two fronts.</strong> Each attack is separate, but both are measured against your one
+pool at home. Every troop you send to one front makes you cheaper to hit on the other.</li>
+<li><strong>Hitting a neighbour who is busy elsewhere.</strong> Their troops out on attacks do not defend them.
+The moment after they launch a big attack is the moment they are weakest.</li>
+<li><strong>The narrow neck.</strong> A front only a few tiles wide advances slowly whatever you send. Widen it,
+or go around it by fleet or Stargate.</li>
+<li><strong>Cutting off a pocket.</strong> Seal in an inland part of an enemy and it is yours for free.</li>
+<li><strong>Sitting at the ceiling.</strong> A full pool regrows nothing and makes you a dense, slow target, but
+an expensive one. Spending down to about half and letting it regrow earns more troops.</li>
+<li><strong>Being struck.</strong> Counter the moment it lands. Every second it keeps advancing is nebula and
+buildings you will not get back; a heavy counter early beats a light one late.</li>
+<li><strong>Invading the Dark Star.</strong> Land with a big stack and keep gaining tiles: stop for
+5 seconds and the throne throws everything it regrows at you.</li>
+</ul>
+<h2 id="quick-reference">Quick reference</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Factor</th><th>Troops lost</th><th>Time per tile</th></tr></thead>
+<tbody>
+<tr><td>Outnumbering 5:3 or better</td><td>0.6×</td><td>0.82×</td></tr>
+<tr><td>Outnumbered 2:1</td><td>2× (the maximum)</td><td>2×</td></tr>
+<tr><td>Highland / dense nebula</td><td>1.25× / 1.5×</td><td>1.2× / 1.5×</td></tr>
+<tr><td>Defense Post within 30 tiles</td><td>5×</td><td>3×</td></tr>
+<tr><td>Radioactive ground</td><td>3× to 5×</td><td>3× to 5×</td></tr>
+<tr><td>Dark Star tile</td><td>3×</td><td>3×</td></tr>
+<tr><td>Hegemon&#39;s strike</td><td>3× and tyranny</td><td>3×</td></tr>
+<tr><td>Defender is a traitor</td><td>0.5×</td><td>0.8×</td></tr>
+<tr><td>Defender is a Baron</td><td>0.7×</td><td>1×</td></tr>
+<tr><td>Army hit</td><td>10% of the attack</td><td>-</td></tr>
+<tr><td>Retreat from a player&#39;s land</td><td>a quarter</td><td>-</td></tr>
+</tbody></table></div>
+
+
+<aside class="related"><h2>Related pages</h2><ul><li><a href="/wiki/getting-started/">Getting started</a> - Your first round of Under a Dark Star - spawning, expanding, troops and gold, attacking, building, and how to win.</li><li><a href="/wiki/armies-and-destroyers/">Armies and Destroyers</a> - Units in Under a Dark Star - Armies that defend your nebula against land attacks, Destroyers that patrol deep space, and how many of each you can field.</li><li><a href="/wiki/stargates-and-warheads/">Stargates, warheads and shields</a> - Stargates fire troops and launch warheads in Under a Dark Star. Nuclear and Antimatter Warheads, Shield Arrays, and the punitive strike every launch risks.</li><li><a href="/wiki/overthrowing-the-hegemon/">Overthrowing the Hegemon</a> - How challengers invade the Dark Star - the moat, the single invader slot, fleets and Stargate shots, stalls, reinforcements and the killing blow.</li><li><a href="/wiki/hegemon/">The Hegemon</a> - The Hegemon rules the Dark Star - a huge troop pool and a shadow tax, but no expansion. Strikes, tyranny, punitive strikes, gifts and the AI Hegemon explained.</li></ul></aside>
+</main>
+</div>
+<footer>
+<a href="/">Play Under a Dark Star</a>
+<a href="https://discord.gg/vTjcPKadD" rel="noopener">Discord</a>
+<a href="mailto:hello@january-games.com">hello@january-games.com</a>
+<a href="/terms.html">Terms</a>
+<a href="/privacy.html">Privacy</a>
+<p>Under a Dark Star by January Games, LLC. Built on OpenFront.</p>
+</footer>
+</body>
+</html>

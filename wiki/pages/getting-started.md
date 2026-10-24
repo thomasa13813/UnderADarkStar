@@ -35,13 +35,14 @@ an AI Hegemon unless you choose to play the Hegemon yourself.
 
 ## Troops and gold
 
-- **Troops** are your army and your population at once. They regrow on their own, faster the
-  further you are below your **troop ceiling**. Your ceiling grows with your territory and with
-  every level of Population Center.
+- **Troops** are your army and your population at once. They regrow on their own, fastest when
+  you are a little under half your **troop ceiling** and not at all when you are at it. Your
+  ceiling grows with your territory and with every level of Population Center.
 - **Gold** pays for buildings, units and warheads. Every challenger earns a steady base income,
   and trade earns much more: see [[trade]].
 - The **attack ratio** slider sets what share of your troops an attack sends. Sending more troops
-  than the defender has makes the attack cheaper; the advantage stops growing at 2:1.
+  than the defender has makes the attack cheaper; the advantage stops growing at about 5:3. See
+  [[combat]] for everything else that sets the price of a tile.
 
 ## Attacking
 
@@ -51,7 +52,8 @@ an AI Hegemon unless you choose to play the Hegemon yourself.
 - **Past a front, or onto the Dark Star:** a [[stargates-and-warheads|Stargate]] fires your troops
   at any tile in range.
 - You can call an attack back from the event panel, at the cost of a quarter of its troops.
-  Fleets, Stargate shots and the Hegemon's strikes can be recalled; warheads cannot.
+  Fleets and Stargate shots can be recalled; warheads cannot. The Hegemon can call off a
+  strike, but its troops are lost.
 
 ## Winning
 

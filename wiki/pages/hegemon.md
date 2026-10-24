@@ -47,14 +47,17 @@ further it goes. On landing it takes the tile and fights outward like a landing.
 - **Razing is expensive.** Each tile costs the strike {{raze}} times the troops, and takes
   {{raze}} times as long, as an ordinary conquest. One live strike per target at a time, any
   number of targets.
-- **The bubble.** The nebula a strike holds is its bubble. Only the struck player may attack it:
-  use Counter-attack, or click the bubble. It is defended by the strike's own troops, never the
-  Dark Star's, so every tile retaken costs the strike. Buildings the bubble rolls over are
-  captured, and destroyed when it pops unless their tile is retaken first.
-- **The end.** A strike ends when its troops are spent, nothing is left in reach, the target is at
-  the tyranny floor, it is recalled, or the Hegemon falls. Its bubble then pops and the nebula
-  becomes neutral, free for anyone to take. A recall in flight brings the troops home whole; a
-  recall on the ground pays the usual retreat loss.
+- **The bubble.** The nebula a strike holds is its bubble. Nobody can take it back. Buildings
+  the bubble rolls over are captured, and destroyed when it pops.
+- **Counter-attack.** The struck player fights a landed strike by committing troops against it
+  (Counter-attack, or a click on the bubble): they cancel the strike's troops one for one, or
+  more than one for one when the strike is bigger than {{counterCeiling}}% of the target's troop
+  ceiling. See [[combat#fighting-a-strike|Fighting a strike]].
+- **The end.** A strike ends the moment it stops advancing: its troops are spent or cancelled,
+  nothing is left in reach, the target is at the tyranny floor, it is called off, or the Hegemon
+  falls. Its bubble then pops and the nebula becomes neutral, free for anyone to take.
+- **No troops come home.** A strike's troops are spent the moment it is launched. Calling it off,
+  in flight or on the ground, stops the razing but returns nothing to the Dark Star.
 
 Defense Posts and [[armies-and-destroyers|Armies]] work against strikes too. Shield Arrays do
 not: a strike is troops, not a missile.
@@ -80,8 +83,8 @@ clicking the gate:
   {{levyA}}% (Antimatter) of the troops they have at home.
 - **The strike.** The levy lands on the gate as a strike that captures it and razes everything
   within {{pRadius}} tiles. There is no tyranny penalty and no recall.
-- **The pop.** When nothing in reach is left the strike halts for {{halt}} seconds, then pops: the
-  gate and every captured building are destroyed and the troops left over are burnt.
+- **The pop.** When nothing in reach is left, or the gate's owner has cancelled it, the strike
+  pops: the gate and every captured building are destroyed and the troops left over are burnt.
 
 A player already under a punitive strike cannot be flagged again until it ends. Every warhead a
 challenger fires is a gamble that the whole galaxy pays for.
@@ -91,9 +94,11 @@ challenger fires is a gamble that the whole galaxy pays for.
 When no human holds the throne, an AI plays it. The AI Hegemon:
 
 - defends the disc;
-- strikes the challenger with the largest troop capacity, once its own pool has sat at
-  {{leveller}}% or more for a minute and that challenger's capacity is at least {{threat}}% of the
-  Hegemon's ceiling. It aims at that challenger's highest-level Population Center;
+- strikes the most threatening challenger, once its own pool has sat at {{leveller}}% or more for
+  a minute and that challenger's troop capacity is at least {{threat}}% of the Hegemon's ceiling.
+  Threat counts both the nebulae a challenger holds and its troop capacity; in team games a team's
+  members count together, and the team's strongest member is struck. It aims at that challenger's
+  highest-level Population Center;
 - punishes every flagged Stargate launch, except from very small players;
 - once an invader holds {{laststand}}% of the disc, sends everything above a {{reserve}}% reserve
   after them until they are evicted.

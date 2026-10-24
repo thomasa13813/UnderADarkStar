@@ -500,6 +500,9 @@ export interface HegemonStrike {
   // Take in any Hegemon land beyond the moat that touches the bubble.
   adoptOrphans(): void;
   holdsTile(tile: TileRef): boolean;
+  // The struck player commits troops against the landed strike (H17):
+  // returns how many were spent cancelling it, at most the troops offered.
+  counter(troops: number): number;
 }
 
 // A stargate shot between launch and landing (GateShotExecution): the HUD's

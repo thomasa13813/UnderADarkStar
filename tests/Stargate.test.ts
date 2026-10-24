@@ -362,7 +362,7 @@ describe("Gate shots and the Dark Star (H6, H12)", () => {
 describe("Gate shots and a strike's bubble (H17)", () => {
   beforeEach(() => start(TestConfig, true));
 
-  test("only the struck player may land on the bubble", () => {
+  test("nobody may land on the bubble, the struck player included", () => {
     buildGate(east, tileOf(east, 5));
     buildGate(west, tileOf(west, 5));
     // The throne strikes east: bubble tiles are the Hegemon's, beyond the moat.
@@ -380,7 +380,7 @@ describe("Gate shots and a strike's bubble (H17)", () => {
     expect(shot(west)).toBeUndefined();
     expect(west.troops()).toBe(westTroops);
     fire(east, bubbleTile, 10_000);
-    expect(shot(east)).toBeDefined();
+    expect(shot(east)).toBeUndefined();
   });
 });
 

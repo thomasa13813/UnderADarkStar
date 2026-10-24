@@ -153,7 +153,8 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   [Built 2026-09-22] A human Hegemon orders one with the **Strike** action — its own `strike` order,
   never a fleet — on any challenger tile, sized by the troop slider; **one live strike per target**,
   any number of targets; a recall in flight brings the troops home whole, on the ground it pays the
-  engine's retreat malus.
+  engine's retreat malus. [Revised 2026-10-24, H17] No troops ever come home: a recall only stops
+  the razing.
 - **H9 — Diplomacy.** The Hegemon **cannot ally** with anyone [built, §6.1]. [Decided 2026-09-24]
   The Hegemon **may donate troops to any challenger** — its own precious, slow-to-refill troops (H4),
   spent to prop up whoever the balance needs (H15). This relaxes the engine's `isFriendly`
@@ -178,10 +179,18 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   enemy warship only inside the moat; the AI Hegemon does not build them yet.
 - **H11 — AI Hegemon personality.** Defensive by default; when its troops have sat at the ceiling for a
   while it may launch a punitive attack at the most powerful challenger. [Decided 2026-09-20 — the
-  "leveller"] Only while nobody is invading; "most powerful" is the largest **troop capacity** (nebula and
-  cities), and only a real threat is struck (capacity ≥ 25% of the Hegemon's ceiling). It sends 25% of
+  "leveller"] Only while nobody is invading; "most powerful" is the largest **threat** (see below), and
+  only a real threat is struck (capacity ≥ 25% of the Hegemon's ceiling).
+  [Revised 2026-10-24, Tom's call] Threat was **troop capacity** alone, which is mostly cities (a city
+  level adds a flat 250k, nebulae only tiles^0.6): a small, built-up challenger outranked one with
+  twice its land. Threat is now the challenger's **share of the map's nebulae plus its capacity as a
+  share of the Hegemon's ceiling** (both permille, weighted equally: `levellerLandWeight`,
+  `levellerCapacityWeight`). In team games **teammates add up**: the strongest team is struck, at
+  its most threatening member, and the recall below compares teams (Barons stay individuals). It sends 25% of
   its troops at the target's greatest city, recalls the strike once the target is clearly below the
   runner-up (85% of their capacity) or the moment the Dark Star is invaded, then waits 90 s. All tunable.
+  [Revised 2026-10-24] With no refund (H17) an invasion no longer recalls the strike; the recall
+  on the runner-up test stays, to spare the target.
   [Revised 2026-09-27] "At the ceiling" is now **75% of it** (was 95%): with the flat refill (H4) the
   throne rarely tops up again after its first strike, and Tom wants it engaging the galaxy without
   dipping below three quarters of its pool to do so — punitive strikes (H19) are its cheaper voice.
@@ -243,6 +252,21 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   reach, recalled, or the throne fallen) the bubble **pops**: whatever it still holds reverts to neutral
   for anyone to scramble over. Strikes are exempt from the engine's troop-for-troop cancelling. AI
   Lords need no special rule: the engine's retaliation against an attacker already fights the bubble.
+  **[Revised 2026-10-24, Tom's call (F23); built the same day]** The two-way bubble fight is gone.
+  A strike now has **one front, expanding outward**, and the struck player fights it by
+  **cancelling** it: troops committed against a landed strike (the **Counter-attack** button, a
+  click on the bubble, or the AI) come off the strike, as opposing attacks cancel, and only what it
+  takes to cancel the strike leaves the pool. **The bubble is never retaken**, by the target or
+  anyone else, by land, fleet or gate shot: whatever it has taken is lost. The strike **pops the
+  moment it stops advancing** (troops spent or cancelled, nothing in reach, tyranny floor, called
+  off, throne fallen), so a strike always destroys the land around where it lands, and a quick,
+  heavy answer limits how much more. **Weighting:** a strike up to `strikeCounterCeilingPercent`
+  (100%) of the target's troop ceiling is cancelled one for one; against a bigger one each
+  committed troop cancels `strike troops ÷ (that share of the ceiling)`, fixed at launch, so a
+  target can always cancel a whole strike with that share of its ceiling and a throne that
+  overreaches against a weaker player wastes troops. **Strike troops never come home**, recalled in
+  flight or on the ground, or left over when it pops (H8's refund and retreat malus are gone). Lords
+  (and Barons) answer a landed strike before anything else by offering half their army.
 - **H18 — Gifts: the Hegemon builds in its vassals' nebulae.** [Decided 2026-09-24] The Hegemon may
   place **any structure a challenger could build** — city, port, factory, defence post, stargate,
   shield array — on **any challenger's territory**, paying the cost from its own gold (H4). The structure
@@ -286,7 +310,9 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
     recalled. Its reach is capped: it razes only tiles within `punitiveRadius` (34: the Nuclear
     Warhead's outer blast radius of 30 with a quarter more area) of the silo, and it never takes the target below the tyranny floor
     (`tyrannyFloorPermille`), so H16 still holds for a player whose whole nebula fits in the pocket.
-  - **Halt, then pop.** When nothing within its radius is left to take (or the floor is reached) the
+  - **Halt, then pop.** [Superseded 2026-10-24 by H17's revision: no halt; with the bubble never
+    retaken, the strike pops as soon as nothing in reach is left, and the target may cancel it as
+    any strike.] When nothing within its radius is left to take (or the floor is reached) the
     strike **halts** for `punitiveHaltSeconds` (5 s). If the target retakes any bubble tile in that
     time the halt is cancelled and the strike resumes out to its radius, halting again once it is
     full; the target may fight it exactly as any bubble (H17), a dense pocket that takes a real army
@@ -527,6 +553,7 @@ destroyers and the challenger table). The playtest checks left over from them ar
 | F20 | **Punitive strike numbers (H19). [Open 2026-09-26]** The levy shares (10% / 25%, raised from 5% / 15% after the first look), the flag window (30 s), the halt (5 s), the radius (34, a quarter more area than the first 30) and the AI's nebula-share threshold are starting points. Because the levy taxes every challenger's troops, it moves the invasion curve, so H19 is built **before** the F1 sweep and its numbers ride with it. To judge in `HegemonSim` and in play: how often Lords nuke on a galaxy map (and so how often the galaxy is levied); whether a 15% levy in a radius-30 pocket is so dense that the halt is never disturbed; whether the pocket should follow the warhead that was fired (Antimatter's 100) rather than one radius for both.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | F21 | **Missiles on gates, shields and the throne's warheads (C4, C5, H2). [Open 2026-09-28]** The shield radius (35; **40** since 2026-10-12, a tenth more on Tom's feel for play, rounded even) is the cap Tom set, not a tuned number; the throne's missiles have no reload — gold-limited only — and may want a cadence once the shadow tax is tuned (F1); Lords do not build shield arrays and the AI Hegemon fires no missiles; a shield refusing gate shots was considered and left as no (gates are meant to matter more, not less). [2026-09-29] The array now shelters its zone from every missile, the throne's included, and costs 5M — Tom's baseline, not a tuned number. To judge in play: whether a level-1 gate's 180 leaves a warhead any target worth 1M, whether a 5M array around a capital is worth it or unanswerable (the throne's strike and conquest are the only answers), and whether a hole in the blast reads clearly on screen. [2026-09-30] The array drops to 2M and the gate to a flat 500k with a 5 s reload and no level cap: the same questions, at the new prices — plus whether warheads at a 5 s cadence and unbounded reach bring back the oppression that tying them to gates was meant to end.                                                                                                                                                                                                                                                     |
 | F22 | **Piracy: eliminated challengers as raiders (C1). [Open 2026-10-14]** Tom's proposal, shaped the same day: an eliminated challenger may _embrace piracy_, spawning one free anonymous ship (the corsair) that raids freighters for troops (100 a raid, 2,500 cap) and gold, and may beach on any non-Hegemon coast to claim exactly 100 tiles and return as a tiny challenger; sunk, it respawns after a climbing cooldown. Decided: the return, landings on players' coasts, the 100-tile floor, anonymity, two-click control, raid gold; target the Sunday 2026-10-18 test behind a lobby toggle. Every shaping question decided the same day (scuttle a leaving pirate, no hold survives a sinking, slow heal, flat 10k raid gold, free 100-tile bite); numbers are levers. Rules PR1–PR18 in `docs/DarkStar-Piracy.md`. [Built 2026-10-15, live 2026-10-17; C1 amended, the cues wired (embrace, beaching; no raid cue) and **no piracy data tracked** (PR14), all 2026-10-17.]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| F23 | **The strike front (H17). [Closed 2026-10-24 — decided and built]** Tom: a strike and the struck player's counter-attack made an odd, organic front that advanced and retreated at once, unlike every other front. Cause and measurement in `docs/DarkStar-Combat.md` §4. Tom's decision: strikes are fought by **cancelling**, one front only, the bubble is never retaken, the strike pops the moment it stops advancing, and **strike troops never come home**; the cancel is weighted by the target's troop ceiling so a disproportionate strike is cheaper to cancel. See H17's revision. Still to judge in play and in `HegemonSim`: the weighting share (`strikeCounterCeilingPercent`, 100), the AI throne's strike size now that nothing returns, and Lords offering half their army (`STRIKE_COUNTER_SHARE`).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 
 ## 5. Engine foundation — what we reuse
 
@@ -2186,6 +2213,33 @@ hydrogen-bomb removal (closed by S6).
 | **Intent / Turn / Execution** | Player action → server-bundled tick of intents → deterministic sim object that applies it.                                                                                                           |
 
 ## 11. Changelog
+
+- **2026-10-24, strikes are cancelled** — **H17 revised (F23 closed): one front, cancelled, never
+  refunded.** Tom's call after the combat review. The struck player's troops cancel a landed
+  strike (new `counter_strike` intent, `CounterStrikeExecution`, `RazeExecution.counter`), weighted
+  by the target's ceiling (`strikeCounterCeilingPercent` 100, replacing `razeBubbleMinTiles`); the
+  bubble can no longer be attacked, landed on or shot at; a strike pops when it stops advancing;
+  no strike troops ever return to the throne (recall, pop, tile lost in flight); punitive strikes
+  lose their halt (`punitiveHaltSeconds` removed); the AI throne no longer recalls on invasion; AI
+  challengers counter with half their army before anything else. HUD Counter-attack, bubble click
+  and the retaliate hotkey send the new order. Wiki (Combat, The Hegemon, glossary, interface,
+  getting started) and `docs/DarkStar-Combat.md` updated. Balance not yet re-run in `HegemonSim`.
+
+- **2026-10-24, combat reference** — **`docs/DarkStar-Combat.md` and the wiki's Combat page.** Tom's
+  ask, prompted by the strike front (F23, opened): every combat rule with its code lever, a
+  headless measurement of a strike against counter-attacks (both sides gain tiles in 9–10 of every
+  10 ticks), and options for a rework, none applied. The wiki's Getting started page had two
+  combat claims wrong (regrowth peaks below half the ceiling; the attack discount stops at about
+  5:3, not 2:1), now corrected; `WikiBuilder` quotes four more Hegemon numbers.
+
+- **2026-10-24, leveller targets** — **H11: the AI Hegemon strikes by threat, and weighs teams.**
+  Tom's ask: the throne seemed to strike whoever had the most troops. It already ranked by troop
+  capacity, but capacity is mostly cities, so a small, built-up challenger outranked one with twice
+  its land. Threat is now land share plus capacity share, weighted equally (new tunables
+  `levellerLandWeight`, `levellerCapacityWeight`); in team games teammates' threat adds up and the
+  strongest team is struck at its strongest member, the recall comparing teams. The 25% capacity
+  gate is unchanged (summed over a team). `HegemonExecution.punish`; wiki _Hegemon_ page updated;
+  two tests in `tests/HegemonRazing.test.ts`.
 
 - **2026-10-24, team picks** — **S11: players choose their team in private lobbies.** Tom's ask:
   click a team's card in the lobby to join it, capped at the mode's size (no fourth player on a

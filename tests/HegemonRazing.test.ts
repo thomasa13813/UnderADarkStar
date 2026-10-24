@@ -1,11 +1,13 @@
 import { AttackExecution } from "../src/core/execution/AttackExecution";
 import { ConstructionExecution } from "../src/core/execution/ConstructionExecution";
+import { CounterStrikeExecution } from "../src/core/execution/CounterStrikeExecution";
 import { Executor } from "../src/core/execution/ExecutionManager";
 import { HegemonExecution } from "../src/core/execution/HegemonExecution";
 import { PlayerExecution } from "../src/core/execution/PlayerExecution";
 import { RazeExecution } from "../src/core/execution/RazeExecution";
 import {
   Game,
+  GameMode,
   GameType,
   Player,
   PlayerInfo,
@@ -29,12 +31,13 @@ function settle(
   depth: number,
   troops: number,
   halfHeight = 10,
+  yOffset = 0,
 ) {
   const g = game.darkStar()!;
   const outer = g.radius + g.moatWidth;
   game.forEachTile((tile) => {
     const dx = (game.x(tile) - g.cx) * side - outer;
-    const dy = game.y(tile) - g.cy;
+    const dy = game.y(tile) - g.cy - yOffset;
     if (
       dx >= 0 &&
       dx < depth &&
@@ -243,63 +246,78 @@ describe("Strike counterplay (H17)", () => {
     return hegemon.outgoingAttacks()[0];
   }
 
-  test("the struck player fights the bubble like any attacker, and its troops come out of the strike", () => {
-    const strike = landStrike(300_000);
-    expect(strike.isStrike()).toBe(true);
+  test("troops committed against a strike cancel it one for one, up to a strike the size of the target's ceiling", () => {
+    const raze = new RazeExecution(hegemon, anyTile(east), 100_000);
+    game.addExecution(raze);
+    while (hegemon.outgoingAttacks().length === 0) game.executeNextTick();
+    const strike = hegemon.outgoingAttacks()[0];
+    executeTicks(game, 10);
+    expect(game.config().maxTroops(east)).toBeGreaterThan(100_000);
+    const before = strike.troops();
+    expect(raze.counter(40_000)).toBe(40_000);
+    expect(strike.troops()).toBe(before - 40_000);
+    // Only what it takes to cancel the rest is spent.
+    expect(raze.counter(1_000_000)).toBe(Math.ceil(before - 40_000));
+    expect(strike.troops()).toBe(0);
+  });
+
+  test("a disproportionate strike is cancelled at a better rate: its troops over the target's ceiling", () => {
+    const ceiling = game.config().maxTroops(east);
+    const troops = ceiling * 4;
+    const raze = new RazeExecution(hegemon, anyTile(east), troops);
+    game.addExecution(raze);
+    while (hegemon.outgoingAttacks().length === 0) game.executeNextTick();
+    const strike = hegemon.outgoingAttacks()[0];
+    const before = strike.troops();
+    expect(raze.counter(10_000)).toBe(10_000);
+    expect(strike.troops()).toBeCloseTo(before - 40_000, 0);
+    // The whole strike never costs more than the ceiling it was measured by.
+    expect(raze.counter(10 * ceiling)).toBeLessThanOrEqual(ceiling);
+    expect(strike.troops()).toBe(0);
+  });
+
+  test("countered to nothing, the strike pops: the bubble goes neutral and nothing returns to the throne", () => {
+    landStrike(100_000);
     executeTicks(game, 30);
     const bubble = game.hegemonBubbleTiles();
     expect(bubble).toBeGreaterThan(20);
-    expect(east.isStruckBy(hegemon)).toBe(true);
-
-    const hegemonTroops = hegemon.troops();
-    east.setTroops(400_000);
-    game.addExecution(new AttackExecution(300_000, east, hegemon.id()));
-    executeTicks(game, 2);
-    // Not cancelled troop for troop: both attacks are in the field.
-    expect(east.outgoingAttacks()).toHaveLength(1);
-    expect(hegemon.outgoingAttacks()).toHaveLength(1);
-    const strikeTroops = strike.troops();
-
-    executeTicks(game, 20);
-    const retaken = Array.from(east.tiles()).filter((t) =>
-      game.isInDarkStar(t),
-    ).length;
-    expect(retaken).toBe(0);
-    // The counter-attack takes bubble tiles back and bleeds the strike; the
-    // Dark Star's own army is untouched (it has only regenerated).
-    expect(strike.troops()).toBeLessThan(strikeTroops - 1000);
-    expect(hegemon.troops()).toBeGreaterThanOrEqual(hegemonTroops);
-  });
-
-  test("a strike ground down to nothing pops: the land goes neutral, not to the Hegemon", () => {
-    landStrike(40_000);
-    executeTicks(game, 30);
     const eastTiles = east.numTilesOwned();
+    const hegemonTroops = hegemon.troops();
     east.setTroops(1_000_000);
-    game.addExecution(new AttackExecution(800_000, east, hegemon.id()));
-    let ticks = 0;
-    while (hegemon.outgoingAttacks().length > 0 && ticks++ < 600) {
-      game.executeNextTick();
-    }
+    game.addExecution(new CounterStrikeExecution(east, 1_000_000));
+    executeTicks(game, 3);
     expect(hegemon.outgoingAttacks()).toHaveLength(0);
     expect(game.hegemonBubbleTiles()).toBe(0);
-    // What east retook is east's; what the bubble still held is neutral.
-    expect(east.numTilesOwned()).toBeGreaterThan(eastTiles);
+    // Only what the strike cost was spent, and none of the bubble came back.
+    expect(east.troops()).toBeGreaterThan(1_000_000 - 100_000);
+    expect(east.numTilesOwned()).toBeLessThanOrEqual(eastTiles);
+    expect(hegemon.troops()).toBeLessThan(hegemonTroops + 10_000);
   });
 
-  test("nobody but the struck player may attack the bubble", () => {
+  test("a counter with no landed strike does nothing", () => {
+    east.setTroops(500_000);
+    game.addExecution(new CounterStrikeExecution(east, 100_000));
+    executeTicks(game, 2);
+    expect(east.troops()).toBeGreaterThanOrEqual(500_000);
+  });
+
+  test("the bubble is never fought over, by the struck player or anyone else", () => {
     landStrike(300_000);
     executeTicks(game, 60);
     expect(game.hegemonBubbleTiles()).toBeGreaterThan(0);
     const bubbleTile = Array.from(hegemon.tiles()).find(
       (t) => !game.isInDarkStar(t),
     )!;
-    expect(east.canAttack(bubbleTile)).toBe(true);
+    expect(east.canAttack(bubbleTile)).toBe(false);
     expect(west.canAttack(bubbleTile)).toBe(false);
+    // Refused before any troops are taken (east's pool is being razed, so
+    // only west's can be compared).
     const westTroops = west.troops();
-    game.addExecution(new AttackExecution(50_000, west, hegemon.id()));
-    executeTicks(game, 2);
-    expect(west.outgoingAttacks()).toHaveLength(0);
+    for (const p of [east, west]) {
+      game.addExecution(new AttackExecution(50_000, p, hegemon.id()));
+      executeTicks(game, 2);
+      expect(p.outgoingAttacks()).toHaveLength(0);
+    }
     expect(west.troops()).toBeGreaterThanOrEqual(westTroops);
 
     // The invader's orders remain its invasion: the Dark Star itself is open.
@@ -311,7 +329,7 @@ describe("Strike counterplay (H17)", () => {
     expect(west.outgoingAttacks()).toHaveLength(1);
   });
 
-  test("a recalled strike pops its bubble and brings the survivors home", () => {
+  test("a recalled strike pops its bubble and its troops are lost", () => {
     const raze = new RazeExecution(hegemon, anyTile(east), 300_000);
     game.addExecution(raze);
     while (hegemon.outgoingAttacks().length === 0) game.executeNextTick();
@@ -322,7 +340,7 @@ describe("Strike counterplay (H17)", () => {
     executeTicks(game, 2);
     expect(hegemon.outgoingAttacks()).toHaveLength(0);
     expect(game.hegemonBubbleTiles()).toBe(0);
-    expect(hegemon.troops()).toBeGreaterThan(before + 100_000);
+    expect(hegemon.troops()).toBeLessThan(before + 10_000);
   });
 
   // An east tile next to the bubble, and one far from any Hegemon land.
@@ -484,7 +502,7 @@ describe("Punitive strikes (H11)", () => {
     expect(east.numTilesOwned()).toBeGreaterThanOrEqual(eastTiles);
   });
 
-  test("the strike is recalled when the Dark Star is invaded", async () => {
+  test("an invasion of the Dark Star leaves a live strike razing: its troops would not come home", async () => {
     await start(PlayerType.Nation);
     const cfg = game.config().hegemonConfig();
     settle(west, -1, 60, 100_000, 40);
@@ -503,8 +521,80 @@ describe("Punitive strikes (H11)", () => {
     east.conquer(game.ref(g.cx + g.radius, g.cy));
     executeTicks(game, 3);
     expect(hegemon.outgoingAttacks().some((a) => a.target() === west)).toBe(
-      false,
+      true,
     );
+  });
+
+  // Runs the idle AI Hegemon until its first leveller strike; returns its target.
+  function firstStrikeTarget(): Player | null {
+    const cfg = game.config().hegemonConfig();
+    for (let i = 0; i < (cfg.levellerFullSeconds + 60) * 10; i++) {
+      game.executeNextTick();
+      const strike = hegemon.outgoingAttacks()[0];
+      if (strike !== undefined) return strike.target() as Player;
+    }
+    return null;
+  }
+
+  test("land counts as well as capacity: a sprawling challenger outranks a small built-up one", async () => {
+    await start(PlayerType.Nation);
+    settle(east, 1, 80, 100_000, 60);
+    game.addExecution(new PlayerExecution(west));
+    west.addGold(100_000_000n);
+    game.addExecution(
+      new ConstructionExecution(west, UnitType.City, anyTile(west)),
+    );
+    executeTicks(game, 5);
+    const city = west.units(UnitType.City)[0];
+    city.increaseLevel();
+    // By capacity alone west would be struck: two city levels outweigh
+    // twenty times its land.
+    expect(game.config().maxTroops(west)).toBeGreaterThan(
+      game.config().maxTroops(east),
+    );
+    expect(firstStrikeTarget()).toBe(east);
+  });
+
+  test("teammates add up: the strongest team is struck at its strongest member", async () => {
+    game = await setup(
+      "big_plains",
+      {
+        hegemon: { enabled: true },
+        disableNavMesh: false,
+        instantBuild: true,
+        gameMode: GameMode.Team,
+        playerTeams: 2,
+      },
+      [
+        new PlayerInfo(
+          "solo",
+          PlayerType.Human,
+          "c1",
+          "solo",
+          false,
+          null,
+          [],
+          0,
+        ),
+        new PlayerInfo("a", PlayerType.Human, "c2", "a", false, null, [], 1),
+        new PlayerInfo("b", PlayerType.Human, "c3", "b", false, null, [], 1),
+      ],
+    );
+    hegemon = game.hegemon()!;
+    const solo = game.player("solo");
+    const a = game.player("a");
+    const b = game.player("b");
+    expect(a.isOnSameTeam(b)).toBe(true);
+    expect(a.isOnSameTeam(solo)).toBe(false);
+    settle(solo, 1, 60, 100_000, 30);
+    settle(a, -1, 60, 100_000, 20, -25);
+    settle(b, -1, 50, 100_000, 20, 25);
+    game.addExecution(new HegemonExecution());
+    while (game.inSpawnPhase()) game.executeNextTick();
+    // Alone, each teammate is smaller than solo.
+    expect(a.numTilesOwned()).toBeLessThan(solo.numTilesOwned());
+    expect(b.numTilesOwned()).toBeLessThan(a.numTilesOwned());
+    expect(firstStrikeTarget()).toBe(a);
   });
 
   test("a human Hegemon is never made to strike", async () => {
@@ -557,6 +647,19 @@ describe("Playing the Hegemon: the seat and the strike order", () => {
     expect(game.strikesInFlight()).toHaveLength(0);
     expect(hegemon.outgoingAttacks()[0].id()).toBe(id);
     expect(hegemon.outgoingAttacks()[0].isStrike()).toBe(true);
+
+    // The struck player's counter_strike order cancels it (H17).
+    const strike = hegemon.outgoingAttacks()[0];
+    const strikeTroops = strike.troops();
+    game.addExecution(
+      executor.createExec({
+        type: "counter_strike",
+        troops: 50_000,
+        clientID: "client1",
+      }),
+    );
+    executeTicks(game, 1);
+    expect(strike.troops()).toBeLessThan(strikeTroops - 49_000);
   });
 
   test("one live strike per target, any number of targets", () => {
@@ -578,10 +681,10 @@ describe("Playing the Hegemon: the seat and the strike order", () => {
     expect(hegemon.outgoingAttacks()).toHaveLength(2);
   });
 
-  test("a strike recalled in flight comes home whole, by the ordinary cancel-attack order", () => {
-    const before = hegemon.troops();
+  test("a strike recalled in flight is lost, by the ordinary cancel-attack order", () => {
     game.addExecution(new RazeExecution(hegemon, anyTile(east), 100_000));
     executeTicks(game, 1);
+    const before = hegemon.troops();
     const id = game.strikesInFlight()[0].id();
     hegemon.orderRetreat(id);
     expect(game.strikesInFlight()).toHaveLength(0);
@@ -757,9 +860,9 @@ describe("The strike as a projectile", () => {
 
   test("a recall in flight removes the projectile without an impact", async () => {
     await startWith(TestConfig);
-    const before = hegemon.troops();
     game.addExecution(new RazeExecution(hegemon, anyTile(east), 100_000));
     executeTicks(game, 3);
+    const before = hegemon.troops();
     const unit = game.units(UnitType.Projectile)[0];
     expect(unit.isActive()).toBe(true);
     hegemon.orderRetreat(game.strikesInFlight()[0].id());

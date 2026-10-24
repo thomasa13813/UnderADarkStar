@@ -66,7 +66,8 @@ export type Intent =
   | ClaimSeatIntent
   | LeaveSeatIntent
   | EmbracePiracyIntent
-  | PirateLandIntent;
+  | PirateLandIntent
+  | CounterStrikeIntent;
 
 export type AttackIntent = z.infer<typeof AttackIntentSchema>;
 export type CancelAttackIntent = z.infer<typeof CancelAttackIntentSchema>;
@@ -74,6 +75,7 @@ export type SpawnIntent = z.infer<typeof SpawnIntentSchema>;
 export type BoatAttackIntent = z.infer<typeof BoatAttackIntentSchema>;
 export type StrikeIntent = z.infer<typeof StrikeIntentSchema>;
 export type PunitiveStrikeIntent = z.infer<typeof PunitiveStrikeIntentSchema>;
+export type CounterStrikeIntent = z.infer<typeof CounterStrikeIntentSchema>;
 export type GateShotIntent = z.infer<typeof GateShotIntentSchema>;
 export type GiftUnitIntent = z.infer<typeof GiftUnitIntentSchema>;
 export type EmbargoAllIntent = z.infer<typeof EmbargoAllIntentSchema>;
@@ -739,6 +741,13 @@ export const PunitiveStrikeIntentSchema = z.object({
   tile: zb.uint(),
 });
 
+// The struck player's answer to a landed Hegemon strike (H17): these troops
+// cancel the strike's.
+export const CounterStrikeIntentSchema = z.object({
+  type: z.literal("counter_strike"),
+  troops: zb.float({ min: 0 }),
+});
+
 // A stargate shot (C4): troops fired from the nearest ready gate in range at
 // a tile, landing as a fleet does.
 export const GateShotIntentSchema = z.object({
@@ -951,6 +960,7 @@ export const IntentSchema = z.discriminatedUnion("type", [
   LeaveSeatIntentSchema,
   EmbracePiracyIntentSchema,
   PirateLandIntentSchema,
+  CounterStrikeIntentSchema,
 ]);
 
 // StampedIntent = Intent with server-stamped clientID (used in turns and execution)

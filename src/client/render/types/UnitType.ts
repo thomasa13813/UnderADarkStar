@@ -76,9 +76,9 @@ export const SMOOTHED_NUKE_TYPES: ReadonlySet<string> = new Set([
   UT_PROJECTILE,
 ]);
 
-/** A strike has no blast: its impact ring marks the aim tile and the
- *  footprint a fresh bubble is costed as (razeBubbleMinTiles = 200 tiles,
- *  a disc of radius ~8). One ring, so inner = outer. */
+/** A strike has no blast: its impact ring marks the aim tile, drawn the
+ *  size of a small fresh bubble (a disc of radius 8). One ring, so
+ *  inner = outer. */
 export const PROJECTILE_TELEGRAPH_RADIUS = 8;
 
 /** Blast radii (in tiles) matching upstream DefaultConfig.nukeMagnitudes(). */

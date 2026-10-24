@@ -70,6 +70,7 @@ The game server only serves `index.html` and the WebSocket. All other assets (JS
 | `docs/DarkStar-Roadmap.md`            | The road to release (phases P0–P8)                                                         |
 | `docs/DarkStar-Buildings.md`          | Player-facing buildings reference, publishable (no code names)                             |
 | `docs/DarkStar-Buildings-Levers.md`   | Where each building number lives in code, audit notes, changelog                           |
+| `docs/DarkStar-Combat.md`             | Combat rules with code levers; the strike-front review (F23)                               |
 | `wiki/pages/`                         | The player wiki (help icon, `/wiki/`); rebuild with `npm run wiki` after any rules change  |
 | `docs/DarkStar-Lobbies.md`            | Public lobbies / thrones design (P6)                                                       |
 | `docs/DarkStar-Piracy.md`             | Piracy: eliminated challengers as raiders (draft, F22)                                     |

@@ -19,6 +19,7 @@ import {
   CancelAttackIntentEvent,
   CancelBoatIntentEvent,
   SendAttackIntentEvent,
+  SendCounterStrikeIntentEvent,
 } from "../../Transport";
 import { UIState } from "../../UIState";
 import { renderTroops, translateText } from "../../Utils";
@@ -223,6 +224,16 @@ export class AttacksDisplay extends LitElement implements Controller {
     const myPlayer = this.game.myPlayer();
     if (!myPlayer) return;
 
+    // A strike is cancelled, not attacked (H17): the slider's share is
+    // offered, and only what the strike costs is spent.
+    if (attack.isStrike) {
+      this.eventBus.emit(
+        new SendCounterStrikeIntentEvent(
+          this.uiState.attackRatio * myPlayer.troops(),
+        ),
+      );
+      return;
+    }
     const counterTroops = Math.min(
       attack.troops,
       this.uiState.attackRatio * myPlayer.troops(),
@@ -279,9 +290,6 @@ export class AttacksDisplay extends LitElement implements Controller {
     );
   }
 
-  // A Dark Star strike (H17): the Hegemon's bubble borders us, so the
-  // ordinary attack order is the counter-attack — the engine costs bubble
-  // tiles to the strike's own troops.
   // Seconds until a strike in flight lands; null once it has.
   private landingIn(attack: AttackUpdate): number | null {
     if (attack.landsAtTick === undefined) return null;
