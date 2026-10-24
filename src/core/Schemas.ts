@@ -126,6 +126,7 @@ export type ClientMessage =
   | ClientLogMessage
   | ClientHashMessage
   | ClientSpectateMessage
+  | ClientTeamPickMessage
   | ClientThronePickMessage
   | ClientReportMessage;
 
@@ -167,6 +168,7 @@ export type ClientRejoinMessage = z.infer<typeof ClientRejoinMessageSchema>;
 export type ClientLogMessage = z.infer<typeof ClientLogMessageSchema>;
 export type ClientHashMessage = z.infer<typeof ClientHashSchema>;
 export type ClientSpectateMessage = z.infer<typeof ClientSpectateMessageSchema>;
+export type ClientTeamPickMessage = z.infer<typeof ClientTeamPickMessageSchema>;
 
 export type AllPlayersStats = z.infer<typeof AllPlayersStatsSchema>;
 export type Player = z.infer<typeof PlayerSchema>;
@@ -329,9 +331,9 @@ const ClientInfoSchema = z.object({
   // Watching rather than playing. Listed like anyone else — a spectator sees the
   // lobby exactly as a player does — but not in the simulation.
   spectator: z.boolean().optional(),
-  // Server-pinned team slot for matchmade team games, so the lobby's team
-  // preview can honour the pins instead of re-deriving teams that the server
-  // will overrule at start. Absent when the game isn't matchmade.
+  // Server-pinned team slot (a matchmade team, or the team picked in a private
+  // lobby), so the lobby's team preview can honour the pins instead of
+  // re-deriving teams that the server will overrule at start. Absent otherwise.
   teamIndex: zb.uint().optional(),
 });
 
@@ -477,7 +479,7 @@ export interface ClientInfo {
   // Watching rather than playing — listed like anyone else, but not in the
   // simulation.
   spectator?: boolean;
-  // Server-pinned team slot for matchmade team games; absent when not matchmade.
+  // Server-pinned team slot (matchmade, or picked in a private lobby).
   teamIndex?: number;
 }
 export enum LogSeverity {
@@ -1058,8 +1060,8 @@ export const PlayerSchema = z.object({
   cosmetics: PlayerCosmeticsSchema.optional(),
   isLobbyCreator: z.boolean().optional(),
   friends: z.array(ID).optional(),
-  // Server-stamped team slot for matchmade team games (index into the
-  // game's team list). Feeds deterministic team assignment, so it must be
+  // Server-stamped team slot for matchmade team games, or the team a player
+  // picked in a private lobby (index into the game's team list). Feeds deterministic team assignment, so it must be
   // identical for every client (like clanTag/friends).
   teamIndex: zb.uint().optional(),
   // This player holds the Hegemon seat (hegemon mode only). A simulation
@@ -1347,6 +1349,15 @@ export const ClientSpectateMessageSchema = z.object({
   spectator: z.boolean(),
 });
 
+// Under a Dark Star: a player in a private team lobby picks the team they will
+// play on by clicking its card (an index into the game's team list). The server
+// accepts it only before start, only in private team games, and only while the
+// team has room under the mode's fixed size (Duos/Trios/Quads).
+export const ClientTeamPickMessageSchema = z.object({
+  type: z.literal("team_pick"),
+  teamIndex: zb.uint(),
+});
+
 // Under a Dark Star (docs/DarkStar-Lobbies.md §5.5): the round's winner, still
 // on the finished game's socket, picks the next round's map and says whether
 // they keep the throne or step down. No map means a random one. Accepted only
@@ -1378,6 +1389,7 @@ export const ClientMessageSchema = zb.discriminatedUnion("type", [
   ClientSpectateMessageSchema,
   ClientReportMessageSchema,
   ClientThronePickSchema,
+  ClientTeamPickMessageSchema,
 ]);
 
 //

@@ -7,7 +7,11 @@ import {
   Quads,
   Trios,
 } from "../src/core/game/Game";
-import { assignTeams, resolveTeamsList } from "../src/core/game/TeamAssignment";
+import {
+  assignTeams,
+  fixedTeamSize,
+  resolveTeamsList,
+} from "../src/core/game/TeamAssignment";
 
 const teams = [ColoredTeams.Red, ColoredTeams.Blue];
 
@@ -464,6 +468,82 @@ describe("assignTeams", () => {
     for (const n of nations) {
       expect(result.get(n)).toEqual(ColoredTeams.Blue);
     }
+  });
+});
+
+// Under a Dark Star: public games balance teams on size alone; clan and
+// friend grouping only applies in private lobbies.
+describe("assignTeams without clan/friend grouping (public games)", () => {
+  const player = (id: string, clan?: string, friends: string[] = []) =>
+    new PlayerInfo(
+      `Player ${id}`,
+      PlayerType.Human,
+      id,
+      id,
+      false,
+      clan,
+      friends,
+    );
+
+  it("splits clanmates like anyone else", () => {
+    const players = [
+      player("1", "CLANA"),
+      player("2", "CLANA"),
+      player("3"),
+      player("4"),
+    ];
+    const grouped = assignTeams(players, teams, false);
+    expect(grouped.get(players[0])).toEqual(grouped.get(players[1]));
+
+    const balanced = assignTeams(players, teams, false, 2, false);
+    expect(balanced.get(players[0])).not.toEqual(balanced.get(players[1]));
+  });
+
+  it("kicks no clan overflow", () => {
+    const players = ["1", "2", "3", "4"].map((id) => player(id, "CLANA"));
+    const result = assignTeams(players, teams, false, 2, false);
+    expect([...result.values()]).not.toContain("kicked");
+  });
+
+  it("ignores friends", () => {
+    // With grouping, 2 follows friend 1 onto Red; without it, the size
+    // balancer sends 2 to Blue.
+    const players = [player("1"), player("2", undefined, ["1"])];
+    expect(assignTeams(players, teams, false, 2).get(players[1])).toEqual(
+      ColoredTeams.Red,
+    );
+    expect(
+      assignTeams(players, teams, false, 2, false).get(players[1]),
+    ).toEqual(ColoredTeams.Blue);
+  });
+
+  it("still honours pinned team slots", () => {
+    const pinned = new PlayerInfo(
+      "Pinned",
+      PlayerType.Human,
+      "p",
+      "p",
+      false,
+      null,
+      [],
+      1,
+    );
+    const result = assignTeams([pinned], teams, false, 1, false);
+    expect(result.get(pinned)).toEqual(ColoredTeams.Blue);
+  });
+});
+
+describe("fixedTeamSize", () => {
+  it("is the team size of Duos, Trios and Quads", () => {
+    expect(fixedTeamSize(Duos)).toBe(2);
+    expect(fixedTeamSize(Trios)).toBe(3);
+    expect(fixedTeamSize(Quads)).toBe(4);
+  });
+
+  it("is undefined for modes that fix the team count instead", () => {
+    expect(fixedTeamSize(2)).toBeUndefined();
+    expect(fixedTeamSize(7)).toBeUndefined();
+    expect(fixedTeamSize(HumansVsNations)).toBeUndefined();
   });
 });
 

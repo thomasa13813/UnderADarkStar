@@ -29,6 +29,7 @@ import {
   Execution,
   Game,
   GameMode,
+  GameType,
   GameUpdates,
   GateShotInFlight,
   HegemonStrike,
@@ -453,6 +454,8 @@ export class GameImpl implements Game {
       allPlayers,
       this.playerTeams,
       isDuosTriosQuads,
+      undefined,
+      this._config.gameConfig().gameType !== GameType.Public,
     );
     for (const [playerInfo, team] of playerToTeam.entries()) {
       if (team === "kicked") {

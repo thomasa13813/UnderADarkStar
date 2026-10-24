@@ -19,6 +19,7 @@ import {
 import { maps } from "../core/game/Maps.gen";
 import {
   assignTeamsLobbyPreview,
+  fixedTeamSize,
   resolveTeamsList,
 } from "../core/game/TeamAssignment";
 import {
@@ -27,6 +28,7 @@ import {
   ClientReportMessage,
   ClientSendLiveStatsMessage,
   ClientSendWinnerMessage,
+  ClientTeamPickMessage,
   ClientThronePickMessage,
   GameConfig,
   GameID,
@@ -314,6 +316,11 @@ export class GameServer {
   // Matchmade team split from the matchmaking assignment: publicIds per
   // team. At start each client is stamped with its team's index.
   private matchmakingTeams?: string[][];
+  // Under a Dark Star: the team each player clicked in a private team lobby,
+  // by clientID (an index into the team list), oldest pick first. Kept off
+  // Client so a reconnect keeps it; read through validTeamPicks, which drops
+  // any that no longer apply.
+  private readonly teamPicks = new Map<ClientID, number>();
   private readonly deps: GameServerDeps;
   // Who may see whose real identity (anonymizeNames / pinned teams / admin
   // clan-tag reveal); shapes the per-viewer lobby roster and start message.
@@ -339,6 +346,7 @@ export class GameServer {
       config: () => this.gameConfig,
       clients: () => this.clients.all(),
       teamIndex: (c) => this.matchmakingTeamIndex(c),
+      shownTeamIndex: (c) => this.pinnedTeamIndex(c),
     });
     this.log = opts.log.child({ gameID: opts.id });
     this.ingress = new SocketIngress(this.log, this.telemetry, {
@@ -373,7 +381,20 @@ export class GameServer {
   }
 
   public updateGameConfig(gameConfig: Partial<GameConfig>): void {
+    const { gameMode, playerTeams } = this.gameConfig;
     applyGameConfigPatch(this.gameConfig, gameConfig);
+    // A pick names a slot in the old team list; under a new split it would
+    // point somewhere the player never chose.
+    if (
+      this.gameConfig.gameMode !== gameMode ||
+      this.gameConfig.playerTeams !== playerTeams
+    ) {
+      this.teamPicks.clear();
+    }
+    // The throne is a team of one: a pick made before being seated would
+    // otherwise come back, ahead of later pickers, if the seat is given away.
+    const seat = this.hegemonSeatClientID();
+    if (seat !== undefined) this.teamPicks.delete(seat);
   }
 
   // Dispatch a control/gameplay intent from either a websocket client or the
@@ -804,6 +825,10 @@ export class GameServer {
         this.setSpectator(client, clientMsg.spectator);
         break;
       }
+      case "team_pick": {
+        this.handleTeamPick(client, clientMsg);
+        break;
+      }
       case "winner": {
         this.handleWinner(client, clientMsg);
         break;
@@ -1189,7 +1214,7 @@ export class GameServer {
         cosmetics: c.cosmetics,
         isLobbyCreator: this.lobbyCreatorID === c.clientID,
         friends: friendsFor(c),
-        teamIndex: this.matchmakingTeamIndex(c),
+        teamIndex: this.pinnedTeamIndex(c),
         ...(hegemonSeat !== undefined && hegemonSeat === c.clientID
           ? { isHegemon: true }
           : {}),
@@ -1250,6 +1275,7 @@ export class GameServer {
 
   private convertClanOverflowToSpectators(): void {
     if (
+      this.isPublic() ||
       this.gameConfig.gameMode !== GameMode.Team ||
       this.gameConfig.playerTeams === undefined ||
       this.gameConfig.playerTeams === HumansVsNations ||
@@ -1307,6 +1333,8 @@ export class GameServer {
     } catch {
       return [];
     }
+    // A picked team overrides the clan, so a picker is placed by the pick and
+    // never counts toward clan overflow.
     const playerInfos = playingClients.map(
       (c) =>
         new PlayerInfo(
@@ -1316,6 +1344,8 @@ export class GameServer {
           c.clientID,
           false,
           c.clanTag ?? null,
+          [],
+          this.lobbyTeamPick(c) ?? null,
         ),
     );
     const preview = assignTeamsLobbyPreview(
@@ -1368,6 +1398,9 @@ export class GameServer {
       if (max !== undefined && this.playerCount() >= max) return;
     }
     client.spectator = spectator;
+    // A watcher holds no team. Kept, the pick would come back on reseating
+    // ahead of everyone who picked that team meanwhile.
+    if (spectator) this.teamPicks.delete(client.clientID);
     // The lobby list is derived from this flag, so everyone's view of who is
     // playing has to be refreshed rather than waiting out the next tick.
     this.broadcastLobbyInfo();
@@ -1408,6 +1441,101 @@ export class GameServer {
     }
     this.matchmakingTeams[teamIndex].push(publicId);
     return { ok: true, teams: this.matchmakingTeams };
+  }
+
+  // The number of teams a pick indexes into, as the simulation will resolve
+  // them: challengers plus Lords (the seated Hegemon is a team of one, outside
+  // the list). Undefined when this lobby takes no picks: public and matchmade
+  // games balance teams themselves, FFA has none, and Humans vs Lords has a
+  // single human team.
+  private pickableTeams(): number | undefined {
+    const config = this.gameConfig;
+    if (
+      config.gameType !== GameType.Private ||
+      config.gameMode !== GameMode.Team ||
+      config.playerTeams === undefined ||
+      config.playerTeams === HumansVsNations ||
+      this.matchmakingTeams !== undefined
+    ) {
+      return undefined;
+    }
+    const seat = this.hegemonSeatClientID();
+    const challengers = this.clients
+      .players()
+      .filter((c) => c.clientID !== seat).length;
+    try {
+      return resolveTeamsList(
+        config.playerTeams,
+        challengers + this.resolveDefaultNationCount(),
+      ).length;
+    } catch {
+      return undefined;
+    }
+  }
+
+  private hegemonSeatClientID(): ClientID | undefined {
+    const hegemon = this.gameConfig.hegemon;
+    return hegemon?.enabled === true ? hegemon.seat : undefined;
+  }
+
+  // The picks that still apply: a playing challenger in a lobby that takes
+  // picks, naming a team that still exists (Duos/Trios/Quads lose teams as
+  // players leave), and inside the mode's fixed team size, first come first
+  // served. Checked here rather than only when the pick is made, because a
+  // pick can outlive its moment — a player who went to watch and came back
+  // finds their team filled in the meantime, and is placed by the balancer.
+  private validTeamPicks(): Map<ClientID, number> {
+    const valid = new Map<ClientID, number>();
+    const teams = this.pickableTeams();
+    if (teams === undefined) return valid;
+    const cap = fixedTeamSize(this.gameConfig.playerTeams!) ?? Infinity;
+    const seat = this.hegemonSeatClientID();
+    const counts = new Map<number, number>();
+    for (const [clientID, pick] of this.teamPicks) {
+      const c = this.clients.get(clientID);
+      if (c === undefined || c.spectator || clientID === seat) continue;
+      if (!this.clients.isConnected(c)) continue;
+      const count = counts.get(pick) ?? 0;
+      if (pick >= teams || count >= cap) continue;
+      counts.set(pick, count + 1);
+      valid.set(clientID, pick);
+    }
+    return valid;
+  }
+
+  private lobbyTeamPick(c: Client): number | undefined {
+    return this.validTeamPicks().get(c.clientID);
+  }
+
+  // The team slot handed to the simulation and shown in the lobby preview:
+  // the matchmaker's pin, else the player's own pick.
+  private pinnedTeamIndex(c: Client): number | undefined {
+    return this.matchmakingTeamIndex(c) ?? this.lobbyTeamPick(c);
+  }
+
+  // A click on a team card in a private team lobby. Ignored (the lobby view
+  // simply doesn't change) after the start, from a spectator or the Hegemon,
+  // in a lobby that balances its own teams, and when the team already holds
+  // the mode's fixed size (Duos/Trios/Quads) in picks.
+  private handleTeamPick(client: Client, msg: ClientTeamPickMessage): void {
+    if (this.hasStarted() || this.ended) return;
+    if (client.spectator || client.clientID === this.hegemonSeatClientID()) {
+      return;
+    }
+    const teams = this.pickableTeams();
+    if (teams === undefined || msg.teamIndex >= teams) return;
+    const valid = this.validTeamPicks();
+    if (valid.get(client.clientID) === msg.teamIndex) return;
+    const cap = fixedTeamSize(this.gameConfig.playerTeams!) ?? Infinity;
+    let taken = 0;
+    for (const [clientID, pick] of valid) {
+      if (clientID !== client.clientID && pick === msg.teamIndex) taken++;
+    }
+    if (taken >= cap) return;
+    // Re-inserted, so the pick queues behind everyone who picked before it.
+    this.teamPicks.delete(client.clientID);
+    this.teamPicks.set(client.clientID, msg.teamIndex);
+    this.broadcastLobbyInfo();
   }
 
   // Resolves a client to its matchmade team slot (index into

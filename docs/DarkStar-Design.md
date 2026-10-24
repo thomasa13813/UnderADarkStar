@@ -494,6 +494,15 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   existing maps — the Earth-geography ones in particular — are removed, decided map by map (F17).
 - **S10 — Branding.** The splash page and main menu are still OpenFront's. Rebuild them for DarkStar
   before release, keeping the attribution §8 requires.
+- **S11 — Choosing a team.** [Decided 2026-10-24] In a **private** team lobby a player joins a
+  team by clicking its card, and may click another to move. Duos/Trios/Quads cap each team at
+  the mode's size; modes that set a team count (2 teams, 3 teams...) have no cap. A pick beats
+  the clan rule; players who don't pick are placed by the usual balancer (clans together, friends
+  grouped), and Lords fill what is left. **Public** lobbies take no picks and balance teams on
+  numbers alone at the start: no clan or friend grouping. Humans vs Lords and the Hegemon (a
+  team of one) take no picks. Built: the pick is the existing pinned `teamIndex` (`GameServer`
+  `team_pick` message, `validTeamPicks`); `assignTeams` gains `groupByClanAndFriends`, false
+  when `gameType` is Public.
 
 ## 4. Open design questions
 
@@ -2106,7 +2115,9 @@ these before any public release.
   (© January Games, All Rights Reserved, `branding/LICENSE`), which overrides `resources/` through
   the same build mechanism; a modified version must replace it. Holds the Dark Star favicon and,
   since 2026-10-04, the January Games studio wordmark (dark and light variants) shown in the
-  footer; the game's own logo, title treatment and font are still open (roadmap P1 step E).
+  footer; since 2026-10-11 the pixel-art menu buttons (`images/btn-*.svg`) and, since 2026-10-24,
+  their lettering as the DarkStar Pixel font (`fonts/darkstar-pixel.*`, source in `pixel-font/`).
+  The game's own logo is still open (roadmap P1 step E).
 - **Stripped (P1 step A):** ads/analytics, the CrazyGames SDK, the Steam wishlist, OpenFront's
   Discord/wiki/reddit links, OpenFront's legal pages and press kit, `index.html` canonical/OpenGraph
   tags, PWA manifest and `package.json` name. The footer carries "Source", "Made by January Games"
@@ -2175,6 +2186,26 @@ hydrogen-bomb removal (closed by S6).
 | **Intent / Turn / Execution** | Player action → server-bundled tick of intents → deterministic sim object that applies it.                                                                                                           |
 
 ## 11. Changelog
+
+- **2026-10-24, team picks** — **S11: players choose their team in private lobbies.** Tom's ask:
+  click a team's card in the lobby to join it, capped at the mode's size (no fourth player on a
+  Trios team); a pick overrides the clan rule; players who don't pick are balanced as before.
+  Public lobbies take no picks and now balance teams without clan or friend grouping (clan
+  overflow is no longer benched to spectating there). New `team_pick` client message; the server
+  keeps picks per clientID, drops them on a team-split change, on going to watch and on taking
+  the throne, and re-checks the cap oldest-first whenever it reads them. The pick reaches the
+  simulation as the matchmaking pin `teamIndex` already did. Tests: `tests/server/TeamPick.test.ts`,
+  `tests/TeamAssignment.test.ts`, `tests/Team.test.ts`.
+
+- **2026-10-24, pixel font** — **DarkStar Pixel: the title's lettering as a font.** Tom's ask: the
+  black-and-purple pixel letters of the title and menu buttons, usable anywhere in the UI. The 20
+  capitals drawn for those (2026-10-09..12) are kept pixel for pixel; H, M, Q, V, X, Z, the digits
+  (slashed zero, all one width) and ASCII punctuation are new, drawn to match (9-pixel caps, 2-pixel
+  strokes). Lowercase draws as the capitals. The source is `branding/pixel-font/glyphs.txt`;
+  `scripts/pixel-font/build.py` (fontTools, recipe in its README) compiles it to
+  `branding/fonts/darkstar-pixel.{woff2,ttf}`, under the branding licence like the buttons.
+  `Main.ts` loads it; Tailwind's `font-pixel` sets it and `pixel-hegemon` adds the purple ring and
+  glow in CSS. Nothing in the UI uses it yet.
 
 - **2026-10-24, wiki** — **The help icon opens the player wiki.** Tom's call: a wiki of linked
   pages, one per topic, for players and for search traffic, at `/wiki/` on the main domain. The

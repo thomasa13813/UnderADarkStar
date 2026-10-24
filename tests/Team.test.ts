@@ -3,6 +3,7 @@ import {
   Duos,
   Game,
   GameMode,
+  GameType,
   PlayerInfo,
   PlayerType,
 } from "../src/core/game/Game";
@@ -69,6 +70,35 @@ describe("Teams", () => {
     expect(game.player("h2").team()).toBe(ColoredTeams.Blue);
     expect(game.player("h3").team()).toBe(ColoredTeams.Blue);
     expect(game.player("h4").team()).toBe(ColoredTeams.Red);
+  });
+
+  // Under a Dark Star: clans group only in private games; a public game
+  // balances teams on size alone.
+  const clanmate = (name: string) =>
+    new PlayerInfo(name, PlayerType.Human, name, name, false, "CLANA");
+  const fourPlayers = () => [
+    clanmate("c1"),
+    clanmate("c2"),
+    playerInfo("h3", PlayerType.Human),
+    playerInfo("h4", PlayerType.Human),
+  ];
+
+  test("a private game keeps clanmates together", async () => {
+    game = await setup(
+      "plains",
+      { gameMode: GameMode.Team, playerTeams: 2, gameType: GameType.Private },
+      fourPlayers(),
+    );
+    expect(game.player("c1").isOnSameTeam(game.player("c2"))).toBe(true);
+  });
+
+  test("a public game balances clanmates like anyone else", async () => {
+    game = await setup(
+      "plains",
+      { gameMode: GameMode.Team, playerTeams: 2, gameType: GameType.Public },
+      fourPlayers(),
+    );
+    expect(game.player("c1").isOnSameTeam(game.player("c2"))).toBe(false);
   });
 
   // Public lobbies start on their countdown regardless of attendance. These

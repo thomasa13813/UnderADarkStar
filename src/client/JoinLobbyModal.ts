@@ -36,7 +36,12 @@ import { JoinFailedEvent, JoinLobbyEvent } from "./Main";
 import { ensureServerList, redirectToGameVersion } from "./ServerList";
 import { terrainMapFileLoader } from "./TerrainMapFileLoader";
 import { findLobby } from "./ThroneLine";
-import { ClaimSeatEvent, LeaveSeatEvent, SendSpectateEvent } from "./Transport";
+import {
+  ClaimSeatEvent,
+  LeaveSeatEvent,
+  SendSpectateEvent,
+  SendTeamPickEvent,
+} from "./Transport";
 import { normaliseMapKey } from "./Utils";
 import { isReplayShellHost, versionedReplayUrl } from "./VersionedReplay";
 import { BaseModal } from "./components/BaseModal";
@@ -384,6 +389,12 @@ export class JoinLobbyModal extends BaseModal {
                         .teamCount=${this.gameConfig?.playerTeams ?? 2}
                         .isPublicGame=${this.gameConfig?.gameType ===
                         GameType.Public}
+                        .onPickTeam=${this.isPrivateLobby()
+                          ? (teamIndex: number) =>
+                              this.eventBus?.emit(
+                                new SendTeamPickEvent(teamIndex),
+                              )
+                          : undefined}
                         .nationCount=${nationsConfigToSlider(
                           this.gameConfig?.nations ?? "default",
                           this.nationCount,

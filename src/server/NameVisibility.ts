@@ -31,6 +31,10 @@ export interface NameVisibilityView {
   clients: () => ReadonlyMap<ClientID, Client>;
   // The client's pinned matchmade team, or undefined outside one.
   teamIndex: (client: Client) => number | undefined;
+  // The team slot the lobby roster carries for the team preview: the matchmade
+  // pin, or a team picked in a private lobby. A pick reveals no names (the
+  // player chose it; nobody vouched for the team). Defaults to teamIndex.
+  shownTeamIndex?: (client: Client) => number | undefined;
 }
 
 export type LobbyClient = NonNullable<GameInfo["clients"]>[number];
@@ -52,6 +56,10 @@ export class NameVisibility {
       publicId !== undefined &&
       (config.nameRevealPublicIds?.includes(publicId) ?? false)
     );
+  }
+
+  private shownTeamIndex(c: Client): number | undefined {
+    return (this.view.shownTeamIndex ?? this.view.teamIndex)(c);
   }
 
   // Same (viewer, target) -> same name in the lobby and in-game.
@@ -191,7 +199,7 @@ export class NameVisibility {
           clanTag: null,
           clientID: c.clientID,
           spectator: c.spectator || undefined,
-          teamIndex: this.view.teamIndex(c),
+          teamIndex: this.shownTeamIndex(c),
         };
       }
       // A TEAMMATE reveal is deliberately narrower than the others. Seeing a
@@ -209,7 +217,7 @@ export class NameVisibility {
         friends: teammateOnly ? undefined : friendsFor(c),
         verified: c.cosmetics?.verified,
         spectator: c.spectator || undefined,
-        teamIndex: this.view.teamIndex(c),
+        teamIndex: this.shownTeamIndex(c),
       };
     });
   }

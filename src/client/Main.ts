@@ -314,6 +314,12 @@ class Client {
       new FontFace("Overpass", `url(${assetUrl("fonts/overpass-bold.woff")})`, {
         weight: "700",
       }),
+      // The game's own pixel face (2026-10-24), from branding/; --font-pixel
+      // in styles.css. Without it (a fork) the text falls back to Tektur.
+      new FontFace(
+        "DarkStar Pixel",
+        `url(${assetUrl("fonts/darkstar-pixel.woff2")})`,
+      ),
     ];
     for (const font of displayFonts) {
       document.fonts.add(font);

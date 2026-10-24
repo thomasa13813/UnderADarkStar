@@ -12,7 +12,10 @@ import {
   Team,
   Trios,
 } from "../../core/game/Game";
-import { assignTeamsLobbyPreview } from "../../core/game/TeamAssignment";
+import {
+  assignTeamsLobbyPreview,
+  fixedTeamSize,
+} from "../../core/game/TeamAssignment";
 import { UserSettings } from "../../core/game/UserSettings";
 import {
   ClientID,
@@ -30,6 +33,9 @@ import {
 
 export interface TeamPreviewData {
   team: Team;
+  // Position in the team list: what a team pick sends. Absent on the
+  // Humans/Nations pair, which takes no picks.
+  index?: number;
   players: ClientInfo[];
   clanTag?: string | null;
 }
@@ -60,6 +66,9 @@ export class LobbyTeamView extends LitElement {
   @property({ type: Boolean }) anonymizeNames: boolean = false;
   @property({ type: Number }) nationCount: number = 0;
   @property({ type: Boolean }) isPublicGame: boolean = false;
+  // Under a Dark Star: set in private lobbies, where a player clicks a team's
+  // card to join it. Public lobbies always balance teams at the start.
+  @property({ type: Function }) onPickTeam?: (teamIndex: number) => void;
 
   private get theme(): Theme {
     return themeProvider.current();
@@ -110,6 +119,7 @@ export class LobbyTeamView extends LitElement {
       changedProperties.has("teamCount") ||
       changedProperties.has("nationCount") ||
       changedProperties.has("isPublicGame") ||
+      changedProperties.has("onPickTeam") ||
       // The seated player leaves the preview (a seat claim changes no client).
       changedProperties.has("hegemonSeat")
     ) {
@@ -241,6 +251,11 @@ export class LobbyTeamView extends LitElement {
         <div>
           <div class="font-semibold text-gray-200 mb-1 text-sm">
             ${translateText("host_modal.assigned_teams")}
+            ${this.canPickTeams()
+              ? html`<span class="ml-2 text-xs font-normal text-white/50"
+                  >${translateText("host_modal.pick_team_hint")}</span
+                >`
+              : null}
           </div>
           <div class="w-full grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3">
             ${repeat(
@@ -457,13 +472,26 @@ export class LobbyTeamView extends LitElement {
 
     const clanTag = this._teamClanTags.get(preview.team) ?? null;
     const teamLabel = getTranslatedPlayerTeamLabel(preview.team, clanTag);
+    const pick = this.pickState(preview);
 
     return html`
       <div
         class="bg-gray-800 border rounded-xl flex flex-col
           ${this.teamContainsCurrentPlayer(preview)
           ? "border-sky-500/60"
-          : "border-gray-700"}"
+          : "border-gray-700"}
+          ${pick === "open"
+          ? "cursor-pointer hover:border-sky-400 hover:bg-gray-700/60"
+          : ""}"
+        title=${pick === "open"
+          ? translateText("host_modal.pick_team_join")
+          : pick === "full"
+            ? translateText("host_modal.pick_team_full")
+            : ""}
+        role=${pick === "open" ? "button" : ""}
+        @click=${pick === "open"
+          ? () => this.onPickTeam?.(preview.index!)
+          : null}
       >
         <div
           class="px-2 py-1 font-bold flex items-center justify-between text-white rounded-t-xl text-[13px] gap-2 bg-gray-700/70"
@@ -539,9 +567,45 @@ export class LobbyTeamView extends LitElement {
     `;
   }
 
+  // Whether the viewer may click team cards: a private team lobby (onPickTeam
+  // set) with real teams, and the viewer a playing challenger — not watching,
+  // and not on the throne, which is a team of one.
+  private canPickTeams(): boolean {
+    if (this.onPickTeam === undefined || this.gameMode !== GameMode.Team) {
+      return false;
+    }
+    if (this.teamCount === HumansVsNations) return false;
+    if (this.currentClientID === this.hegemonSeat) return false;
+    return this.activePlayers.some((c) => c.clientID === this.currentClientID);
+  }
+
+  // A card the viewer can click ("open"), one already holding the mode's size
+  // in picks ("full", as the server would refuse it), or neither.
+  private pickState(preview: TeamPreviewData): "open" | "full" | "none" {
+    if (preview.index === undefined || !this.canPickTeams()) return "none";
+    const me = this.activePlayers.find(
+      (c) => c.clientID === this.currentClientID,
+    );
+    if (me?.teamIndex === preview.index) return "none";
+    const cap = fixedTeamSize(this.teamCount);
+    if (cap !== undefined) {
+      const picked = this.activePlayers.filter(
+        (c) => c !== me && c.teamIndex === preview.index,
+      ).length;
+      if (picked >= cap) return "full";
+    }
+    return "open";
+  }
+
   private getTeamList(): Team[] {
     if (this.gameMode !== GameMode.Team) return [];
-    const playerCount = this.activePlayers.length + this.effectiveNationCount;
+    // The seated Hegemon is a team of one outside the list (GameImpl
+    // populateTeams), so the count — and with it the Duos/Trios/Quads team
+    // count a pick indexes into — leaves them out.
+    const challengers = this.activePlayers.filter(
+      (c) => c.clientID !== this.hegemonSeat,
+    ).length;
+    const playerCount = challengers + this.effectiveNationCount;
     const config = this.teamCount;
 
     if (config === HumansVsNations) {
@@ -628,6 +692,8 @@ export class LobbyTeamView extends LitElement {
       teams,
       this.teamCount,
       this.effectiveNationCount,
+      // Public games balance on size alone (GameImpl.addPlayers).
+      !this.isPublicGame,
     );
     const buckets = new Map<Team, ClientInfo[]>();
     for (const t of teams) buckets.set(t, []);
@@ -656,8 +722,9 @@ export class LobbyTeamView extends LitElement {
         ),
       );
     }
-    this.teamPreview = teams.map((t) => ({
+    this.teamPreview = teams.map((t, i) => ({
       team: t,
+      index: i,
       players: buckets.get(t) ?? [],
     }));
     this.triggerClanUpdate();

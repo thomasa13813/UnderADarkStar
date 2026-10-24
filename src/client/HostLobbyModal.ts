@@ -38,6 +38,7 @@ import "./components/ToggleInputCard";
 import { modalHeader } from "./components/ui/ModalHeader";
 import { JoinFailedEvent, JoinLobbyEvent } from "./Main";
 import { terrainMapFileLoader } from "./TerrainMapFileLoader";
+import { SendTeamPickEvent } from "./Transport";
 import {
   getBotsForCompactMap,
   getNationsForCompactMap,
@@ -661,6 +662,8 @@ export class HostLobbyModal extends BaseModal {
               this.toggleNameReveal(clientID)}
             .nameReveals=${this.nameReveals}
             .anonymizeNames=${this.anonymizeNames}
+            .onPickTeam=${(teamIndex: number) =>
+              this.eventBus?.emit(new SendTeamPickEvent(teamIndex))}
           ></lobby-player-view>
         </div>
 

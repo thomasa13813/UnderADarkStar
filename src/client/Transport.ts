@@ -30,6 +30,7 @@ import {
   ClientSendLiveStatsMessage,
   ClientSendWinnerMessage,
   ClientSpectateMessage,
+  ClientTeamPickMessage,
   ClientThronePickMessage,
   GameConfig,
   Intent,
@@ -288,6 +289,12 @@ export class SendSpectateEvent implements GameEvent {
   constructor(public readonly spectator: boolean) {}
 }
 
+// Join a team from a private team lobby by clicking its card (an index into
+// the game's team list).
+export class SendTeamPickEvent implements GameEvent {
+  constructor(public readonly teamIndex: number) {}
+}
+
 export class Transport {
   // Retry budget for a dropped game socket. The first retry is immediate (a
   // blip should not cost a second), then exponential from the base to the
@@ -442,6 +449,12 @@ export class Transport {
         type: "spectate",
         spectator: e.spectator,
       } satisfies ClientSpectateMessage);
+    });
+    this.subscribe(SendTeamPickEvent, (e) => {
+      this.sendMsg({
+        type: "team_pick",
+        teamIndex: e.teamIndex,
+      } satisfies ClientTeamPickMessage);
     });
   }
 

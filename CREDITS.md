@@ -22,8 +22,10 @@ open licence and are not in this repository. See [LICENSING.md](LICENSING.md).
 
 ## Under a Dark Star
 
-- **Branding** (name, wordmark, logo, favicon; `branding/`): © January Games,
-  all rights reserved. See [branding/LICENSE](branding/LICENSE). The January
+- **Branding** (name, wordmark, logo, favicon, the menu buttons and the
+  DarkStar Pixel font; `branding/`): © January Games, all rights reserved.
+  See [branding/LICENSE](branding/LICENSE). The pixel font's glyphs were drawn
+  with Claude, Anthropic's AI model, at January Games' direction. The January
   Games wordmark in the footer (`branding/images/JanuaryGamesWordmark*.svg`)
   is an AI-generated placeholder mark, kept until a final studio logo is made.
 - **Audio of our own:** the five soundtrack tracks in `resources/sounds/music/`

@@ -24,3 +24,5 @@ If you distribute a modified version of this software, replace the contents
 of this directory with your own branding. The build works without it: every
 file here overrides a same-named file in `resources/`, and nothing in the
 code requires a file that exists only here except `images/Favicon.svg`.
+Without `fonts/darkstar-pixel.woff2`, text set in the pixel font falls back
+to Tektur.

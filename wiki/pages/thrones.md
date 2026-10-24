@@ -24,6 +24,8 @@ the winner keeps the throne.
 ## The seat
 
 - An open seat is first come, first served: claim it in the lobby, or give it up before the start.
+- On a team throne the teams are balanced at the start, on numbers alone: you cannot choose your
+  team, and clans and friends are not grouped.
 - If nobody holds it, the AI Hegemon plays.
 - A round needs two humans to start, the Hegemon included.
 
@@ -47,3 +49,7 @@ Eliminated before the end, you may join the head at once.
 
 In a private lobby the creator seats the Hegemon by clicking a player's crown. **New Lobby** from
 the win screen carries the settings over and seats the winner as they arrive.
+
+In a private team lobby, click a team's card to join that team. In Duos, Trios and Quads a full
+team takes no more players. Anyone who doesn't pick is placed at the start, with clanmates kept
+together and friends grouped where possible. Lords fill the places left over.

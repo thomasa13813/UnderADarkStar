@@ -17,14 +17,18 @@ export function assignTeams(
   teams: Team[],
   isDuosTriosQuads: boolean,
   maxTeamSize: number = getMaxTeamSize(players.length, teams.length),
+  // Under a Dark Star: public games balance teams on size alone; clan and
+  // friend grouping is a private-lobby courtesy (gameType !== Public).
+  groupByClanAndFriends: boolean = true,
 ): Map<PlayerInfo, Team | "kicked"> {
   const result = new Map<PlayerInfo, Team | "kicked">();
   const teamPlayerCount = new Map<Team, number>();
 
-  // Matchmade games arrive with a server-pinned team slot (teamIndex). The
-  // matchmaker already balanced those teams, so pins are honored
-  // unconditionally — before and regardless of clan/friend grouping and
-  // maxTeamSize — and seed the counts the balancing below sees.
+  // A pinned team slot (teamIndex) comes from the server: a matchmade game's
+  // balanced teams, or a team the player clicked in a private lobby (the
+  // server caps those at the mode's size). Pins are honored unconditionally —
+  // before and regardless of clan/friend grouping and maxTeamSize — and seed
+  // the counts the balancing below sees.
   const unpinned: PlayerInfo[] = [];
   for (const p of players) {
     const pinnedTeam = p.teamIndex === null ? undefined : teams[p.teamIndex];
@@ -42,7 +46,7 @@ export function assignTeams(
   const clanGroups = new Map<string, PlayerInfo[]>();
   const nonClanPlayers: PlayerInfo[] = [];
   for (const p of unpinned) {
-    if (p.clanTag) {
+    if (groupByClanAndFriends && p.clanTag) {
       if (!clanGroups.has(p.clanTag)) clanGroups.set(p.clanTag, []);
       clanGroups.get(p.clanTag)!.push(p);
     } else {
@@ -93,7 +97,7 @@ export function assignTeams(
     s.add(b);
   };
   for (const p of players) {
-    if (p.clientID === null) continue;
+    if (!groupByClanAndFriends || p.clientID === null) continue;
     for (const friendID of p.friends) {
       if (!presentClientIDs.has(friendID)) continue;
       addEdge(p.clientID, friendID);
@@ -165,6 +169,7 @@ export function assignTeamsLobbyPreview(
   teams: Team[],
   teamCount: TeamCountConfig,
   nationCount: number,
+  groupByClanAndFriends: boolean = true,
 ): Map<PlayerInfo, Team | "kicked"> {
   const maxTeamSize = getMaxTeamSize(
     players.length + nationCount,
@@ -175,7 +180,18 @@ export function assignTeamsLobbyPreview(
     teams,
     teamCount === Duos || teamCount === Trios || teamCount === Quads,
     maxTeamSize,
+    groupByClanAndFriends,
   );
+}
+
+// Under a Dark Star: the fixed team size of Duos/Trios/Quads, the cap a
+// private-lobby team pick may not exceed. Undefined for modes that set a team
+// COUNT instead (2 teams, 3 teams...), whose sizes follow attendance.
+export function fixedTeamSize(config: TeamCountConfig): number | undefined {
+  if (config === Duos) return 2;
+  if (config === Trios) return 3;
+  if (config === Quads) return 4;
+  return undefined;
 }
 
 export function getMaxTeamSize(numPlayers: number, numTeams: number): number {

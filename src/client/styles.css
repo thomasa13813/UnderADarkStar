@@ -16,6 +16,11 @@
      text falls through to the system face, not to Overpass, which is only
      loaded in bold. */
   --font-sans: "Tektur", ui-sans-serif, system-ui, sans-serif;
+  /* DarkStar Pixel, the game's own face (2026-10-24): the lettering of the
+     title and buttons, from branding/fonts/, loaded in Main.ts. ASCII only,
+     lowercase drawn as capitals; anything else falls through to Tektur. One
+     pixel is 1/12 em, so it is crisp at 12px, 24px, 36px, 48px... */
+  --font-pixel: "DarkStar Pixel", "Tektur", ui-sans-serif, sans-serif;
 
   /* Palette inherited from upstream; P2 replaces it with the deep-space set. */
   --color-malibu-blue: #0084d1;
@@ -165,6 +170,33 @@ body.page-open {
 ::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.2);
   border-radius: 4px;
+}
+
+/* The title's lettering in CSS: near-black DarkStar Pixel letters in a purple
+   ring (light at the top, deep at the bottom), a dark outer ring and a soft
+   glow, as in branding/images/btn-*.svg. Pair with font-pixel. The offsets
+   are half a pixel and 0.9 of one (1/12 em each), as the SVG strokes are. */
+@utility pixel-hegemon {
+  color: #050308;
+  text-shadow:
+    0 -0.042em #c084fc,
+    -0.042em -0.042em #c084fc,
+    0.042em -0.042em #c084fc,
+    -0.042em 0 #a855f7,
+    0.042em 0 #a855f7,
+    -0.042em 0.042em #7c3aed,
+    0 0.042em #7c3aed,
+    0.042em 0.042em #7c3aed,
+    0 -0.075em #3b0764,
+    -0.075em -0.075em #3b0764,
+    0.075em -0.075em #3b0764,
+    -0.075em 0 #3b0764,
+    0.075em 0 #3b0764,
+    -0.075em 0.075em #3b0764,
+    0 0.075em #3b0764,
+    0.075em 0.075em #3b0764,
+    0 0 0.1em rgb(168 85 247 / 0.6),
+    0 0 0.2em rgb(168 85 247 / 0.5);
 }
 
 .hide-scrollbar {
