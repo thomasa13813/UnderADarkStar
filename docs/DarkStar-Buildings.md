@@ -302,7 +302,10 @@ Not a building, but every one is supported by an Industrial Zone.
 - **Only defence:** Armies never attack and never help an attack of yours.
 - **Losing one:** an Army has no health. It is lost when the tile under it is taken (nobody
   captures it) or a warhead hits it.
-- **Hotkey:** 0.
+- **Newsfeed:** every hit is reported to both sides: you see how many attacking troops your
+  Army's shot killed, the attacker how many they lost.
+- **Look and hotkey:** on the map a pixel star in your colours; in the build bar three rank
+  chevrons, hotkey 0.
 
 ## 4. Income compared
 

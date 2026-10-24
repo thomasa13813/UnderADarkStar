@@ -98,6 +98,18 @@ Notes for Tom, not decisions.
 
 ## 3. Changelog
 
+- **2026-10-23** — Army look and newsfeed (Tom).
+  - **Map sprite:** a pixel star in the destroyer's banding: territory-colour rim, border-colour
+    body, centre accent. It is 11 px like the destroyer, with its bounding box centred so it sits
+    in the middle of the selection box.
+  - **Icon:** the hotbar, menu and help icon is three rank chevrons (`ArmyIconWhite.svg`).
+  - **Newsfeed:** each hit messages the owner (`events_display.army_hit`) and the attacker
+    (`army_hit_taken`).
+  - **Fixed:** a duplicate `UT_ARMY` in `UnitPass.UNIT_ORDER` (and a stray entry in
+    `MISSILE_TYPES`) made the shader split the atlas into 15 columns instead of 14. Every unit
+    sprite was sampled off by a fraction of a cell: armies drew as the projectile glyph, and
+    destroyers sat beside their selection box. `tests/client/render/gl/UnitAtlasOrder.test.ts` now
+    pins the column count to the atlas.
 - **2026-10-23** — Armies and fleet support (Tom).
   - Each spaceport level supports one Destroyer, and each Industrial Zone level one Army. Losing
     support disbands nothing.

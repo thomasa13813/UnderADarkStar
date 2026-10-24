@@ -75,7 +75,7 @@ const unitAtlasUrl = assetUrl("atlases/unit-atlas.png");
  *  they don't match header.unitTypes directly. Train resolution is
  *  handled specially in updateUnits() via trainType + loaded fields.
  */
-const UNIT_ORDER = [
+export const UNIT_ORDER = [
   UT_TRANSPORT,
   UT_TRADE_SHIP,
   UT_WARSHIP,
@@ -89,7 +89,6 @@ const UNIT_ORDER = [
   "TrainCarriage",
   "TrainCarriageLoaded",
   UT_PROJECTILE,
-  UT_ARMY,
   UT_ARMY,
 ] as const;
 
@@ -157,7 +156,6 @@ const MISSILE_TYPES: ReadonlySet<string> = new Set([
   UT_SHELL,
   UT_MIRV_WARHEAD,
   UT_PROJECTILE,
-  UT_ARMY,
 ]);
 
 /** Values per smoothing segment in the flat `smoothSegs` array:

@@ -399,7 +399,10 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   - **Losing it.** It has no health: it is lost when its tile is taken, or to a warhead.
   - **Lords** (not Easy) send their armies to a land attack's front and deploy one there when
     supported.
-  - **Its look.** A pixel-star sprite and icon, hotkey 0.
+  - **Its look.** On the map, a pixel star in the destroyer's banding; in the build bar and menus,
+    three rank chevrons; hotkey 0.
+  - **The newsfeed.** Each hit is reported to the army's owner (troops killed) and to the attacker
+    (troops lost).
   - Numbers in `ARMY_DEFAULTS` and `UNIT_SUPPORT_DEFAULTS`; player rules in
     `docs/DarkStar-Buildings.md` §3.8.
 

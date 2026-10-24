@@ -382,6 +382,8 @@
     "alliance_renewed": "Your alliance with {name} has been renewed",
     "alliance_request_sent": "Alliance request sent to {name}.",
     "alliance_request_status": "{name} {status} your alliance request",
+    "army_hit": "Your army's shot killed {troops} of {name}'s attacking troops",
+    "army_hit_taken": "{name}'s army killed {troops} of your attacking troops",
     "atom_bomb_detonated": "{name} - nuclear warhead detonated",
     "attack_cancelled_retreat": "Attack cancelled, {troops} soldiers killed during retreat",
     "attack_request": "{name} requests you attack {target}",

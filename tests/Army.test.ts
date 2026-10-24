@@ -1,3 +1,4 @@
+import { vi } from "vitest";
 import { ConstructionExecution } from "../src/core/execution/ConstructionExecution";
 import { MoveWarshipExecution } from "../src/core/execution/MoveWarshipExecution";
 import { NationStructureBehavior } from "../src/core/execution/nation/NationStructureBehavior";
@@ -122,6 +123,27 @@ describe("Armies on big_plains", () => {
     expect(attack.troops()).toBe(95_000);
     executeTicks(game, 60);
     expect(attack.troops()).toBe(90_250);
+  });
+
+  test("a hit is reported to both sides in the newsfeed", () => {
+    build(defender, UnitType.Factory, game.ref(90, 30));
+    const army = deployArmy(game.ref(90, 30));
+    const attack = attacker.createAttack(defender, 100_000, null, new Set());
+    attack.addBorderTile(game.ref(99, 30));
+    const spy = vi.spyOn(game, "displayMessage");
+    executeTicks(game, 22);
+    const calls = spy.mock.calls.filter(([key]) =>
+      String(key).startsWith("events_display.army_hit"),
+    );
+    expect(calls).toHaveLength(2);
+    const [mine, theirs] = calls;
+    expect(mine[0]).toBe("events_display.army_hit");
+    expect(mine[2]).toBe(defender.id());
+    expect(mine[4]).toEqual({ troops: "500", name: attacker.displayName() });
+    expect(mine[5]).toBe(army.id());
+    expect(theirs[0]).toBe("events_display.army_hit_taken");
+    expect(theirs[2]).toBe(attacker.id());
+    expect(theirs[4]).toEqual({ troops: "500", name: defender.displayName() });
   });
 
   test("it does not fire at an attack beyond its reach", () => {

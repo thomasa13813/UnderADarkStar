@@ -1,7 +1,9 @@
+import { renderTroops } from "../../client/Utils";
 import {
   Attack,
   Execution,
   Game,
+  MessageType,
   OwnerComp,
   Player,
   Unit,
@@ -98,7 +100,13 @@ export class ArmyExecution implements Execution {
     if (bestTile === null || bestAttack === null) return;
     this.lastShotTick = ticks;
     this.mg.addExecution(
-      new ArmyShotExecution(owner, army.tile(), bestTile, bestAttack),
+      new ArmyShotExecution(
+        owner,
+        army.tile(),
+        bestTile,
+        bestAttack,
+        army.id(),
+      ),
     );
   }
 
@@ -244,6 +252,7 @@ export class ArmyShotExecution implements Execution {
     private from: TileRef,
     private target: TileRef,
     private attack: Attack,
+    private armyID: number,
   ) {}
 
   init(mg: Game, _ticks: number): void {
@@ -266,9 +275,26 @@ export class ArmyShotExecution implements Execution {
     if (!attack.isActive() || attack.retreating()) return;
     const percent = this.mg.config().armyConfig().casualtyPercent;
     const deaths = Math.floor((attack.troops() * percent) / 100);
-    if (deaths > 0) {
-      attack.setTroops(attack.troops() - deaths);
-    }
+    if (deaths <= 0) return;
+    attack.setTroops(attack.troops() - deaths);
+    // The newsfeed: the army's owner hears what it killed, the attacker what
+    // it lost.
+    const troops = renderTroops(deaths);
+    this.mg.displayMessage(
+      "events_display.army_hit",
+      MessageType.SAM_HIT,
+      this.owner.id(),
+      undefined,
+      { troops, name: attack.attacker().displayName() },
+      this.armyID,
+    );
+    this.mg.displayMessage(
+      "events_display.army_hit_taken",
+      MessageType.UNIT_DESTROYED,
+      attack.attacker().id(),
+      undefined,
+      { troops, name: this.owner.displayName() },
+    );
   }
 
   isActive(): boolean {
