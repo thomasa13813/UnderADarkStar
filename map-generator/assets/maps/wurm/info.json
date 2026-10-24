@@ -1,0 +1,140 @@
+{
+  "id": "Wurm",
+  "name": "Wurm",
+  "translation_key": "map.wurm",
+  "categories": ["cosmic"],
+  "multiplayer_frequency": 4,
+  "themes": ["space"],
+  "hegemon": {
+    "center": [3500, 480],
+    "radius": 116,
+    "moat": 15
+  },
+  "nations": [
+    {
+      "coordinates": [2310, 715],
+      "name": "Jacobian Dynasty",
+      "flag": ""
+    },
+    {
+      "coordinates": [1790, 795],
+      "name": "Gienah Ascendancy",
+      "flag": ""
+    },
+    {
+      "coordinates": [2515, 630],
+      "name": "Finks Federation",
+      "flag": ""
+    },
+    {
+      "coordinates": [1485, 720],
+      "name": "Fomalhaut Collective",
+      "flag": ""
+    },
+    {
+      "coordinates": [2790, 545],
+      "name": "Orion Ascendancy",
+      "flag": ""
+    },
+    {
+      "coordinates": [2010, 610],
+      "name": "Beardenian Tribal Council",
+      "flag": ""
+    },
+    {
+      "coordinates": [1335, 645],
+      "name": "Gresdesselen Union",
+      "flag": ""
+    },
+    {
+      "coordinates": [1795, 575],
+      "name": "Tau Ceti Protectorate",
+      "flag": ""
+    },
+    {
+      "coordinates": [365, 560],
+      "name": "Perlbergian Worlds",
+      "flag": ""
+    },
+    {
+      "coordinates": [845, 545],
+      "name": "Harbekkan Concord",
+      "flag": ""
+    },
+    {
+      "coordinates": [160, 560],
+      "name": "Achernar Authority",
+      "flag": ""
+    },
+    {
+      "coordinates": [1025, 525],
+      "name": "Argent Hive",
+      "flag": ""
+    },
+    {
+      "coordinates": [555, 460],
+      "name": "Spica Mandate",
+      "flag": ""
+    },
+    {
+      "coordinates": [1615, 455],
+      "name": "Orlo Council",
+      "flag": ""
+    },
+    {
+      "coordinates": [2180, 455],
+      "name": "Zosma Combine",
+      "flag": ""
+    },
+    {
+      "coordinates": [1175, 425],
+      "name": "Merak Dominion",
+      "flag": ""
+    },
+    {
+      "coordinates": [750, 370],
+      "name": "Capella Republic",
+      "flag": ""
+    },
+    {
+      "coordinates": [1425, 360],
+      "name": "Mira Collective",
+      "flag": ""
+    },
+    {
+      "coordinates": [970, 320],
+      "name": "Lyra Reach",
+      "flag": ""
+    },
+    {
+      "coordinates": [1990, 375],
+      "name": "Alcyone Confederation",
+      "flag": ""
+    },
+    {
+      "coordinates": [2610, 405],
+      "name": "Andromeda Commonwealth",
+      "flag": ""
+    },
+    {
+      "coordinates": [2380, 370],
+      "name": "The Beyrellean Guild",
+      "flag": ""
+    },
+    {
+      "coordinates": [1250, 205],
+      "name": "Tarazed Concord",
+      "flag": ""
+    },
+    {
+      "coordinates": [2835, 260],
+      "name": "Bohlandian Autocracy",
+      "flag": ""
+    },
+    {
+      "coordinates": [2650, 190],
+      "name": "Killbot-7",
+      "flag": ""
+    }
+  ]
+}

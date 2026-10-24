@@ -19,6 +19,11 @@ import { styledSelect } from "./ui/StyledSelect";
 // to the full page (<leaderboard-modal>, the top 100). Read on load, again on
 // a return home once the API's minute of caching has passed, and whenever the
 // account changes.
+//
+// Every word is set in DarkStar Pixel (Tom, 2026-10-24), the title in the
+// pixel-art buttons' purple ring. The face has no bold, so emphasis is by
+// colour alone, and sizes stay at 12px or 24px, where its pixels land on
+// the screen's.
 
 export const PANEL_ROWS = 10;
 export const PANEL_REFRESH_MS = 60_000;
@@ -99,14 +104,14 @@ export class LeaderboardPanel extends LitElement {
     const sort = this.sort;
     return html`
       <section
-        class="flex flex-col gap-3 h-full bg-surface/80 border-y border-white/10 px-3 py-3 sm:rounded-xl sm:border"
+        class="flex flex-col gap-3 h-full font-pixel text-[12px] bg-surface/80 border-y border-white/10 px-3 py-3 sm:rounded-xl sm:border"
         aria-labelledby="leaderboard-panel-title"
         data-sort=${sort}
       >
         <div class="flex flex-wrap items-center justify-between gap-2">
           <h2
             id="leaderboard-panel-title"
-            class="font-display text-lg font-bold uppercase tracking-[0.12em] text-malibu-blue"
+            class="pixel-hegemon text-[24px] leading-none uppercase"
           >
             ${translateText("leaderboard.title")}
           </h2>
@@ -124,7 +129,7 @@ export class LeaderboardPanel extends LitElement {
         ${this.renderList(sort, this.lists[sort])}
         <button
           type="button"
-          class="mt-auto w-full rounded-lg border border-white/10 bg-white/[0.04] py-2 text-xs font-bold uppercase tracking-widest text-white/70 transition-colors hover:border-purple-500/50 hover:bg-purple-500/15 hover:text-white"
+          class="mt-auto w-full rounded-lg border border-white/10 bg-white/[0.04] py-2 uppercase text-white/70 transition-colors hover:border-purple-500/50 hover:bg-purple-500/15 hover:text-white"
           data-panel-full
           @click=${() => this.openFullPage()}
         >
@@ -147,9 +152,7 @@ export class LeaderboardPanel extends LitElement {
         class="flex flex-col items-center gap-3 py-6 text-center"
         data-panel-error
       >
-        <p class="text-xs text-white/60">
-          ${translateText("leaderboard.unavailable")}
-        </p>
+        <p class="text-white/60">${translateText("leaderboard.unavailable")}</p>
         <o-button
           variant="secondary"
           size="sm"
@@ -165,22 +168,16 @@ export class LeaderboardPanel extends LitElement {
     const pinned = me !== null && me.rank !== null && !listed;
     return html`
       ${top.length === 0
-        ? html`<p
-            class="py-6 text-center text-xs text-white/50"
-            data-panel-empty
-          >
+        ? html`<p class="py-6 text-center text-white/50" data-panel-empty>
             ${translateText("leaderboard.empty")}
           </p>`
         : this.renderTable(sort, top, me?.publicId ?? null, pinned ? me : null)}
       ${me === null
-        ? html`<p class="text-center text-xs text-white/50" data-panel-guest>
+        ? html`<p class="text-center text-white/50" data-panel-guest>
             ${translateText("leaderboard.sign_in_hint")}
           </p>`
         : me.rank === null
-          ? html`<p
-              class="text-center text-xs text-white/50"
-              data-panel-unranked
-            >
+          ? html`<p class="text-center text-white/50" data-panel-unranked>
               ${translateText("leaderboard.unranked", { name: me.username })}
             </p>`
           : nothing}
@@ -198,20 +195,20 @@ export class LeaderboardPanel extends LitElement {
     const heading = (key: LeaderboardSort) =>
       key === sort ? "text-white/80" : "";
     return html`
-      <table class="w-full table-fixed border-collapse text-sm" data-panel-list>
+      <table class="w-full table-fixed border-collapse" data-panel-list>
         <thead>
           <tr
-            class="align-bottom text-[10px] uppercase leading-tight tracking-wide text-white/40 [&>th]:px-1 [&>th]:py-1 [&>th]:font-bold"
+            class="align-bottom uppercase leading-tight text-white/40 [&>th]:px-1 [&>th]:py-1 [&>th]:font-normal"
           >
             <th class="w-8 text-right">#</th>
             <th class="text-left">${translateText("leaderboard.player")}</th>
-            <th class="w-16 text-right ${heading("victories")}">
+            <th class="w-[84px] text-right ${heading("victories")}">
               ${translateText("leaderboard.col_victories")}
             </th>
-            <th class="w-12 text-right ${heading("reigns")}">
+            <th class="w-[60px] text-right ${heading("reigns")}">
               ${translateText("leaderboard.col_reigns")}
             </th>
-            <th class="w-14 text-right ${heading("longest")}">
+            <th class="w-[72px] text-right ${heading("longest")}">
               ${translateText("leaderboard.col_longest")}
             </th>
           </tr>
@@ -248,7 +245,7 @@ export class LeaderboardPanel extends LitElement {
             ? "text-amber-600"
             : "text-white/50";
     const figure = (key: LeaderboardSort) =>
-      key === sort ? "font-semibold text-white" : "text-white/70";
+      key === sort ? "text-white" : "text-white/70";
     return html`
       <tr
         class="border-t border-white/5 [&>td]:px-1 [&>td]:py-1.5 ${mine
@@ -258,27 +255,37 @@ export class LeaderboardPanel extends LitElement {
         ?data-mine=${mine}
         ?data-pinned=${pinned}
       >
-        <td class="text-right font-bold tabular-nums ${medal}">
-          ${entry.rank}
+        <td class="text-right tabular-nums ${medal}">${entry.rank}</td>
+        <td>
+          <!-- A long name gives way, the "you" tag never does. -->
+          <div class="flex min-w-0 items-center">
+            <span class="truncate ${mine ? "text-white" : "text-white/90"}"
+              >${entry.username}</span
+            >
+            ${mine
+              ? html`<span
+                  class="ml-1 shrink-0 rounded bg-malibu-blue/30 px-1 py-0.5 uppercase text-white"
+                  >${translateText("leaderboard.you")}</span
+                >`
+              : nothing}
+          </div>
         </td>
-        <td class="truncate">
-          <span class=${mine ? "text-white" : "text-white/90"}
-            >${entry.username}</span
-          >
-          ${mine
-            ? html`<span
-                class="ml-1 rounded bg-malibu-blue/30 px-1 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white"
-                >${translateText("leaderboard.you")}</span
-              >`
-            : nothing}
-        </td>
-        <td class="text-right tabular-nums ${figure("victories")}">
+        <td
+          class="text-right tabular-nums ${figure("victories")}"
+          ?data-sorted=${sort === "victories"}
+        >
           ${entry.victories}
         </td>
-        <td class="text-right tabular-nums ${figure("reigns")}">
+        <td
+          class="text-right tabular-nums ${figure("reigns")}"
+          ?data-sorted=${sort === "reigns"}
+        >
           ${entry.reigns}
         </td>
-        <td class="text-right tabular-nums ${figure("longest")}">
+        <td
+          class="text-right tabular-nums ${figure("longest")}"
+          ?data-sorted=${sort === "longest"}
+        >
           ${entry.longestReign}
         </td>
       </tr>

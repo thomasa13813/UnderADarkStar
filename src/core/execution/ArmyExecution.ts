@@ -265,6 +265,12 @@ export class ArmyShotExecution implements Execution {
 
   tick(_ticks: number): void {
     if (this.done || this.shell === null) return;
+    // The shell can go before it lands (its owner eliminated, a warhead);
+    // the shot goes with it.
+    if (!this.shell.isActive()) {
+      this.done = true;
+      return;
+    }
     const speed = this.mg.config().armyConfig().shotSpeed;
     this.step = Math.min(this.line.length - 1, this.step + speed);
     this.shell.move(this.line[this.step]);

@@ -143,7 +143,7 @@ describe("the home-page leaderboard panel", () => {
       figures: ["1", "9", "4"],
     });
     const emphasised = panel.querySelector(
-      "tbody tr td:nth-child(4).font-semibold",
+      "tbody tr td:nth-child(4)[data-sorted]",
     );
     expect(emphasised?.textContent?.trim()).toBe("9");
     chooseSort("victories");

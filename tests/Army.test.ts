@@ -1,4 +1,5 @@
 import { vi } from "vitest";
+import { ArmyShotExecution } from "../src/core/execution/ArmyExecution";
 import { ConstructionExecution } from "../src/core/execution/ConstructionExecution";
 import { MoveWarshipExecution } from "../src/core/execution/MoveWarshipExecution";
 import { NationStructureBehavior } from "../src/core/execution/nation/NationStructureBehavior";
@@ -155,6 +156,27 @@ describe("Armies on big_plains", () => {
     const attack = attacker.createAttack(defender, 100_000, null, new Set());
     attack.addBorderTile(game.ref(99, 30));
     executeTicks(game, 40);
+    expect(attack.troops()).toBe(100_000);
+  });
+
+  test("a shot whose shell is gone before it lands does nothing", () => {
+    const attack = attacker.createAttack(defender, 100_000, null, new Set());
+    attack.addBorderTile(game.ref(99, 30));
+    game.addExecution(
+      new ArmyShotExecution(
+        defender,
+        game.ref(10, 30),
+        game.ref(99, 30),
+        attack,
+        0,
+      ),
+    );
+    executeTicks(game, 2);
+    const shell = defender.units(UnitType.Shell)[0];
+    expect(shell.isActive()).toBe(true);
+    // As when its owner is eliminated mid-flight.
+    shell.delete(false);
+    expect(() => executeTicks(game, 40)).not.toThrow();
     expect(attack.troops()).toBe(100_000);
   });
 

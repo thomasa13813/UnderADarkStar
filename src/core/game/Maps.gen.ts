@@ -24,6 +24,7 @@ export enum GameMapType {
   Standoff = "Standoff", // map-generator/assets/maps/standoff/info.json
   TradersDream = "Traders Dream", // map-generator/assets/maps/tradersdream/info.json
   WarshipWarship = "Warship Warship", // map-generator/assets/maps/warshipwarship/info.json
+  Wurm = "Wurm", // map-generator/assets/maps/wurm/info.json
 }
 
 export type GameMapName = keyof typeof GameMapType;
@@ -420,5 +421,17 @@ export const maps: readonly MapInfo[] = [
     teamFrequency: 6,
     specialFrequency: -1,
     defaultNationCount: 10,
+  },
+  {
+    id: "Wurm",
+    type: GameMapType.Wurm,
+    translationKey: "map.wurm",
+    categories: ["cosmic"],
+    multiplayerFrequency: 4,
+    ffaFrequency: -1,
+    teamFrequency: -1,
+    specialFrequency: -1,
+    defaultNationCount: 25,
+    themes: ["space"],
   },
 ];
