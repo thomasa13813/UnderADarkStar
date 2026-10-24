@@ -405,7 +405,7 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
     patrols inside the owner's territory, never crosses deep space, and is moved like a destroyer.
   - **Its shot.** When the front of **any** land attack on its owner comes within range (the
     Hegemon's strikes included), it fires a shot over the nebula. A shot that lands while the
-    attack still stands kills **5%** of the attack's troops; it fires once per cooldown.
+    attack still stands kills **10%** of the attack's troops; it fires once per cooldown.
   - **What it never does.** It never attacks and never helps an attack.
   - **Losing it.** It has no health: it is lost when its tile is taken, or to a warhead.
   - **Lords** (not Easy) send their armies to a land attack's front and deploy one there when
@@ -2175,6 +2175,10 @@ hydrogen-bomb removal (closed by S6).
 | **Intent / Turn / Execution** | Player action → server-bundled tick of intents → deterministic sim object that applies it.                                                                                                           |
 
 ## 11. Changelog
+
+- **2026-10-24, army buff** — **An army's hit now kills 10% of the attack's troops** (was 5%).
+  Tom's call: 5% felt too anemic to make the unit attractive. `ARMY_DEFAULTS.casualtyPercent`, the
+  build menu and help text, the buildings reference and the army tests updated.
 
 - **2026-10-23, homeland** — **H20: an invader must keep a homeland.** Tom's call, from play: an
   invader whose every nebula beyond the moat was taken lived on, regenerating troops, on its Dark

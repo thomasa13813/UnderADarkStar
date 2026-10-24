@@ -296,7 +296,7 @@ Not a building, but every one is supported by an Industrial Zone.
   space.
 - **Firing:** when the front of an attack on you comes within 40 tiles, an Army fires a shot over
   the nebula, at most once every 10 seconds. If the attack is still going when the shot lands,
-  **5% of its troops die**. Several Armies each fire their own shots. Every land attack counts:
+  **10% of its troops die**. Several Armies each fire their own shots. Every land attack counts:
   players, Lords, Barons, fleets and Stargate shots once they have landed, and the Hegemon's
   strikes.
 - **Only defence:** Armies never attack and never help an attack of yours.

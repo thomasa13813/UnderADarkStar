@@ -347,7 +347,7 @@ export const ARMY_DEFAULTS = {
   // Tiles a shot flies per tick.
   shotSpeed: 3,
   // Percent of the attack's current troops a landed shot kills.
-  casualtyPercent: 5,
+  casualtyPercent: 10,
 };
 
 // Piracy (docs/DarkStar-Piracy.md, PR1–PR18): an eliminated challenger stays

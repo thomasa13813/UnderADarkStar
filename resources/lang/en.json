@@ -33,7 +33,7 @@
   },
   "build_menu": {
     "desc": {
-      "army": "Patrols your nebula and shoots at incoming attacks; each hit kills 5% of the attacking troops. One per Industrial Zone level",
+      "army": "Patrols your nebula and shoots at incoming attacks; each hit kills 10% of the attacking troops. One per Industrial Zone level",
       "atom_bomb": "Small explosion",
       "city": "Increases max population",
       "defense_post": "Increases defenses of nearby borders",
@@ -650,7 +650,7 @@
     "ally_donate": "Donate some of your troops to your ally. Used when they're low on troops and are being attacked, or when they need that extra power to crush an enemy.",
     "ally_donate_gold": "Donate some of your gold to your ally. Used when they're low on gold and need it for buildings, or when your team member is saving for a Stargate or a warhead.",
     "bomb_direction": "Nuclear / Antimatter warhead arc direction",
-    "build_army_desc": "A defensive unit that patrols your own nebula. When the front of an enemy attack on you comes within 40 tiles, it fires a shot every 10 seconds; each shot that reaches the front kills 5% of the attacking troops. It never attacks, cannot leave your territory or cross deep space, and is lost if the ground under it is taken or a warhead hits it. Each Industrial Zone level supports one Army. Deploy one by clicking your nebula: it sets out from your nearest Industrial Zone. Click an Army to select it (Shift-drag to select several), then click your nebula to send it there.",
+    "build_army_desc": "A defensive unit that patrols your own nebula. When the front of an enemy attack on you comes within 40 tiles, it fires a shot every 10 seconds; each shot that reaches the front kills 10% of the attacking troops. It never attacks, cannot leave your territory or cross deep space, and is lost if the ground under it is taken or a warhead hits it. Each Industrial Zone level supports one Army. Deploy one by clicking your nebula: it sets out from your nearest Industrial Zone. Click an Army to select it (Shift-drag to select several), then click your nebula to send it there.",
     "build_atom_desc": "Small explosive bomb that destroys territory, buildings, ships and fleets. Spawns from the nearest ready Stargate with the target in range (the Hegemon fires it from the Dark Star itself) and lands in the area you first clicked to build it. It cannot harm anything inside another player's Shield Array, though it still clears the ground around it.",
     "build_city_desc": "Increases your max population. Useful when you can't expand your territory or you're about to hit your population limit.",
     "build_defense_desc": "Increases defenses around nearby borders, which show a checkered pattern. Attacks from enemies are slower and have more casualties.",

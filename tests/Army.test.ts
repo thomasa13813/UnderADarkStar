@@ -108,7 +108,7 @@ describe("Armies on big_plains", () => {
     expect(army.warshipState().patrolTile).toBe(game.ref(90, 50));
   });
 
-  test("a shot at an attack's front kills 5% of its troops", () => {
+  test("a shot at an attack's front kills 10% of its troops", () => {
     build(defender, UnitType.Factory, game.ref(90, 30));
     deployArmy(game.ref(90, 30));
     // A standing attack with one front tile in reach, no execution moving it.
@@ -117,12 +117,12 @@ describe("Armies on big_plains", () => {
     executeTicks(game, 2);
     expect(defender.units(UnitType.Army)).toHaveLength(1);
     executeTicks(game, 20);
-    expect(attack.troops()).toBe(95_000);
+    expect(attack.troops()).toBe(90_000);
     // One shot per cooldown.
     executeTicks(game, 50);
-    expect(attack.troops()).toBe(95_000);
+    expect(attack.troops()).toBe(90_000);
     executeTicks(game, 60);
-    expect(attack.troops()).toBe(90_250);
+    expect(attack.troops()).toBe(81_000);
   });
 
   test("a hit is reported to both sides in the newsfeed", () => {
@@ -139,11 +139,14 @@ describe("Armies on big_plains", () => {
     const [mine, theirs] = calls;
     expect(mine[0]).toBe("events_display.army_hit");
     expect(mine[2]).toBe(defender.id());
-    expect(mine[4]).toEqual({ troops: "500", name: attacker.displayName() });
+    expect(mine[4]).toEqual({ troops: "1.00K", name: attacker.displayName() });
     expect(mine[5]).toBe(army.id());
     expect(theirs[0]).toBe("events_display.army_hit_taken");
     expect(theirs[2]).toBe(attacker.id());
-    expect(theirs[4]).toEqual({ troops: "500", name: defender.displayName() });
+    expect(theirs[4]).toEqual({
+      troops: "1.00K",
+      name: defender.displayName(),
+    });
   });
 
   test("it does not fire at an attack beyond its reach", () => {
