@@ -639,7 +639,7 @@ export class GameModeSelector extends LitElement {
     )?.open();
   };
 
-  // Handled in Main, which also serves the help page's tutorial button.
+  // Handled in Main.
   private startTutorial = () => {
     if (!this.validateUsername()) return;
     document.dispatchEvent(new CustomEvent("start-tutorial"));

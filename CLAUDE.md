@@ -22,6 +22,7 @@ npm run lint:fix         # Oxlint + ESLint with auto-fix
 npm run format           # Prettier
 npm run build-prod       # Production build
 npm run map              # Map kit: build a map from a drawing (docs/MapMaking.md)
+npm run wiki             # Build the player wiki: wiki/pages/*.md -> resources/public/wiki/
 ```
 
 **Run a single test file:**
@@ -69,6 +70,7 @@ The game server only serves `index.html` and the WebSocket. All other assets (JS
 | `docs/DarkStar-Roadmap.md`            | The road to release (phases P0–P8)                                                         |
 | `docs/DarkStar-Buildings.md`          | Player-facing buildings reference, publishable (no code names)                             |
 | `docs/DarkStar-Buildings-Levers.md`   | Where each building number lives in code, audit notes, changelog                           |
+| `wiki/pages/`                         | The player wiki (help icon, `/wiki/`); rebuild with `npm run wiki` after any rules change  |
 | `docs/DarkStar-Lobbies.md`            | Public lobbies / thrones design (P6)                                                       |
 | `docs/DarkStar-Piracy.md`             | Piracy: eliminated challengers as raiders (draft, F22)                                     |
 | `docs/DarkStar-Accounts.md`           | Accounts / leaderboard design (P5)                                                         |

@@ -2,7 +2,9 @@ import { html, LitElement, TemplateResult } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
 /**
- * The help "?" and settings cogwheel as icon buttons.
+ * The help "?" and settings cogwheel as icon buttons. Help is a link: it opens
+ * the player wiki (/wiki/, built from wiki/pages/) in a new tab, so a lobby or
+ * a half-filled form on the home page survives it.
  *
  * Shared by the desktop nav bar and the mobile top bar so both read as the same
  * cluster next to the profile control — they're utility affordances rather than
@@ -49,11 +51,11 @@ export class NavUtilityIcons extends LitElement {
     const currentPage = window.currentPageId;
     return html`
       <div class="flex items-center gap-1">
-        <button
-          class="${this.buttonClass()} ${currentPage === "page-help"
-            ? "active"
-            : ""}"
-          data-page="page-help"
+        <a
+          class="${this.buttonClass()}"
+          href="/wiki/"
+          target="_blank"
+          rel="noopener"
           data-i18n-aria-label="main.help"
           data-i18n-title="main.help"
         >
@@ -72,7 +74,7 @@ export class NavUtilityIcons extends LitElement {
             <path d="M9.2 9.2a2.9 2.9 0 0 1 5.6 1c0 1.9-2.8 2.4-2.8 4" />
             <line x1="12" y1="17.5" x2="12.01" y2="17.5" />
           </svg>
-        </button>
+        </a>
         <button
           class="${this.buttonClass()} ${currentPage === "page-settings"
             ? "active"

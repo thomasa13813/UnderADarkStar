@@ -347,5 +347,9 @@ describe("PublicAssetManifest", () => {
     // The legal pages the footer links to.
     expect(index["privacy.html"]).toBe("text/html; charset=utf-8");
     expect(index["terms.html"]).toBe("text/html; charset=utf-8");
+    // The wiki (npm run wiki): a directory entry per page, and the sitemap.
+    expect(index["wiki/"]).toBe("text/html; charset=utf-8");
+    expect(index["wiki/hegemon/"]).toBe("text/html; charset=utf-8");
+    expect(index["sitemap.xml"]).toBe("application/xml; charset=utf-8");
   });
 });

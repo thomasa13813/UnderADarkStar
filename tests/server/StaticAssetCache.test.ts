@@ -23,6 +23,18 @@ describe("StaticAssetCache", () => {
     );
   });
 
+  test("keeps wiki pages and the sitemap on a short cache", () => {
+    // express.static serves /wiki/<slug>/ from its index.html; the URL never
+    // ends in .html, so the trailing slash has to count.
+    expect(getStaticAssetCacheControl("/wiki/")).toBe("public, max-age=300");
+    expect(getStaticAssetCacheControl("/wiki/hegemon/")).toBe(
+      "public, max-age=300",
+    );
+    expect(getStaticAssetCacheControl("/sitemap.xml")).toBe(
+      "public, max-age=300",
+    );
+  });
+
   test("does not mark other paths as immutable", () => {
     expect(getStaticAssetCacheControl("/manifest.json")).toBeUndefined();
     expect(getStaticAssetCacheControl("/api/health")).toBeUndefined();

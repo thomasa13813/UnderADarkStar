@@ -38,12 +38,7 @@ export class TroubleshootingModal extends BaseModal {
         <span
           class="text-white text-xl sm:text-2xl md:text-3xl font-bold uppercase tracking-widest break-words hyphens-auto"
         >
-          <a
-            class="hover:text-blue-200 text-blue-400 cursor-pointer"
-            @click=${this.close}
-            >${translateText("main.help")}</a
-          >
-          / ${translateText("troubleshooting.title")}
+          ${translateText("troubleshooting.title")}
         </span>
         <o-button
           variant="primary"
@@ -212,18 +207,5 @@ export class TroubleshootingModal extends BaseModal {
       return translateText("troubleshooting.canvas_2d_no_gpu");
     }
     return `${rendering.type}`;
-  }
-
-  public close(): void {
-    // Override BaseModal.close() to navigate back to Help (this modal is
-    // opened from inside HelpModal), not to page-play like other inline modals.
-    this.unregisterEscapeHandler();
-    this.onClose();
-    if (this.inline) {
-      this.style.pointerEvents = "none";
-      window.showPage?.("page-help");
-    } else {
-      this.modalEl?.close();
-    }
   }
 }

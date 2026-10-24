@@ -28,6 +28,9 @@ async function mount(tag: string): Promise<Mountable> {
 const settingsButton = (root: ParentNode) =>
   root.querySelector<HTMLElement>('.nav-menu-item[data-page="page-settings"]');
 
+const helpLink = (root: ParentNode) =>
+  root.querySelector<HTMLElement>('.nav-menu-item[href="/wiki/"]');
+
 // Settings is reachable from the nav again (OPE-173): it used to be found only
 // in the account dropdown, which renders as "Sign in" when logged out. It is a
 // cogwheel icon button in the utility cluster, paired with the help "?".
@@ -62,9 +65,7 @@ describe("nav-utility-icons settings cogwheel", () => {
 
   it("matches the help icon's box and hover treatment", () => {
     // The two have to read as a pair, so they share buttonClass().
-    const help = icons.querySelector<HTMLElement>(
-      '.nav-menu-item[data-page="page-help"]',
-    )!;
+    const help = helpLink(icons)!;
     const settings = settingsButton(icons)!;
     const shared = (el: HTMLElement) =>
       el.className
@@ -75,10 +76,20 @@ describe("nav-utility-icons settings cogwheel", () => {
   });
 
   it("sits last in the cluster", () => {
-    const buttons = Array.from(
-      icons.querySelectorAll<HTMLElement>(".nav-menu-item[data-page]"),
-    ).map((b) => b.dataset.page);
-    expect(buttons).toEqual(["page-help", "page-settings"]);
+    const items = Array.from(
+      icons.querySelectorAll<HTMLElement>(".nav-menu-item"),
+    );
+    expect(items).toEqual([helpLink(icons), settingsButton(icons)]);
+  });
+
+  it("opens the wiki in a new tab from the help icon", () => {
+    // Help is the player wiki (wiki/pages/, served at /wiki/), not a page of
+    // the app, so it must stay out of Navigation's data-page routing.
+    const help = helpLink(icons)!;
+    expect(help.tagName).toBe("A");
+    expect(help.getAttribute("target")).toBe("_blank");
+    expect(help.hasAttribute("data-page")).toBe(false);
+    expect(help.getAttribute("data-i18n-aria-label")).toBe("main.help");
   });
 
   it("marks the button active once the settings page is shown", async () => {

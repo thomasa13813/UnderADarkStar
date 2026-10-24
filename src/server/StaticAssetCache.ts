@@ -20,9 +20,14 @@ export function getStaticAssetCacheControl(
     return IMMUTABLE_CACHE_CONTROL;
   }
 
-  // Root HTML pages (the Terms and Privacy Policy) are edited in place, so
-  // they must not inherit express.static's one-year maxAge.
-  if (normalizedPath.endsWith(".html")) {
+  // Root HTML pages (the Terms, the Privacy Policy, the wiki at /wiki/<slug>/
+  // and its sitemap) are edited in place, so they must not inherit
+  // express.static's one-year maxAge.
+  if (
+    normalizedPath.endsWith(".html") ||
+    normalizedPath.endsWith("/") ||
+    normalizedPath.endsWith(".xml")
+  ) {
     return HTML_PAGE_CACHE_CONTROL;
   }
 

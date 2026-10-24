@@ -20,7 +20,6 @@ import { getPlayerCosmeticsRefs } from "./Cosmetics";
 import "./GameModeSelector";
 import { GameModeSelector, joinIsGateable } from "./GameModeSelector";
 import { GameStartingModal } from "./GameStartingModal";
-import { HelpModal } from "./HelpModal";
 import { HostLobbyModal as HostPrivateLobbyModal } from "./HostLobbyModal";
 import { showInGameAlert, showInGameConfirm } from "./InGameModal";
 import { JoinLobbyModal } from "./JoinLobbyModal";
@@ -43,12 +42,15 @@ import {
   startServerListPolling,
 } from "./ServerList";
 import "./SinglePlayerModal";
+// Reached by URL only (#modal=troubleshooting, linked from the wiki's
+// Troubleshooting page), so nothing else imports it.
 import { SinglePlayerModal } from "./SinglePlayerModal";
 import {
   SendKickPlayerIntentEvent,
   SendToggleGameStartTimer,
   SendUpdateGameConfigIntentEvent,
 } from "./Transport";
+import "./TroubleshootingModal";
 import {
   setTurnstileDialogVisible,
   TURNSTILE_CONTAINER_SELECTOR,
@@ -247,7 +249,6 @@ class Client {
       tag: "user-setting",
       pageId: "page-settings",
     });
-    modalRouter.register("help", { tag: "help-modal", pageId: "page-help" });
     modalRouter.register("language", {
       tag: "language-modal",
       pageId: "page-language",
@@ -378,23 +379,9 @@ class Client {
       this.handleUpdateGameConfig.bind(this),
     );
 
-    const hlpModal = document.querySelector("help-modal") as HelpModal;
-    if (!hlpModal || !(hlpModal instanceof HelpModal)) {
-      console.warn("Help modal element not found");
-    }
-    const helpButton = document.getElementById("help-button");
-    if (helpButton) {
-      helpButton.addEventListener("click", () => {
-        if (hlpModal && hlpModal instanceof HelpModal) {
-          hlpModal.open();
-        }
-      });
-    }
-    // Tutorial entry points (play-page card, help page): back to the play page
-    // if needed (so a username problem is visible), then a default solo game
-    // with the guide on.
+    // Tutorial entry point (the play-page card): a default solo game with the
+    // guide on, unless a username problem needs fixing first.
     document.addEventListener("start-tutorial", () => {
-      if (hlpModal?.isOpen()) hlpModal.close();
       if (this.usernameInput && !this.usernameInput.canPlay()) return;
       void (
         document.querySelector("single-player-modal") as SinglePlayerModal
@@ -774,7 +761,6 @@ class Client {
         "single-player-modal",
         "game-starting-modal",
         "game-top-bar",
-        "help-modal",
         "user-setting",
         // The in-game instance is addressed by id: querySelector("user-setting")
         // above only ever reaches the page's inline one.

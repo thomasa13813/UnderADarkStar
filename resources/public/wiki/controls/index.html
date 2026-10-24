@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Controls and hotkeys - Under a Dark Star Wiki</title>
+<meta name="description" content="Every mouse action and default keyboard shortcut in Under a Dark Star - attacking, building, fleets, Destroyers, Armies, camera and game speed." />
+<link rel="canonical" href="https://darkstar.january-games.com/wiki/controls/" />
+<meta property="og:type" content="article" />
+<meta property="og:site_name" content="Under a Dark Star" />
+<meta property="og:title" content="Controls and hotkeys - Under a Dark Star Wiki" />
+<meta property="og:description" content="Every mouse action and default keyboard shortcut in Under a Dark Star - attacking, building, fleets, Destroyers, Armies, camera and game speed." />
+<meta property="og:url" content="https://darkstar.january-games.com/wiki/controls/" />
+<meta name="twitter:card" content="summary" />
+<style>:root{color-scheme:dark;--bg:#0b0d14;--panel:#141824;--line:rgba(255,255,255,.1);--text:#e4e4e7;--muted:#a1a1aa;--head:#fff;--accent:#93c5fd;--accent-strong:#60a5fa}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.6}
+a{color:var(--accent)}
+a:hover{color:#bfdbfe}
+.topbar{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:16px;padding:10px 16px;background:rgba(11,13,20,.92);backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+.brand{color:var(--head);text-decoration:none;font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-size:.95rem}
+.brand span{color:var(--accent);font-weight:600}
+.topbar .spacer{flex:1}
+.play{background:var(--accent-strong);color:#0b0d14;text-decoration:none;font-weight:700;padding:6px 14px;border-radius:999px;font-size:.9rem;white-space:nowrap}
+.play:hover{background:#93c5fd;color:#0b0d14}
+.layout{display:grid;grid-template-columns:240px minmax(0,1fr);gap:40px;max-width:1120px;margin:0 auto;padding:24px 16px 64px}
+nav.side{position:sticky;top:64px;align-self:start;max-height:calc(100vh - 80px);overflow:auto;font-size:.92rem}
+nav.side h2{font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin:18px 0 6px;border:0;padding:0}
+nav.side ul{list-style:none;margin:0;padding:0}
+nav.side a{display:block;padding:3px 10px;border-radius:6px;color:var(--text);text-decoration:none}
+nav.side a:hover{background:rgba(255,255,255,.06)}
+nav.side a[aria-current]{background:rgba(96,165,250,.15);color:var(--head);font-weight:600}
+details.mobile-nav{display:none}
+main{min-width:0}
+.crumbs{font-size:.85rem;color:var(--muted);margin:0 0 4px}
+.crumbs a{color:var(--muted)}
+h1{margin:0 0 6px;font-size:2.1rem;color:var(--head);line-height:1.2}
+.lede{color:var(--muted);margin:0 0 20px;font-size:1.05rem}
+h2{margin-top:40px;padding-bottom:4px;border-bottom:1px solid var(--line);font-size:1.4rem;color:var(--head)}
+h3{margin:26px 0 6px;font-size:1.12rem;color:#f4f4f5}
+h4{margin:20px 0 4px;color:#f4f4f5}
+code{font-size:.9em;background:rgba(255,255,255,.07);padding:1px 5px;border-radius:4px}
+kbd{display:inline-block;min-width:1.6em;text-align:center;font:600 .82em/1.4 ui-monospace,monospace;padding:1px 6px;border:1px solid rgba(255,255,255,.3);border-bottom-width:2px;border-radius:5px;background:rgba(255,255,255,.06);color:var(--head)}
+.table-wrap{overflow-x:auto;margin:12px 0}
+table{width:100%;border-collapse:collapse;font-size:.93rem}
+th,td{padding:7px 9px;border:1px solid var(--line);text-align:left;vertical-align:top}
+th{background:rgba(255,255,255,.06)}
+blockquote{margin:16px 0;padding:6px 16px;background:var(--panel);border-left:3px solid var(--accent-strong);border-radius:0 8px 8px 0}
+.toc{margin:16px 0 8px;padding:10px 18px;background:var(--panel);border:1px solid var(--line);border-radius:10px;font-size:.92rem}
+.toc strong{display:block;color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;margin-bottom:4px}
+.toc ol{margin:0;padding-left:20px}
+.related{margin-top:48px;padding:14px 18px;background:var(--panel);border:1px solid var(--line);border-radius:10px}
+.related h2{margin:0 0 6px;font-size:1rem;border:0;padding:0}
+.related ul{margin:0;padding-left:20px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin:12px 0 8px;padding:0;list-style:none}
+.cards a{display:block;height:100%;padding:12px 14px;background:var(--panel);border:1px solid var(--line);border-radius:10px;text-decoration:none;color:var(--text)}
+.cards a:hover{border-color:var(--accent-strong)}
+.cards strong{display:block;color:var(--head);margin-bottom:2px}
+.cards span{font-size:.88rem;color:var(--muted)}
+footer{border-top:1px solid var(--line);padding:20px 16px 40px;text-align:center;font-size:.85rem;color:var(--muted)}
+footer a{color:var(--muted);margin:0 8px}
+@media (max-width:820px){
+.layout{display:block;padding-top:12px}
+nav.side{display:none}
+details.mobile-nav{display:block;margin-bottom:16px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 14px}
+details.mobile-nav summary{cursor:pointer;font-weight:600}
+details.mobile-nav nav.side{display:block;position:static;max-height:none}
+h1{font-size:1.7rem}
+}</style>
+</head>
+<body>
+<header class="topbar">
+<a class="brand" href="/wiki/">Under a Dark Star <span>Wiki</span></a>
+<span class="spacer"></span>
+<a class="play" href="/">Play now</a>
+</header>
+<div class="layout">
+<nav class="side" aria-label="Wiki pages"><ul><li><a href="/wiki/">Wiki home</a></li></ul><h2>Start here</h2><ul><li><a href="/wiki/getting-started/">Getting started</a></li><li><a href="/wiki/the-round/">The round</a></li></ul><h2>The throne</h2><ul><li><a href="/wiki/hegemon/">The Hegemon</a></li><li><a href="/wiki/overthrowing-the-hegemon/">Overthrowing the Hegemon</a></li><li><a href="/wiki/thrones/">Thrones and lobbies</a></li></ul><h2>Challengers</h2><ul><li><a href="/wiki/buildings/">Buildings</a></li><li><a href="/wiki/trade/">Trade and the economy</a></li><li><a href="/wiki/armies-and-destroyers/">Armies and Destroyers</a></li><li><a href="/wiki/stargates-and-warheads/">Stargates, warheads and shields</a></li><li><a href="/wiki/piracy/">Piracy</a></li><li><a href="/wiki/alliances-and-diplomacy/">Alliances and diplomacy</a></li></ul><h2>The galaxy</h2><ul><li><a href="/wiki/galaxy/">Nebulae and deep space</a></li><li><a href="/wiki/lords-and-barons/">Lords and Barons</a></li><li><a href="/wiki/maps/">Maps</a></li></ul><h2>Reference</h2><ul><li><a href="/wiki/controls/" aria-current="page">Controls and hotkeys</a></li><li><a href="/wiki/interface/">The game screen</a></li><li><a href="/wiki/glossary/">Glossary</a></li><li><a href="/wiki/troubleshooting/">Troubleshooting</a></li></ul></nav>
+<main>
+<details class="mobile-nav"><summary>All wiki pages</summary><nav class="side" aria-label="Wiki pages"><ul><li><a href="/wiki/">Wiki home</a></li></ul><h2>Start here</h2><ul><li><a href="/wiki/getting-started/">Getting started</a></li><li><a href="/wiki/the-round/">The round</a></li></ul><h2>The throne</h2><ul><li><a href="/wiki/hegemon/">The Hegemon</a></li><li><a href="/wiki/overthrowing-the-hegemon/">Overthrowing the Hegemon</a></li><li><a href="/wiki/thrones/">Thrones and lobbies</a></li></ul><h2>Challengers</h2><ul><li><a href="/wiki/buildings/">Buildings</a></li><li><a href="/wiki/trade/">Trade and the economy</a></li><li><a href="/wiki/armies-and-destroyers/">Armies and Destroyers</a></li><li><a href="/wiki/stargates-and-warheads/">Stargates, warheads and shields</a></li><li><a href="/wiki/piracy/">Piracy</a></li><li><a href="/wiki/alliances-and-diplomacy/">Alliances and diplomacy</a></li></ul><h2>The galaxy</h2><ul><li><a href="/wiki/galaxy/">Nebulae and deep space</a></li><li><a href="/wiki/lords-and-barons/">Lords and Barons</a></li><li><a href="/wiki/maps/">Maps</a></li></ul><h2>Reference</h2><ul><li><a href="/wiki/controls/" aria-current="page">Controls and hotkeys</a></li><li><a href="/wiki/interface/">The game screen</a></li><li><a href="/wiki/glossary/">Glossary</a></li><li><a href="/wiki/troubleshooting/">Troubleshooting</a></li></ul></nav></details>
+<p class="crumbs"><a href="/wiki/">Wiki</a> / Reference</p>
+<h1>Controls and hotkeys</h1>
+<p class="lede">Every mouse action and default keyboard shortcut in Under a Dark Star - attacking, building, fleets, Destroyers, Armies, camera and game speed.</p>
+<div class="toc"><strong>On this page</strong><ol><li><a href="#mouse">Mouse</a></li><li><a href="#keyboard">Keyboard</a></li><li><a href="#build-keys">Build keys</a></li></ol></div>
+<p>These are the default keys. You can rebind them in <strong>Settings</strong>.</p>
+<h2 id="mouse">Mouse</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Action</th><th>What it does</th></tr></thead>
+<tbody>
+<tr><td>Left click</td><td>Attack the tile, or open the menu, depending on your &quot;action on left click&quot; setting</td></tr>
+<tr><td>Right click (touch on mobile)</td><td>Open the radial menu (see <a href="/wiki/interface/#radial-menu">The game screen</a>)</td></tr>
+<tr><td><kbd>Shift</kbd> + left click</td><td>Attack, when left click is set to open the menu</td></tr>
+<tr><td><kbd>Ctrl</kbd> + left click</td><td>Open the build menu (<kbd>⌘</kbd> on a Mac)</td></tr>
+<tr><td><kbd>Alt</kbd> + left click</td><td>Open the emote menu</td></tr>
+<tr><td>Middle click</td><td>Upgrade the nearest building automatically</td></tr>
+<tr><td><kbd>Shift</kbd> + mouse wheel</td><td>Decrease or increase the attack ratio</td></tr>
+<tr><td><kbd>Shift</kbd> + drag</td><td>Select several Destroyers and Armies</td></tr>
+<tr><td>Mouse wheel</td><td>Zoom</td></tr>
+</tbody></table></div>
+<h2 id="keyboard">Keyboard</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Key</th><th>What it does</th></tr></thead>
+<tbody>
+<tr><td><kbd>Esc</kbd></td><td>Close a menu, or cancel a build preview</td></tr>
+<tr><td><kbd>Enter</kbd></td><td>Build the unit under the cursor</td></tr>
+<tr><td><kbd>Space</kbd></td><td>Alternate view (terrain / territories)</td></tr>
+<tr><td><kbd>M</kbd></td><td>Toggle the coordinate grid</td></tr>
+<tr><td><kbd>U</kbd></td><td>Swap a Nuclear or Antimatter Warhead&#39;s arc direction</td></tr>
+<tr><td><kbd>C</kbd></td><td>Center the camera on your territory</td></tr>
+<tr><td><kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd></td><td>Move the camera</td></tr>
+<tr><td><kbd>Q</kbd> / <kbd>E</kbd></td><td>Zoom out / in</td></tr>
+<tr><td><kbd>T</kbd> / <kbd>Y</kbd></td><td>Decrease / increase the attack ratio</td></tr>
+<tr><td><kbd>B</kbd></td><td>Send a fleet to the tile under the cursor</td></tr>
+<tr><td><kbd>G</kbd></td><td>Ground attack on the tile under the cursor</td></tr>
+<tr><td><kbd>Shift</kbd> + <kbd>R</kbd></td><td>Retaliate against your most recent attacker (only while under attack)</td></tr>
+<tr><td><kbd>K</kbd></td><td>Request an alliance with the player under the cursor</td></tr>
+<tr><td><kbd>L</kbd></td><td>Break the alliance with the player under the cursor</td></tr>
+<tr><td><kbd>F</kbd></td><td>Select all your Destroyers</td></tr>
+<tr><td><kbd>P</kbd></td><td>Pause or resume (solo games)</td></tr>
+<tr><td><kbd>,</kbd> / <kbd>.</kbd></td><td>Game speed down / up (solo games)</td></tr>
+<tr><td><kbd>Alt</kbd> + <kbd>R</kbd></td><td>Reset graphics</td></tr>
+</tbody></table></div>
+<h2 id="build-keys">Build keys</h2>
+<p>Press a number to build the matching unit under the cursor. Each icon in the build bar shows its
+digit.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Key</th><th>Builds</th></tr></thead>
+<tbody>
+<tr><td><kbd>1</kbd></td><td><a href="/wiki/buildings/#3-1-population-center">Population Center</a></td></tr>
+<tr><td><kbd>2</kbd></td><td><a href="/wiki/buildings/#3-2-industrial-zone">Industrial Zone</a></td></tr>
+<tr><td><kbd>3</kbd></td><td><a href="/wiki/buildings/#3-3-spaceport">Spaceport</a></td></tr>
+<tr><td><kbd>4</kbd></td><td><a href="/wiki/buildings/#3-4-defense-post">Defense Post</a></td></tr>
+<tr><td><kbd>5</kbd></td><td><a href="/wiki/buildings/#3-6-shield-array">Shield Array</a></td></tr>
+<tr><td><kbd>6</kbd></td><td><a href="/wiki/buildings/#3-5-stargate">Stargate</a></td></tr>
+<tr><td><kbd>7</kbd></td><td><a href="/wiki/armies-and-destroyers/#destroyers">Destroyer</a></td></tr>
+<tr><td><kbd>8</kbd></td><td><a href="/wiki/stargates-and-warheads/#warheads">Nuclear Warhead</a></td></tr>
+<tr><td><kbd>9</kbd></td><td><a href="/wiki/stargates-and-warheads/#warheads">Antimatter Warhead</a></td></tr>
+<tr><td><kbd>0</kbd></td><td><a href="/wiki/armies-and-destroyers/#armies">Army</a></td></tr>
+</tbody></table></div>
+
+
+<aside class="related"><h2>Related pages</h2><ul><li><a href="/wiki/interface/">The game screen</a> - A guide to the Under a Dark Star interface - the control panel, event panel, leaderboard, radial menu, info menu, build menu and player icons.</li><li><a href="/wiki/getting-started/">Getting started</a> - Your first round of Under a Dark Star - spawning, expanding, troops and gold, attacking, building, and how to win.</li><li><a href="/wiki/armies-and-destroyers/">Armies and Destroyers</a> - Units in Under a Dark Star - Armies that defend your nebula against land attacks, Destroyers that patrol deep space, and how many of each you can field.</li></ul></aside>
+</main>
+</div>
+<footer>
+<a href="/">Play Under a Dark Star</a>
+<a href="https://discord.gg/vTjcPKadD" rel="noopener">Discord</a>
+<a href="mailto:hello@january-games.com">hello@january-games.com</a>
+<a href="/terms.html">Terms</a>
+<a href="/privacy.html">Privacy</a>
+<p>Under a Dark Star by January Games, LLC. Built on OpenFront.</p>
+</footer>
+</body>
+</html>

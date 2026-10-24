@@ -29,9 +29,12 @@ const __dirname = path.dirname(__filename);
 
 // Dev-only: resources/public/ is served at the site root, as the build copies
 // it into static/. Vite's publicDir (resources/) would put it under /public/.
+// "pre" so it runs before vite-plugin-html, which otherwise answers every
+// browser navigation (Accept: text/html) with the app shell, /wiki/ included.
 function serveRootPublicDir(publicDir: string): Plugin {
   return {
     name: "serve-root-public-dir",
+    enforce: "pre",
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
         if (!req.url) return next();

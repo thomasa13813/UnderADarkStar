@@ -2176,6 +2176,19 @@ hydrogen-bomb removal (closed by S6).
 
 ## 11. Changelog
 
+- **2026-10-24, wiki** — **The help icon opens the player wiki.** Tom's call: a wiki of linked
+  pages, one per topic, for players and for search traffic, at `/wiki/` on the main domain. The
+  pages are Markdown in `wiki/pages/`; `npm run wiki` (`src/wiki/WikiBuilder.ts`) builds them into
+  static HTML under `resources/public/wiki/` plus `resources/public/sitemap.xml` (named in
+  `robots.txt`), committed, served like the Terms and Privacy pages. `{{name}}` in a page is a
+  number read from the core defaults, `[[slug]]` a link to another page; an unknown number, page or
+  heading fails the build, and `tests/wiki/Wiki.test.ts` fails while the committed output is stale.
+  The Buildings page includes `docs/DarkStar-Buildings.md`, so that document is now published. The
+  in-app help page (`HelpModal`) is gone: its rules, hotkeys, interface guide and troubleshooting
+  moved into the wiki (19 pages), the icon opens `/wiki/` in a new tab, the troubleshooting panel
+  is reached at `/#modal=troubleshooting`, and 150 unused `help_modal` strings left `en.json`. The
+  wiki is English only, like the policy pages.
+
 - **2026-10-24, army buff** — **An army's hit now kills 10% of the attack's troops** (was 5%).
   Tom's call: 5% felt too anemic to make the unit attractive. `ARMY_DEFAULTS.casualtyPercent`, the
   build menu and help text, the buildings reference and the army tests updated.

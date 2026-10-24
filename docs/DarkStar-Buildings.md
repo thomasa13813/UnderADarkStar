@@ -3,6 +3,9 @@
   Keep code names, internal notes and attribution out of it. The levers behind every number, the
   audit notes and the changelog are in docs/DarkStar-Buildings-Levers.md. When a building's number
   or behaviour changes in Config.ts, update both files in the same commit.
+  This file is the player wiki's Buildings page (wiki/pages/buildings.md): run `npm run wiki`
+  after editing it. Headings are link targets there; renaming one may break a wiki link, which
+  the wiki build reports.
 -->
 
 # Under a Dark Star — Buildings

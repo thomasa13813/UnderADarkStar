@@ -36,6 +36,7 @@ export default [
             "scripts/generateMapThumbnails.ts",
             "scripts/generateGalaxyMap.ts",
             "scripts/generateStarfield.ts",
+            "scripts/buildWiki.ts",
             "tests/matchmaking/*.mjs",
           ],
         },
