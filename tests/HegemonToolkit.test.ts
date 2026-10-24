@@ -167,9 +167,11 @@ describe("Anyone reinforces the throne (H9)", () => {
     for (const tile of Array.from(hegemon.tiles())) {
       if (game.x(tile) > g.cx) east.conquer(tile);
     }
-    for (const tile of Array.from(east.tiles())) {
-      if (!game.isInDarkStar(tile)) west.conquer(tile);
-    }
+    // One nebula left beyond the moat: with none it would be out (H20).
+    const homeland = Array.from(east.tiles()).filter(
+      (t) => !game.isInDarkStar(t),
+    );
+    for (const tile of homeland.slice(1)) west.conquer(tile);
     east.setTroops(0);
     expect(game.darkStarInvader()).toBe(east);
   }

@@ -506,7 +506,12 @@ export class PlayerExecution implements Execution {
       return;
     }
 
-    if (this.player.numTilesOwned() === tiles.length) {
+    // Its last nebula beyond the moat is its last tile: the Dark Star
+    // foothold goes back to the Hegemon with it (H20).
+    if (
+      this.player.numTilesOwned() - this.player.domainTilesHeld() ===
+      tiles.length
+    ) {
       this.mg.conquerPlayer(capturing, this.player);
     }
 

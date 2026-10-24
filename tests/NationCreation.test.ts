@@ -143,7 +143,7 @@ describe("the Lord pool (resources/lordNames.json)", () => {
     expect(new Set(all).size).toBe(all.length);
     expect(lordNames.names).toContain("Harbekkan Concord");
     expect(lordNames.names).toContain("Killbot-7");
-    expect(lordNames.names).toHaveLength(12);
+    expect(lordNames.names).toHaveLength(19);
     for (const name of all) {
       expect(name.length).toBeGreaterThan(0);
       expect(name.length).toBeLessThanOrEqual(27);

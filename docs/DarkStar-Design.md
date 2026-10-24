@@ -168,7 +168,8 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   against them**, stalled or not, human or AI throne. Why: a round can deadlock when an invader takes
   most of the domain and exhausts the throne but loses its nebula beyond the moat, so its troop cap
   collapses (H5) and neither side can move; the other challengers' donations finish the failed
-  invasion and free the slot, and are how rivals compete for the throne by proxy.
+  invasion and free the slot, and are how rivals compete for the throne by proxy. [2026-10-23: the
+  extreme case, an invader with no nebula at all beyond the moat, is now settled by H20.]
 - **H10 — Destroyers of the Dark Star.** [Revised 2026-09-24] The Hegemon may build **destroyers**
   (the engine's warship, S7) **without a port** — it has none (H2). They **spawn in the moat** and are
   purely defensive: they move to intercept fleets bound for the domain and harass the trade of the
@@ -206,7 +207,8 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   **all of the Hegemon's troop income is automatically sent into an attack on the invader** until they
   are evicted. While the invader is still advancing, the Hegemon defends normally. Troops donated to
   the throne go into that attack at once whether or not the invasion has stalled (H9, 2026-10-04). Consequently nobody can take a sliver of the domain and sit on the slot: a failed
-  invasion is always pushed out, and domain tiles return to the Hegemon by reconquest, not by fiat.
+  invasion is always pushed out, and domain tiles return to the Hegemon by reconquest, not by fiat
+  (the one exception: an invader with no homeland left is out and its tiles return at once, H20).
   This is a rule of the role, applied identically to human and AI Hegemons.
 - **H14 — The moat.** The Dark Star is separated from the rest of the map by a ring of "water" (deep
   space). The ring is **narrow**, so an invasion force launched from a well-chosen spot crosses quickly.
@@ -225,8 +227,8 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   below which a player **cannot be struck at all** (the strike is refused, or goes home if it razed its
   target down to the floor). Because the target shrinks as it is razed, every strike self-limits.
   Bullying the weak is ruinous; only a real power can be struck efficiently. Tyranny applies to strikes
-  only: evicting an invader from the Dark Star is ordinary combat, so a player whose homeland is gone
-  can still die on the Dark Star.
+  only: evicting an invader from the Dark Star is ordinary combat. [Superseded 2026-10-23 by H20: a
+  player whose homeland is gone no longer lingers on the Dark Star; it is out at once.]
 - **H17 — Strike counterplay: the bubble.** [Decided 2026-09-21; replaces the same-day "hold" design]
   A strike is an ordinary conquest: the nebula it takes is the strike's **bubble**, Hegemon-owned while
   the strike lasts and bordering the target, so the target **fights it like any other invader** — an
@@ -300,6 +302,15 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
     untouched.
   - **AI Hegemon.** Strikes any flag as soon as it may, except against a challenger holding less than
     `punitiveAIMinLandPermille` of the map's nebulae (tunable, 50–100‰ to start).
+- **H20 — An invader must keep a homeland.** [Decided 2026-10-23, Tom; built the same day] The
+  moment the invader holds **no nebula beyond the moat**, it is **eliminated**, and every Dark Star
+  tile it held **returns to the Hegemon at once** — by fiat, not reconquest, and with no troops
+  attached (the bleed it already paid stays paid, H5). Whoever took its last nebula records the kill
+  (gold, standings); land lost to nobody (a warhead, a neutral pop) eliminates it uncredited. The
+  Hegemon is told by an event line. Why: a stranded invader kept regenerating troops and stayed
+  alive on its foothold alone, deadlocking the round (the case H9's donations were opened to break).
+  Built in `GameImpl.castOutIfHomeless` (checked whenever a challenger loses a tile outside the Dark
+  Star); `PlayerExecution.removeCluster` credits the encloser when the pocket was the last homeland.
 
 ### 3.3 Challengers
 
@@ -2164,6 +2175,17 @@ hydrogen-bomb removal (closed by S6).
 | **Intent / Turn / Execution** | Player action → server-bundled tick of intents → deterministic sim object that applies it.                                                                                                           |
 
 ## 11. Changelog
+
+- **2026-10-23, homeland** — **H20: an invader must keep a homeland.** Tom's call, from play: an
+  invader whose every nebula beyond the moat was taken lived on, regenerating troops, on its Dark
+  Star foothold alone. Now losing its last nebula outside eliminates it and returns its domain tiles
+  to the Hegemon at once; whoever took that nebula has the kill. H9, H13 and H16 annotated; the rules
+  page's _Invading the Dark Star_ fifth line rewritten; `HegemonInvasion` gains an H20 block, and the
+  H9 deadlock test and the H7 nuke test now leave the invader one nebula outside.
+
+- **2026-10-23, Lord names** — **Seven more fixed Lord names from Tom** in `resources/lordNames.json`
+  (nineteen now): The Beyrellean Guild, Jacobian Dynasty, Finks Federation, Orlo Council, Adlerean
+  Alliance, Beardenian Tribal Council, Bohlandian Autocracy.
 
 - **2026-10-23, armies** — **C6: armies, and destroyers capped by spaceports.** Tom's call. Each
   spaceport level supports one destroyer, and each industrial-zone level one army: a new defensive

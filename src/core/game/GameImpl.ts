@@ -1116,6 +1116,7 @@ export class GameImpl implements Game {
         if (!this.isInDarkStar(t)) this.relinquish(t);
       }
     }
+    if (previousOwner.isPlayer()) this.castOutIfHomeless(previousOwner, tile);
   }
 
   relinquish(tile: TileRef) {
@@ -1138,6 +1139,27 @@ export class GameImpl implements Game {
     this._map.setOwnerID(tile, 0);
     this.updateBorders(tile);
     this.recordTileUpdate(tile);
+    this.castOutIfHomeless(previousOwner, tile);
+  }
+
+  // H20: an invader with no nebula left beyond the moat is out. Its Dark Star
+  // tiles go straight back to the Hegemon, so it drops to zero tiles and dies
+  // as any eliminated player does; whoever took its last tile outside records
+  // the kill (handleDeadDefender, removeCluster).
+  private castOutIfHomeless(player: PlayerImpl, lostTile: TileRef) {
+    if (this._darkStar === null || this.isInDarkStar(lostTile)) return;
+    const held = this.domainTilesHeldBy(player);
+    if (held === 0 || player.numTilesOwned() > held) return;
+    const hegemon = this._hegemon as PlayerImpl | null;
+    if (hegemon === null || !hegemon.isAlive()) return;
+    for (const t of Array.from(player.tiles())) this.conquer(hegemon, t);
+    this.displayMessage(
+      "events_display.dark_star_cast_out",
+      MessageType.CONQUERED_PLAYER,
+      hegemon.id(),
+      undefined,
+      { name: player.displayName() },
+    );
   }
 
   // Reusable neighbor buffer to avoid closures/allocation in updateBorders.

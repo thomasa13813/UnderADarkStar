@@ -1,3 +1,4 @@
+import { AttackExecution } from "../src/core/execution/AttackExecution";
 import { DonateTroopsExecution } from "../src/core/execution/DonateTroopExecution";
 import { HegemonExecution } from "../src/core/execution/HegemonExecution";
 import { TransportShipExecution } from "../src/core/execution/TransportShipExecution";
@@ -340,5 +341,64 @@ describe("An invader gains nothing from the Dark Star (H5)", () => {
     expect(sawStalled).toBe(true);
     expect(game.darkStarInvader()).toBeNull();
     expect(east.domainTilesHeld()).toBe(0);
+  });
+});
+
+describe("An invader must keep a homeland (H20)", () => {
+  beforeEach(() => start(PlayerType.Human));
+
+  // Half the domain: more than the engine's 100-tile mop-up would take.
+  function seizeHalf(invader: Player) {
+    const g = game.darkStar()!;
+    for (const tile of Array.from(hegemon.tiles())) {
+      if (game.x(tile) > g.cx) invader.conquer(tile);
+    }
+    expect(invader.domainTilesHeld()).toBeGreaterThan(100);
+  }
+
+  function homeland(player: Player): TileRef[] {
+    return Array.from(player.tiles()).filter((t) => !game.isInDarkStar(t));
+  }
+
+  test("keeps its foothold while it holds any nebula beyond the moat", () => {
+    seizeHalf(east);
+    const held = east.domainTilesHeld();
+    const land = homeland(east);
+    for (const tile of land.slice(1)) west.conquer(tile);
+    expect(homeland(east)).toHaveLength(1);
+    expect(game.darkStarInvader()).toBe(east);
+    expect(east.domainTilesHeld()).toBe(held);
+  });
+
+  test("is out when its last nebula falls; the Dark Star is whole again and the taker has the kill", () => {
+    seizeHalf(east);
+    const land = homeland(east);
+    for (const tile of land.slice(1)) west.conquer(tile);
+    east.setTroops(0);
+    game.addExecution(new AttackExecution(10_000, west, east.id()));
+
+    let conqueror: string | null = null;
+    for (let i = 0; i < 50 && conqueror === null; i++) {
+      const events = game.executeNextTick()[GameUpdateType.ConquestEvent];
+      const kill = events.find((e) => e.conqueredId === east.id());
+      if (kill !== undefined) conqueror = kill.conquerorId;
+    }
+    expect(conqueror).toBe(west.id());
+    expect(east.numTilesOwned()).toBe(0);
+    expect(game.darkStarInvader()).toBeNull();
+    expect(game.hegemonDomainTiles()).toBe(game.darkStar()!.domainTileCount);
+    executeTicks(game, 2);
+    expect(east.isAlive()).toBe(false);
+    // The slot is free for the next challenger.
+    expect(game.canInvadeDarkStar(west)).toBe(true);
+  });
+
+  test("land lost to nobody counts too", () => {
+    seizeHalf(east);
+    for (const tile of homeland(east)) east.relinquish(tile);
+    expect(east.numTilesOwned()).toBe(0);
+    expect(game.hegemonDomainTiles()).toBe(game.darkStar()!.domainTileCount);
+    executeTicks(game, 2);
+    expect(east.isAlive()).toBe(false);
   });
 });

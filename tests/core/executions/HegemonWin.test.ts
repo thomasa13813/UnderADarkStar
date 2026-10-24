@@ -138,6 +138,9 @@ describe("Hegemon win rules", () => {
     for (const tile of Array.from(hegemon.tiles())) {
       if (game.x(tile) > g.cx + 5) challenger.conquer(tile);
     }
+    // A homeland beyond the blast, or the invader would be out with the
+    // shore (H20).
+    challenger.conquer(game.ref(game.width() - 2, game.height() - 2));
     const challengerBefore = challenger.numTilesOwned();
     const hegemonBefore = hegemon.numTilesOwned();
     const domainHeld = Array.from(challenger.tiles()).filter((t) =>
