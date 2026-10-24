@@ -67,6 +67,8 @@ The game server only serves `index.html` and the WebSocket. All other assets (JS
 | ------------------------------------- | ------------------------------------------------------------------------------------------ |
 | `docs/DarkStar-Design.md`             | DarkStar goals, rules, roadmap                                                             |
 | `docs/DarkStar-Roadmap.md`            | The road to release (phases P0–P8)                                                         |
+| `docs/DarkStar-Buildings.md`          | Player-facing buildings reference, publishable (no code names)                             |
+| `docs/DarkStar-Buildings-Levers.md`   | Where each building number lives in code, audit notes, changelog                           |
 | `docs/DarkStar-Lobbies.md`            | Public lobbies / thrones design (P6)                                                       |
 | `docs/DarkStar-Piracy.md`             | Piracy: eliminated challengers as raiders (draft, F22)                                     |
 | `docs/DarkStar-Accounts.md`           | Accounts / leaderboard design (P5)                                                         |

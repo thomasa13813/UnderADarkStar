@@ -8,6 +8,7 @@ import {
   UnitType,
 } from "../game/Game";
 import { TileRef } from "../game/GameMap";
+import { ArmyExecution } from "./ArmyExecution";
 import { CityExecution } from "./CityExecution";
 import { DefensePostExecution } from "./DefensePostExecution";
 import { FactoryExecution } from "./FactoryExecution";
@@ -157,6 +158,11 @@ export class ConstructionExecution implements Execution {
       case UnitType.Warship:
         this.mg.addExecution(
           new WarshipExecution({ owner: player, patrolTile: this.tile }),
+        );
+        break;
+      case UnitType.Army:
+        this.mg.addExecution(
+          new ArmyExecution({ owner: player, patrolTile: this.tile }),
         );
         break;
       case UnitType.Port:

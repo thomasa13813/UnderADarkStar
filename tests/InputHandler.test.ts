@@ -757,6 +757,14 @@ describe("InputHandler AutoUpgrade", () => {
       expect(inputHandler["uiState"].ghostStructure).toBeNull();
     });
 
+    test("Digit0 picks the Army by default", () => {
+      newHandler([]);
+      window.dispatchEvent(
+        new KeyboardEvent("keyup", { code: "Digit0", key: "0" }),
+      );
+      expect(inputHandler["uiState"].ghostStructure).toBe(UnitType.Army);
+    });
+
     test("Numpad6 alias also reaches the Stargate", () => {
       newHandler([]);
       window.dispatchEvent(
@@ -772,6 +780,8 @@ describe("InputHandler AutoUpgrade", () => {
       testSettings.setKeybinds({
         buildCity: "Numpad1",
         buildHydrogenBomb: "Numpad0",
+        // Digit0 is the Army's by default; move it out of the way.
+        buildArmy: "KeyZ",
       });
       const uiState: UIState = {
         attackRatio: 20,

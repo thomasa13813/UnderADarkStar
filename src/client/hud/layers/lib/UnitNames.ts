@@ -26,6 +26,7 @@ export const UNIT_NAME_KEYS: Partial<Record<UnitType, string>> = {
   [UnitType.Train]: "train",
   [UnitType.TransportShip]: "boat",
   [UnitType.Warship]: "warship",
+  [UnitType.Army]: "army",
 };
 
 /** The player-facing name of a unit type, in the viewer's language. */

@@ -242,8 +242,8 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   for anyone to scramble over. Strikes are exempt from the engine's troop-for-troop cancelling. AI
   Lords need no special rule: the engine's retaliation against an attacker already fights the bubble.
 - **H18 — Gifts: the Hegemon builds in its vassals' nebulae.** [Decided 2026-09-24] The Hegemon may
-  place **any structure a challenger could build** — city, port, factory, defence post, SAM, silo,
-  stargate — on **any challenger's territory**, paying the cost from its own gold (H4). The structure
+  place **any structure a challenger could build** — city, port, factory, defence post, stargate,
+  shield array — on **any challenger's territory**, paying the cost from its own gold (H4). The structure
   is a **gift**: it belongs to the host player outright from the moment it is placed, exactly as if
   they had built it (the engine ties a structure to the tile's owner, so it changes hands with the
   tile like any other). The host **cannot refuse** — challengers are the Hegemon's subjects, and the
@@ -384,6 +384,24 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   of the throne's strike only conquest removes one — hence the price (Tom's baseline; F21). Lords
   do not build arrays yet (F21). Icon: a crenelated generator under a dashed dome (the silhouette
   of the Echo Base shield generator, not its name).
+- **C6 — Armies and fleet support.** [Decided and built 2026-10-23, Tom] Each **level** of a
+  finished spaceport supports one destroyer, and each level of a finished industrial zone one
+  **army**. With no support to spare, nothing new deploys. Losing support disbands nothing: the
+  units stay, and no new one comes until the count is back under the cap. The Hegemon's destroyers
+  and a pirate's corsair are not capped.
+  - **What an army is.** A new, purely **defensive land unit**, priced like a destroyer on its own
+    count. It is deployed on the owner's nebula and sets out from the nearest industrial zone. It
+    patrols inside the owner's territory, never crosses deep space, and is moved like a destroyer.
+  - **Its shot.** When the front of **any** land attack on its owner comes within range (the
+    Hegemon's strikes included), it fires a shot over the nebula. A shot that lands while the
+    attack still stands kills **5%** of the attack's troops; it fires once per cooldown.
+  - **What it never does.** It never attacks and never helps an attack.
+  - **Losing it.** It has no health: it is lost when its tile is taken, or to a warhead.
+  - **Lords** (not Easy) send their armies to a land attack's front and deploy one there when
+    supported.
+  - **Its look.** A pixel-star sprite and icon, hotkey 0.
+  - Numbers in `ARMY_DEFAULTS` and `UNIT_SUPPORT_DEFAULTS`; player rules in
+    `docs/DarkStar-Buildings.md` §3.8.
 
 ### 3.4 Setting and delivery
 
@@ -2144,6 +2162,15 @@ hydrogen-bomb removal (closed by S6).
 
 ## 11. Changelog
 
+- **2026-10-23, armies** — **C6: armies, and destroyers capped by spaceports.** Tom's call. Each
+  spaceport level supports one destroyer, and each industrial-zone level one army: a new defensive
+  land unit that patrols its owner's nebula and shoots at incoming attack fronts, 5% of the attack's
+  troops per hit. Lords use them under land attack. The MIRV quick-chat phrases are gone.
+- **2026-10-23, buildings** — **`docs/DarkStar-Buildings.md` is the buildings reference**, written
+  for players and kept publishable (site, wiki): every structure's cost, levels, effects and fate,
+  from the code. Its maintainer companion `docs/DarkStar-Buildings-Levers.md` holds where each
+  number lives, the audit's findings and the changelog. Fixed with it: H18's gift list (no SAM or
+  silo) and the punitive-strike and ambience strings that still named a silo.
 - **2026-10-20, font** — **Tektur is the default face, not only the display face.** Tom's call:
   `--font-sans` in `styles.css` names Tektur (system sans behind it for scripts its Latin subsets
   lack), so the whole UI inherits it; the radial menu's labels and the floating map text

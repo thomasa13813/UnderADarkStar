@@ -318,6 +318,38 @@ export const SHIELD_ARRAY_DEFAULTS = {
   constructionSeconds: 10,
 };
 
+// Fleet and army support (Tom, 2026-10-23): each level of a finished
+// spaceport supports one destroyer, each level of a finished industrial zone
+// one army. Losing a supporting building disbands nothing; it only stops new
+// deployments until the count is back under the cap. The Hegemon's
+// destroyers and a pirate's corsair need no port and are not capped.
+export const UNIT_SUPPORT_DEFAULTS = {
+  destroyersPerPortLevel: 1,
+  armiesPerFactoryLevel: 1,
+};
+
+// Armies (Tom, 2026-10-23): a purely defensive land unit. Deployed from the
+// owner's nearest industrial zone, it patrols its own territory and, when an
+// attack's front comes within reach, fires a shot over the nebula that kills
+// a share of the attacking troops if the attack still stands when it lands.
+// It never attacks, never leaves its owner's nebula, and dies like a
+// building: conquest of the tile under it or a warhead. Priced like a
+// destroyer, on its own count.
+export const ARMY_DEFAULTS = {
+  // Tiles from its patrol tile it wanders within.
+  patrolRange: 40,
+  // Ticks per tile moved (1 = a destroyer's pace in deep space).
+  moveTicksPerTile: 1,
+  // An attack is in reach when one of its front tiles is this close.
+  shotRange: 40,
+  // Seconds between shots.
+  shotCooldownSeconds: 10,
+  // Tiles a shot flies per tick.
+  shotSpeed: 3,
+  // Percent of the attack's current troops a landed shot kills.
+  casualtyPercent: 5,
+};
+
 // Piracy (docs/DarkStar-Piracy.md, PR1–PR18): an eliminated challenger stays
 // in the round as one anonymous raiding ship, the corsair, and may beach it
 // to return as a tiny challenger. Every number is a lever (§5); only
@@ -578,6 +610,12 @@ export class Config {
   }
   shieldArrayRadius(): number {
     return this.shieldArrayConfig().radius;
+  }
+  unitSupportConfig(): typeof UNIT_SUPPORT_DEFAULTS {
+    return UNIT_SUPPORT_DEFAULTS;
+  }
+  armyConfig(): typeof ARMY_DEFAULTS {
+    return ARMY_DEFAULTS;
   }
   setHegemonMapLandTiles(landTiles: number): void {
     this._hegemonMapLandTiles = landTiles;
@@ -898,6 +936,15 @@ export class Config {
         };
         break;
       }
+      case UnitType.Army:
+        // Priced like a destroyer, on its own count (Tom, 2026-10-23).
+        info = {
+          cost: this.costWrapper(
+            (numUnits: number) => Math.min(1_000_000, (numUnits + 1) * 250_000),
+            UnitType.Army,
+          ),
+        };
+        break;
       case UnitType.Shell:
         info = {
           cost: () => 0n,

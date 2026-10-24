@@ -1619,6 +1619,35 @@ export class PlayerImpl implements Player {
     return closest?.unit ?? false;
   }
 
+  // Fleet and army support (UNIT_SUPPORT_DEFAULTS): how many destroyers the
+  // player's finished spaceports support, or armies its finished industrial
+  // zones, one per level, against how many it has. null for an uncapped
+  // unit, and for the Hegemon's destroyers, which need no port.
+  unitSupport(unitType: UnitType): { used: number; cap: number } | null {
+    const support = this.mg.config().unitSupportConfig();
+    let building: UnitType;
+    let perLevel: number;
+    if (unitType === UnitType.Warship && !this.isHegemon()) {
+      building = UnitType.Port;
+      perLevel = support.destroyersPerPortLevel;
+    } else if (unitType === UnitType.Army) {
+      building = UnitType.Factory;
+      perLevel = support.armiesPerFactoryLevel;
+    } else {
+      return null;
+    }
+    let levels = 0;
+    for (const unit of this.units(building)) {
+      if (unit.isActive() && !unit.isUnderConstruction()) {
+        levels += unit.level();
+      }
+    }
+    return {
+      used: this.units(unitType).length,
+      cap: levels * perLevel,
+    };
+  }
+
   // `payer` is whose gold is checked (a gift's Hegemon, H18, at the flat
   // first-building price).
   private canBuildUnitType(
@@ -1640,11 +1669,19 @@ export class PlayerImpl implements Player {
     if (this.isHegemon() && unitType === UnitType.MIRV) {
       return false;
     }
+    // Armies are a challenger's: the throne has no industrial zone.
+    if (this.isHegemon() && unitType === UnitType.Army) {
+      return false;
+    }
     // A pirate builds one thing, the corsair, and it costs nothing (PR2,
     // PR3): the alive check below would refuse it, so it is opened here.
     // Everything else a dead player cannot build, a pirate cannot either.
     if (this.isPirate() && unitType === UnitType.Warship) {
       return true;
+    }
+    const support = this.unitSupport(unitType);
+    if (support !== null && support.used >= support.cap) {
+      return false;
     }
     const cost =
       knownCost ?? this.mg.unitInfo(unitType).cost(this.mg, this, 0, payer);
@@ -1805,6 +1842,8 @@ export class PlayerImpl implements Player {
         return targetTile;
       case UnitType.Warship:
         return this.warshipSpawn(targetTile);
+      case UnitType.Army:
+        return this.armySpawn(targetTile);
       case UnitType.Shell:
       case UnitType.SAMMissile:
       case UnitType.Projectile:
@@ -1984,6 +2023,31 @@ export class PlayerImpl implements Player {
           best = harbour.tile;
           bestDist = d;
         }
+      }
+    }
+    return best;
+  }
+
+  // An army is deployed on the player's own nebula (never the Dark Star's)
+  // and sets out from its nearest finished industrial zone, which it walks
+  // from through the player's territory. Ties go to the lower tile.
+  armySpawn(tile: TileRef): TileRef | false {
+    const mg = this.mg;
+    if (!mg.isLand(tile) || mg.owner(tile) !== this || mg.isInDarkStar(tile)) {
+      return false;
+    }
+    let best: TileRef | false = false;
+    let bestDist = Infinity;
+    for (const zone of this.units(UnitType.Factory)) {
+      if (!zone.isActive() || zone.isUnderConstruction()) continue;
+      const d = mg.manhattanDist(zone.tile(), tile);
+      if (
+        best === false ||
+        d < bestDist ||
+        (d === bestDist && zone.tile() < best)
+      ) {
+        best = zone.tile();
+        bestDist = d;
       }
     }
     return best;

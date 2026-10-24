@@ -23,6 +23,8 @@ export const UT_MIRV_WARHEAD = "MIRV Warhead" as const;
 export const UT_TRAIN = "Train" as const;
 /** DarkStar: the Hegemon's flying strike (later also stargate shots). */
 export const UT_PROJECTILE = "Projectile" as const;
+/** DarkStar: the defensive land unit an industrial zone supports. */
+export const UT_ARMY = "Army" as const;
 
 // Structures
 export const UT_CITY = "City" as const;
@@ -117,4 +119,5 @@ export const ALL_UNIT_TYPES = [
   UT_PROJECTILE,
   UT_STARGATE,
   UT_SHIELD_ARRAY,
+  UT_ARMY,
 ] as const;

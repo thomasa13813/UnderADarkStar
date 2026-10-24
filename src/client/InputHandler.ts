@@ -460,6 +460,7 @@ export class InputHandler {
       "buildAtomBomb",
       "buildHydrogenBomb",
       "buildWarship",
+      "buildArmy",
     ];
     buildKeybinds = buildKeybinds.map((i: string): string => {
       return this.keybinds[i];
@@ -1236,6 +1237,7 @@ export class InputHandler {
       { key: "buildAtomBomb", type: UnitType.AtomBomb },
       { key: "buildHydrogenBomb", type: UnitType.HydrogenBomb },
       { key: "buildWarship", type: UnitType.Warship },
+      { key: "buildArmy", type: UnitType.Army },
     ];
     // A disabled unit never claims a key (a lobby may switch units off).
     const config = this.gameView.config();

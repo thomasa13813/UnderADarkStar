@@ -39,10 +39,6 @@
       "requiresPlayer": true
     },
     {
-      "key": "mirv",
-      "requiresPlayer": true
-    },
-    {
       "key": "focus",
       "requiresPlayer": true
     },
@@ -183,10 +179,6 @@
       "requiresPlayer": true
     },
     {
-      "key": "mirv_soon",
-      "requiresPlayer": true
-    },
-    {
       "key": "number1_warning",
       "requiresPlayer": false
     },
@@ -216,14 +208,6 @@
     },
     {
       "key": "danger_base",
-      "requiresPlayer": true
-    },
-    {
-      "key": "saving_for_mirv",
-      "requiresPlayer": true
-    },
-    {
-      "key": "mirv_ready",
       "requiresPlayer": true
     },
     {

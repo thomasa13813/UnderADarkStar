@@ -15,6 +15,7 @@ import { Cluster } from "../../game/TrainStation";
 import { PseudoRandom } from "../../PseudoRandom";
 import { assertNever, calculateBoundingBox } from "../../Util";
 import { ConstructionExecution } from "../ConstructionExecution";
+import { MoveWarshipExecution } from "../MoveWarshipExecution";
 import { UpgradeStructureExecution } from "../UpgradeStructureExecution";
 import { nearestTileDist, nearestTileDistCapped } from "../Util";
 import { NationHegemonBehavior } from "./NationHegemonBehavior";
@@ -201,6 +202,11 @@ export class NationStructureBehavior {
   ) {}
 
   handleStructures(): boolean {
+    // Armies answer a land attack before anything else is weighed; like
+    // defense posts they sit outside the pacing/counter system.
+    if (this.placementsCount > 0) {
+      this.handleArmies();
+    }
     // Defense posts are handled outside the normal pacing/counter system:
     // they don't increment placementsCount or lastStructureTick, and they
     // are never built as the very first structure.
@@ -284,6 +290,48 @@ export class NationStructureBehavior {
       return true;
     }
     return false;
+  }
+
+  /**
+   * Armies (Tom, 2026-10-23): while a land attack is coming in, send every
+   * army that is not already near its front there, and deploy a new one if
+   * the industrial zones support it and the gold is there. Not on Easy.
+   */
+  private handleArmies(): void {
+    const game = this.game;
+    if (game.config().isUnitDisabled(UnitType.Army)) return;
+    if (game.config().gameConfig().difficulty === Difficulty.Easy) return;
+    const player = this.player;
+    let target: Attack | null = null;
+    for (const attack of player.incomingAttacks()) {
+      if (attack.sourceTile() !== null || attack.borderTiles().size === 0) {
+        continue;
+      }
+      if (target === null || attack.troops() > target.troops()) {
+        target = attack;
+      }
+    }
+    if (target === null) return;
+    const front = this.random.randElement(Array.from(target.borderTiles()));
+    if (game.owner(front) !== player) return;
+
+    const reach = game.config().armyConfig().shotRange;
+    const away = player
+      .units(UnitType.Army)
+      .filter((army) => {
+        const patrol = army.warshipState().patrolTile ?? army.tile();
+        return game.euclideanDistSquared(patrol, front) > reach * reach;
+      })
+      .map((army) => army.id());
+    if (away.length > 0) {
+      game.addExecution(new MoveWarshipExecution(player, away, front));
+    }
+
+    const support = player.unitSupport(UnitType.Army);
+    if (support === null || support.used >= support.cap) return;
+    if (player.gold() < this.cost(UnitType.Army)) return;
+    if (player.canBuild(UnitType.Army, front) === false) return;
+    game.addExecution(new ConstructionExecution(player, UnitType.Army, front));
   }
 
   private defensePostNeeded(): boolean {

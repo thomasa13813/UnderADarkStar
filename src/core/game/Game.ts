@@ -232,6 +232,9 @@ export enum UnitType {
   // DarkStar: the structure whose perimeter no challenger's missile may
   // target (C5). Appended.
   ShieldArray = "Shield Array",
+  // DarkStar: the defensive land unit an industrial zone supports (Tom,
+  // 2026-10-23). Appended.
+  Army = "Army",
 }
 
 export enum TrainType {
@@ -252,6 +255,7 @@ export const BuildableAttacks = unitTypeGroup([
   UnitType.HydrogenBomb,
   UnitType.MIRV,
   UnitType.Warship,
+  UnitType.Army,
 ] as const);
 
 export const Structures = unitTypeGroup([
@@ -299,6 +303,10 @@ export interface UnitParamsMap {
   };
 
   [UnitType.Warship]: {
+    patrolTile: TileRef;
+  };
+
+  [UnitType.Army]: {
     patrolTile: TileRef;
   };
 
@@ -450,6 +458,8 @@ export interface Attack {
   clearBorder(): void;
   borderSize(): number;
   clusteredPositions(): TileRef[];
+  // The defender's tiles on the attack's front (an army aims at them).
+  borderTiles(): ReadonlySet<TileRef>;
   // A Hegemon's strike (RazeExecution): its troops defend the bubble of land
   // it holds, and the target fights it by taking that land back.
   isStrike(): boolean;
@@ -813,6 +823,9 @@ export interface Player {
   unitCount(type: UnitType): number;
   unitsConstructed(type: UnitType): number;
   unitsOwned(type: UnitType): number;
+  // Destroyers a player's spaceports support, or armies its industrial
+  // zones, one per level (null: no cap).
+  unitSupport(unitType: UnitType): { used: number; cap: number } | null;
   // DarkStar: the stargate that would fire at the tile (C4), null when none
   // of the player's built gates has it in range.
   stargateFor(tile: TileRef): GateShotOption | null;

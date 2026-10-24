@@ -26,6 +26,7 @@ export function getDefaultKeybinds(isMac: boolean): Record<string, string> {
     // DarkStar: shares the silo's key; silos are disabled under a Dark Star.
     buildShieldArray: "Digit5",
     buildWarship: "Digit7",
+    buildArmy: "Digit0",
     buildAtomBomb: "Digit8",
     buildHydrogenBomb: "Digit9",
     attackRatioDown: "KeyT",

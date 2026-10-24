@@ -149,8 +149,11 @@ export class WarshipSelectionController implements Controller {
   private findWarshipsNearCell(clickRef: TileRef): UnitView[] {
     const myPlayer = this.game.myPlayer();
     if (!myPlayer) return [];
+    // Destroyers are picked from deep space, armies from the player's own
+    // nebula (Tom, 2026-10-23).
+    const type = this.game.isWater(clickRef) ? UnitType.Warship : UnitType.Army;
     return this.game
-      .units(UnitType.Warship)
+      .units(type)
       .filter(
         (unit) =>
           unit.isActive() &&
@@ -185,14 +188,20 @@ export class WarshipSelectionController implements Controller {
       if (!this.game.isValidCoord(cell.x, cell.y)) return;
       clickRef = this.game.ref(cell.x, cell.y);
     }
-    if (!this.game.isWater(clickRef)) return;
+    // Deep space moves destroyers; the player's own nebula moves armies.
+    // Any other click (an attack, a boat) is not ours.
+    const water = this.game.isWater(clickRef);
+    if (!water && !this.isOwnNebula(clickRef)) return;
+    const movable = (u: UnitView) => (u.type() === UnitType.Army) === !water;
 
     if (this.multiSelectedWarships.length > 0) {
       const myPlayer = this.game.myPlayer();
       const activeIds = this.multiSelectedWarships
-        .filter((u) => u.isActive() && u.owner() === myPlayer)
+        .filter((u) => u.isActive() && u.owner() === myPlayer && movable(u))
         .map((u) => u.id());
 
+      // Nebula clicked with only destroyers selected: keep the selection.
+      if (activeIds.length === 0 && !water) return;
       if (activeIds.length > 0) {
         this.eventBus.emit(new MoveWarshipIntentEvent(activeIds, clickRef));
       }
@@ -201,6 +210,7 @@ export class WarshipSelectionController implements Controller {
     }
 
     if (this.selectedUnit) {
+      if (!movable(this.selectedUnit)) return;
       this.eventBus.emit(
         new MoveWarshipIntentEvent([this.selectedUnit.id()], clickRef),
       );
@@ -233,7 +243,7 @@ export class WarshipSelectionController implements Controller {
       }
       return;
     }
-    if (!this.game.isWater(clickRef)) {
+    if (!this.game.isWater(clickRef) && !this.isOwnNebula(clickRef)) {
       this.eventBus.emit(new ContextMenuEvent(event.x, event.y));
       return;
     }
@@ -267,21 +277,32 @@ export class WarshipSelectionController implements Controller {
     const myPlayer = this.game.myPlayer();
     if (!myPlayer) return;
 
-    const selected = this.game.units(UnitType.Warship).filter((unit) => {
-      if (!unit.isActive() || unit.owner() !== myPlayer) return false;
-      const screen = this.transformHandler.worldToScreenCoordinates(
-        new Cell(this.game.x(unit.tile()), this.game.y(unit.tile())),
-      );
-      return (
-        screen.x >= x1 && screen.x <= x2 && screen.y >= y1 && screen.y <= y2
-      );
-    });
+    const selected = this.game
+      .units(UnitType.Warship, UnitType.Army)
+      .filter((unit) => {
+        if (!unit.isActive() || unit.owner() !== myPlayer) return false;
+        const screen = this.transformHandler.worldToScreenCoordinates(
+          new Cell(this.game.x(unit.tile()), this.game.y(unit.tile())),
+        );
+        return (
+          screen.x >= x1 && screen.x <= x2 && screen.y >= y1 && screen.y <= y2
+        );
+      });
 
     // Clear single selection if we got a box selection
     if (selected.length > 0 && this.selectedUnit) {
       this.eventBus.emit(new UnitSelectionEvent(this.selectedUnit, false));
     }
     this.eventBus.emit(new UnitSelectionEvent(null, true, selected));
+  }
+
+  private isOwnNebula(tile: TileRef): boolean {
+    const myPlayer = this.game.myPlayer();
+    return (
+      myPlayer !== null &&
+      this.game.isLand(tile) &&
+      this.game.owner(tile) === myPlayer
+    );
   }
 
   private getAllWarships(): UnitView[] {

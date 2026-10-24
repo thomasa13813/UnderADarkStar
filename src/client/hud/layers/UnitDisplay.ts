@@ -17,6 +17,7 @@ import { UIState } from "../../UIState";
 import { renderNumber, translateText } from "../../Utils";
 import { GameView } from "../../view";
 import {
+  armyIcon,
   atomBombIcon,
   cityIcon,
   defensePostIcon,
@@ -39,6 +40,11 @@ export class UnitDisplay extends LitElement implements Controller {
   private keybinds: Record<string, { value: string; key: string }> = {};
   private _cities = 0;
   private _warships = 0;
+  private _armies = 0;
+  // Destroyers / armies in service and how many the player's finished
+  // spaceports / industrial zones support (one per level).
+  private _warshipCap = 0;
+  private _armyCap = 0;
   private _factories = 0;
   private _port = 0;
   private _defensePost = 0;
@@ -79,6 +85,10 @@ export class UnitDisplay extends LitElement implements Controller {
     this.requestUpdate();
   }
 
+  private isHegemon(): boolean {
+    return this.game?.myPlayer()?.isHegemon() ?? false;
+  }
+
   private cost(item: UnitType): Gold {
     for (const bu of this.playerBuildables ?? []) {
       if (bu.type === item) {
@@ -116,7 +126,12 @@ export class UnitDisplay extends LitElement implements Controller {
       case UnitType.Warship:
         return (
           this.cost(item) <= (player?.gold() ?? 0n) &&
-          (player?.units(UnitType.Port).length ?? 0) > 0
+          this._warships < this._warshipCap
+        );
+      case UnitType.Army:
+        return (
+          this.cost(item) <= (player?.gold() ?? 0n) &&
+          this._armies < this._armyCap
         );
       default:
         return this.cost(item) <= (player?.gold() ?? 0n);
@@ -135,7 +150,15 @@ export class UnitDisplay extends LitElement implements Controller {
     this._stargate = player.totalUnitLevels(UnitType.Stargate);
     this._shieldArray = player.totalUnitLevels(UnitType.ShieldArray);
     this._factories = player.totalUnitLevels(UnitType.Factory);
-    this._warships = player.totalUnitLevels(UnitType.Warship);
+    this._warships = player.units(UnitType.Warship).length;
+    this._armies = player.units(UnitType.Army).length;
+    const supported = (building: UnitType) =>
+      player
+        .units(building)
+        .filter((u) => !u.isUnderConstruction())
+        .reduce((sum, u) => sum + u.level(), 0);
+    this._warshipCap = supported(UnitType.Port);
+    this._armyCap = supported(UnitType.Factory);
     this.requestUpdate();
   }
 
@@ -200,10 +223,19 @@ export class UnitDisplay extends LitElement implements Controller {
           )}
           ${this.renderUnitItem(
             warshipIcon,
-            this._warships,
+            this.isHegemon()
+              ? this._warships
+              : `${this._warships}/${this._warshipCap}`,
             UnitType.Warship,
             "warship",
             this.keybinds["buildWarship"]?.key ?? "7",
+          )}
+          ${this.renderUnitItem(
+            armyIcon,
+            `${this._armies}/${this._armyCap}`,
+            UnitType.Army,
+            "army",
+            this.keybinds["buildArmy"]?.key ?? "0",
           )}
           ${this.renderUnitItem(
             atomBombIcon,
@@ -226,7 +258,7 @@ export class UnitDisplay extends LitElement implements Controller {
 
   private renderUnitItem(
     icon: string,
-    number: number | null,
+    number: number | string | null,
     unitType: PlayerBuildableUnitType,
     structureKey: string,
     hotkey: string,
@@ -311,6 +343,11 @@ export class UnitDisplay extends LitElement implements Controller {
               case UnitType.Warship:
                 this.eventBus?.emit(new ToggleStructureEvent([UnitType.Port]));
                 break;
+              case UnitType.Army:
+                this.eventBus?.emit(
+                  new ToggleStructureEvent([UnitType.Factory]),
+                );
+                break;
               default:
                 this.eventBus?.emit(new ToggleStructureEvent([unitType]));
             }
@@ -328,7 +365,11 @@ export class UnitDisplay extends LitElement implements Controller {
           <div class="flex items-center gap-0.5 pt-0.5">
             <img src=${icon} alt=${structureKey} class="align-middle size-5" />
             ${number !== null
-              ? html`<span class="text-xs">${renderNumber(number)}</span>`
+              ? html`<span class="text-xs"
+                  >${typeof number === "string"
+                    ? number
+                    : renderNumber(number)}</span
+                >`
               : null}
           </div>
         </div>

@@ -70,6 +70,8 @@ const UNIT_COLUMNS: UnitColumn[] = [
   { name: "TrainCarriageLoaded", sprite: "trainCarriageLoaded.png" },
   // DarkStar: the strike / stargate-shot projectile (the atom bomb glyph for now).
   { name: "Projectile", sprite: "gl/projectile.png" },
+  // DarkStar: the army, a pixel star (Tom, 2026-10-23).
+  { name: "Army", sprite: "gl/army.png" },
 ];
 
 /** Icon atlas: one 64×64 cell per column, the SVG rendered white at 48×48

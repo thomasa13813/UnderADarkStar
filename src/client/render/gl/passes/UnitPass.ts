@@ -39,6 +39,7 @@ import type { RendererConfig, UnitState } from "../../types";
 import {
   SMOOTHED_NUKE_TYPES,
   TrainType,
+  UT_ARMY,
   UT_ATOM_BOMB,
   UT_HYDROGEN_BOMB,
   UT_MIRV,
@@ -88,6 +89,8 @@ const UNIT_ORDER = [
   "TrainCarriage",
   "TrainCarriageLoaded",
   UT_PROJECTILE,
+  UT_ARMY,
+  UT_ARMY,
 ] as const;
 
 const ATLAS_COLS = UNIT_ORDER.length;
@@ -154,6 +157,7 @@ const MISSILE_TYPES: ReadonlySet<string> = new Set([
   UT_SHELL,
   UT_MIRV_WARHEAD,
   UT_PROJECTILE,
+  UT_ARMY,
 ]);
 
 /** Values per smoothing segment in the flat `smoothSegs` array:
