@@ -57,6 +57,7 @@ describe("api config", () => {
       discord: null,
       google: null,
       turnstileSecret: null,
+      backup: null,
     });
     expect(issuerFor(config)).toBe("http://localhost:8787");
   });

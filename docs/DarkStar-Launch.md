@@ -220,17 +220,18 @@ _Done when_ nothing a player sees or hears is a placeholder.
       actually tried. (Delete was built 2026-10-25: Settings → Account.) **In part 2026-10-25**
       (Accounts doc §12.8): the name filter masks the offending word for everyone but the
       player, API rate limits, bans and the admin command (`npm run api:admin`), and one name per
-      account with unlimited instant renames (§12.9). Left: backups and the restore drill
-      (deferred by Tom, 2026-10-25).
+      account with unlimited instant renames (§12.9). Nightly backups to Cloudflare R2 built the
+      same day (§12.10, free tier). Left: Tom's R2 setup (Services doc §2.1), the keys pushed
+      and deployed, and the restore drill.
 - [x] **Legal pages**: Terms of Service and Privacy Policy, linked from the footer, with a contact
       address. Then publish the Google sign-in (it needs the privacy policy on the live domain)
       and add the Google provider to production. Drafted 2026-10-17 (below) and live on the
       domain soon after; **Google sign-in live 2026-10-18** (`870292bf`), brand verified, tested
       by Tom.
-- [ ] **Visitor analytics**: Cloudflare Web Analytics, cookieless, switched on in the Cloudflare
-      dashboard (automatic setup: Cloudflare adds its beacon to every HTML page at the edge, so
-      the repository carries no script and no token). The Privacy Policy's revision (2026-10-25,
-      below) must be live before it is switched on. Steps in `DarkStar-Services.md` §2.1.
+- [x] **Visitor analytics**: Cloudflare Web Analytics, cookieless (automatic setup: Cloudflare
+      adds its beacon to every HTML page at the edge, so the repository carries no script and no
+      token). Found already on 2026-10-25 (since the domain was added, EU visitors excluded); the
+      revised Privacy Policy is live the same day. Where to read it: `DarkStar-Services.md` §2.1.
 
   **As drafted (2026-10-17).** `resources/public/privacy.html` and `terms.html`, served at
   `/privacy.html` and `/terms.html` as root files, linked from the footer (`main.terms`,
@@ -311,7 +312,7 @@ _Done when_ the checklist is clean. This build is the release candidate.
 | ~~A Google Cloud OAuth client~~                       | Stage 6   | Done: Google sign-in live 2026-10-18.                                   |
 | ~~A contact address and a place for bug reports~~     | Stage 6   | Done: `hello@january-games.com` (10-06) and the Discord server (10-07). |
 | ~~Reading and approving the Terms and Privacy pages~~ | Stage 6   | Done: live since 2026-10-17; revisions are Tom's to approve.            |
-| Switching on Cloudflare Web Analytics                 | Stage 6   | In the dashboard, after the revised privacy policy is deployed.         |
+| ~~Switching on Cloudflare Web Analytics~~             | Stage 6   | Already on (automatic setup); policy live 2026-10-25.                   |
 | The go or no-go                                       | Stage 8   |                                                                         |
 
 ## 6. Open questions
@@ -335,11 +336,16 @@ _Done when_ the checklist is clean. This build is the release candidate.
 
 ## 7. Changelog
 
+- **2026-10-25** — **Nightly backups built** (B6, Accounts doc §12.10): the database and signing
+  key to a private Cloudflare R2 bucket at 09:00 UTC, thirty nights kept by a lifecycle rule,
+  inside the free tier; `npm run api:backup` for an immediate backup, the list and the restore
+  drill. The Privacy Policy gains the backups' 30-day retention.
 - **2026-10-25** — **Checklist brought up to date.** Stage 7 passed: Tom reports the friends test
   went well, with no game-breaking bugs and useful feedback gathered. Legal pages ticked (live
   since 2026-10-17) with Google sign-in (live 2026-10-18). New Stage 6 item: **Cloudflare Web
-  Analytics** (Tom's choice), cookieless, enabled from the dashboard; the Privacy Policy now
-  describes it and must be deployed first.
+  Analytics** (Tom's choice), cookieless; the Privacy Policy now describes it. Later the same
+  day: the policy deployed, and the dashboard showed analytics already on since the domain was
+  added (automatic setup, EU visitors excluded), so the item is ticked.
 - **2026-10-25** — **B6, first part** (Accounts doc §12.8): masked names (Tom's rule: others see
   `***-player`, the player sees their own), API rate limits, bans and the admin command.
 - **2026-10-25** — **Self-service account deletion** (Accounts A17): Settings → Account deletes

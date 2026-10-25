@@ -50,37 +50,77 @@ which receives `hello@`.
 
 The front door. Four jobs under one account.
 
-| Job               | What it does                                                                                                                                                        | Where in the dashboard                 |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
-| Registrar and DNS | Owns `january-games.com` (bought 2026-10-06) and answers "which address is this name?" for the game and the API hostnames. The free certificate makes the `https`.  | Domain Registration; DNS → Records     |
-| Tunnel            | A connection the server opens _outward_ to Cloudflare. Players' requests ride down it. Nothing on the server listens to the internet except SSH.                    | Zero Trust → Networks → Tunnels        |
-| Turnstile         | The bot check. The page asks Cloudflare for a one-time token when a player joins; our API confirms it with Cloudflare using the secret key.                         | Turnstile → widget "Under a Dark Star" |
-| Email Routing     | Forwards `hello@january-games.com` to the studio mailbox. No mailbox of its own; replies go out through the mail client's "Send mail as".                           | Email → Email Routing                  |
-| Web Analytics     | Counts visits: page views, referring sites, countries, devices, load times. Cookieless; Cloudflare adds its beacon to our HTML pages at the edge (automatic setup). | Analytics & Logs → Web Analytics       |
+| Job               | What it does                                                                                                                                                        | Where in the dashboard                    |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| Registrar and DNS | Owns `january-games.com` (bought 2026-10-06) and answers "which address is this name?" for the game and the API hostnames. The free certificate makes the `https`.  | Domain Registration; DNS → Records        |
+| Tunnel            | A connection the server opens _outward_ to Cloudflare. Players' requests ride down it. Nothing on the server listens to the internet except SSH.                    | Zero Trust → Networks → Tunnels           |
+| Turnstile         | The bot check. The page asks Cloudflare for a one-time token when a player joins; our API confirms it with Cloudflare using the secret key.                         | Turnstile → widget "Under a Dark Star"    |
+| Email Routing     | Forwards `hello@january-games.com` to the studio mailbox. No mailbox of its own; replies go out through the mail client's "Send mail as".                           | Email → Email Routing                     |
+| Web Analytics     | Counts visits: page views, referring sites, countries, devices, load times. Cookieless; Cloudflare adds its beacon to our HTML pages at the edge (automatic setup). | Observability → Analytics → Web analytics |
+| R2 (backups)      | Holds the nightly backup of the account database and signing key, thirty nights deep, in a private bucket. Free tier; see "Nightly backups" below.                  | Storage & databases → R2 Object Storage   |
 
 - **If it is down:** the whole site is unreachable, since every request passes through it. Rare;
   check <https://www.cloudflarestatus.com>.
 - **Gotcha:** the free certificate covers `january-games.com` and names _one_ level below it.
   That is why the API is `darkstar-api.january-games.com` and not `api.darkstar.…`.
 
-**Web Analytics, setting it up (Tom, in a browser, once).** Only after the Privacy Policy that
-describes it (2026-10-25 revision) is deployed. Cloudflare renames these pages from time to time.
+**Web Analytics.** Nothing to set up: Cloudflare created it with automatic setup when the domain
+was added (about 2026-10-06), and it has run since. The repository holds no script and no token;
+Cloudflare adds its beacon to every HTML page as it passes through. As seen on 2026-10-25:
 
-1. In the Cloudflare dashboard, open **Analytics & Logs → Web Analytics** and choose **Add a
-   site**.
-2. Pick the domain `january-games.com` from the list (it is proxied, so the automatic setup is
-   offered), and choose **Enable** (not "with JS snippet installation": no script or token goes
-   in the repository). **Done**.
-3. Optional: under the site's **Manage site → Advanced options**, add a rule so that only
-   `darkstar.january-games.com` is measured. The API answers JSON, which never gets the beacon,
-   so leaving it out changes nothing in practice.
-4. Check: open `https://darkstar.january-games.com/`, view the page source (Ctrl+U) and look for
-   `static.cloudflareinsights.com/beacon.min.js` near the end. Visits appear in the dashboard
-   within a few minutes.
+- **Seeing the numbers.** In the dashboard's left sidebar, **Observability → Analytics → Web
+  analytics**. One site card, `january-games.com`, labelled _Automatic setup_, shows page views
+  and visits for the last 24 hours. Click the site name (or **View Web Analytics for all
+  sites**) for the full charts: visits, page views, top pages, referrers, countries, browsers,
+  devices and load times, over a chosen period.
+- **The setting.** **Manage site** on the card shows _Configured hostname(s):
+  january-games.com_ and four choices under _Real User Measurements (RUM)_. Ours is **Enable,
+  excluding visitor data in the EU** (Cloudflare's default, kept by Tom 2026-10-25): visitors from the EU get no beacon
+  and are not counted. **Enable** would count them too; the Privacy Policy covers either. The
+  other two (manual snippet, Disable) are not wanted. Press **Update** only after changing it.
+- **Checking it works.** On `https://darkstar.january-games.com/`, view the page source (Ctrl+U)
+  and look for `static.cloudflareinsights.com/beacon.min.js` near the end (absent from an EU
+  connection). Checked 2026-10-25 on the home page, the wiki and the Privacy Policy.
 
 What it measures: each page load, including the wiki, the Terms and the Privacy Policy. The
 game itself is one page, so it shows how many arrive, where from, and how many leave without a
 second page, not where they leave inside a round. Nothing in the game's code depends on it.
+
+**Nightly backups (R2).** The account API uploads its database and signing key every night at
+09:00 UTC (Accounts doc §12.10) to a private bucket. Free: R2 gives 10 GB of storage, a million
+writes and ten million reads a month at no charge; thirty nights of two small files use a few
+megabytes and about 60 writes. As set up on 2026-10-25:
+
+- **R2 itself**: **Storage & databases → R2 Object Storage**. The first visit offered **Add R2
+  subscription to my account** ($0.00 due, the card on file charged only above the free
+  limits); Tom added it.
+- **The bucket**: `darkstar-backups`, location Automatic (Eastern North America), default storage
+  class **Standard**. Never pick Infrequent Access: it has no free allowance. Public access is
+  off, and must stay off (the backups hold the signing key).
+- **The 30-day rule**: the bucket's **Settings → Object Lifecycle Rules**: rule
+  `delete-after-30-days`, prefix `nightly/`, **Delete uploaded objects after 30 Days**. Leave
+  "Transition objects to Infrequent Access" unticked. The default multipart rule stays too.
+- **The access key** (Tom, once): R2 Object Storage overview → **Manage API Tokens** → **Create
+  Account API token**. Token name `darkstar-backup`; Permissions **Object Read & Write**;
+  Specify bucket(s) **Apply to specific buckets only** → `darkstar-backups`; TTL **Forever**; no IP
+  filtering (the restore drill runs from the PC). **Create Account API Token**. The next page
+  shows the secret once: copy **Access Key ID** into `R2_ACCESS_KEY_ID` and **Secret Access Key**
+  into `R2_SECRET_ACCESS_KEY` in the root `.env`. The token value and the endpoint on that page
+  are not needed. `R2_ACCOUNT_ID` (shown on the R2 overview under Account Details) and
+  `R2_BUCKET=darkstar-backups` are already there.
+- **Check the key from the PC**: `npm run api:backup -- list` prints `(no backups)` (or the
+  nights). A `403 SignatureDoesNotMatch` means the secret is wrong: the Secret Access Key is 64
+  characters, the Access Key ID 32. If the secret was lost (it is shown once), the token's
+  **⋯ → Roll** on Manage API Tokens issues a new one; copy both keys from the page it shows.
+- **To the server**: push the env (the private operations doc's helper), deploy, then take the
+  first backup by hand with `api:backup -- now` (operations doc §6a). The API log then says
+  `nightly backup at 9:00 UTC to R2` at every start.
+- **The restore drill** (from the PC, the live server untouched): `npm run api:backup -- fetch
+latest .restore-drill` prints `integrity: ok` and the account and round counts, which should
+  match the live board. Delete the folder afterwards (it holds the signing key).
+- **Keeping it free**: the R2 overview's Billing Dashboard shows the month's billable usage
+  ($0.00 so far) and offers **Add Budget Alert**, an email if charges ever start. The API also
+  logs a warning if one night's backup passes 300 MB.
 
 ### 2.2 The server
 
@@ -201,16 +241,16 @@ Things nobody signed up for that the build still needs.
   the running game.
 - **npm registry** supplies the JavaScript packages at build time. Same: deploys only.
 - **Cloudflare's Turnstile script** (`challenges.cloudflare.com`) loads in every player's browser.
-- **Cloudflare's Web Analytics beacon** (`static.cloudflareinsights.com`), added at the edge once
-  enabled (§2.1). If it is blocked or down, only the visit counts suffer.
+- **Cloudflare's Web Analytics beacon** (`static.cloudflareinsights.com`), added at the edge
+  (§2.1). If it is blocked or down, only the visit counts suffer.
 
 ### 2.7 Planned, not yet in use
 
-- **Backups** of the account database and signing key, nightly, off the server (Cloudflare R2 or
-  similar). Accounts doc §10, step B6. Until then, §2.2's volume is a single point of loss.
+- **Backups** of the account database and signing key, nightly, to Cloudflare R2: built
+  2026-10-25 (§2.1, "Nightly backups"), running once the R2 keys reach the server. Until then,
+  §2.2's volume is a single point of loss.
 - ~~**Google sign-in**~~ live since 2026-10-18 (§2.5).
 - ~~**An uptime check**~~ in place since 2026-10-12 (UptimeRobot, both health endpoints).
-- **Cloudflare Web Analytics**: the policy is written; switching it on is §2.1's steps.
 - **itch.io** listing (open question, Launch doc §6).
 
 ## 3. How they work together
@@ -246,7 +286,7 @@ A secret is anything that lets someone act as us. None is in this repository; `d
 lists the keys the server needs and `deploy/push-env.sh` writes them to the server from a
 developer's git-ignored `.env`. Each exists only at its source (the dashboard or portal that
 issued it) and in the server's environment file; the token signing key exists only on the
-server's data volume. Which ones there are:
+server's data volume and in the nightly backups (§2.1, a private R2 bucket). Which ones there are:
 
 | Secret                | What it unlocks                               |
 | --------------------- | --------------------------------------------- |
@@ -256,6 +296,7 @@ server's data volume. Which ones there are:
 | Tunnel token          | Attaching a different server to our hostnames |
 | `API_KEY`             | Calling the API as the game server            |
 | Token signing key     | Minting login tokens for any account          |
+| R2 secret access key  | Reading the backups (accounts, signing key)   |
 
 Public, not secret: the Discord and Google client IDs, the Turnstile site key and the tunnel's name. If a
 secret may have leaked, rotate it first and investigate second; the rotation steps are in the
@@ -263,6 +304,10 @@ private operations doc.
 
 ## 5. Changelog
 
+- **2026-10-25, later** — §2.1's Web Analytics rewritten from the dashboard itself: it was
+  already on (automatic setup since the domain was added, EU visitors excluded), so the setup
+  steps became where to read the numbers and what the setting is. The revised Privacy Policy is
+  live; the earlier version said the site used no analytics while this ran.
 - **2026-10-25** — Cloudflare Web Analytics added to §2.1 (Tom's choice): automatic setup from the
   dashboard, steps and limits; the Privacy Policy describes it. §2.7 brought up to date (Google
   sign-in and the uptime check are live).

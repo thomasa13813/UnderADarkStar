@@ -310,8 +310,9 @@
       <ul>
         <li>
           <strong>Cloudflare</strong> carries all traffic to the site, protects
-          it from attacks, runs the Turnstile bot check and counts visits for us
-          (Web Analytics).
+          it from attacks, runs the Turnstile bot check, counts visits for us
+          (Web Analytics) and stores our nightly backups of the account
+          database.
         </li>
         <li>
           <strong>Our hosting provider</strong> rents us the server that runs
@@ -367,6 +368,13 @@
           <td>Until you delete it, or ask us to</td>
         </tr>
         <tr>
+          <td>Backups of the account database</td>
+          <td>
+            30 days; a deleted account leaves the backups as the last copy
+            holding it expires
+          </td>
+        </tr>
+        <tr>
           <td>Sign-in sessions</td>
           <td>Until they expire (30 days) or you sign out</td>
         </tr>
@@ -411,8 +419,9 @@
           sessions, account name and leaderboard numbers are erased, and you
           leave the leaderboard. Rounds you played stay only as anonymous
           history, not linked to you. Game records you appear in are deleted on
-          their normal 30-day schedule. If you sign in again later, you start a
-          new, empty account.
+          their normal 30-day schedule, and copies in our nightly backups expire
+          within 30 days; we restore a backup only to recover from a failure. If
+          you sign in again later, you start a new, empty account.
         </li>
         <li>
           You can ask us for a copy of the information we hold about your

@@ -11,7 +11,8 @@
 # Reads DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, TURNSTILE_SITE_KEY,
 # TURNSTILE_SECRET_KEY and TUNNEL_TOKEN from ./.env (git-ignored), and
 # GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET when they are there (Google sign-in
-# is optional: empty keys leave it off), generates
+# is optional: empty keys leave it off), the four R2_* keys of the nightly
+# backup when they are there (optional the same way), generates
 # a fresh API_KEY, fills in deploy/env.example's fixed values, and uploads the
 # result to /opt/darkstar/.env (mode 600). Nothing is printed: no secret ever
 # appears in a terminal or a chat log. An existing server file is kept as
@@ -54,6 +55,10 @@ TURNSTILE_SECRET_KEY="$(need TURNSTILE_SECRET_KEY)"
 TUNNEL_TOKEN="$(need TUNNEL_TOKEN)"
 GOOGLE_CLIENT_ID="$(val GOOGLE_CLIENT_ID)"
 GOOGLE_CLIENT_SECRET="$(val GOOGLE_CLIENT_SECRET)"
+R2_ACCOUNT_ID="$(val R2_ACCOUNT_ID)"
+R2_ACCESS_KEY_ID="$(val R2_ACCESS_KEY_ID)"
+R2_SECRET_ACCESS_KEY="$(val R2_SECRET_ACCESS_KEY)"
+R2_BUCKET="$(val R2_BUCKET)"
 DEPLOY_BRANCH="$(val DEPLOY_BRANCH)"
 DEPLOY_BRANCH="${DEPLOY_BRANCH:-main}"
 
@@ -84,6 +89,10 @@ DISCORD_CLIENT_SECRET=$DISCORD_CLIENT_SECRET
 GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID
 GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET
 DATA_DIR=/data
+R2_ACCOUNT_ID=$R2_ACCOUNT_ID
+R2_ACCESS_KEY_ID=$R2_ACCESS_KEY_ID
+R2_SECRET_ACCESS_KEY=$R2_SECRET_ACCESS_KEY
+R2_BUCKET=$R2_BUCKET
 EOF
 
 $SSH "$HOST" "mkdir -p /opt/darkstar && { [ -f /opt/darkstar/.env ] && cp /opt/darkstar/.env /opt/darkstar/.env.previous || true; }"

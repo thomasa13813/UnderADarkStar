@@ -11,6 +11,7 @@
     "start:api": "tsx src/api/Server.ts",
     "api:rebuild-stats": "tsx src/api/RebuildStats.ts",
     "api:admin": "tsx src/api/AdminCli.ts",
+    "api:backup": "tsx src/api/BackupCli.ts",
     "start:api-dev": "cross-env GAME_ENV=dev DOMAIN=localhost API_KEY=WARNING_DEV_API_KEY_DO_NOT_USE_IN_PRODUCTION NODE_OPTIONS=--disable-warning=ExperimentalWarning tsx src/api/Server.ts",
     "dev": "cross-env GAME_ENV=dev concurrently \"npm run start:client\" \"npm run start:server-dev\" \"npm run start:api-dev\"",
     "dev:host": "cross-env GAME_ENV=dev VITE_HOST=lan concurrently \"npm run start:client\" \"npm run start:server-dev\" \"npm run start:api-dev\"",

@@ -6,6 +6,8 @@ static/
 coverage/
 # The account API's database and signing key in dev (src/api, DATA_DIR)
 .data/
+# Restore drills (npm run api:backup -- fetch): a database and the signing key.
+.restore*/
 TODO.txt
 resources/images/.DS_Store
 resources/.DS_Store

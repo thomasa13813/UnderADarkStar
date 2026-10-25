@@ -1,9 +1,10 @@
 import { GameEnv, parseGameEnv } from "../core/configuration/Config";
+import { R2Config } from "./R2";
 
 // Under a Dark Star: the account API's settings (docs/DarkStar-Accounts.md
 // §11). Read once at boot from the environment; nothing here is secret except
-// API_KEY, which the game server shares for server-to-API calls, and the
-// sign-in providers' client secrets. In dev those come from the root `.env`
+// API_KEY, which the game server shares for server-to-API calls, the
+// sign-in providers' client secrets and the backup bucket's R2 secret. In dev those come from the root `.env`
 // (git-ignored), which Server.ts loads through dotenv.
 
 export interface ProviderCredentials {
@@ -43,6 +44,9 @@ export interface ApiConfig {
   // Cloudflare Turnstile's secret, for the join bot check (§7, join_verify).
   // Required outside dev; in dev it may be absent, and every token passes.
   turnstileSecret: string | null;
+  // The nightly backup's R2 bucket (§10, Backup.ts). Null, and no backups,
+  // unless all four R2_* keys are set.
+  backup: R2Config | null;
 }
 
 export function apiConfigFromEnv(
@@ -98,7 +102,36 @@ export function apiConfigFromEnv(
       env.GOOGLE_CLIENT_SECRET,
     ),
     turnstileSecret,
+    backup: backupConfigFromEnv(env),
   };
+}
+
+// All four or none, like the providers. Read on its own by the backup
+// command, which needs no other API setting.
+export function backupConfigFromEnv(
+  env: NodeJS.ProcessEnv = process.env,
+): R2Config | null {
+  const values = {
+    accountId: env.R2_ACCOUNT_ID?.trim() ?? "",
+    accessKeyId: env.R2_ACCESS_KEY_ID?.trim() ?? "",
+    secretAccessKey: env.R2_SECRET_ACCESS_KEY?.trim() ?? "",
+    bucket: env.R2_BUCKET?.trim() ?? "",
+  };
+  const set = Object.values(values).filter((v) => v !== "").length;
+  if (set === 0) return null;
+  if (set < 4) {
+    throw new Error(
+      "R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY and R2_BUCKET must be set together",
+    );
+  }
+  // The token page shows both keys at once; pasting one twice otherwise
+  // surfaces only as R2's SignatureDoesNotMatch.
+  if (values.secretAccessKey === values.accessKeyId) {
+    throw new Error(
+      "R2_SECRET_ACCESS_KEY is a copy of R2_ACCESS_KEY_ID: paste the token's Secret Access Key (64 characters)",
+    );
+  }
+  return values;
 }
 
 // Both keys or neither: one without the other is a misconfiguration worth

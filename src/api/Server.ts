@@ -1,9 +1,12 @@
 import * as dotenv from "dotenv";
 import http from "http";
+import { GameEnv } from "../core/configuration/Config";
 import { createApiApp } from "./App";
+import { BACKUP_HOUR_UTC, scheduleNightlyBackups, takeBackup } from "./Backup";
 import { apiConfigFromEnv, issuerFor } from "./Config";
 import { openDatabase, tableNames } from "./Db";
 import { loadOrCreateSigningKey } from "./Keys";
+import { R2Client } from "./R2";
 import { RECORD_RETENTION_MS, RecordStore } from "./Records";
 
 // Under a Dark Star: the account API's entry point (docs/DarkStar-Accounts.md
@@ -32,6 +35,21 @@ async function main() {
   prune();
   const pruneTimer = setInterval(prune, PRUNE_INTERVAL_MS);
   pruneTimer.unref();
+  // The nightly backup (§10): production only, so a developer's .env holding
+  // the R2 keys never sends a dev database to the bucket.
+  let stopBackups = () => {};
+  if (config.backup === null) {
+    log.info("nightly backup off (R2_* not set)");
+  } else if (config.env === GameEnv.Dev) {
+    log.info("nightly backup off in dev");
+  } else {
+    const r2 = new R2Client(config.backup);
+    stopBackups = scheduleNightlyBackups(
+      () => takeBackup(db, config.dataDir, r2, Date.now()),
+      log,
+    );
+    log.info(`nightly backup at ${BACKUP_HOUR_UTC}:00 UTC to R2`);
+  }
   const app = createApiApp({ config, db, key, log, records });
   const server = http.createServer(app);
   server.listen(config.port, () => {
@@ -43,6 +61,7 @@ async function main() {
   });
   const shutdown = () => {
     clearInterval(pruneTimer);
+    stopBackups();
     server.close(() => {
       db.close();
       process.exit(0);

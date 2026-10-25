@@ -341,7 +341,7 @@ Schema changes are numbered migration files applied at boot.
   backups exist, the policy must say how long a deleted account survives in them. Server logs keep IP
   addresses for a short, stated period.
 - **Backups.** A nightly consistent copy of the database and signing key, sent off the server (an
-  R2 bucket or similar), with a restore tried once before launch. Losing the file loses every
+  R2 bucket; built 2026-10-25, §12.10), with a restore tried once before launch. Losing the file loses every
   account and the board; this is the one part of the system that is not rebuildable.
 - **Google's rule.** A Google sign-in cannot leave test mode until the app has a public privacy
   policy on a verified domain. So the legal pages come before Google sign-in goes live; Discord
@@ -752,6 +752,38 @@ board (the account name) and the game (the box) could disagree.
   player's own row is live.
 - **Tests**: `tests/api/Rename.test.ts`, `tests/client/UsernameInputAccountName.test.ts`,
   `accountJoinName` in `tests/server/Censor.test.ts`, the admin rename in `Admin.test.ts`.
+
+### 12.10 As built: the nightly backup (2026-10-25)
+
+Tom's constraints: Cloudflare R2, and free. Thirty nights of two small files is about 60 writes a
+month against R2's free million, and megabytes against its free 10 GB.
+
+- **What and when**: at 09:00 UTC the API copies its database with SQLite's online backup
+  (`node:sqlite` `backup()`: consistent while the API writes, WAL included), gzips it, and
+  uploads it with the signing key to `nightly/<YYYY-MM-DD>/darkstar.sqlite.gz` and
+  `nightly/<YYYY-MM-DD>/signing-key.json` (`src/api/Backup.ts`). The game records (30-day
+  replays) are not backed up: losing them costs replays, not accounts. A failure is logged
+  (`nightly backup failed`) and the next night tries again; over 300 MB compressed it warns
+  that thirty nights would pass the free storage.
+- **Retention** is the bucket's lifecycle rule (delete `nightly/` after 30 days), set in the
+  dashboard; the API never deletes, so its token needs no more than object read and write on
+  the one bucket.
+- **Uploading** is `src/api/R2.ts`: SigV4 by hand on `node:crypto` and `fetch` (put, get, list),
+  checked against AWS's published signing examples; no SDK.
+- **Configuration**: `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`,
+  all four or none (`backupConfigFromEnv`); `deploy/push-env.sh` carries them from the local
+  `.env`. Production only: with `GAME_ENV=dev` the API never uploads, so a developer's `.env`
+  holding the keys cannot overwrite a night with a dev database.
+- **The command**: `npm run api:backup -- now | list | fetch <night|latest> <dir> | summary
+  <dir>`. `now` (production only) takes tonight's backup at once, the first check after the
+  keys land. `fetch` downloads a night into a fresh directory, refuses to overwrite, and prints
+  `PRAGMA integrity_check` with the account and round counts; `summary` prints the same for any
+  data directory. The restore drill runs `fetch latest` on the developer's PC and starts a local
+  API on it (Services doc §2.1); a production restore is in the private operations doc.
+- **Privacy**: the policy's retention table and deletion paragraph say a deleted account leaves
+  the backups within 30 days, and that a backup is restored only to recover from a failure.
+- **Tests**: `tests/api/Backup.test.ts` (the AWS signing examples, backup and fetch through an
+  in-memory bucket including WAL writes, the schedule and its retry, the all-or-none keys).
 
 ## 13. Tests
 
