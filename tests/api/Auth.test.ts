@@ -7,7 +7,11 @@ import { DatabaseSync } from "node:sqlite";
 import os from "os";
 import path from "path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { accountNameFrom, FALLBACK_ACCOUNT_NAME } from "../../src/api/Accounts";
+import {
+  accountNameFrom,
+  DELETED_ACCOUNT_NAME,
+  FALLBACK_ACCOUNT_NAME,
+} from "../../src/api/Accounts";
 import { createApiApp } from "../../src/api/App";
 import {
   SIGN_IN_FAILED_FRAGMENT,
@@ -354,6 +358,142 @@ describe("auth routes (dev provider)", () => {
     expect((await refresh(h, a)).status).toBe(401);
     expect((await refresh(h, b)).status).toBe(401);
     expect((await refresh(h, other)).status).toBe(200);
+  });
+
+  it("delete erases the account at once and leaves its rounds anonymous (A17)", async () => {
+    const a = await devSignIn(h, "Tom");
+    const b = await devSignIn(h, "Tom");
+    const other = await devSignIn(h, "Ann");
+    const r = await refresh(h, a);
+    const token = ((await r.json()) as { jwt: string }).jwt;
+    const live = setCookie(r, REFRESH_COOKIE)!;
+    const ids = h.db
+      .prepare("SELECT id, name, public_id FROM accounts ORDER BY name")
+      .all() as { id: string; name: string; public_id: string }[];
+    const ann = ids.find((x) => x.name === "Ann")!;
+    const tom = ids.find((x) => x.name === "Tom")!;
+    h.db
+      .prepare(
+        `INSERT INTO rounds (game_id, throne_id, throne_name, throne_type, map,
+           started_at, ended_at, humans, outcome, hegemon_account,
+           winner_account, reign_after, git_commit, reign_before, hegemon_run)
+         VALUES ('g1', 't1', 'Throne', 'ffa', 'Map', 0, 1, 2, 'held', ?, ?, 1,
+           NULL, 0, 1)`,
+      )
+      .run(tom.id, tom.id);
+    h.db
+      .prepare(
+        "INSERT INTO round_players (game_id, account_id, was_hegemon, won) VALUES ('g1', ?, 1, 1), ('g1', ?, 0, 0)",
+      )
+      .run(tom.id, ann.id);
+    h.db
+      .prepare(
+        "INSERT INTO stats (account_id, rounds_held, hegemon_rounds, longest_reign, games_played, updated_at) VALUES (?, 1, 1, 1, 1, 0), (?, 0, 0, 0, 1, 0)",
+      )
+      .run(tom.id, ann.id);
+
+    const out = await fetch(`${h.base}/auth/delete`, {
+      method: "POST",
+      headers: { cookie: `${REFRESH_COOKIE}=${live}` },
+    });
+    expect(out.status).toBe(204);
+    expect(setCookieHeader(out, REFRESH_COOKIE)).toContain("Max-Age=0");
+
+    // Every session ends and the token stops being honoured.
+    expect((await refresh(h, b)).status).toBe(401);
+    const me = await fetch(`${h.base}/users/@me`, {
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(me.status).toBe(401);
+
+    // Nothing left that names the person or links a round to them.
+    const count = (sql: string, ...args: string[]) =>
+      (h.db.prepare(sql).get(...args) as { n: number }).n;
+    expect(
+      count(
+        "SELECT COUNT(*) AS n FROM identities WHERE account_id = ?",
+        tom.id,
+      ),
+    ).toBe(0);
+    expect(
+      count("SELECT COUNT(*) AS n FROM sessions WHERE account_id = ?", tom.id),
+    ).toBe(0);
+    expect(
+      count("SELECT COUNT(*) AS n FROM stats WHERE account_id = ?", tom.id),
+    ).toBe(0);
+    expect(
+      count(
+        "SELECT COUNT(*) AS n FROM round_players WHERE account_id = ?",
+        tom.id,
+      ),
+    ).toBe(0);
+    expect(
+      h.db
+        .prepare(
+          "SELECT hegemon_account, winner_account FROM rounds WHERE game_id = 'g1'",
+        )
+        .get(),
+    ).toEqual({ hegemon_account: null, winner_account: null });
+    const tombstone = h.db
+      .prepare("SELECT * FROM accounts WHERE id = ?")
+      .get(tom.id) as { name: string; public_id: string; deleted_at: number };
+    expect(tombstone.name).toBe(DELETED_ACCOUNT_NAME);
+    expect(tombstone.public_id).not.toBe(tom.public_id);
+    expect(tombstone.deleted_at).toBe(h.clock.now);
+
+    // Another account is untouched.
+    expect((await refresh(h, other)).status).toBe(200);
+    expect(
+      count(
+        "SELECT COUNT(*) AS n FROM round_players WHERE account_id = ?",
+        ann.id,
+      ),
+    ).toBe(1);
+
+    // Signing in again with the same login starts a new, empty account.
+    await devSignIn(h, "Tom");
+    const fresh = h.db
+      .prepare(
+        "SELECT id FROM accounts WHERE name = 'Tom' AND deleted_at IS NULL",
+      )
+      .get() as { id: string };
+    expect(fresh.id).not.toBe(tom.id);
+  });
+
+  it("delete answers 401 without a live session", async () => {
+    const none = await fetch(`${h.base}/auth/delete`, { method: "POST" });
+    expect(none.status).toBe(401);
+    const a = await devSignIn(h, "Tom");
+    await fetch(`${h.base}/auth/logout`, {
+      method: "POST",
+      headers: { cookie: `${REFRESH_COOKIE}=${a}` },
+    });
+    const dead = await fetch(`${h.base}/auth/delete`, {
+      method: "POST",
+      headers: { cookie: `${REFRESH_COOKIE}=${a}` },
+    });
+    expect(dead.status).toBe(401);
+    expect(h.db.prepare("SELECT deleted_at FROM accounts").get()).toEqual({
+      deleted_at: null,
+    });
+  });
+
+  it("delete is refused while a ban is in force", async () => {
+    const a = await devSignIn(h, "Tom");
+    h.db
+      .prepare("UPDATE accounts SET ban_reason = 'cheating', ban_until = NULL")
+      .run();
+    const out = await fetch(`${h.base}/auth/delete`, {
+      method: "POST",
+      headers: { cookie: `${REFRESH_COOKIE}=${a}` },
+    });
+    expect(out.status).toBe(403);
+    expect(await out.json()).toEqual({ error: "banned" });
+    const row = h.db.prepare("SELECT name, deleted_at FROM accounts").get() as {
+      name: string;
+      deleted_at: number | null;
+    };
+    expect(row).toEqual({ name: "Tom", deleted_at: null });
   });
 
   it("refuses an expired session", async () => {

@@ -39,7 +39,7 @@ function respondWith(status: number, body: unknown = {}) {
   return fetchMock;
 }
 
-describe("deleteAccount (DELETE /users/@me)", () => {
+describe("deleteAccount (POST /auth/delete)", () => {
   beforeEach(setConfig);
 
   afterEach(() => {
@@ -57,44 +57,25 @@ describe("deleteAccount (DELETE /users/@me)", () => {
       string,
       RequestInit,
     ];
-    expect(url.endsWith("/users/@me")).toBe(true);
-    expect(init.method).toBe("DELETE");
+    expect(url.endsWith("/auth/delete")).toBe(true);
+    expect(init.method).toBe("POST");
     expect(init.credentials).toBe("include");
     expect(init.headers).toBeUndefined();
   });
 
-  it("treats 204 as queued (the account is deleted 24 hours later)", async () => {
+  it("treats 204 as deleted", async () => {
     respondWith(204);
     expect(await deleteAccount()).toEqual({ ok: true });
   });
 
   it("maps 401 to logged_out", async () => {
-    respondWith(401, {
-      error: "Unauthorized",
-      message: "Invalid refresh token",
-    });
+    respondWith(401, { error: "no session" });
     expect(await deleteAccount()).toEqual({ ok: false, code: "logged_out" });
   });
 
-  it("passes the server's player-facing message through on 403", async () => {
-    respondWith(403, {
-      error: "Forbidden",
-      message: "Banned accounts cannot be deleted",
-    });
-    expect(await deleteAccount()).toEqual({
-      ok: false,
-      code: "forbidden",
-      message: "Banned accounts cannot be deleted",
-    });
-  });
-
-  it("maps the global rate limit (429) to rate_limited, not a support failure", async () => {
-    respondWith(429, {
-      error: "Too many requests",
-      message:
-        "Account deletion is temporarily unavailable, please try again later",
-    });
-    expect(await deleteAccount()).toEqual({ ok: false, code: "rate_limited" });
+  it("maps 403 to banned", async () => {
+    respondWith(403, { error: "banned" });
+    expect(await deleteAccount()).toEqual({ ok: false, code: "banned" });
   });
 
   it("maps any other status to failed", async () => {

@@ -47,7 +47,7 @@ Numbered so the code and tests can cite them. Build steps are B1–B7 (§12).
 | A14 | **Results arrive through the existing archive call.** The game server already posts each finished game to the API; the record gains a throne block. Private and solo games are not recorded.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Proposed |
 | A15 | **Longest reign is consecutive rounds as Hegemon on one throne.** The run continues while the same holder wins and keeps the seat; it ends on a loss, on stepping down (a seat claimed again in the lobby is a new run), on a server restart (L12), and it never carries to another throne: a Hegemon who quits one throne for an open seat elsewhere starts at one. The throne card's badge keeps its own rule (Lobbies §3.1: the win that takes a throne is 1, each timer win adds 1), which for a slayer who stays equals the run so far. (Revised 2026-10-17; until then, consecutive wins counted from the taking win, shared with the badge.)                                                                | Decided  |
 | A16 | **All-time boards only,** top 100 each, at launch. Weekly or seasonal boards later.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | Proposed |
-| A17 | **An account can delete itself.** Sign-ins and sessions are erased; its rounds stay as anonymous history and leave the board.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Proposed |
+| A17 | **An account can delete itself,** from the settings page's Account tab, at once (no waiting period). Sign-ins, sessions, the name and the numbers are erased; its rounds stay as anonymous history and leave the board. Refused while a ban is in force (email instead). Decided 2026-10-25.                                                                                                                                                                                                                                                                                                                                                                                                                       | Decided  |
 | A18 | **Moderation by command line.** A ban is a role on the account, carried in the token; the game server already refuses a banned token. Tom runs ban, unban and rename from a script on the server. No admin web page at launch.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Proposed |
 | A19 | **Full game records are kept 30 days,** compressed on disk, then deleted. They are for bug reports and for replay-checking a disputed result (§5.5); the leaderboard does not need them.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | Proposed |
 | A20 | **Listing a private lobby publicly is off at launch.** Upstream sold it with a subscription; thrones are our public offer. Decided 2026-10-07.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Decided  |
@@ -270,7 +270,7 @@ What the game server and client call at `api.<DOMAIN>`, and what answers at laun
 | `GET /auth/providers`                                         | client      | The providers this API offers (`{ providers: [...] }`); the page shows Google's button only when it is listed.                                                           |
 | `POST /auth/refresh`, `/logout`, `/revoke`                    | client      | Rotate the cookie and issue a token; end this session; end every session.                                                                                                |
 | `GET /users/@me`                                              | both        | Account name, public ID, ban, the numbers. `UserMeResponseSchema` is cut to these.                                                                                       |
-| `PUT /users/@me/username`, `DELETE /users/@me`                | client      | Rename (A13); delete the account (A17).                                                                                                                                  |
+| `PUT /users/@me/username`, `POST /auth/delete`                | client      | Rename (A13, not built); delete the account (A17, built 2026-10-25; the refresh cookie is the credential, as for revoke).                                                |
 | `POST /join_verify`                                           | game server | Cloudflare Turnstile check plus the name filter, as the server expects today.                                                                                            |
 | `POST /game/:id`                                              | game server | Result ingest (§5.3).                                                                                                                                                    |
 | `GET /game/:id`                                               | both        | The stored record while it is kept; 404 after.                                                                                                                           |
@@ -320,7 +320,7 @@ Schema changes are numbered migration files applied at boot.
 **Client (`src/client`)**
 
 - A **Sign in** button and an account panel (name, the numbers, sign out, sign out everywhere,
-  delete account). For a guest, `UsernameInput` shows the assigned name and a sign-in prompt
+  a link to the settings page's **Account** tab, which repeats sign-out and holds delete account). For a guest, `UsernameInput` shows the assigned name and a sign-in prompt
   instead of a text box. The upstream account pages were removed in P1; `Auth.ts` kept the
   refresh, logout and play-token paths these build on.
 - The Leaderboard page (§6) and the win-screen prompt.
@@ -340,7 +340,8 @@ Schema changes are numbered migration files applied at boot.
 - **Rate limits** on the sign-in and refresh endpoints and on renames.
 - **Privacy.** What is held is in A12. The privacy policy (roadmap P8) says so, names Discord and
   Google as sign-in providers and Cloudflare as the network in front, and gives the deletion route
-  (the account panel, and an email address for people who cannot sign in). Server logs keep IP
+  (Settings → Account, and an email address for people who cannot sign in or are banned). When
+  backups exist, the policy must say how long a deleted account survives in them. Server logs keep IP
   addresses for a short, stated period.
 - **Backups.** A nightly consistent copy of the database and signing key, sent off the server (an
   R2 bucket or similar), with a restore tried once before launch. Losing the file loses every
@@ -681,8 +682,9 @@ API tests run against an in-memory database, under `tests/api/`, added to `npm t
 - `Leaderboard.test.ts` (built, §12.5, §12.6): the three sorts, ordering and ties; a Hegemon
   listed on reigns alone; runs within and across thrones; banned and deleted accounts absent;
   the caller's own row; the top-100 cut; the cache.
-- `Account.test.ts`: rename rules and the wait; deletion erases sign-ins and sessions and
-  anonymises rounds.
+- `Account.test.ts`: rename rules and the wait. Deletion is built and tested in `Auth.test.ts`
+  (2026-10-25): sign-ins, sessions, stats and round_players erased, rounds anonymised, the name
+  scrubbed, a stale token refused, a fresh sign-in a new account, a banned account refused.
 - Server: `tests/server/GameServerJoin` gains the guest-in-production, assigned-guest-name
   (stable per browser ID, typed name ignored) and slim-`@me` cases;
   `ArchivePlayerRecord` gains `verified` and `throne`.
@@ -708,7 +710,7 @@ API tests run against an in-memory database, under `tests/api/`, added to `npm t
 ## 15. Open questions for Tom
 
 - **Q1 — The proposed rows of §2.** A7 to A12, A14 and A16 to A19 are still recommendations (A20
-  was decided 2026-10-07). The one most worth a look is A17 (deletion).
+  was decided 2026-10-07, A17 on 2026-10-25).
 - ~~**Q2 — Playing under another name.**~~ Answered 2026-10-01: a signed-in player may type any
   name; a guest may not and is given an `Anon` name (A13, A21).
 - ~~**Q3 — Minimum age.**~~ 13, in the draft Terms (2026-10-17).
@@ -718,6 +720,13 @@ API tests run against an in-memory database, under `tests/api/`, added to `npm t
 
 ## 16. Changelog
 
+- **2026-10-25** — **Self-service deletion (A17) built and decided** at Tom's request, so
+  deletion no longer waits on an email to him. `POST /auth/delete` (refresh cookie as the
+  credential) erases sign-ins, sessions, stats and round_players, nulls the account in `rounds`,
+  and leaves a tombstone with the name and public ID replaced. Immediate, no waiting period;
+  refused while banned. The settings page gains an Account tab (sign out, sign out everywhere,
+  delete with a typed confirmation), linked from the account panel. Privacy Policy and Terms
+  updated to point at it; email stays for access, correction, and players who cannot sign in.
 - **2026-10-20** — The leaderboard moves onto the home page beside the menu (§6, Tom's request:
   more attention, more competition); the desktop nav item is gone, the full page stays.
 - **2026-10-17** — **The Google provider built** (§12.7): scopes `openid profile` only, the

@@ -334,46 +334,33 @@ export function invalidateUserMe() {
 }
 
 export type DeleteAccountResult =
-  // 204: deletion queued — the server deletes the account 24 hours later.
+  // 204: the account is deleted.
   | { ok: true }
   // 401: missing/unknown/expired refresh token — already logged out, and the
   // server cleared the cookie.
   | { ok: false; code: "logged_out" }
-  // 403: refused by policy. `message` is the server's player-facing reason
-  // (root player / banned account), shown as-is.
-  | { ok: false; code: "forbidden"; message?: string }
-  // 429: the global deletion rate limit (one per 20 minutes across all
-  // players) — nothing was queued, try again later.
-  | { ok: false; code: "rate_limited" }
-  // Anything else: the client shows a "contact support" failure.
+  // 403: a ban is in force; nothing was deleted.
+  | { ok: false; code: "banned" }
+  // Anything else: the client says so and points at the email address.
   | { ok: false; code: "failed" };
 
-// DELETE /users/@me — queues the account for deletion; the server performs it
-// 24 hours later, and only support can cancel in the meantime (there is no
-// self-service cancel endpoint). The HttpOnly refresh cookie is the credential
-// (same as /auth/logout), so no Authorization header. On 204 every session on
-// every device is invalidated and the cookie is cleared — callers drop local
-// auth state themselves and must NOT call /auth/logout afterwards. Signing in
-// again during the 24 hours works but does not cancel the deletion.
+// Under a Dark Star: POST /auth/delete (docs/DarkStar-Accounts.md A17) deletes
+// the account at once; there is nothing to cancel. The HttpOnly refresh cookie
+// is the credential (same as /auth/revoke), so no Authorization header. On 204
+// every session on every device has ended and the cookie is cleared — callers
+// drop local auth state with clearLocalSession() and must NOT call
+// /auth/logout afterwards.
 export async function deleteAccount(): Promise<DeleteAccountResult> {
   try {
-    const response = await fetch(`${getApiBase()}/users/@me`, {
-      method: "DELETE",
+    const response = await fetch(`${getApiBase()}/auth/delete`, {
+      method: "POST",
       credentials: "include",
     });
     if (response.status === 401) {
       return { ok: false, code: "logged_out" };
     }
     if (response.status === 403) {
-      const body = await response.json().catch(() => null);
-      return {
-        ok: false,
-        code: "forbidden",
-        message: typeof body?.message === "string" ? body.message : undefined,
-      };
-    }
-    if (response.status === 429) {
-      return { ok: false, code: "rate_limited" };
+      return { ok: false, code: "banned" };
     }
     if (!response.ok) {
       console.error(

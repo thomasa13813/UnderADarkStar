@@ -19,8 +19,9 @@ import { translateText } from "../Utils";
  * The Sign in button and the account panel (docs/DarkStar-Accounts.md §9,
  * accounts step B2). Signed out, it offers the providers; signed in, it shows
  * the account name and opens a small panel with the numbers (reigns,
- * longest reign, B4/B5), a link to the leaderboard page, sign out and sign
- * out everywhere; rename and delete come with B6.
+ * longest reign, B4/B5), links to the leaderboard page and to the settings
+ * page's Account tab (where the account can be deleted, A17), sign out and
+ * sign out everywhere; rename comes with B6.
  *
  * Sign-in is a page navigation (SignIn.ts): the browser goes to the API's
  * login route, from there to the provider, and comes back to this page with
@@ -101,6 +102,15 @@ export class AccountButton extends LitElement {
   private openLeaderboard() {
     this.open = false;
     window.showPage?.("page-leaderboard");
+  }
+
+  // The settings page's Account tab: sign out and delete the account (A17).
+  private openAccountSettings() {
+    this.open = false;
+    const settings = document.getElementById("page-settings") as
+      | (HTMLElement & { open(args?: Record<string, unknown>): void })
+      | null;
+    settings?.open({ tab: "account" });
   }
 
   private async signOut(everywhere: boolean) {
@@ -293,6 +303,14 @@ export class AccountButton extends LitElement {
           @click=${() => this.openLeaderboard()}
         >
           ${translateText("account.view_leaderboard")}
+        </button>
+        <button
+          type="button"
+          class=${this.itemClass()}
+          data-account-settings
+          @click=${() => this.openAccountSettings()}
+        >
+          ${translateText("account.account_settings")}
         </button>
         <button
           type="button"

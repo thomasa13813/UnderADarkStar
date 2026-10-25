@@ -243,3 +243,53 @@ export function userMeResponse(
 
 // The wait between renames (§11): 30 days, as upstream.
 export const NAME_CHANGE_WAIT_MS = 30 * 24 * 60 * 60 * 1000;
+
+// What a deleted account's row keeps in place of its name (A17).
+export const DELETED_ACCOUNT_NAME = "deleted";
+
+export type DeleteAccountOutcome = "deleted" | "banned" | "unknown";
+
+// A17: an account deletes itself, at once and for good. Its sign-ins,
+// sessions and numbers are erased; its rounds stay as anonymous history (the
+// account columns become null, as for a guest) and its rows in round_players
+// go, so nothing left links a round to the person. The accounts row stays as
+// a tombstone with the name, tag and public ID replaced: a token issued before
+// the deletion still names its ID for up to 15 minutes, and every reader
+// already treats `deleted_at` as "no such account". Signing in again with the
+// same provider login creates a new, empty account.
+//
+// Refused while a ban is in force, so deleting is not a way out of one; the
+// player can still email to have it deleted once the ban is dealt with.
+export function deleteAccount(
+  db: DatabaseSync,
+  accountId: string,
+  now: number,
+): DeleteAccountOutcome {
+  const account = accountById(db, accountId);
+  if (account === null || account.deleted_at !== null) return "unknown";
+  if (activeBan(account, now) !== null) return "banned";
+  db.exec("BEGIN");
+  try {
+    db.prepare("DELETE FROM identities WHERE account_id = ?").run(accountId);
+    db.prepare("DELETE FROM sessions WHERE account_id = ?").run(accountId);
+    db.prepare("DELETE FROM stats WHERE account_id = ?").run(accountId);
+    db.prepare("DELETE FROM round_players WHERE account_id = ?").run(accountId);
+    db.prepare(
+      "UPDATE rounds SET hegemon_account = NULL WHERE hegemon_account = ?",
+    ).run(accountId);
+    db.prepare(
+      "UPDATE rounds SET winner_account = NULL WHERE winner_account = ?",
+    ).run(accountId);
+    db.prepare(
+      `UPDATE accounts SET public_id = ?, name = ?, tag = '0000',
+         name_changed_at = NULL, role = NULL, ban_reason = NULL,
+         ban_until = NULL, deleted_at = ?
+       WHERE id = ?`,
+    ).run(newPublicId(), DELETED_ACCOUNT_NAME, now, accountId);
+    db.exec("COMMIT");
+  } catch (error) {
+    db.exec("ROLLBACK");
+    throw error;
+  }
+  return "deleted";
+}

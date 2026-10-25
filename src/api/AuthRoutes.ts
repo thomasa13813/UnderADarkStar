@@ -5,6 +5,7 @@ import { uuidToBase64url } from "../core/Base64";
 import {
   accountById,
   accountProvider,
+  deleteAccount,
   findOrCreateAccount,
   ProviderIdentity,
   tokenRole,
@@ -235,6 +236,31 @@ export function mountAuthRoutes(app: Express, deps: AuthDeps): void {
       accountId === null ? 0 : revokeAllSessions(db, accountId, now());
     res.append("Set-Cookie", clearedRefreshCookieHeader(config));
     res.json({ ok: true, ended });
+  });
+
+  // Delete the account behind this cookie (A17), from the settings page's
+  // Account tab. The refresh cookie is the credential, as for revoke: it is
+  // HttpOnly and scoped to /auth, so a token lifted from the page cannot
+  // delete an account. 204 when done (every session ended, the cookie
+  // cleared); 401 with no live session; 403 while a ban is in force.
+  app.post("/auth/delete", (req, res) => {
+    const cookie = parseCookies(req.headers.cookie)[REFRESH_COOKIE];
+    const accountId = cookie ? sessionAccount(db, cookie, now()) : null;
+    const publicId =
+      accountId === null ? null : accountById(db, accountId)?.public_id;
+    const outcome =
+      accountId === null ? "unknown" : deleteAccount(db, accountId, now());
+    if (outcome === "banned") {
+      res.status(403).json({ error: "banned" });
+      return;
+    }
+    res.append("Set-Cookie", clearedRefreshCookieHeader(config));
+    if (outcome === "unknown") {
+      res.status(401).json({ error: "no session" });
+      return;
+    }
+    log.info(`account deleted: ${publicId}`);
+    res.status(204).end();
   });
 
   // The account behind a token: the client's and the game server's view.

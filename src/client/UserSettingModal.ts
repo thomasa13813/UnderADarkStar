@@ -1,6 +1,7 @@
 import { html, nothing } from "lit";
 import { customElement, state } from "lit/decorators.js";
 import { formatKeyForDisplay, translateText } from "../client/Utils";
+import type { UserMeResponse } from "../core/ApiSchemas";
 import type { MapLayer } from "../core/game/TerrainMapLoader";
 import {
   AudioCategory,
@@ -9,6 +10,8 @@ import {
   USER_SETTINGS_CHANGED_EVENT,
   UserSettings,
 } from "../core/game/UserSettings";
+import { deleteAccount, getUserMe, invalidateUserMe } from "./Api";
+import { clearLocalSession, logOut, userAuth } from "./Auth";
 import "./components/baseComponents/setting/SettingKeybind";
 import { SettingKeybind } from "./components/baseComponents/setting/SettingKeybind";
 import "./components/baseComponents/setting/SettingNumber";
@@ -21,6 +24,7 @@ import type { GraphicsAdvancedSettings } from "./components/GraphicsAdvancedSett
 import "./components/GraphicsPresetSelector";
 import "./components/GraphicsPresetTools";
 import { modalHeader } from "./components/ui/ModalHeader";
+import { showInGameAlert } from "./InGameModal";
 import { pushMapLayerState } from "./MapLayerSettings";
 import { Platform } from "./Platform";
 import type { AudioControls } from "./sound/CuePlayer";
@@ -102,8 +106,53 @@ export class UserSettingModal extends BaseModal {
     { value: string; key: string }
   > = {};
 
+  // ---- Account tab (docs/DarkStar-Accounts.md A17) ----
+  //
+  // Only the page instance shows it, and only while signed in: signing out or
+  // deleting an account mid-game would pull the session out from under the
+  // running round. It follows the same events as the nav's account button.
+
+  @state() private account: UserMeResponse | null = null;
+  @state() private accountProvider: string | null = null;
+  @state() private accountBusy = false;
+  @state() private deleteConfirmOpen = false;
+  @state() private deleteConfirmText = "";
+  @state() private accountError: string | null = null;
+
+  private readonly onUserMe = (event: Event) => {
+    const me = (event as CustomEvent).detail as UserMeResponse | false;
+    this.setAccount(me === false ? null : me);
+  };
+
+  private readonly onSessionCleared = () => this.setAccount(null);
+
+  private setAccount(me: UserMeResponse | null) {
+    this.account = me;
+    this.deleteConfirmOpen = false;
+    this.deleteConfirmText = "";
+    this.accountError = null;
+    if (me === null) {
+      this.accountProvider = null;
+      if (this.activeTab === "account") this.activeTab = "gameplay";
+      return;
+    }
+    void userAuth(false).then((auth) => {
+      this.accountProvider =
+        auth === false ? null : (auth.claims.provider ?? null);
+    });
+  }
+
   connectedCallback() {
     super.connectedCallback();
+    if (this.inline) {
+      document.addEventListener("userMeResponse", this.onUserMe);
+      document.addEventListener("session-cleared", this.onSessionCleared);
+      // userMeResponse may already have been dispatched; the profile is
+      // cached, so asking again costs nothing.
+      void getUserMe().then((me) => {
+        if (this.account === null && me !== false) this.setAccount(me);
+      });
+    }
     // Only the inline page instance owns the #modal=settings URL state. The
     // in-game instance must not touch the hash: Main's popstate handler treats
     // a hash change during a match as a request to leave the game.
@@ -123,6 +172,8 @@ export class UserSettingModal extends BaseModal {
       this.onGraphicsChanged,
     );
     window.removeEventListener("keydown", this.handleEasterEggKey);
+    document.removeEventListener("userMeResponse", this.onUserMe);
+    document.removeEventListener("session-cleared", this.onSessionCleared);
     super.disconnectedCallback();
   }
 
@@ -626,6 +677,199 @@ export class UserSettingModal extends BaseModal {
     `;
   }
 
+  private async accountSignOut(everywhere: boolean) {
+    if (this.accountBusy) return;
+    this.accountBusy = true;
+    try {
+      await logOut(everywhere);
+    } finally {
+      // logOut clears the local session whatever the API said; the profile
+      // cache must not outlive it. session-cleared then hides this tab.
+      invalidateUserMe();
+      this.accountBusy = false;
+    }
+  }
+
+  private deleteConfirmMatches(): boolean {
+    const word = translateText("account.delete_confirm_word");
+    return (
+      this.deleteConfirmText.trim().toLocaleUpperCase() ===
+      word.toLocaleUpperCase()
+    );
+  }
+
+  private async confirmDeleteAccount() {
+    if (this.accountBusy || !this.deleteConfirmMatches()) return;
+    this.accountBusy = true;
+    this.accountError = null;
+    try {
+      const result = await deleteAccount();
+      if (result.ok) {
+        // The server ended every session and cleared the cookie: drop the
+        // local state without calling /auth/logout.
+        clearLocalSession();
+        invalidateUserMe();
+        void showInGameAlert(translateText("account.delete_done"));
+        return;
+      }
+      if (result.code === "logged_out") {
+        clearLocalSession();
+        invalidateUserMe();
+        void showInGameAlert(translateText("account.delete_signed_out"));
+        return;
+      }
+      this.accountError = translateText(
+        result.code === "banned"
+          ? "account.delete_banned"
+          : "account.delete_failed",
+      );
+    } finally {
+      this.accountBusy = false;
+    }
+  }
+
+  private renderAccountSettings() {
+    const me = this.account;
+    if (me === null) return nothing;
+    const providerKey =
+      this.accountProvider === "discord"
+        ? "account.provider_discord"
+        : this.accountProvider === "google"
+          ? "account.provider_google"
+          : this.accountProvider === "dev"
+            ? "account.provider_dev"
+            : null;
+    const button =
+      "px-3 py-1.5 text-sm font-medium rounded-lg border border-white/10 " +
+      "text-white bg-white/5 hover:bg-white/15 transition-colors " +
+      "disabled:opacity-50 disabled:cursor-default";
+    return html`
+      <div
+        id="account-settings"
+        class="flex flex-col gap-3 rounded-lg border border-white/10 bg-white/5 p-4"
+      >
+        <div>
+          <div class="text-lg font-semibold text-white">
+            ${me.player.username ?? ""}
+          </div>
+          ${providerKey !== null
+            ? html`<div class="text-sm text-white/60">
+                ${translateText("account.signed_in_with", {
+                  provider: translateText(providerKey),
+                })}
+              </div>`
+            : nothing}
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button
+            id="account-sign-out"
+            class=${button}
+            ?disabled=${this.accountBusy}
+            @click=${() => this.accountSignOut(false)}
+          >
+            ${translateText("account.sign_out")}
+          </button>
+          <button
+            id="account-sign-out-everywhere"
+            class=${button}
+            ?disabled=${this.accountBusy}
+            title=${translateText("account.sign_out_everywhere_hint")}
+            @click=${() => this.accountSignOut(true)}
+          >
+            ${translateText("account.sign_out_everywhere")}
+          </button>
+        </div>
+      </div>
+
+      <div
+        id="account-delete"
+        class="flex flex-col gap-3 rounded-lg border border-red-500/40 bg-red-500/5 p-4"
+      >
+        <div class="text-base font-semibold text-red-300">
+          ${translateText("account.delete_title")}
+        </div>
+        <p class="text-sm text-white/70">
+          ${translateText("account.delete_desc")}
+        </p>
+        ${this.deleteConfirmOpen
+          ? html`
+              <p class="text-sm font-medium text-red-200">
+                ${translateText("account.delete_warning")}
+              </p>
+              <label class="flex flex-col gap-1 text-sm text-white/70">
+                ${translateText("account.delete_type_to_confirm", {
+                  word: translateText("account.delete_confirm_word"),
+                })}
+                <input
+                  id="account-delete-input"
+                  type="text"
+                  autocomplete="off"
+                  spellcheck="false"
+                  class="rounded-lg border border-white/20 bg-black/30 px-3 py-1.5 text-white focus:outline-none focus:border-red-400"
+                  .value=${this.deleteConfirmText}
+                  @input=${(e: Event) => {
+                    this.deleteConfirmText = (
+                      e.target as HTMLInputElement
+                    ).value;
+                  }}
+                  @keydown=${(e: KeyboardEvent) => {
+                    if (e.key === "Enter") void this.confirmDeleteAccount();
+                  }}
+                />
+              </label>
+              <div class="flex flex-wrap gap-2">
+                <button
+                  id="account-delete-confirm"
+                  class="px-3 py-1.5 text-sm font-semibold rounded-lg border border-red-500/60 bg-red-600/80 text-white hover:bg-red-600 transition-colors disabled:opacity-40 disabled:cursor-default"
+                  ?disabled=${this.accountBusy || !this.deleteConfirmMatches()}
+                  @click=${() => this.confirmDeleteAccount()}
+                >
+                  ${translateText("account.delete_confirm_button")}
+                </button>
+                <button
+                  class=${button}
+                  ?disabled=${this.accountBusy}
+                  @click=${() => {
+                    this.deleteConfirmOpen = false;
+                    this.deleteConfirmText = "";
+                    this.accountError = null;
+                  }}
+                >
+                  ${translateText("common.cancel")}
+                </button>
+              </div>
+            `
+          : html`<div>
+              <button
+                id="account-delete-start"
+                class="px-3 py-1.5 text-sm font-medium rounded-lg border border-red-500/50 text-red-200 bg-transparent hover:bg-red-500/15 transition-colors"
+                @click=${() => {
+                  this.deleteConfirmOpen = true;
+                }}
+              >
+                ${translateText("account.delete_start")}
+              </button>
+            </div>`}
+        ${this.accountError !== null
+          ? html`<p class="text-sm text-red-300" role="alert">
+              ${this.accountError}
+            </p>`
+          : nothing}
+      </div>
+
+      <p class="px-1 text-xs text-white/50">
+        ${translateText("account.privacy_note")}
+        <a
+          href="/privacy.html"
+          target="_blank"
+          rel="noopener"
+          class="underline hover:text-white/80"
+          >${translateText("account.privacy_link")}</a
+        >
+      </p>
+    `;
+  }
+
   protected modalConfig() {
     return {
       tabs: [
@@ -652,6 +896,14 @@ export class UserSettingModal extends BaseModal {
                 label: translateText("user_setting.tab_keybinds"),
               },
             ]),
+        ...(this.inline && this.account !== null
+          ? [
+              {
+                key: "account",
+                label: translateText("user_setting.tab_account"),
+              },
+            ]
+          : []),
       ],
     };
   }
@@ -676,6 +928,9 @@ export class UserSettingModal extends BaseModal {
         break;
       case "graphics":
         body = this.renderGraphicsSettings();
+        break;
+      case "account":
+        body = this.renderAccountSettings();
         break;
       default:
         body = this.renderGameplaySettings();

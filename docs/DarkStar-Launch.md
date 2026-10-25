@@ -216,8 +216,8 @@ _Done when_ nothing a player sees or hears is a placeholder.
 
 ### Stage 6 — Release preparation (M)
 
-- [ ] **B6** Bans and the admin script, rate limits, rename and delete, nightly backups, and one
-      restore actually tried.
+- [ ] **B6** Bans and the admin script, rate limits, rename, nightly backups, and one restore
+      actually tried. (Delete was built 2026-10-25: Settings → Account.)
 - [ ] **Legal pages**: Terms of Service and Privacy Policy, linked from the footer, with a contact
       address. Then publish the Google sign-in (it needs the privacy policy on the live domain)
       and add the Google provider to production. Drafted 2026-10-17 (below), awaiting Tom's
@@ -229,8 +229,9 @@ _Done when_ nothing a player sees or hears is a placeholder.
   minimum age 13, US$50 liability cap. The policy describes the code as it is: provider ID and
   name only (Discord `identify`, Google basic profile, no email), the `ds_refresh` and `ds_oauth`
   cookies, browser storage, anonymised IPs in logs, IPs to Turnstile, 30-day game records, a public
-  board; no ads, analytics or tracking cookies, hence no banner. It promises deletion on request
-  by email within 45 days, since B6's delete button is not built. Root `.html` files now get a
+  board; no ads, analytics or tracking cookies, hence no banner. Since 2026-10-25 players delete
+  their own accounts from Settings → Account (immediately); email within 45 days remains for
+  access and correction requests and for anyone who cannot sign in. Root `.html` files now get a
   five-minute cache (`StaticAssetCache.ts`) instead of express.static's one year. **Ads will need
   a revision first**: an ads section naming the network, a consent tool for EEA/UK visitors, an
   opt-out link for US state laws, no personalised ads for minors, and `ads.txt`. Not legal
@@ -321,6 +322,8 @@ _Done when_ the checklist is clean. This build is the release candidate.
 
 ## 7. Changelog
 
+- **2026-10-25** — **Self-service account deletion** (Accounts A17): Settings → Account deletes
+  an account at once; the Privacy Policy and Terms now point there, effective October 25, 2026.
 - **2026-10-17, evening** — **Legal pages drafted** (Stage 6): Terms of Service and Privacy
   Policy as root pages linked from the footer, written for January Games, LLC under Minnesota
   law; open question 5 answered. They await Tom's reading and a deploy before the Google OAuth
