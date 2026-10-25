@@ -222,10 +222,15 @@ _Done when_ nothing a player sees or hears is a placeholder.
       player, API rate limits, bans and the admin command (`npm run api:admin`), and one name per
       account with unlimited instant renames (§12.9). Left: backups and the restore drill
       (deferred by Tom, 2026-10-25).
-- [ ] **Legal pages**: Terms of Service and Privacy Policy, linked from the footer, with a contact
+- [x] **Legal pages**: Terms of Service and Privacy Policy, linked from the footer, with a contact
       address. Then publish the Google sign-in (it needs the privacy policy on the live domain)
-      and add the Google provider to production. Drafted 2026-10-17 (below), awaiting Tom's
-      approval and a deploy; the Google provider is not built yet.
+      and add the Google provider to production. Drafted 2026-10-17 (below) and live on the
+      domain soon after; **Google sign-in live 2026-10-18** (`870292bf`), brand verified, tested
+      by Tom.
+- [ ] **Visitor analytics**: Cloudflare Web Analytics, cookieless, switched on in the Cloudflare
+      dashboard (automatic setup: Cloudflare adds its beacon to every HTML page at the edge, so
+      the repository carries no script and no token). The Privacy Policy's revision (2026-10-25,
+      below) must be live before it is switched on. Steps in `DarkStar-Services.md` §2.1.
 
   **As drafted (2026-10-17).** `resources/public/privacy.html` and `terms.html`, served at
   `/privacy.html` and `/terms.html` as root files, linked from the footer (`main.terms`,
@@ -233,7 +238,9 @@ _Done when_ nothing a player sees or hears is a placeholder.
   minimum age 13, US$50 liability cap. The policy describes the code as it is: provider ID and
   name only (Discord `identify`, Google basic profile, no email), the `ds_refresh` and `ds_oauth`
   cookies, browser storage, anonymised IPs in logs, IPs to Turnstile, 30-day game records, a public
-  board; no ads, analytics or tracking cookies, hence no banner. Since 2026-10-25 players delete
+  board; no ads or tracking cookies, hence no banner. Since 2026-10-25 the policy also describes
+  Cloudflare Web Analytics (visit counts with no cookies or browser storage, so still no banner):
+  the summary, §1's technical information, §2, §4, §5, §7 and §11. Since 2026-10-25 players delete
   their own accounts from Settings → Account (immediately); email within 45 days remains for
   access and correction requests and for anyone who cannot sign in. Root `.html` files now get a
   five-minute cache (`StaticAssetCache.ts`) instead of express.static's one year. **Ads will need
@@ -275,12 +282,13 @@ _Done when_ the checklist is clean. This build is the release candidate.
 
 ### Stage 7 — The friends test (the gate)
 
-- [ ] Tom and friends play an evening on the live server: several thrones, guests and accounts,
+- [x] Tom and friends play an evening on the live server: several thrones, guests and accounts,
       a winner who keeps the seat, one who leaves, a loser who stays with their throne and one
       who joins the head of the line. No restart in the middle (Tom, 2026-10-17): the evening
-      runs on one uninterrupted server.
-- [ ] Collect what broke, what confused, and whether it was fun. Fix what must be fixed; adjust
-      balance (the numbers from M4 are expected to move).
+      runs on one uninterrupted server. **Passed** (Tom, reported 2026-10-25): it went well.
+- [x] Collect what broke, what confused, and whether it was fun. Fix what must be fixed; adjust
+      balance (the numbers from M4 are expected to move). **Done** (Tom, 2026-10-25): no
+      game-breaking bugs, and useful feedback gathered for after the gate.
 
 ### Stage 8 — Go or no-go
 
@@ -290,20 +298,21 @@ _Done when_ the checklist is clean. This build is the release candidate.
 
 ## 5. Things only Tom can do
 
-| What                                              | Needed by | Notes                                                                   |
-| ------------------------------------------------- | --------- | ----------------------------------------------------------------------- |
-| The decisions of Stage 0                          | Stage 0   |                                                                         |
-| Maps                                              | Stage 5   | Starts after Stage 1's kit.                                             |
-| Sound and music                                   | Stage 5   | Tom's plan; each file needs a licence that permits this use.            |
-| Logo, wordmark, font                              | Stage 5   | The text wordmark and Overpass stay until then.                         |
-| ~~A Discord developer application~~               | B2        | Done 2026-10-07 on `hello@`; keys go in the git-ignored `.env`.         |
-| ~~A domain name~~                                 | 3b        | Done 2026-10-06: `january-games.com` at Cloudflare.                     |
-| ~~A Cloudflare account, with the domain on it~~   | 3b        | Done 2026-10-06. Free plan. Also issues the Turnstile keys.             |
-| A server (VPS) account                            | 3b        | About $10–30 a month from this point.                                   |
-| A Google Cloud OAuth client                       | Stage 6   | Free. Cannot go public before the privacy policy is live.               |
-| ~~A contact address and a place for bug reports~~ | Stage 6   | Done: `hello@january-games.com` (10-06) and the Discord server (10-07). |
-| Reading and approving the Terms and Privacy pages | Stage 6   | Claude can draft them; they are Tom's undertakings, not Claude's.       |
-| The go or no-go                                   | Stage 8   |                                                                         |
+| What                                                  | Needed by | Notes                                                                   |
+| ----------------------------------------------------- | --------- | ----------------------------------------------------------------------- |
+| The decisions of Stage 0                              | Stage 0   |                                                                         |
+| Maps                                                  | Stage 5   | Starts after Stage 1's kit.                                             |
+| Sound and music                                       | Stage 5   | Tom's plan; each file needs a licence that permits this use.            |
+| Logo, wordmark, font                                  | Stage 5   | The text wordmark and Overpass stay until then.                         |
+| ~~A Discord developer application~~                   | B2        | Done 2026-10-07 on `hello@`; keys go in the git-ignored `.env`.         |
+| ~~A domain name~~                                     | 3b        | Done 2026-10-06: `january-games.com` at Cloudflare.                     |
+| ~~A Cloudflare account, with the domain on it~~       | 3b        | Done 2026-10-06. Free plan. Also issues the Turnstile keys.             |
+| A server (VPS) account                                | 3b        | About $10–30 a month from this point.                                   |
+| ~~A Google Cloud OAuth client~~                       | Stage 6   | Done: Google sign-in live 2026-10-18.                                   |
+| ~~A contact address and a place for bug reports~~     | Stage 6   | Done: `hello@january-games.com` (10-06) and the Discord server (10-07). |
+| ~~Reading and approving the Terms and Privacy pages~~ | Stage 6   | Done: live since 2026-10-17; revisions are Tom's to approve.            |
+| Switching on Cloudflare Web Analytics                 | Stage 6   | In the dashboard, after the revised privacy policy is deployed.         |
+| The go or no-go                                       | Stage 8   |                                                                         |
 
 ## 6. Open questions
 
@@ -326,6 +335,11 @@ _Done when_ the checklist is clean. This build is the release candidate.
 
 ## 7. Changelog
 
+- **2026-10-25** — **Checklist brought up to date.** Stage 7 passed: Tom reports the friends test
+  went well, with no game-breaking bugs and useful feedback gathered. Legal pages ticked (live
+  since 2026-10-17) with Google sign-in (live 2026-10-18). New Stage 6 item: **Cloudflare Web
+  Analytics** (Tom's choice), cookieless, enabled from the dashboard; the Privacy Policy now
+  describes it and must be deployed first.
 - **2026-10-25** — **B6, first part** (Accounts doc §12.8): masked names (Tom's rule: others see
   `***-player`, the player sees their own), API rate limits, bans and the admin command.
 - **2026-10-25** — **Self-service account deletion** (Accounts A17): Settings → Account deletes

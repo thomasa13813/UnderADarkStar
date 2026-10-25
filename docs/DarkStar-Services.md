@@ -50,17 +50,37 @@ which receives `hello@`.
 
 The front door. Four jobs under one account.
 
-| Job               | What it does                                                                                                                                                       | Where in the dashboard                 |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------- |
-| Registrar and DNS | Owns `january-games.com` (bought 2026-10-06) and answers "which address is this name?" for the game and the API hostnames. The free certificate makes the `https`. | Domain Registration; DNS → Records     |
-| Tunnel            | A connection the server opens _outward_ to Cloudflare. Players' requests ride down it. Nothing on the server listens to the internet except SSH.                   | Zero Trust → Networks → Tunnels        |
-| Turnstile         | The bot check. The page asks Cloudflare for a one-time token when a player joins; our API confirms it with Cloudflare using the secret key.                        | Turnstile → widget "Under a Dark Star" |
-| Email Routing     | Forwards `hello@january-games.com` to the studio mailbox. No mailbox of its own; replies go out through the mail client's "Send mail as".                          | Email → Email Routing                  |
+| Job               | What it does                                                                                                                                                        | Where in the dashboard                 |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| Registrar and DNS | Owns `january-games.com` (bought 2026-10-06) and answers "which address is this name?" for the game and the API hostnames. The free certificate makes the `https`.  | Domain Registration; DNS → Records     |
+| Tunnel            | A connection the server opens _outward_ to Cloudflare. Players' requests ride down it. Nothing on the server listens to the internet except SSH.                    | Zero Trust → Networks → Tunnels        |
+| Turnstile         | The bot check. The page asks Cloudflare for a one-time token when a player joins; our API confirms it with Cloudflare using the secret key.                         | Turnstile → widget "Under a Dark Star" |
+| Email Routing     | Forwards `hello@january-games.com` to the studio mailbox. No mailbox of its own; replies go out through the mail client's "Send mail as".                           | Email → Email Routing                  |
+| Web Analytics     | Counts visits: page views, referring sites, countries, devices, load times. Cookieless; Cloudflare adds its beacon to our HTML pages at the edge (automatic setup). | Analytics & Logs → Web Analytics       |
 
 - **If it is down:** the whole site is unreachable, since every request passes through it. Rare;
   check <https://www.cloudflarestatus.com>.
 - **Gotcha:** the free certificate covers `january-games.com` and names _one_ level below it.
   That is why the API is `darkstar-api.january-games.com` and not `api.darkstar.…`.
+
+**Web Analytics, setting it up (Tom, in a browser, once).** Only after the Privacy Policy that
+describes it (2026-10-25 revision) is deployed. Cloudflare renames these pages from time to time.
+
+1. In the Cloudflare dashboard, open **Analytics & Logs → Web Analytics** and choose **Add a
+   site**.
+2. Pick the domain `january-games.com` from the list (it is proxied, so the automatic setup is
+   offered), and choose **Enable** (not "with JS snippet installation": no script or token goes
+   in the repository). **Done**.
+3. Optional: under the site's **Manage site → Advanced options**, add a rule so that only
+   `darkstar.january-games.com` is measured. The API answers JSON, which never gets the beacon,
+   so leaving it out changes nothing in practice.
+4. Check: open `https://darkstar.january-games.com/`, view the page source (Ctrl+U) and look for
+   `static.cloudflareinsights.com/beacon.min.js` near the end. Visits appear in the dashboard
+   within a few minutes.
+
+What it measures: each page load, including the wiki, the Terms and the Privacy Policy. The
+game itself is one page, so it shows how many arrive, where from, and how many leave without a
+second page, not where they leave inside a round. Nothing in the game's code depends on it.
 
 ### 2.2 The server
 
@@ -94,10 +114,10 @@ Where the code lives: <https://github.com/thomasa13813/UnderADarkStar>, a fork o
 
 Two unrelated things under one account.
 
-| Thing                 | What it does                                                                                                                                                                       | Where                                                              |
-| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| Developer application | "Sign in with Discord". Discord tells our API who the player is (their Discord user id and display name, nothing else: scope `identify`). Needs a client ID (public) and a secret. | <https://discord.com/developers> → application "Under a Dark Star" |
-| Community server      | Where players report bugs and talk. Five channels: welcome, announcements, general, bug-reports, suggestions. Invite: <https://discord.gg/RWZWsxzhB3> (permanent, to the welcome channel; 2026-10-25)                               | The Discord app                                                    |
+| Thing                 | What it does                                                                                                                                                                                          | Where                                                              |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| Developer application | "Sign in with Discord". Discord tells our API who the player is (their Discord user id and display name, nothing else: scope `identify`). Needs a client ID (public) and a secret.                    | <https://discord.com/developers> → application "Under a Dark Star" |
+| Community server      | Where players report bugs and talk. Five channels: welcome, announcements, general, bug-reports, suggestions. Invite: <https://discord.gg/RWZWsxzhB3> (permanent, to the welcome channel; 2026-10-25) | The Discord app                                                    |
 
 - **The redirects** (OAuth2 page): `http://localhost:8787/auth/callback/discord` for development
   and `https://darkstar-api.january-games.com/auth/callback/discord` for production. A sign-in
@@ -111,7 +131,7 @@ A Google Cloud OAuth client for "Sign in with Google" (Launch doc, Stage 6). Goo
 who the player is: their Google account ID (`sub`) and name, nothing else (scopes `openid
 profile`; never `email`). That is exactly what the Privacy Policy (§6 of `privacy.html`) promises,
 so the scopes must never grow without the policy changing first. Needs a client ID (public) and a
-secret. The code is built (Accounts doc §12.7) and **off** until both keys are set.
+secret. The code is built (Accounts doc §12.7) and **live in production since 2026-10-18**.
 
 - **The redirects** (Authorized redirect URIs on the OAuth client):
   `http://localhost:8787/auth/callback/google` for development and
@@ -181,14 +201,16 @@ Things nobody signed up for that the build still needs.
   the running game.
 - **npm registry** supplies the JavaScript packages at build time. Same: deploys only.
 - **Cloudflare's Turnstile script** (`challenges.cloudflare.com`) loads in every player's browser.
+- **Cloudflare's Web Analytics beacon** (`static.cloudflareinsights.com`), added at the edge once
+  enabled (§2.1). If it is blocked or down, only the visit counts suffer.
 
 ### 2.7 Planned, not yet in use
 
 - **Backups** of the account database and signing key, nightly, off the server (Cloudflare R2 or
   similar). Accounts doc §10, step B6. Until then, §2.2's volume is a single point of loss.
-- **Google sign-in** (Stage 6, after the privacy policy). Built, off until its keys are set
-  (§2.5).
-- **An uptime check** on `/api/health` and the API's `/health` (Stage 6).
+- ~~**Google sign-in**~~ live since 2026-10-18 (§2.5).
+- ~~**An uptime check**~~ in place since 2026-10-12 (UptimeRobot, both health endpoints).
+- **Cloudflare Web Analytics**: the policy is written; switching it on is §2.1's steps.
 - **itch.io** listing (open question, Launch doc §6).
 
 ## 3. How they work together
@@ -241,6 +263,9 @@ private operations doc.
 
 ## 5. Changelog
 
+- **2026-10-25** — Cloudflare Web Analytics added to §2.1 (Tom's choice): automatic setup from the
+  dashboard, steps and limits; the Privacy Policy describes it. §2.7 brought up to date (Google
+  sign-in and the uptime check are live).
 - **2026-10-17** — §2.5 Google filled in: the provider is built (off until its keys are set),
   the scopes, the redirect URIs and the step-by-step Google Cloud setup.
 
