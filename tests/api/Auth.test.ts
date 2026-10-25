@@ -227,10 +227,8 @@ describe("account names", () => {
     expect(accountNameFrom("")).toBe(FALLBACK_ACCOUNT_NAME);
   });
 
-  it("passes the name through the filter", () => {
-    const name = accountNameFrom("fuckface");
-    expect(name).not.toMatch(/fuck/i);
-    expect(name).toMatch(/^[a-zA-Z0-9_-]{3,20}$/);
+  it("keeps an offensive name for its owner; the board masks it (B6)", () => {
+    expect(accountNameFrom("fuckface")).toBe("fuckface");
   });
 });
 

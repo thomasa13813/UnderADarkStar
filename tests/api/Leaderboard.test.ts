@@ -355,6 +355,20 @@ describe("GET /leaderboard", () => {
     expect(LeaderboardResponseSchema.parse(await res.json()).me).toBeNull();
   });
 
+  it("masks an offensive name for everyone but its owner (B6)", async () => {
+    const rude = await signIn(h, "ass-player");
+    const other = await signIn(h, "Bravo");
+    round(h, rude, "overthrow");
+    round(h, other, "overthrow");
+
+    const seen = await list(h, "victories", other);
+    expect(seen.body.entries.map((e) => e.username)).toEqual(
+      expect.arrayContaining([expect.stringMatching(/^\*\*\*-player\.\d{4}$/)]),
+    );
+    const own = await list(h, "victories", rude);
+    expect(own.body.me?.username).toMatch(/^ass-player\.\d{4}$/);
+  });
+
   it("leaves banned and deleted accounts off, and puts a lifted ban back", async () => {
     const alpha = await signIn(h, "Alpha");
     const bravo = await signIn(h, "Bravo");

@@ -1,11 +1,13 @@
 import express, { Express, NextFunction, Request, Response } from "express";
 import { DatabaseSync } from "node:sqlite";
+import { GameEnv } from "../core/configuration/Config";
 import { mountAuthRoutes } from "./AuthRoutes";
 import { allowedOrigin, ApiConfig } from "./Config";
 import { mountJoinRoutes } from "./JoinRoutes";
 import { jwksDocument, SigningKey } from "./Keys";
 import { mountLeaderboardRoutes } from "./LeaderboardRoutes";
 import { FetchLike } from "./Providers";
+import { mountRateLimits } from "./RateLimits";
 import { RecordStore } from "./Records";
 import { mountResultRoutes } from "./ResultRoutes";
 
@@ -31,6 +33,9 @@ export interface ApiDeps {
   now?: () => number;
   // Where full game records are kept (B4); defaults to the data directory.
   records?: RecordStore;
+  // Per-IP rate limits (B6, RateLimits.ts). On by default outside dev; off
+  // in dev, where one browser and the test suites make every request.
+  rateLimits?: boolean;
 }
 
 export function createApiApp(deps: ApiDeps): Express {
@@ -49,6 +54,9 @@ export function createApiApp(deps: ApiDeps): Express {
   });
   app.use(cors(deps.config));
   app.use(noStore);
+  if (deps.rateLimits ?? deps.config.env !== GameEnv.Dev) {
+    mountRateLimits(app, deps.config);
+  }
   const records = deps.records ?? new RecordStore(deps.config.dataDir);
 
   // Monitoring and the container's health check (Launch stage 6).

@@ -24,6 +24,7 @@ import {
   ThroneInfo,
 } from "../../core/Schemas";
 import { createRandomName, formatPlayerDisplayName } from "../../core/Util";
+import { ownJoinName } from "../OwnName";
 import { Theme, themeProvider } from "../theme/ThemeProvider";
 import {
   getTranslatedPlayerTeamLabel,
@@ -764,7 +765,13 @@ export class LobbyTeamView extends LitElement {
   }
 
   private getClientDisplayName(client: ClientInfo): string {
-    const full = formatPlayerDisplayName(client.username, client.clanTag);
+    // The player's own row shows the name they joined with, never the
+    // server's filtered copy (OwnName.ts).
+    const own = this.isCurrentPlayer(client) ? ownJoinName() : null;
+    const full =
+      own !== null
+        ? formatPlayerDisplayName(own.username, own.clanTag)
+        : formatPlayerDisplayName(client.username, client.clanTag);
     if (!this.userSettings.anonymousNames()) {
       return full;
     }

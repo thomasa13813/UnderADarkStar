@@ -233,9 +233,16 @@ async function doRefreshJwt(): Promise<void> {
       credentials: "include",
       signal: AbortSignal.timeout(10_000),
     });
-    if (response.status !== 200) {
+    if (response.status === 401) {
       console.error("Refresh failed", response);
       logOut();
+      return;
+    }
+    if (response.status !== 200) {
+      // Rate-limited (429) or a server error: the session may be fine, so
+      // keep it and try again on the next call, as when unreachable.
+      console.error("Refresh failed", response);
+      __jwt = null;
       return;
     }
     const json = await response.json();

@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("../../src/client/Api", () => ({
   getUserMe: vi.fn(async () => false),
   invalidateUserMe: vi.fn(),
+  updateUsername: vi.fn(async () => ({ ok: false, code: "failed" })),
 }));
 vi.mock("../../src/client/ClanApi", () => ({
   checkClanTagOwnership: vi.fn(async (tag: string) => ({ tag, error: null })),

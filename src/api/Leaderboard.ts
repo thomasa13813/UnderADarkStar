@@ -1,5 +1,6 @@
 import { DatabaseSync } from "node:sqlite";
 import { LeaderboardEntry, LeaderboardSort } from "../core/ApiSchemas";
+import { maskName } from "../server/Censor";
 
 // Under a Dark Star: the leaderboard (docs/DarkStar-Accounts.md §6). One
 // list over the `stats` cache with three numbers per account: victories
@@ -57,11 +58,14 @@ function rankedSql(sort: LeaderboardSort): string {
   `;
 }
 
-function entry(row: Row): LeaderboardEntry {
+// The list is what everyone sees, so its names go through the name filter
+// (B6); an account's own row keeps the name as its owner chose it.
+function entry(row: Row, masked: boolean): LeaderboardEntry {
+  const name = masked ? maskName(row.name) : row.name;
   return {
     rank: Number(row.rank),
     publicId: row.public_id,
-    username: `${row.name}.${row.tag}`,
+    username: `${name}.${row.tag}`,
     victories: row.victories,
     reigns: row.reigns,
     longestReign: row.longest_reign,
@@ -82,7 +86,7 @@ export function leaderboard(
        LIMIT ?`,
     )
     .all(now, limit) as unknown as Row[];
-  return rows.map(entry);
+  return rows.map((row) => entry(row, true));
 }
 
 // One account's own row: its rank under the sort when it is on the list,
@@ -102,7 +106,7 @@ export function ownRow(
        WHERE a.id = ?`,
     )
     .get(now, accountId) as unknown as Row | undefined;
-  if (ranked !== undefined) return entry(ranked);
+  if (ranked !== undefined) return entry(ranked, false);
   const row = db
     .prepare(
       `SELECT a.public_id, a.name, a.tag,
@@ -115,5 +119,5 @@ export function ownRow(
     )
     .get(accountId) as unknown as Omit<Row, "rank"> | undefined;
   if (row === undefined) return null;
-  return { ...entry({ ...row, rank: 0 }), rank: null };
+  return { ...entry({ ...row, rank: 0 }, false), rank: null };
 }

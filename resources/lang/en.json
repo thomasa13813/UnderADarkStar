@@ -812,7 +812,7 @@
     "sol": "Sol",
     "standoff": "Standoff",
     "tradersdream": "Traders Dream",
-    "warshipwarship": "Warship Warship",
+    "warshipwarship": "Destroyers of Worlds",
     "wurm": "Wurm"
   },
   "map_categories": {
@@ -1462,6 +1462,8 @@
     "lapse_notice": "Your subscription ended, so you are no longer playing as \"{name}\". It stays reserved for you until {date} — resubscribe before then to keep it. After that anyone can take it.",
     "lapse_notice_at_risk": "You are no longer playing as \"{name}\", and it is no longer reserved. Another player can take it at any moment — resubscribe now to keep it.",
     "not_string": "Username must be a string.",
+    "save_failed": "Your name could not be saved. Try again in a moment.",
+    "save_too_fast": "Too many name changes at once. Try again in a minute.",
     "tag": "TAG",
     "tag_invalid_chars": "Clan tag can only contain letters and numbers.",
     "tag_not_member": "Join the {tag} clan before using its tag. Click this message to join it.",

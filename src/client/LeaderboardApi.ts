@@ -14,6 +14,22 @@ import { getAuthHeader } from "./Auth";
 
 export const LEADERBOARD_TIMEOUT_MS = 10_000;
 
+// The list's names are masked by the name filter (B6) for everyone; the own
+// row carries the name as its owner chose it, and a player sees that name on
+// their row in the list too, never the masked one.
+export function withOwnName(data: LeaderboardResponse): LeaderboardResponse {
+  const me = data.me;
+  if (me === null || me === undefined) return data;
+  return {
+    ...data,
+    entries: data.entries.map((entry) =>
+      entry.publicId === me.publicId
+        ? { ...entry, username: me.username }
+        : entry,
+    ),
+  };
+}
+
 // The list under one sort, or null when the API could not be reached or
 // answered with something else: the page then says so and offers a retry.
 export async function fetchLeaderboard(
@@ -36,7 +52,7 @@ export async function fetchLeaderboard(
       console.warn("leaderboard: unexpected answer", parsed.error);
       return null;
     }
-    return parsed.data;
+    return withOwnName(parsed.data);
   } catch (error) {
     console.warn("leaderboard: unreachable", error);
     return null;

@@ -21,7 +21,7 @@ import { generateID, replacer } from "../core/Util";
 import { CreateGameInputSchema } from "../core/WorkerSchemas";
 import { decodeClientMessage, encodeServerMessage } from "../core/ZbinWire";
 import { registerAdminBotRoutes } from "./AdminBotRoutes";
-import { censorPlayer } from "./Censor";
+import { accountJoinName, censorPlayer } from "./Censor";
 import { Client } from "./Client";
 import { gameApiCors } from "./GameApiCors";
 import { GameManager } from "./GameManager";
@@ -674,6 +674,14 @@ export async function startWorker() {
           ownedClanTags = result.response.player.clans?.map((c) => c.tag) ?? [];
           accountUsername = result.response.player;
           trusted = result.response.player.trustTier === "trusted";
+          // Under a Dark Star (docs/DarkStar-Accounts.md A13, revised
+          // 2026-10-25): one name per account. A signed-in player plays
+          // under the account's name, which the board shows too, whatever
+          // the browser sent; masked like any other name.
+          username = accountJoinName(
+            result.response.player.usernameBase,
+            username,
+          );
 
           if (allowedFlares !== undefined) {
             const allowed =

@@ -11,6 +11,7 @@ const invalidateUserMe = vi.fn();
 vi.mock("../src/client/Api", () => ({
   getUserMe: () => getUserMe(),
   invalidateUserMe: () => invalidateUserMe(),
+  updateUsername: vi.fn(async () => ({ ok: false, code: "failed" })),
 }));
 const checkClanTagOwnership = vi.fn(
   async (
@@ -472,12 +473,12 @@ describe("UsernameInput clan tag picker", () => {
 
     expect(el.isVerified()).toBe(false);
     // Under a Dark Star (A21): signed out, the player is a guest and plays
-    // under the assigned name; the typed name waits in storage for the next
-    // sign-in.
+    // under the assigned name. Signed in, the box held the account's name
+    // (A13, revised 2026-10-25), and that is what waits in storage.
     expect(el.getUsername()).toMatch(/^Anon\d{5}$/);
     expect(q(el, "#guest-name")).not.toBeNull();
     expect(q(el, 'input[aria-label="username.enter_username"]')).toBeNull();
-    expect(localStorage.getItem("username")).toBe("MyCoolName");
+    expect(localStorage.getItem("username")).toBe("RyanTheGreat");
   });
 
   it("bypasses the cached profile when the picker is opened", async () => {
@@ -603,7 +604,8 @@ describe("UsernameInput verified name", () => {
     await signIn(el, premiumUser());
 
     expect(el.isVerified()).toBe(false);
-    expect(el.getUsername()).toBe("MyCoolName");
+    // The box shows the account's one name (A13, revised 2026-10-25).
+    expect(el.getUsername()).toBe("RyanTheGreat");
     expect(q(el, TOGGLE)).not.toBeNull();
   });
 
@@ -648,7 +650,8 @@ describe("UsernameInput verified name", () => {
     await signIn(el, premiumUser());
 
     expect(el.isVerified()).toBe(false);
-    expect(el.getUsername()).toBe("MyCoolName");
+    // The box shows the account's one name (A13, revised 2026-10-25).
+    expect(el.getUsername()).toBe("RyanTheGreat");
     expect(q(el, TOGGLE)).not.toBeNull();
     expect(q(el, CHANGE)).toBeNull();
   });
@@ -701,14 +704,15 @@ describe("UsernameInput verified name", () => {
     expect(q(el, TOGGLE)).toBeNull();
   });
 
-  it("restores the stored custom name when switching back", async () => {
-    // Starts opted out so the round trip begins on the free-form name; the
-    // default-on case is covered above.
+  it("returns to the account's name in the box when switching back", async () => {
+    // Starts opted out so the round trip begins on the free-form box; the
+    // default-on case is covered above. Under a Dark Star the box holds the
+    // account's one name (A13, revised 2026-10-25), not a browser-only one.
     localStorage.setItem("useVerifiedName", "false");
     localStorage.setItem("username", "MyCoolName");
     const el = await mount();
     await signIn(el, premiumUser());
-    expect(el.getUsername()).toBe("MyCoolName");
+    expect(el.getUsername()).toBe("RyanTheGreat");
 
     q(el, 'button[aria-pressed="false"]')!.click();
     await el.updateComplete;
@@ -718,7 +722,7 @@ describe("UsernameInput verified name", () => {
     q(el, 'button[aria-label="username.verified_use_custom"]')!.click();
     await el.updateComplete;
     expect(el.isVerified()).toBe(false);
-    expect(el.getUsername()).toBe("MyCoolName");
+    expect(el.getUsername()).toBe("RyanTheGreat");
   });
 
   it("stays on the free-text name when the account is not eligible", async () => {

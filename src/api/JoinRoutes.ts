@@ -51,8 +51,8 @@ export function mountJoinRoutes(app: Express, deps: JoinDeps): void {
   };
 
   // The bot check and the name filter in one call. `status` is the
-  // Turnstile verdict; on approval the identity is display-ready (a profane
-  // name as its shadow name, a profane tag dropped, a surviving tag
+  // Turnstile verdict; on approval the identity is display-ready (offensive
+  // words in the name masked, a profane tag dropped, a surviving tag
   // uppercased), exactly what Censor.ts does locally, so the lobby never
   // shows a banned name. A null token skips the Turnstile check: the game
   // server sends that only for a reconnect it already admitted.

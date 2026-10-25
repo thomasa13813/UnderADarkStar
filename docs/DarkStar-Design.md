@@ -1782,7 +1782,8 @@ Step 4 of the space economy (S7), the last. Tom kept the straight lanes (hop thr
   the rest). The tutorial's port and warship steps now say a spaceport goes anywhere in the
   territory and a destroyer is launched into deep space near it; the no-coast step explains that
   spaceports work inland but their freighters crawl until they reach deep space.
-- **Not renamed.** The "Warship Warship" map title (a map, not the unit); Lord chat lines
+- **Not renamed.** The "Warship Warship" map title (a map, not the unit; renamed **Destroyers of
+  Worlds** on 2026-10-25); Lord chat lines
   ("Please let me get a coastline"); the debug effect editor's labels. Icons stay naval until
   M6.
 - **Tests.** `EnJsonSorted` (keys untouched), the client and tutorial suites unchanged: nothing
@@ -2214,6 +2215,10 @@ hydrogen-bomb removal (closed by S6).
 
 ## 11. Changelog
 
+- **2026-10-25, map name** — **Warship Warship is now Destroyers of Worlds.** Tom's call: the
+  old title predates the destroyer rename. Display name only (`en.json`, `info.json`, the
+  manifest, the `GameMapType` string, `CREDITS.md`); the folder, the `WarshipWarship` id and the
+  `map.warshipwarship` key stay. Wiki rebuilt.
 - **2026-10-24, strikes are cancelled** — **H17 revised (F23 closed): one front, cancelled, never
   refunded.** Tom's call after the combat review. The struck player's troops cancel a landed
   strike (new `counter_strike` intent, `CounterStrikeExecution`, `RazeExecution.counter`), weighted

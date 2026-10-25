@@ -23,7 +23,7 @@ export enum GameMapType {
   Sol = "Sol", // map-generator/assets/maps/sol/info.json
   Standoff = "Standoff", // map-generator/assets/maps/standoff/info.json
   TradersDream = "Traders Dream", // map-generator/assets/maps/tradersdream/info.json
-  WarshipWarship = "Warship Warship", // map-generator/assets/maps/warshipwarship/info.json
+  WarshipWarship = "Destroyers of Worlds", // map-generator/assets/maps/warshipwarship/info.json
   Wurm = "Wurm", // map-generator/assets/maps/wurm/info.json
 }
 

@@ -47,3 +47,30 @@ describe("/auth/refresh is bounded", () => {
     expect(timeoutSpy).toHaveBeenCalledWith(AUTH_FETCH_TIMEOUT_MS);
   });
 });
+
+// B6: the API answers 429 when a visitor goes past its rate limit. That says
+// nothing about the session, so the client must not sign out (which would
+// end the session on the server); only a 401 does.
+describe("/auth/refresh refused for a reason other than the session", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it.each([429, 500])("keeps the session on %i", async (status) => {
+    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => ({
+      status,
+      json: async () => ({}),
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    vi.spyOn(console, "log").mockImplementation(() => undefined);
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+
+    await userAuth();
+
+    const urls = fetchMock.mock.calls.map((c) => String(c[0]));
+    expect(urls.some((u) => u.includes("/auth/refresh"))).toBe(true);
+    expect(urls.some((u) => u.includes("/auth/logout"))).toBe(false);
+  });
+});

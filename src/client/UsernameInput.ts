@@ -2,17 +2,18 @@ import { html, LitElement } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { translateText } from "../client/Utils";
 import { UserMeResponse } from "../core/ApiSchemas";
-import { guestName, isGuestName } from "../core/GuestName";
+import { guestName } from "../core/GuestName";
 import { sanitizeClanTag } from "../core/Util";
 import {
   MAX_CLAN_TAG_LENGTH,
   MAX_USERNAME_LENGTH,
   MIN_CLAN_TAG_LENGTH,
   MIN_USERNAME_LENGTH,
+  validateAccountUsername,
   validateClanTag,
   validateUsername,
 } from "../core/validations/username";
-import { getUserMe, invalidateUserMe } from "./Api";
+import { getUserMe, invalidateUserMe, updateUsername } from "./Api";
 import { getPersistentID } from "./Auth";
 import { checkClanTagOwnership } from "./ClanApi";
 import { verifiedBadge } from "./components/ui/VerifiedBadge";
@@ -55,6 +56,8 @@ const lapseNoticeKey: string = LAPSE_NOTICE_KEY;
 // setTimeout stores its delay in a 32-bit signed int. Anything larger does not
 // saturate — Node warns and fires after 1ms.
 const MAX_TIMEOUT_MS = 2_147_483_647;
+// How long after the last keystroke a signed-in player's name is saved.
+const NAME_SAVE_DELAY_MS = 1200;
 
 // Announced by the clan modal, which invalidates /users/@me but dispatches no
 // fresh userMeResponse.
@@ -180,6 +183,14 @@ export class UsernameInput extends LitElement {
   // slow getUser() falls back to the generated name instead of blocking.
   private steamSeedReady: Promise<void> = Promise.resolve();
 
+  // Under a Dark Star (docs/DarkStar-Accounts.md A13, revised 2026-10-25): a
+  // signed-in player's box is the account's one name, saved to the account
+  // a moment after typing stops (or on Enter, or leaving the box). `nameDirty`:
+  // typed and not saved yet, so a profile arriving now must not overwrite it.
+  private nameDirty = false;
+  private nameSaveTimer: ReturnType<typeof setTimeout> | null = null;
+  private nameSave: Promise<void> = Promise.resolve();
+
   // Remove static styles since we're using Tailwind
 
   createRenderRoot() {
@@ -217,21 +228,76 @@ export class UsernameInput extends LitElement {
     return guestName(getPersistentID());
   }
 
-  // Under a Dark Star (§4.5): a signed-in player's name box starts with the
-  // account name. Only over a name that is ours (generated, a guest name, or
-  // nothing): a name the player typed is theirs to keep.
+  // Under a Dark Star (§4.5, A13 revised 2026-10-25): a signed-in player's
+  // name box shows the account's name, the one name the game and the board
+  // use, on every device. Only an edit not yet saved is left alone.
   private adoptAccountName() {
-    if (this.userMe === null || this.userMe === false) return;
-    const accountName = this.userMe.player.usernameBase ?? "";
+    if (!this.isSignedIn() || this.nameDirty) return;
+    const accountName =
+      (this.userMe as UserMeResponse).player.usernameBase ?? "";
     if (accountName === "") return;
-    const current = this.baseUsername.trim();
-    if (current !== "" && !this.usernameIsGenerated && !isGuestName(current)) {
-      return;
-    }
-    if (current === accountName) return;
+    if (this.baseUsername.trim() === accountName) return;
     this.baseUsername = accountName;
     this.usernameIsGenerated = false;
     this.validateAndStore();
+  }
+
+  private isSignedIn(): boolean {
+    return this.userMe !== null && this.userMe !== false;
+  }
+
+  /**
+   * Resolves once any name the player has typed is saved to their account
+   * (or has failed to). The join flow awaits this before reading the name,
+   * so a player who types and clicks Play at once joins under the new name.
+   */
+  public whenNameSaved(): Promise<void> {
+    if (this.nameSaveTimer !== null) this.saveName();
+    return this.nameSave;
+  }
+
+  private scheduleNameSave() {
+    if (this.nameSaveTimer !== null) clearTimeout(this.nameSaveTimer);
+    this.nameSaveTimer = setTimeout(() => this.saveName(), NAME_SAVE_DELAY_MS);
+  }
+
+  private saveName() {
+    if (this.nameSaveTimer !== null) {
+      clearTimeout(this.nameSaveTimer);
+      this.nameSaveTimer = null;
+    }
+    if (!this.isSignedIn() || !this.nameDirty) return;
+    const name = this.baseUsername.trim();
+    const current = (this.userMe as UserMeResponse).player.usernameBase ?? "";
+    if (name === current) {
+      this.nameDirty = false;
+      return;
+    }
+    if (!validateAccountUsername(name).isValid) return;
+    this.nameSave = this.nameSave.then(async () => {
+      const result = await updateUsername(name);
+      // Typed again while this was in flight: the next save carries it.
+      if (this.baseUsername.trim() === name) this.nameDirty = false;
+      if (!result.ok) {
+        this.validationError = translateText(
+          result.code === "cooldown"
+            ? "username.save_too_fast"
+            : result.code === "invalid"
+              ? "username.account_invalid_chars"
+              : "username.save_failed",
+        );
+        return;
+      }
+      // The account panel, the board and this box all read the profile.
+      const me = await getUserMe();
+      document.dispatchEvent(
+        new CustomEvent("userMeResponse", {
+          detail: me,
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
+    });
   }
 
   // The clans this player belongs to, for the tag picker. Empty when signed
@@ -1026,6 +1092,8 @@ export class UsernameInput extends LitElement {
         type="text"
         .value=${this.baseUsername}
         @input=${this.handleUsernameChange}
+        @keydown=${this.handleUsernameKeydown}
+        @blur=${this.handleUsernameBlur}
         placeholder="${translateText("username.enter_username")}"
         minlength="${MIN_USERNAME_LENGTH}"
         maxlength="${MAX_USERNAME_LENGTH}"
@@ -1134,6 +1202,19 @@ export class UsernameInput extends LitElement {
     // Typed by the player, so no longer ours to reseed over.
     this.usernameIsGenerated = false;
     this.validateAndStore();
+    if (this.isSignedIn()) {
+      this.nameDirty = true;
+      this.scheduleNameSave();
+    }
+  }
+
+  // Enter or leaving the box saves a signed-in player's name at once.
+  private handleUsernameKeydown(e: KeyboardEvent) {
+    if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+  }
+
+  private handleUsernameBlur() {
+    this.saveName();
   }
 
   private validateAndStore() {
@@ -1163,7 +1244,10 @@ export class UsernameInput extends LitElement {
       return;
     }
 
-    const result = validateUsername(trimmedBase);
+    // A signed-in player's name is the account's (A13): the account rules.
+    const result = this.isSignedIn()
+      ? validateAccountUsername(trimmedBase)
+      : validateUsername(trimmedBase);
     this._isValid = result.isValid;
     if (result.isValid) {
       // Never persist on CrazyGames: keeping localStorage empty means a logout

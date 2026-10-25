@@ -217,7 +217,11 @@ _Done when_ nothing a player sees or hears is a placeholder.
 ### Stage 6 — Release preparation (M)
 
 - [ ] **B6** Bans and the admin script, rate limits, rename, nightly backups, and one restore
-      actually tried. (Delete was built 2026-10-25: Settings → Account.)
+      actually tried. (Delete was built 2026-10-25: Settings → Account.) **In part 2026-10-25**
+      (Accounts doc §12.8): the name filter masks the offending word for everyone but the
+      player, API rate limits, bans and the admin command (`npm run api:admin`), and one name per
+      account with unlimited instant renames (§12.9). Left: backups and the restore drill
+      (deferred by Tom, 2026-10-25).
 - [ ] **Legal pages**: Terms of Service and Privacy Policy, linked from the footer, with a contact
       address. Then publish the Google sign-in (it needs the privacy policy on the live domain)
       and add the Google provider to production. Drafted 2026-10-17 (below), awaiting Tom's
@@ -322,6 +326,8 @@ _Done when_ the checklist is clean. This build is the release candidate.
 
 ## 7. Changelog
 
+- **2026-10-25** — **B6, first part** (Accounts doc §12.8): masked names (Tom's rule: others see
+  `***-player`, the player sees their own), API rate limits, bans and the admin command.
 - **2026-10-25** — **Self-service account deletion** (Accounts A17): Settings → Account deletes
   an account at once; the Privacy Policy and Terms now point there, effective October 25, 2026.
 - **2026-10-17, evening** — **Legal pages drafted** (Stage 6): Terms of Service and Privacy

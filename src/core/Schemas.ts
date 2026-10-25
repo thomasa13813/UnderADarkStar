@@ -316,6 +316,16 @@ export const UsernameSchema = z
   .min(3)
   .max(27);
 
+// A name as the server hands it out: what a player may send, plus the name
+// filter's mask character (src/server/Censor.ts, "***-player"). Only on
+// server-written fields; a join still has to pass UsernameSchema. The glyph
+// atlas has "*".
+export const DisplayUsernameSchema = z
+  .string()
+  .regex(new RegExp(`^(?=.*\\S)[${RENDERABLE_NAME_CHARS}*]+$`, "u"))
+  .min(3)
+  .max(27);
+
 export const ClanTagSchema = z
   .string()
   .regex(/^[a-zA-Z0-9]{2,5}$/)
@@ -323,7 +333,7 @@ export const ClanTagSchema = z
 
 const ClientInfoSchema = z.object({
   clientID: z.string(),
-  username: UsernameSchema,
+  username: DisplayUsernameSchema,
   clanTag: ClanTagSchema,
   friends: z.array(z.string()).optional(),
   // Plays under their server-validated account name (blue check in the
@@ -1065,7 +1075,7 @@ export const PlayerCosmeticsSchema = z.object({
 
 export const PlayerSchema = z.object({
   clientID: ID,
-  username: UsernameSchema,
+  username: DisplayUsernameSchema,
   clanTag: ClanTagSchema,
   cosmetics: PlayerCosmeticsSchema.optional(),
   isLobbyCreator: z.boolean().optional(),

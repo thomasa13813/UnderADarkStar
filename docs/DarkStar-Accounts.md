@@ -5,7 +5,7 @@
 > decisions of that day; rows marked **Proposed** are recommendations waiting for his review (§15).
 > Companion to `DarkStar-Roadmap.md` phase P5, which this document expands and supersedes, and to
 > `DarkStar-Lobbies.md` (thrones, seats, reigns). Where it sits in the order of work is in
-> `DarkStar-Launch.md`. B1 (2026-10-03, §12.1), B2 (2026-10-07, §12.2), B3 (2026-10-07, §12.3), B4 (2026-10-11, §12.4) and B5 (2026-10-12, §12.5; one list with victories since 2026-10-17, §12.6) are built; B6–B7 are not. Changelog at the end.
+> `DarkStar-Launch.md`. B1 (2026-10-03, §12.1), B2 (2026-10-07, §12.2), B3 (2026-10-07, §12.3), B4 (2026-10-11, §12.4) and B5 (2026-10-12, §12.5; one list with victories since 2026-10-17, §12.6) are built; B6 is in part (2026-10-25, §12.8: the name filter, rate limits, bans and the admin command); B7 is not. Changelog at the end.
 
 ## 1. Goals
 
@@ -43,12 +43,12 @@ Numbered so the code and tests can cite them. Build steps are B1–B7 (§12).
 | A10 | **Guests in production.** The game server accepts the anonymous browser ID in every environment; today it refuses it outside dev (`jwt.ts`).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Proposed |
 | A11 | **Only verified sign-ins are credited.** The game record marks which players joined with a signed token; the API ignores everyone else.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | Proposed |
 | A12 | **Stored about a person:** the provider's user ID, a display name, timestamps. No email address, no avatar, no IP address in the database.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Proposed |
-| A13 | **Account name:** taken from the provider at first sign-in, screened by the name filter, editable. Shown with a four-digit tag (`Tom.4471`) so two players with one name can be told apart. A signed-in player may play a round under any name they type.                                                                                                                                                                                                                                                                                                                                                                                                                                                          | Decided  |
+| A13 | **Account name:** taken from the provider at first sign-in, screened by the name filter, editable. Shown with a four-digit tag (`Tom.4471`) so two players with one name can be told apart. A signed-in player may play a round under any name they type. **Revised 2026-10-25 (Tom, Q8):** one name per account, renamed as often as the player likes and at once; the name a signed-in player plays under is the account's name. Built 2026-10-25 (§12.9).                                                                                                                                                                                                                                                       | Decided  |
 | A14 | **Results arrive through the existing archive call.** The game server already posts each finished game to the API; the record gains a throne block. Private and solo games are not recorded.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Proposed |
 | A15 | **Longest reign is consecutive rounds as Hegemon on one throne.** The run continues while the same holder wins and keeps the seat; it ends on a loss, on stepping down (a seat claimed again in the lobby is a new run), on a server restart (L12), and it never carries to another throne: a Hegemon who quits one throne for an open seat elsewhere starts at one. The throne card's badge keeps its own rule (Lobbies §3.1: the win that takes a throne is 1, each timer win adds 1), which for a slayer who stays equals the run so far. (Revised 2026-10-17; until then, consecutive wins counted from the taking win, shared with the badge.)                                                                | Decided  |
 | A16 | **All-time boards only,** top 100 each, at launch. Weekly or seasonal boards later.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | Proposed |
 | A17 | **An account can delete itself,** from the settings page's Account tab, at once (no waiting period). Sign-ins, sessions, the name and the numbers are erased; its rounds stay as anonymous history and leave the board. Refused while a ban is in force (email instead). Decided 2026-10-25.                                                                                                                                                                                                                                                                                                                                                                                                                       | Decided  |
-| A18 | **Moderation by command line.** A ban is a role on the account, carried in the token; the game server already refuses a banned token. Tom runs ban, unban and rename from a script on the server. No admin web page at launch.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Proposed |
+| A18 | **Moderation by command line.** A ban is a role on the account, carried in the token; the game server already refuses a banned token. Tom runs ban, unban and rename from a script on the server. No admin web page at launch. Built 2026-10-25 (§12.8).                                                                                                                                                                                                                                                                                                                                                                                                                                                           | Proposed |
 | A19 | **Full game records are kept 30 days,** compressed on disk, then deleted. They are for bug reports and for replay-checking a disputed result (§5.5); the leaderboard does not need them.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | Proposed |
 | A20 | **Listing a private lobby publicly is off at launch.** Upstream sold it with a subscription; thrones are our public offer. Decided 2026-10-07.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Decided  |
 | A21 | **Guests do not choose a name.** The server gives a guest the name `Anon` plus five digits (`Anon48213`), derived from their browser ID so it stays the same between games. Choosing a name is a reason to sign in.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | Decided  |
@@ -141,15 +141,12 @@ next reign", not this one (§14).
 
 ### 4.5 Names
 
-The account name (A13) starts as the provider's display name, passes through the name filter
-(`Censor.ts`), and can be changed in the account panel (a 30-day wait between changes, as
-upstream). Names need not be unique; the four-digit tag tells namesakes apart, and the client's
-existing helpers already understand the `Name.1234` form (`isVerifiedUsername`,
-`UsernameInput`).
-
-In a game, a signed-in player's name box is pre-filled with the account name, and they may type
-any other name for the round (A13); it passes the name filter as today. The leaderboard always
-shows the account name. Guests have no name box (§4.4).
+The account name (A13) starts as the provider's display name. Since 2026-10-25 it is the one
+name a signed-in player has: the name box on the home page shows it and saves any change to the
+account at once, as often as the player likes; the game, the lobby and the leaderboard all show
+it, masked by the name filter (`Censor.ts`) where others see it (§12.8, §12.9). Names need not
+be unique; the four-digit tag tells namesakes apart, and the client's existing helpers already
+understand the `Name.1234` form. Guests have no name box (§4.4).
 
 ## 5. Recording results
 
@@ -270,7 +267,7 @@ What the game server and client call at `api.<DOMAIN>`, and what answers at laun
 | `GET /auth/providers`                                         | client      | The providers this API offers (`{ providers: [...] }`); the page shows Google's button only when it is listed.                                                           |
 | `POST /auth/refresh`, `/logout`, `/revoke`                    | client      | Rotate the cookie and issue a token; end this session; end every session.                                                                                                |
 | `GET /users/@me`                                              | both        | Account name, public ID, ban, the numbers. `UserMeResponseSchema` is cut to these.                                                                                       |
-| `PUT /users/@me/username`, `POST /auth/delete`                | client      | Rename (A13, not built); delete the account (A17, built 2026-10-25; the refresh cookie is the credential, as for revoke).                                                |
+| `PUT /users/@me/username`, `POST /auth/delete`                | client      | Rename (A13: instant, unlimited, built 2026-10-25); delete the account (A17, built 2026-10-25; the refresh cookie is the credential, as for revoke).                     |
 | `POST /join_verify`                                           | game server | Cloudflare Turnstile check plus the name filter, as the server expects today.                                                                                            |
 | `POST /game/:id`                                              | game server | Result ingest (§5.3).                                                                                                                                                    |
 | `GET /game/:id`                                               | both        | The stored record while it is kept; 404 after.                                                                                                                           |
@@ -361,7 +358,7 @@ Schema changes are numbered migration files applied at boot.
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`   | API              | From a Google Cloud OAuth client (Tom creates it; Services doc §2.5). Optional: both empty and Google is not offered; one without the other stops the API at boot.                                                                                |
 | `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | game server, API | From the Cloudflare dashboard. The site key already exists.                                                                                                                                                                                       |
 | `DATA_DIR`                                   | API              | `/data` in the container; `.data/` (git-ignored) in dev.                                                                                                                                                                                          |
-| Record retention, name-change wait           | API constants    | 30 days each.                                                                                                                                                                                                                                     |
+| Record retention                             | API constants    | 30 days.                                                                                                                                                                                                                                          |
 
 ## 12. Implementation order
 
@@ -667,6 +664,95 @@ redirect URIs are in the Services doc, §2.5.
   no Google without keys (login, callback and the list), half a Google refused, the production
   callback URI. `ApiSkeleton.test.ts`: `google: null` by default.
 
+### 12.8 As built: B6, first part (2026-10-25)
+
+The name filter, rate limits and bans with the admin command. Self-deletion (A17) was built the
+same day; the player's own rename followed (§12.9). Still to do for B6: backups and the restore
+drill. Guests: nothing for now (Q6).
+
+- **The name filter** (Tom's rule, 2026-10-25): an offensive word in a name is **masked letter
+  for letter** (`ass-player` becomes `***-player`) for every other player, and the player keeps
+  seeing their own name. It replaces upstream's "shadow names" (the whole name swapped for a
+  joke one) and the `obscenity` library, whose matching hid ordinary names (`Assassin`,
+  `cockpit`, `Spica`, `Cumulus`, `Arsenal`, `Niger`). `src/server/Censor.ts`: `maskName`,
+  `nameIsClean`, `censorPlayer` (unchanged contract: join*verify and the game server's local
+  fallback both call it). Each term says where it may sit: \_anywhere* (`fuck`, `hitler`), as a
+  _whole word_ (`ass`, `cock`, `spic`, `cum`: plural allowed, so `asses`, but never `assignment`,
+  `class`, `Spica`), at the _start_ of a word (`nazi`, `retard`), or as a _phrase_ across a gap
+  (`White Power`). Words split at spaces, punctuation, digits and camelCase, so `AssPlayer` is
+  caught and `assplayer` is not (the price of leaving `assault` alone). An allowlist covers the
+  rare innocent word holding an _anywhere_ term (`Scunthorpe`, `Snigger`, `Nazir`, `retardant`).
+  It sees through case, accents, digits for letters (`sh1t`, `n4z1`), stretched letters
+  (`fuuuck`) and a word spelled out with gaps (`f.u.c.k`), without joining real words (`Bus Hit`
+  stays). Clan tags as before: an offensive tag, or one that spells a slur with the name, is
+  dropped. Known trade-off: `Dick` alone is masked (`Dick Grayson`), `Dickens` is not.
+  The guest words, the Baron and Lord names and the throne names all pass untouched (tested).
+- **Showing the player their own name**: the server's copy is masked; the player's own client
+  puts their name back. In the round, `GameView` already did (upstream's shadow-name path). In
+  the lobby, `src/client/OwnName.ts` holds the name the browser joined with (set in
+  `Main.handleJoinLobby`) and `LobbyPlayerView` shows it on the player's own row. The
+  leaderboard masks every name in its shared list (`Leaderboard.ts`); the caller's own row keeps
+  the stored name and `LeaderboardApi.withOwnName` puts it on their row of the list. Account
+  names are now stored as chosen (`accountNameFrom` no longer filters), so the owner sees theirs.
+- **The wire**: `*` is not a character a player may type, so server-written name fields use
+  `DisplayUsernameSchema` (the join charset plus `*`): `ClientInfoSchema`, `PlayerSchema`, the
+  preview builder. A join still has to pass `UsernameSchema`. The glyph atlas has `*`.
+- **Rate limits** (`src/api/RateLimits.ts`, `express-rate-limit`, already a dependency): per
+  visitor IP (`CF-Connecting-IP`, IPv6 per /56), per minute, in memory. Sign-in start and return
+  20; refresh 60 (one household or school shares an IP); sign out, sign out everywhere and delete
+  10; everything else together 300. 429 with `RateLimit` headers. Calls carrying the API key
+  (the game server's) are never counted. On outside dev (`ApiDeps.rateLimits` overrides). The
+  client's refresh now signs out only on a 401: a 429 or a server error keeps the session.
+- **Bans and the admin command** (A18): the ban columns, `tokenRole` and the game server's refusal
+  of a banned token already existed (B2). New: `src/api/Admin.ts` (tested) and
+  `src/api/AdminCli.ts`, run as `npm run api:admin -- <command>` with the API's environment.
+  Commands: `find`, `search`, `game <id>` (the signed-in players of a recorded throne round),
+  `banned`, `ban <account> [--days N] [--reason "why"]`, `unban`, `rename <account> <name>`,
+  `signout`, `delete <account> --yes` (lifts a ban first: deletion on request). An account is
+  named by its public ID, its board name `Name.1234`, or a name only one account has. A ban takes
+  hold at the player's next token (within 15 minutes): the game server refuses their join, the
+  board drops them, they cannot delete themselves. A round already running is not interrupted.
+  On the server, from the checkout, as the `node` user so the database files keep their owner:
+
+  ```
+  docker compose -f deploy/docker-compose.yml --env-file /opt/darkstar/.env exec -u node game npm run -s api:admin -- find Name.1234
+  ```
+
+- **Tests**: `tests/server/Censor.test.ts` (rewritten), `tests/api/RateLimits.test.ts`,
+  `tests/api/Admin.test.ts`, `tests/client/OwnNameMasking.test.ts`, the leaderboard's masking
+  case, the client refresh on 429/500 (`AuthRefreshTimeout.test.ts`).
+
+### 12.9 As built: one name per account (2026-10-25)
+
+Tom's rule (A13 revised, Q8): unlimited, instant renames, and one name per account. Before this a
+signed-in player's name box held a per-browser name that never reached the account, so the
+board (the account name) and the game (the box) could disagree.
+
+- **API**: `PUT /users/@me/username` (`AuthRoutes.ts`), bearer token, body `{ username }`;
+  `Accounts.renameAccount` applies the account rules (`AccountUsernameSchema`: letters, digits,
+  `_` and `-`, single spaces, 3 to 20), keeps the tag, stamps `name_changed_at`. 200 with
+  `PutUsernameResponseSchema`, 400 outside the rules, 401 without a session. No wait:
+  `nextUsernameChangeAt` is always null and `NAME_CHANGE_WAIT_MS` is gone. Rate limit 20 a
+  minute per IP, against scripts only. The admin command's `rename` uses the same function.
+- **Client**: `UsernameInput`, for a signed-in player, shows the account name (over any name
+  stored in the browser), validates against the account rules, and saves through upstream's
+  `Api.updateUsername` 1.2 s after typing stops, on Enter, or on leaving the box; then it
+  re-reads the profile and dispatches `userMeResponse`, so the account panel and the board
+  follow. An unsaved edit is never overwritten by a profile arriving. `Main.handleJoinLobby`
+  awaits `whenNameSaved()`, so a name typed just before Play is the one joined under. Strings:
+  `username.save_failed`, `username.save_too_fast`. Side effect: a signed-in name can no longer
+  carry accents or dots (the account rules); guests are unchanged (A21). No migration (Tom,
+  2026-10-25): a name a player kept only in their browser is not carried over; the box shows
+  the account's name and they retype theirs once.
+- **Game server**: a signed-in join takes the account's name from the `/users/@me` lookup it
+  already makes (`Censor.accountJoinName`, masked), whatever the browser sent. A refresh before
+  the round starts (the re-admit path, which skips the lookup) keeps the name it was admitted
+  under.
+- **Board timing**: other players see a new name once the board's one-minute cache turns; the
+  player's own row is live.
+- **Tests**: `tests/api/Rename.test.ts`, `tests/client/UsernameInputAccountName.test.ts`,
+  `accountJoinName` in `tests/server/Censor.test.ts`, the admin rename in `Admin.test.ts`.
+
 ## 13. Tests
 
 API tests run against an in-memory database, under `tests/api/`, added to `npm test`.
@@ -717,9 +803,24 @@ API tests run against an in-memory database, under `tests/api/`, added to `npm t
 - ~~**Q4 — A contact address**~~ `hello@january-games.com`, in the draft Terms and Privacy Policy
   (2026-10-17).
 - **Q5 — Record retention.** 30 days of full game records (A19), or none at all?
+- ~~**Q6 — Guests and bans** (B6).~~ Answered 2026-10-25: nothing for now. A guest cannot choose
+  a name (A21) and the game has no free chat, so a guest has few ways to disrupt anyone.
+- ~~**Q7 — How strict the word list is.**~~ Answered 2026-10-25: the strongest words only, as
+  built (slurs, sexual terms, strong swearing; mild words such as damn, hell and crap pass).
+  `TERMS` in `src/server/Censor.ts`.
+- ~~**Q8 — The player's own rename.**~~ Answered 2026-10-25 (A13 revised): **unlimited, instant
+  renames, and one name per account.** No 30-day wait. Today a signed-in player's name box is a
+  per-browser name that never reaches the account, so the board can show one name and the game
+  another; the box is to become the account's name. Built 2026-10-25 (§12.9).
 
 ## 16. Changelog
 
+- **2026-10-25** — **B6, first part** (§12.8), at Tom's request: the name filter rewritten to mask
+  the offending word for everyone but the player (Tom's rule; few false positives), API rate
+  limits, and the admin command for bans, renames, sign-outs and deletion on request. B6 keeps
+  backups. Tom answered Q6 (no guest bans for now), Q7 (the list as built) and Q8 (unlimited
+  instant renames, one name per account; A13 revised), and the rename was built the same day
+  (§12.9).
 - **2026-10-25** — **Self-service deletion (A17) built and decided** at Tom's request, so
   deletion no longer waits on an email to him. `POST /auth/delete` (refresh cookie as the
   credential) erases sign-ins, sessions, stats and round_players, nulls the account in `rounds`,

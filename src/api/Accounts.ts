@@ -3,10 +3,10 @@ import { DatabaseSync } from "node:sqlite";
 import { UserMeResponse } from "../core/ApiSchemas";
 import {
   ACCOUNT_NAME_CHARS,
+  AccountUsernameSchema,
   MAX_ACCOUNT_USERNAME_LENGTH,
   MIN_ACCOUNT_USERNAME_LENGTH,
 } from "../core/validations/username";
-import { censorPlayer } from "../server/Censor";
 import { AccountStats, EMPTY_STATS, victories } from "./Results";
 
 // Under a Dark Star: accounts and sign-ins (docs/DarkStar-Accounts.md §4.1,
@@ -40,16 +40,14 @@ export const FALLBACK_ACCOUNT_NAME = "Player";
 
 // The account name an identity starts with (A13): the provider's display
 // name reduced to the account alphabet (letters, digits, underscore, hyphen;
-// spaces become underscores), clamped, and passed through the name filter.
-// Anything that leaves nothing usable becomes "Player"; the tag tells
-// namesakes apart.
+// spaces become underscores) and clamped. Anything that leaves nothing usable
+// becomes "Player"; the tag tells namesakes apart. The name is stored as it
+// is: the name filter masks it where other players see it (B6), so its owner
+// keeps seeing their own.
 export function accountNameFrom(displayName: string): string {
   const reduced = reduceToAccountAlphabet(displayName);
-  const screened = reduceToAccountAlphabet(
-    censorPlayer(reduced, null).username,
-  );
-  return screened.length >= MIN_ACCOUNT_USERNAME_LENGTH
-    ? screened
+  return reduced.length >= MIN_ACCOUNT_USERNAME_LENGTH
+    ? reduced
     : FALLBACK_ACCOUNT_NAME;
 }
 
@@ -220,12 +218,8 @@ export function userMeResponse(
       username: displayName(account),
       usernameBase: account.name,
       usernameDiscriminator: account.tag,
-      nextUsernameChangeAt:
-        account.name_changed_at === null
-          ? null
-          : new Date(
-              account.name_changed_at + NAME_CHANGE_WAIT_MS,
-            ).toISOString(),
+      // No wait between renames (A13, revised 2026-10-25).
+      nextUsernameChangeAt: null,
       flares: [],
       achievements: { singleplayerMap: [], player: [] },
       friends: [],
@@ -241,8 +235,29 @@ export function userMeResponse(
   };
 }
 
-// The wait between renames (§11): 30 days, as upstream.
-export const NAME_CHANGE_WAIT_MS = 30 * 24 * 60 * 60 * 1000;
+export type RenameOutcome = "renamed" | "invalid" | "unknown";
+
+// A13 (revised 2026-10-25, Tom): one name per account, which is the name the
+// player plays under and the board shows, changed as often as the player
+// likes and at once. The account rules apply (letters, digits, _ and -,
+// single spaces, 3 to 20); the tag stays, so namesakes stay apart. The name
+// is stored as typed and masked by the name filter where others see it.
+// Used by the player's own name box and by Tom's admin command.
+export function renameAccount(
+  db: DatabaseSync,
+  accountId: string,
+  name: string,
+  now: number,
+): RenameOutcome {
+  const parsed = AccountUsernameSchema.safeParse(name);
+  if (!parsed.success) return "invalid";
+  const changed = db
+    .prepare(
+      "UPDATE accounts SET name = ?, name_changed_at = ? WHERE id = ? AND deleted_at IS NULL",
+    )
+    .run(parsed.data, now, accountId);
+  return changed.changes === 0 ? "unknown" : "renamed";
+}
 
 // What a deleted account's row keeps in place of its name (A17).
 export const DELETED_ACCOUNT_NAME = "deleted";

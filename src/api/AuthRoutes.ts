@@ -6,8 +6,10 @@ import {
   accountById,
   accountProvider,
   deleteAccount,
+  displayName,
   findOrCreateAccount,
   ProviderIdentity,
+  renameAccount,
   tokenRole,
   userMeResponse,
 } from "./Accounts";
@@ -273,6 +275,40 @@ export function mountAuthRoutes(app: Express, deps: AuthDeps): void {
         return;
       }
       res.json(userMeResponse(account, now(), statsFor(db, account.id)));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Rename the account (A13, revised 2026-10-25): the player's name box.
+  // Instant and unlimited; one name per account, which the game and the
+  // board both show. 400 for a name outside the account rules. The answer
+  // is PutUsernameResponseSchema, which the client's updateUsername reads.
+  app.put("/users/@me/username", async (req, res, next) => {
+    try {
+      const accountId = await bearer.accountId(req);
+      const account = accountId === null ? null : accountById(db, accountId);
+      if (account === null || account.deleted_at !== null) {
+        res.status(401).json({ error: "unauthorized" });
+        return;
+      }
+      const requested: unknown = req.body?.username;
+      const outcome =
+        typeof requested === "string"
+          ? renameAccount(db, account.id, requested, now())
+          : "invalid";
+      if (outcome !== "renamed") {
+        res.status(400).json({ error: "invalid name" });
+        return;
+      }
+      const renamed = accountById(db, account.id)!;
+      res.json({
+        username: displayName(renamed),
+        base: renamed.name,
+        discriminator: renamed.tag,
+        usernameStatus: "unclaimed",
+        nextUsernameChangeAt: null,
+      });
     } catch (error) {
       next(error);
     }

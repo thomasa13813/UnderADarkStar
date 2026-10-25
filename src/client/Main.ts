@@ -34,6 +34,7 @@ import {
 } from "./MenuChrome";
 import { modalRouter } from "./ModalRouter";
 import { initNavigation } from "./Navigation";
+import { setOwnJoinName } from "./OwnName";
 import { capturePagePin } from "./PagePin";
 import { fallbackPlayerName } from "./PlayerName";
 import {
@@ -700,11 +701,15 @@ class Client {
     // handshake. whenSeeded() always resolves (falling back to the generated
     // anon name on failure/timeout), so this can only delay, never block.
     await this.usernameInput?.whenSeeded();
+    // A signed-in player's name is the account's: a rename just typed must
+    // reach the API first, since the game server reads the name from there.
+    await this.usernameInput?.whenNameSaved();
     // One resolution for the whole join: the name and the verified badge have
     // to describe the same decision, so they are read together rather than
     // asked for separately.
     const resolvedName =
       this.usernameInput?.resolvedName() ?? fallbackPlayerName();
+    setOwnJoinName(resolvedName.name, this.usernameInput?.getClanTag() ?? null);
     const newLobbyHandle = joinLobby(this.eventBus, {
       gameID: lobby.gameID,
       cosmetics: await getPlayerCosmeticsRefs({

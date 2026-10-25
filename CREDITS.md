@@ -61,7 +61,7 @@ open licence and are not in this repository. See [LICENSING.md](LICENSING.md).
 [Public Domain](https://www.jpl.nasa.gov/jpl-image-use-policy/)
 
 The other maps that ship (Sol, Traders Dream, Passage, Branching Paths,
-Chopping Block, More Than Luck, Sierpinski, Warship Warship, Duel, Standoff,
+Chopping Block, More Than Luck, Sierpinski, Destroyers of Worlds, Duel, Standoff,
 Corners, Royale) were drawn by OpenFront contributors and are CC BY-SA 4.0 like
 the rest of `resources/`; Event Horizon and the six maps generated from the
 sketches in `MapImages/` (No Moon, Nucleic Acid, Nucleus, Jovian System,

@@ -1,6 +1,10 @@
 import { z } from "zod";
 import { buildAssetUrl } from "../core/AssetUrls";
-import { ClanTagSchema, GameInfo, UsernameSchema } from "../core/Schemas";
+import {
+  ClanTagSchema,
+  DisplayUsernameSchema,
+  GameInfo,
+} from "../core/Schemas";
 import { formatPlayerDisplayName } from "../core/Util";
 import { GameMode, maps } from "../core/game/Game";
 import { getRuntimeAssetManifest } from "./RuntimeAssetManifest";
@@ -8,7 +12,7 @@ import { ServerEnv } from "./ServerEnv";
 
 export const PlayerInfoSchema = z.object({
   clientID: z.string().optional(),
-  username: UsernameSchema.optional(),
+  username: DisplayUsernameSchema.optional(),
   clanTag: ClanTagSchema,
   stats: z.unknown().optional(),
 });
