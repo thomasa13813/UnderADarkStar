@@ -588,15 +588,18 @@ export class UserSettingModal extends BaseModal {
   }
 
   private renderTestButton(controls: AudioControls, category: CueCategory) {
-    // isAudible gates on master before the channel, so on a fresh web install
-    // — master 0, channels at their defaults — every button would otherwise
-    // read "turn this category up", blaming a slider that is already up. The
-    // master row has no Test button, so that hint cannot even be followed.
+    // isAudible gates on the quick mute and master before the channel, so on
+    // a fresh web install -- muted, channels at their defaults -- every button
+    // would otherwise read "turn this category up", blaming a slider that is
+    // already up. The master row has no Test button, so that hint cannot even
+    // be followed; name whichever is really in the way.
     const masterMuted = !controls.isAudible("master");
     const muted = masterMuted || !controls.isAudible(category);
-    const hint = masterMuted
-      ? "user_setting.audio_test_master_muted"
-      : "user_setting.audio_test_muted";
+    const hint = !masterMuted
+      ? "user_setting.audio_test_muted"
+      : this.userSettings.soundMuted()
+        ? "user_setting.audio_test_sound_muted"
+        : "user_setting.audio_test_master_muted";
     const pending = this.previewing.has(category);
     return html`
       <button

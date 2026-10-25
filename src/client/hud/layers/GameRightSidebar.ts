@@ -8,6 +8,7 @@ import { ClientEnv } from "../../ClientEnv";
 import "../../components/DarkStarPanel";
 import "../../components/DoomsdayClockPanel";
 import "../../components/OvertimePanel";
+import "../../components/SoundToggle";
 import { Controller } from "../../Controller";
 import { showInGameAlert, showInGameConfirm } from "../../InGameModal";
 import { TogglePauseIntentEvent } from "../../InputHandler";
@@ -381,6 +382,13 @@ export class GameRightSidebar extends LitElement implements Controller {
         <div class="cursor-pointer" @click=${this.onSettingsButtonClick}>
           <img src=${settingsIcon} alt="settings" width="20" height="20" />
         </div>
+
+        <sound-toggle
+          class="flex"
+          buttonClass="flex cursor-pointer text-white"
+          iconClass="w-5 h-5"
+          solid
+        ></sound-toggle>
 
         ${document.fullscreenEnabled && !this.hideFullscreenButton
           ? html`<div

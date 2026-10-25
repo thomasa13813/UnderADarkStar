@@ -40,6 +40,19 @@ workflow in §6 says how a new one gets in. Companion to the design doc's S8
 Channels: **master**, **music**, **effects**, **alerts** (still audible when the
 window is unfocused unless turned off), **ambience**, **interface**.
 
+**Quick mute (Tom 2026-10-25):** a speaker icon right of the settings cogwheel, on
+the home nav bar and in the in-game top-right panel, mutes or unmutes everything
+in one click. No volume control of its own. It is a separate saved flag
+(`settings.audio.muted`) that zeroes Howler's master gain, so unmuting restores the
+player's levels exactly.
+
+**Defaults (Tom 2026-10-25):** master at 100%, and the quick mute **on** for a new
+visitor, so nothing plays by itself but sound is one click away rather than buried
+in Settings. A player who has stored any volume (a returning player, or one who
+drags a slider in the Audio tab) starts unmuted; a mute set by the player is kept.
+"Reset to defaults" mutes again. Unmuting from a master dragged to zero lifts it to
+100%. This replaced the earlier rule that started web visitors at master 0.
+
 **Audience principle (S8, Tom 2026-10-04):** a cue is heard by the players
 involved, not by the whole map. The one exception: the Hegemon hears every
 missile launch in the galaxy. A detonation is heard by all.
@@ -177,6 +190,11 @@ with them since those units never appear.
    either way.
 
 ## 7. Changelog
+
+- **2026-10-25** — **Quick mute.** Speaker icon beside the settings cogwheel on the home
+  nav bar and the in-game panel (`components/SoundToggle.ts`); flag in `UserSettings`,
+  applied in `AudioMixer`. Master now defaults to 100% and new visitors start muted,
+  replacing the master-0 web default. See section 2.
 
 - **2026-10-17** — **Piracy cues.** Tom's `embrace` (the pirate alone, on the death screen's
   button) and `beaching` (the pirate and the coast's owner, on the landing's two messages) are

@@ -72,7 +72,7 @@ describe("audio channel volumes", () => {
   it("has no legacy fallback for master", () => {
     localStorage.setItem("settings.soundEffectsVolume", "0.1");
     localStorage.setItem("settings.backgroundMusicVolume", "0.1");
-    expect(new UserSettings().audioVolume("master")).toBeCloseTo(0.9);
+    expect(new UserSettings().audioVolume("master")).toBe(1);
   });
 
   it("writes the channel key and clamps to 0-1", () => {
@@ -95,6 +95,55 @@ describe("audio channel volumes", () => {
     );
     new UserSettings().setAudioVolume("music", 0.42);
     expect(seen).toEqual(["0.42"]);
+  });
+});
+
+describe("quick mute (speaker icon)", () => {
+  beforeEach(resetUserSettingsState);
+
+  it("unmutes a new visitor at full master in one click", () => {
+    const s = new UserSettings();
+    expect(s.soundOn()).toBe(false);
+    s.toggleSound();
+    expect(s.soundOn()).toBe(true);
+    expect(s.audioVolume("master")).toBe(1);
+  });
+
+  it("mutes and unmutes without touching the master level", () => {
+    const s = new UserSettings();
+    s.setAudioVolume("master", 0.6);
+    expect(s.soundOn()).toBe(true);
+    s.toggleSound();
+    expect(s.soundMuted()).toBe(true);
+    expect(s.soundOn()).toBe(false);
+    expect(s.audioVolume("master")).toBeCloseTo(0.6);
+    s.toggleSound();
+    expect(s.soundOn()).toBe(true);
+    expect(s.audioVolume("master")).toBeCloseTo(0.6);
+  });
+
+  it("lifts a master dragged to zero back to the default when turning sound on", () => {
+    const s = new UserSettings();
+    s.setAudioVolume("master", 0);
+    expect(s.soundMuted()).toBe(false);
+    expect(s.soundOn()).toBe(false);
+    s.toggleSound();
+    expect(s.soundOn()).toBe(true);
+    expect(s.audioVolume("master")).toBe(1);
+  });
+
+  it("announces the change for the mixer and the icons", () => {
+    const s = new UserSettings();
+    const seen: string[] = [];
+    const type = `${USER_SETTINGS_CHANGED_EVENT}:settings.audio.muted`;
+    const listener = (e: Event) => seen.push((e as CustomEvent).detail);
+    globalThis.addEventListener(type, listener);
+    s.setSoundMuted(false);
+    s.resetAudio();
+    globalThis.removeEventListener(type, listener);
+    // Reset goes back to the new-visitor default: muted.
+    expect(seen).toEqual(["false", "true"]);
+    expect(s.soundMuted()).toBe(true);
   });
 });
 
@@ -145,17 +194,16 @@ describe("legacy volume accessors", () => {
   });
 });
 
-describe("master volume default", () => {
-  beforeEach(() => {
-    resetUserSettingsState();
-  });
+describe("master volume and quick mute defaults", () => {
+  beforeEach(resetUserSettingsState);
 
-  it("starts web silent when the player has never chosen any audio value", () => {
-    // Parity with main, where both old sliders defaulted to 0, and ordinary
-    // autoplay etiquette: nothing should start making noise by itself.
+  it("starts a new visitor muted, with master at full", () => {
+    // Tom, 2026-10-25: nothing plays by itself on the web, but sound is one
+    // click on the speaker icon away rather than a slider in Settings.
     const s = new UserSettings();
-    expect(s.audioVolume("master")).toBe(0);
-    // The channels themselves are untouched — only master differs.
+    expect(s.soundMuted()).toBe(true);
+    expect(s.soundOn()).toBe(false);
+    expect(s.audioVolume("master")).toBe(1);
     expect(s.audioVolume("music")).toBeCloseTo(0.5);
     expect(s.audioVolume("effects")).toBeCloseTo(0.7);
     expect(s.audioVolume("alerts")).toBeCloseTo(0.8);
@@ -163,99 +211,66 @@ describe("master volume default", () => {
     expect(s.audioVolume("interface")).toBeCloseTo(0.5);
   });
 
-  it("keeps a returning web player audible when only a legacy key is stored", () => {
-    // Master has no legacy key, so without this carve-out a player who had
-    // deliberately set the old sliders would upgrade into silence.
+  it("keeps a returning player unmuted when only a legacy key is stored", () => {
     localStorage.setItem("settings.backgroundMusicVolume", "0.5");
     const s = new UserSettings();
-    expect(s.audioVolume("master")).toBeCloseTo(0.9);
+    expect(s.soundMuted()).toBe(false);
+    expect(s.audioVolume("master")).toBe(1);
     expect(s.audioVolume("music")).toBeCloseTo(0.5);
   });
 
   it("counts a stored channel key as having chosen, even at zero", () => {
     localStorage.setItem("settings.audio.effects", "0");
     const s = new UserSettings();
-    expect(s.audioVolume("master")).toBeCloseTo(0.9);
+    expect(s.soundMuted()).toBe(false);
     expect(s.audioVolume("effects")).toBe(0);
   });
 
-  it("announces master when the first write flips the carve-out", () => {
-    // Otherwise the mixer stays at master 0 — a silent game — while the tab
-    // shows master at its default.
+  it("announces the unmute when the first slider write flips the carve-out", () => {
+    // Otherwise the mixer stays silent while the speaker icon shows sound on.
     const seen: unknown[] = [];
-    const type = `${USER_SETTINGS_CHANGED_EVENT}:settings.audio.master`;
-    const listener = (e: Event) => seen.push((e as CustomEvent).detail);
-    globalThis.addEventListener(type, listener);
-
-    const s = new UserSettings();
-    expect(s.audioVolume("master")).toBe(0);
-    s.setAudioVolume("effects", 0.7);
-
-    globalThis.removeEventListener(type, listener);
-    expect(s.audioVolume("master")).toBeCloseTo(0.9);
-    expect(seen).toEqual(["0.9"]);
-  });
-
-  it("announces the flip through the legacy setters too", () => {
-    const seen: unknown[] = [];
-    const type = `${USER_SETTINGS_CHANGED_EVENT}:settings.audio.master`;
-    const listener = (e: Event) => seen.push((e as CustomEvent).detail);
-    globalThis.addEventListener(type, listener);
-
-    new UserSettings().setBackgroundMusicVolume(0.5);
-
-    globalThis.removeEventListener(type, listener);
-    expect(seen).toEqual(["0.9"]);
-  });
-
-  it("announces the flip only once, not on every later write", () => {
-    const seen: unknown[] = [];
-    const type = `${USER_SETTINGS_CHANGED_EVENT}:settings.audio.master`;
+    const type = `${USER_SETTINGS_CHANGED_EVENT}:settings.audio.muted`;
     const listener = (e: Event) => seen.push((e as CustomEvent).detail);
     globalThis.addEventListener(type, listener);
 
     const s = new UserSettings();
     s.setAudioVolume("effects", 0.7);
     s.setAudioVolume("music", 0.3);
-    s.setAudioVolume("alerts", 0.2);
+    new UserSettings().setBackgroundMusicVolume(0.5);
 
     globalThis.removeEventListener(type, listener);
-    expect(seen).toEqual(["0.9"]);
+    expect(s.soundMuted()).toBe(false);
+    expect(seen).toEqual(["false"]);
   });
 
-  it("does not announce a flip when master is stored", () => {
-    const s = new UserSettings();
-    s.setAudioVolume("master", 0.3);
+  it("announces the flip through the legacy setters too", () => {
     const seen: unknown[] = [];
-    const type = `${USER_SETTINGS_CHANGED_EVENT}:settings.audio.master`;
+    const type = `${USER_SETTINGS_CHANGED_EVENT}:settings.audio.muted`;
     const listener = (e: Event) => seen.push((e as CustomEvent).detail);
     globalThis.addEventListener(type, listener);
 
-    s.setAudioVolume("effects", 0.7);
+    new UserSettings().setSoundEffectsVolume(0.5);
 
     globalThis.removeEventListener(type, listener);
-    expect(seen).toEqual([]);
-    expect(s.audioVolume("master")).toBeCloseTo(0.3);
+    expect(seen).toEqual(["false"]);
   });
 
-  it("trips the carve-out on a legacy effects value alone", () => {
-    localStorage.setItem("settings.soundEffectsVolume", "0.65");
-    expect(new UserSettings().audioVolume("master")).toBeCloseTo(0.9);
+  it("keeps a mute the player set, whatever they store afterwards", () => {
+    const s = new UserSettings();
+    s.setSoundMuted(true);
+    s.setAudioVolume("music", 0.3);
+    expect(s.soundMuted()).toBe(true);
   });
 
   it("does not trip the carve-out on the blur toggles alone", () => {
-    // Those are not a volume choice, so they must not unmute a web player.
+    // Those are not a volume choice, so they must not unmute a new visitor.
     const s = new UserSettings();
     s.setMuteOnBlur(true);
     s.setAlertsWhenUnfocused(false);
-    expect(new UserSettings().audioVolume("master")).toBe(0);
+    expect(new UserSettings().soundMuted()).toBe(true);
   });
 
-  it("lets a stored master value win on either platform", () => {
-    localStorage.setItem("settings.audio.master", "0.3");
-    expect(new UserSettings().audioVolume("master")).toBeCloseTo(0.3);
-
-    resetUserSettingsState();
+  it("lets a stored master value win", () => {
     localStorage.setItem("settings.audio.master", "0.3");
     expect(new UserSettings().audioVolume("master")).toBeCloseTo(0.3);
   });
@@ -304,9 +319,10 @@ describe("resetAudio", () => {
     s.resetAudio();
 
     const after = new UserSettings();
-    // Silent on web, because nothing is stored any more — not even the
-    // legacy keys that would otherwise trip the master carve-out.
-    expect(after.audioVolume("master")).toBe(0);
+    // Muted again, because nothing is stored any more -- not even the
+    // legacy keys that would otherwise trip the carve-out.
+    expect(after.soundMuted()).toBe(true);
+    expect(after.audioVolume("master")).toBe(1);
     expect(after.audioVolume("music")).toBeCloseTo(0.5);
     expect(after.audioVolume("effects")).toBeCloseTo(0.7);
     expect(after.audioVolume("alerts")).toBeCloseTo(0.8);
@@ -372,7 +388,7 @@ describe("resetAudio", () => {
     s.resetAudio();
 
     globalThis.removeEventListener(type, listener);
-    expect(seen).toEqual(["0"]);
+    expect(seen).toEqual(["1"]);
     expect(seen.every((d) => !isNaN(parseFloat(String(d))))).toBe(true);
   });
 });
@@ -384,18 +400,18 @@ describe("one-time audio reset", () => {
 
   it("clears the state that had a web player hearing cues they never chose", () => {
     // The reported case: the old build's music slider was dragged once and
-    // effects was left alone, so the master carve-out reads "has chosen" and
-    // the four channels that slider never covered fall through to the new
+    // effects was left alone, so the carve-out reads "has chosen" and the
+    // four channels that slider never covered fall through to the new
     // defaults. Audible, at full level, opted into by nobody.
     localStorage.setItem("settings.backgroundMusicVolume", "0.4");
     const before = new UserSettings();
-    expect(before.audioVolume("master")).toBeCloseTo(0.9);
+    expect(before.soundMuted()).toBe(false);
     expect(before.audioVolume("effects")).toBeCloseTo(0.7);
 
     expect(new UserSettings().resetAudioOnce()).toBe(true);
 
     const after = new UserSettings();
-    expect(after.audioVolume("master")).toBe(0);
+    expect(after.soundMuted()).toBe(true);
     expect(localStorage.getItem("settings.backgroundMusicVolume")).toBeNull();
   });
 
@@ -457,13 +473,14 @@ describe("one-time audio reset", () => {
   it("announces the reset values, so a running mixer follows it", () => {
     localStorage.setItem("settings.soundEffectsVolume", "0.9");
     const seen: unknown[] = [];
-    const type = `${USER_SETTINGS_CHANGED_EVENT}:settings.audio.master`;
+    const type = `${USER_SETTINGS_CHANGED_EVENT}:settings.audio.muted`;
     const listener = (e: Event) => seen.push((e as CustomEvent).detail);
     globalThis.addEventListener(type, listener);
 
     new UserSettings().resetAudioOnce();
 
     globalThis.removeEventListener(type, listener);
-    expect(seen).toEqual(["0"]);
+    // The legacy key had this player unmuted; the reset mutes them again.
+    expect(seen).toEqual(["true"]);
   });
 });

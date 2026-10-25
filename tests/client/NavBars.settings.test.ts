@@ -5,6 +5,7 @@ import "../../src/client/components/DesktopNavBar";
 import "../../src/client/components/NavUtilityIcons";
 import "../../src/client/components/PlayPage";
 import { initNavigation } from "../../src/client/Navigation";
+import { UserSettings } from "../../src/core/game/UserSettings";
 
 // jsdom has no ResizeObserver.
 globalThis.ResizeObserver ??= class {
@@ -28,6 +29,9 @@ async function mount(tag: string): Promise<Mountable> {
 
 const settingsButton = (root: ParentNode) =>
   root.querySelector<HTMLElement>('.nav-menu-item[data-page="page-settings"]');
+
+const soundButton = (root: ParentNode) =>
+  root.querySelector<HTMLElement>("sound-toggle button");
 
 const helpLink = (root: ParentNode) =>
   root.querySelector<HTMLElement>('.nav-menu-item[href="/wiki/"]');
@@ -76,7 +80,7 @@ describe("nav-utility-icons settings cogwheel", () => {
     expect(shared(settings)).toEqual(shared(help));
   });
 
-  it("sits last in the cluster", () => {
+  it("sits last among the links, with only the speaker after it", () => {
     const items = Array.from(
       icons.querySelectorAll<HTMLElement>(".nav-menu-item"),
     );
@@ -84,7 +88,35 @@ describe("nav-utility-icons settings cogwheel", () => {
       helpLink(icons),
       icons.querySelector(`a[href="${DISCORD_INVITE_URL}"]`),
       settingsButton(icons),
+      soundButton(icons),
     ]);
+  });
+
+  it("toggles the quick mute from the speaker, which shares the box", async () => {
+    const speaker = soundButton(icons)!;
+    expect(speaker.tagName).toBe("BUTTON");
+    // No data-page: Navigation must not route it.
+    expect(speaker.hasAttribute("data-page")).toBe(false);
+    const settings = new UserSettings();
+    settings.setAudioVolume("master", 0.5);
+    settings.setSoundMuted(false);
+    const toggle = icons.querySelector("sound-toggle") as Mountable;
+    await toggle.updateComplete;
+    expect(soundButton(icons)!.dataset.soundOn).toBe("true");
+    // The waves are a nested fragment; it has to be built as SVG to draw.
+    const shapes = soundButton(icons)!.querySelectorAll("svg > *");
+    expect(shapes.length).toBe(3);
+    for (const shape of shapes) {
+      expect(shape.namespaceURI).toBe("http://www.w3.org/2000/svg");
+    }
+    soundButton(icons)!.click();
+    await toggle.updateComplete;
+    expect(settings.soundMuted()).toBe(true);
+    expect(soundButton(icons)!.dataset.soundOn).toBe("false");
+    soundButton(icons)!.click();
+    await toggle.updateComplete;
+    expect(settings.soundMuted()).toBe(false);
+    expect(settings.audioVolume("master")).toBeCloseTo(0.5);
   });
 
   it("opens the wiki in a new tab from the help icon", () => {

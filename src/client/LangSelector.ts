@@ -260,6 +260,7 @@ export class LangSelector extends LitElement {
       "difficulty-info",
       "fluent-slider",
       "tutorial-panel",
+      "sound-toggle",
     ];
 
     document.title = this.translateText("main.title") ?? document.title;

@@ -121,3 +121,20 @@ describe("GameRightSidebar fullscreen button", () => {
     expect(fullscreenButton(el)!.src).toContain("ExitFullscreen");
   });
 });
+
+describe("GameRightSidebar speaker", () => {
+  beforeEach(() => {
+    document.body.innerHTML = "";
+  });
+
+  it("sits immediately right of the settings gear", async () => {
+    const el = await mount();
+    const gear = el.renderRoot.querySelector<HTMLImageElement>(
+      'img[alt="settings"]',
+    )!.parentElement!;
+    const next = gear.nextElementSibling!;
+    expect(next.tagName).toBe("SOUND-TOGGLE");
+    await (next as unknown as TestSidebar).updateComplete;
+    expect(next.querySelector("button svg")).not.toBeNull();
+  });
+});

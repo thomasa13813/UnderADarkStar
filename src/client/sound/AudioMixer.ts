@@ -117,6 +117,8 @@ interface ActiveSound {
  */
 export class AudioMixer {
   private volumes = new Map<AudioCategory, number>();
+  /** The speaker icon's quick mute (UserSettings.soundMuted). */
+  private muted = false;
   private focused = true;
   private ambienceEnvelope = 1;
   /** Loops (music, ambience) whose volume must follow their channel. */
@@ -132,6 +134,8 @@ export class AudioMixer {
       this.volumes.set(category, this.userSettings.audioVolume(category));
       this.followSetting(category);
     }
+    this.muted = this.userSettings.soundMuted();
+    this.followMute();
     this.followFocus();
     this.applyAll();
     // After applyAll on purpose: Howler builds its AudioContext lazily, and
@@ -218,6 +222,7 @@ export class AudioMixer {
   }
 
   isAudible(category: AudioCategory): boolean {
+    if (this.muted) return false;
     if ((this.volumes.get("master") ?? 0) === 0) return false;
     if (category === "master") return true;
     return (this.volumes.get(category) ?? 0) > 0;
@@ -247,8 +252,12 @@ export class AudioMixer {
 
   private applyAll(): void {
     // Master is the one real GainNode Howler exposes; the rest is fan-out.
+    // The quick mute lives here and nowhere else, so every channel -- the
+    // html5 soundtrack included -- goes silent and comes back at its level.
     this.safely("set master volume", () =>
-      Howler.volume(perceptualGain(this.volumes.get("master") ?? 0)),
+      Howler.volume(
+        this.muted ? 0 : perceptualGain(this.volumes.get("master") ?? 0),
+      ),
     );
     for (const category of PLAYABLE) this.applyTo(category);
   }
@@ -288,6 +297,18 @@ export class AudioMixer {
       this.volumes.set(category, parsed);
       if (category === "master") this.applyAll();
       else this.applyTo(category);
+    };
+    globalThis.addEventListener(type, handler);
+    this.disposers.push(() => globalThis.removeEventListener(type, handler));
+  }
+
+  private followMute(): void {
+    const type = `${USER_SETTINGS_CHANGED_EVENT}:settings.audio.muted`;
+    const handler = (event: Event) => {
+      const muted = (event as CustomEvent<string>).detail === "true";
+      if (muted === this.muted) return;
+      this.muted = muted;
+      this.applyAll();
     };
     globalThis.addEventListener(type, handler);
     this.disposers.push(() => globalThis.removeEventListener(type, handler));

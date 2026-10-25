@@ -203,6 +203,32 @@ describe("channel volumes", () => {
   });
 });
 
+describe("quick mute", () => {
+  it("silences Howler's master and every channel, then restores the level", () => {
+    build({ master: 0.5, alerts: 1 });
+    howlerVolume.mockClear();
+    settings.setSoundMuted(true);
+    expect(howlerVolume).toHaveBeenLastCalledWith(0);
+    expect(mixer.isAudible("master")).toBe(false);
+    expect(mixer.isAudible("alerts")).toBe(false);
+    settings.setSoundMuted(false);
+    expect(howlerVolume).toHaveBeenLastCalledWith(perceptualGain(0.5));
+    expect(mixer.isAudible("alerts")).toBe(true);
+  });
+
+  it("starts muted when the setting was saved muted", () => {
+    settings = new UserSettings();
+    settings.setAudioVolume("master", 0.5);
+    settings.setSoundMuted(true);
+    howlerVolume.mockClear();
+    mixer = new AudioMixer(settings);
+    expect(howlerVolume).toHaveBeenLastCalledWith(0);
+    // A master slider move while muted stays silent.
+    settings.setAudioVolume("master", 0.8);
+    expect(howlerVolume).toHaveBeenLastCalledWith(0);
+  });
+});
+
 describe("per-channel budgets", () => {
   it("steals the oldest effect rather than an alert", () => {
     build({ effects: 1, alerts: 1 });

@@ -1,6 +1,7 @@
 import { html, LitElement, TemplateResult } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { DISCORD_INVITE_URL } from "../CommunityLinks";
+import "./SoundToggle";
 
 /**
  * The help "?" and settings cogwheel as icon buttons. Help is a link: it opens
@@ -13,7 +14,8 @@ import { DISCORD_INVITE_URL } from "../CommunityLinks";
  * page links, which is why they've left the nav item lists. The cogwheel sits
  * last among the page links, immediately left of the profile control, and is a
  * plain page link with no auth dependency: it looks and behaves the same
- * signed in or out. The power button, when it renders, sits right after it.
+ * signed in or out. The speaker (quick mute, 2026-10-25) sits immediately
+ * right of the cogwheel; the power button, when it renders, after that.
  */
 @customElement("nav-utility-icons")
 export class NavUtilityIcons extends LitElement {
@@ -123,6 +125,7 @@ export class NavUtilityIcons extends LitElement {
             />
           </svg>
         </button>
+        <sound-toggle .buttonClass=${this.buttonClass()}></sound-toggle>
       </div>
     `;
   }

@@ -300,11 +300,26 @@ describe("user-setting audio tab", () => {
     expect(testButton(el, "alerts")!.disabled).toBe(false);
   });
 
+  it("points at the speaker icon when the quick mute is the blocker", async () => {
+    // A fresh web install: muted, every channel at its non-zero default.
+    // isAudible gates on the mute first, so all three would otherwise tell
+    // the player to turn up a slider that is already up.
+    setAudioControls(stubControls({ audible: false }));
+    const el = await mountAudioTab();
+
+    for (const category of TESTABLE) {
+      const button = testButton(el, category)!;
+      expect(button.disabled).toBe(true);
+      expect(button.getAttribute("title")).toBe(
+        "user_setting.audio_test_sound_muted",
+      );
+    }
+  });
+
   it("blames master, not the channel, when master is the blocker", async () => {
-    // A fresh web install: master 0, every channel at its non-zero default.
-    // isAudible gates on master first, so all three would otherwise tell the
-    // player to turn up a slider that is already up — and there is no Test
-    // button on the master row to act on.
+    // Unmuted with master dragged to 0. There is no Test button on the
+    // master row, so the channel hint could not even be followed.
+    new UserSettings().setAudioVolume("master", 0);
     setAudioControls(stubControls({ audible: false }));
     const el = await mountAudioTab();
 
@@ -379,8 +394,8 @@ describe("user-setting audio tab", () => {
       ).value;
     expect(sliderValue("music")).toBe(50);
     expect(sliderValue("effects")).toBe(70);
-    // Web, and nothing stored any more, so master is silent.
-    expect(sliderValue("master")).toBe(0);
+    // Master defaults to full; a new visitor is held silent by the mute.
+    expect(sliderValue("master")).toBe(100);
     expect(checkbox(el, "audio-mute-on-blur-toggle").checked).toBe(false);
   });
 
@@ -456,6 +471,7 @@ describe("user-setting audio tab", () => {
       "audio_test",
       "audio_test_muted",
       "audio_test_master_muted",
+      "audio_test_sound_muted",
       "audio_reset",
     ];
     expect(required.filter((k) => !(k in en.user_setting))).toEqual([]);

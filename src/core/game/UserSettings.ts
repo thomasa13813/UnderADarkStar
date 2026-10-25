@@ -72,15 +72,10 @@ export type AudioCategory =
   | "interface";
 
 const AUDIO_DEFAULTS: Record<AudioCategory, number> = {
-  // Not 1.0, in answer to the "too loud on desktop" reports. perceptualGain
-  // squares the slider position, so the cut is twice what the number reads
-  // as: 0.9 is -0.9 dB on the handle and -1.8 dB by the time it is heard.
-  //
-  // Desktop is where it is felt, because that is the platform this default
-  // actually applies on (see defaultMasterVolume), but it is not a
-  // desktop-only value: it is also where the web carve-out lands a player
-  // who opts in, and the two should agree about how loud "default" is.
-  master: 0.9,
+  // Full, by Tom's call (2026-10-25). A new visitor still hears nothing:
+  // the quick mute starts on instead (see soundMuted), so sound is one click
+  // on the speaker icon away rather than a slider buried in Settings.
+  master: 1,
   music: 0.5,
   effects: 0.7,
   alerts: 0.8,
@@ -117,6 +112,7 @@ const AUDIO_CHANNELS = [
 /** Everything "reset to defaults" clears, so the read-through sees a clean slate. */
 const AUDIO_RESET_KEYS: readonly string[] = [
   ...AUDIO_CHANNELS.map((category) => `settings.audio.${category}`),
+  "settings.audio.muted",
   "settings.audio.muteOnBlur",
   "settings.audio.alertsWhenUnfocused",
   // The legacy keys too: leaving them would have the read-through hand the
@@ -132,7 +128,8 @@ const AUDIO_RESET_KEYS: readonly string[] = [
  * audioVolume() below was meant to carry an existing player's two old sliders
  * across, but it only carries the channels those sliders covered: a player who
  * had ever dragged ONE of them stored a key, which satisfies the master
- * carve-out in defaultMasterVolume() -- so master resolves to audible -- while
+ * carve-out then in defaultMasterVolume() (since replaced by the quick mute's,
+ * see soundMuted) -- so master resolves to audible -- while
  * the four channels the other slider never covered fall through to the new
  * defaults. That is a web player who opted into music years ago now hearing
  * the entire new cue layer at full level, having opted into none of it.
@@ -801,42 +798,22 @@ export class UserSettings {
   }
 
   /**
+   * Whether this player has ever stored an audio volume. Decides the quick
+   * mute's default; see soundMuted.
+   */
+  private chosenAudioBefore(): boolean {
+    return AUDIO_VOLUME_KEYS.some((key) => this.getCached(key) !== null);
+  }
+
+  /**
    * Channel volume, 0-1. Falls back to the legacy key before the default, so
    * an existing player keeps the level they chose. A stored 0 is respected:
    * the only writer is a slider drag, so 0 is always a deliberate choice and
    * never means "unset".
    */
-  /**
-   * What master falls back to with nothing stored for it.
-   *
-   * The desktop shell is a game the player deliberately launched, so it starts
-   * audible. The web build starts silent, matching main today — both of the
-   * old sliders defaulted to 0, and audio that starts by itself on the web is
-   * bad manners besides.
-   *
-   * The carve-out: master has no legacy key of its own, so defaulting it to 0
-   * would silence a returning player who had deliberately set the old
-   * sliders. If any audio value is stored at all, master falls back to
-   * AUDIO_DEFAULTS.master and that player keeps hearing what they chose.
-   *
-   * Named rather than quoted, here and in setAudioVolume below, so the two
-   * cannot drift apart the next time the default moves.
-   */
-  private defaultMasterVolume(): number {
-    const chosenBefore = AUDIO_VOLUME_KEYS.some(
-      (key) => this.getCached(key) !== null,
-    );
-    return chosenBefore ? AUDIO_DEFAULTS.master : 0;
-  }
-
   audioVolume(category: AudioCategory): number {
     const legacyKey = AUDIO_LEGACY_KEY[category];
-    // Only master is platform-dependent; every channel default is the same
-    // everywhere, and the mixer is identical on both.
-    const base =
-      category === "master"
-        ? this.defaultMasterVolume()
-        : AUDIO_DEFAULTS[category];
+    const base = AUDIO_DEFAULTS[category];
     const fallback =
       legacyKey === undefined ? base : this.getFloat(legacyKey, base);
     // Clamp on read as well as on write: the legacy keys were never bounded,
@@ -845,19 +822,55 @@ export class UserSettings {
   }
 
   setAudioVolume(category: AudioCategory, volume: number): void {
-    // Writing any channel can flip the web master carve-out from 0 to
-    // AUDIO_DEFAULTS.master (see defaultMasterVolume): the player now has a
-    // stored audio value. Nothing else would announce that, so the mixer
-    // would sit at master 0 — a silent game — while the tab showed the
-    // default.
-    const masterBefore = this.audioVolume("master");
+    // The first volume a player stores flips an unset mute from on to off
+    // (see soundMuted). Nothing else would announce that, so the mixer would
+    // stay silent while the speaker icon showed sound on.
+    const mutedBefore = this.soundMuted();
     this.setFloat(`settings.audio.${category}`, clampVolume(volume));
-    if (category === "master") return;
-    // A stored master is authoritative; the carve-out cannot apply.
-    if (this.getCached("settings.audio.master") !== null) return;
-    const masterAfter = this.audioVolume("master");
-    if (masterAfter !== masterBefore) {
-      this.emitChange("settings.audio.master", String(masterAfter));
+    const mutedAfter = this.soundMuted();
+    if (mutedAfter !== mutedBefore) {
+      this.emitChange("settings.audio.muted", String(mutedAfter));
+    }
+  }
+
+  /**
+   * The quick mute behind the speaker icons (home nav bar and in-game panel).
+   * Separate from master so unmuting puts back exactly the level the player
+   * had; the mixer silences everything while it is set.
+   *
+   * On by default (Tom, 2026-10-25): sound that starts by itself drives web
+   * visitors away, so a new visitor starts muted with master at full, one
+   * click from hearing the game. The carve-out: a player who has stored any
+   * audio volume -- a returning player, or one who has just dragged a slider
+   * in the Audio tab -- has asked for sound, and starts unmuted. A mute the
+   * player set either way is kept as set.
+   */
+  soundMuted(): boolean {
+    return this.getBool("settings.audio.muted", !this.chosenAudioBefore());
+  }
+
+  setSoundMuted(value: boolean): void {
+    this.setBool("settings.audio.muted", value);
+  }
+
+  /** What the speaker icon shows: not muted, and master above zero. */
+  soundOn(): boolean {
+    return !this.soundMuted() && this.audioVolume("master") > 0;
+  }
+
+  /**
+   * The speaker icon's click. Turning sound on also lifts a master the player
+   * dragged to zero back to the default, or the click would unmute into
+   * silence.
+   */
+  toggleSound(): void {
+    if (this.soundOn()) {
+      this.setSoundMuted(true);
+      return;
+    }
+    this.setSoundMuted(false);
+    if (this.audioVolume("master") === 0) {
+      this.setAudioVolume("master", AUDIO_DEFAULTS.master);
     }
   }
 
@@ -896,6 +909,7 @@ export class UserSettings {
         String(this.audioVolume(category)),
       );
     }
+    this.emitChange("settings.audio.muted", String(this.soundMuted()));
     this.emitChange("settings.audio.muteOnBlur", String(this.muteOnBlur()));
     this.emitChange(
       "settings.audio.alertsWhenUnfocused",
