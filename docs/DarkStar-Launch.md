@@ -216,13 +216,14 @@ _Done when_ nothing a player sees or hears is a placeholder.
 
 ### Stage 6 — Release preparation (M)
 
-- [ ] **B6** Bans and the admin script, rate limits, rename, nightly backups, and one restore
+- [x] **B6** Bans and the admin script, rate limits, rename, nightly backups, and one restore
       actually tried. (Delete was built 2026-10-25: Settings → Account.) **In part 2026-10-25**
       (Accounts doc §12.8): the name filter masks the offending word for everyone but the
       player, API rate limits, bans and the admin command (`npm run api:admin`), and one name per
-      account with unlimited instant renames (§12.9). Nightly backups to Cloudflare R2 built the
-      same day (§12.10, free tier). Left: Tom's R2 setup (Services doc §2.1), the keys pushed
-      and deployed, and the restore drill.
+      account with unlimited instant renames (§12.9). **Done 2026-10-25:** nightly backups to
+      Cloudflare R2 (§12.10, free tier, a $1 budget alert), live with the first backup taken the
+      same day, and the restore drill passed (the fetched copy's board and signing key matched
+      the live API).
 - [x] **Legal pages**: Terms of Service and Privacy Policy, linked from the footer, with a contact
       address. Then publish the Google sign-in (it needs the privacy policy on the live domain)
       and add the Google provider to production. Drafted 2026-10-17 (below) and live on the
@@ -336,6 +337,17 @@ _Done when_ the checklist is clean. This build is the release candidate.
 
 ## 7. Changelog
 
+- **2026-10-25, afternoon** — From a second readiness review: **English only enforced.** The
+  game had followed the browser's language into upstream's forty Crowdin files (a French browser
+  got a half-French page titled "OpenFront (ALPHA)"). `ENGLISH_ONLY` in `LangSelector.ts` now
+  ignores the browser and any saved choice and hides the flag picker; flip it when translations
+  of our own exist. Also the phone header: the text wordmark ran under the four utility icons, so
+  the mobile bar now shows the stacked pixel title in a flex row that shrinks it to fit.
+- **2026-10-25, later** — **B6 done.** R2 set up (bucket `darkstar-backups`, 30-day lifecycle
+  rule, a bucket-scoped token, a $1 budget alert), the keys pushed and deployed, the first
+  backup taken by hand (`nightly/2026-10-25`, 5.9 KB), and the restore drill passed on Tom's PC:
+  integrity ok, 11 accounts, 6 rounds, the leaderboard identical to the live one, the signing
+  key the live JWKS serves.
 - **2026-10-25** — **Nightly backups built** (B6, Accounts doc §12.10): the database and signing
   key to a private Cloudflare R2 bucket at 09:00 UTC, thirty nights kept by a lifecycle rule,
   inside the free tier; `npm run api:backup` for an immediate backup, the list and the restore

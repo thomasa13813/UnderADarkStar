@@ -1,5 +1,6 @@
 import { LitElement, html } from "lit";
 import { customElement } from "lit/decorators.js";
+import { assetUrl } from "../../core/AssetUrls";
 import "./AccountButton";
 import "./LeaderboardPanel";
 import "./NavUtilityIcons";
@@ -23,12 +24,14 @@ export class PlayPage extends LitElement {
         <div
           class="lg:hidden fixed left-0 right-0 top-0 z-40 pt-[env(safe-area-inset-top)] bg-surface border-b border-white/10"
         >
-          <div
-            class="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center h-14 px-2 gap-2"
-          >
+          <!-- A flex row, not a three-column grid: the grid split the two
+               sides evenly, and the four utility icons outgrew their half
+               and ran over the title on a phone. Here the title takes what
+               the button and the icons leave and shrinks to fit. -->
+          <div class="flex items-center h-14 px-2 gap-2">
             <button
               id="hamburger-btn"
-              class="col-start-1 justify-self-start h-10 shrink-0 aspect-[4/3] flex text-white/90 rounded-md items-center justify-center transition-colors"
+              class="h-10 shrink-0 aspect-[4/3] flex text-white/90 rounded-md items-center justify-center transition-colors"
               data-i18n-aria-label="main.menu"
               aria-expanded="false"
               aria-controls="sidebar-menu"
@@ -51,15 +54,16 @@ export class PlayPage extends LitElement {
               </svg>
             </button>
 
-            <!-- Text wordmark until the logo lands (P1 decision). -->
-            <div
-              class="col-start-2 flex items-center justify-center text-malibu-blue min-w-0 font-display font-bold uppercase tracking-[0.12em] text-sm whitespace-nowrap"
-              data-i18n="main.title"
-            ></div>
+            <!-- Tom's stacked pixel-art title, as in the desktop nav bar. -->
+            <img
+              src=${assetUrl("images/TitleStacked.svg")}
+              alt="Under a Dark Star"
+              data-i18n-alt="main.title"
+              class="flex-1 min-w-0 h-8 object-contain select-none pointer-events-none"
+              draggable="false"
+            />
             <!-- Right slot: help and settings. -->
-            <div
-              class="col-start-3 justify-self-end shrink-0 flex items-center gap-0.5"
-            >
+            <div class="shrink-0 flex items-center gap-0.5">
               <nav-utility-icons size="mobile"></nav-utility-icons>
             </div>
           </div>

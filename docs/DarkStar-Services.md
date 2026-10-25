@@ -89,7 +89,8 @@ second page, not where they leave inside a round. Nothing in the game's code dep
 **Nightly backups (R2).** The account API uploads its database and signing key every night at
 09:00 UTC (Accounts doc §12.10) to a private bucket. Free: R2 gives 10 GB of storage, a million
 writes and ten million reads a month at no charge; thirty nights of two small files use a few
-megabytes and about 60 writes. As set up on 2026-10-25:
+megabytes and about 60 writes. Live since 2026-10-25 (first night 5.9 KB; restore drill passed).
+As set up that day:
 
 - **R2 itself**: **Storage & databases → R2 Object Storage**. The first visit offered **Add R2
   subscription to my account** ($0.00 due, the card on file charged only above the free
@@ -119,8 +120,13 @@ megabytes and about 60 writes. As set up on 2026-10-25:
 latest .restore-drill` prints `integrity: ok` and the account and round counts, which should
   match the live board. Delete the folder afterwards (it holds the signing key).
 - **Keeping it free**: the R2 overview's Billing Dashboard shows the month's billable usage
-  ($0.00 so far) and offers **Add Budget Alert**, an email if charges ever start. The API also
+  ($0.00 so far) and **Add Budget Alert**. Set 2026-10-25: "Any Cloudflare charge", $1, emailed
+  to the account's address (listed under Notifications). It warns; it does not cap. The API also
   logs a warning if one night's backup passes 300 MB.
+- **Gotchas met on the way**: the token page shows two keys, and pasting the Access Key ID into
+  both slots gives `SignatureDoesNotMatch` (the command now says so plainly); and the env push
+  opens four SSH connections, so a command run straight after it can meet the server's
+  six-per-30-seconds limit ("Connection timed out": wait a minute).
 
 ### 2.2 The server
 
@@ -246,9 +252,6 @@ Things nobody signed up for that the build still needs.
 
 ### 2.7 Planned, not yet in use
 
-- **Backups** of the account database and signing key, nightly, to Cloudflare R2: built
-  2026-10-25 (§2.1, "Nightly backups"), running once the R2 keys reach the server. Until then,
-  §2.2's volume is a single point of loss.
 - ~~**Google sign-in**~~ live since 2026-10-18 (§2.5).
 - ~~**An uptime check**~~ in place since 2026-10-12 (UptimeRobot, both health endpoints).
 - **itch.io** listing (open question, Launch doc §6).
@@ -304,6 +307,8 @@ private operations doc.
 
 ## 5. Changelog
 
+- **2026-10-25, evening** — Nightly backups live: R2 bucket, lifecycle rule, token and a $1
+  budget alert set up; first backup and the restore drill passed. §2.7's backups line removed.
 - **2026-10-25, later** — §2.1's Web Analytics rewritten from the dashboard itself: it was
   already on (automatic setup since the domain was added, EU visitors excluded), so the setup
   steps became where to read the numbers and what the setting is. The revised Privacy Policy is

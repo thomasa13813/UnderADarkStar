@@ -8,6 +8,14 @@ import { formatDebugTranslation } from "./Utils";
 import en from "../../resources/lang/en.json";
 import metadata from "../../resources/lang/metadata.json";
 
+// Under a Dark Star: English only at launch (docs/DarkStar-Launch.md §1,
+// roadmap P8's localisation decision). The other forty files are upstream's
+// Crowdin translations: they say "OpenFront", use its terms and lack every
+// Dark Star key, so a French browser got a half-French OpenFront page titled
+// "OpenFront (ALPHA)". Until translations of our own exist, every visitor gets
+// English, a choice saved earlier is ignored, and the flag picker is hidden.
+export const ENGLISH_ONLY = true;
+
 type LanguageMetadata = {
   code: string;
   native: string;
@@ -51,6 +59,7 @@ export class LangSelector extends LitElement {
   }
 
   private handleLanguageSelected = (e: CustomEvent) => {
+    if (ENGLISH_ONLY) return;
     if (e.detail && e.detail.lang) {
       this.changeLanguage(e.detail.lang);
     }
@@ -120,7 +129,9 @@ export class LangSelector extends LitElement {
     // changes their Steam language sees the game follow.
     const browserLocale = this.defaultLocale();
     const savedLang = localStorage.getItem("lang");
-    const userLang = this.getClosestSupportedLang(savedLang ?? browserLocale);
+    const userLang = ENGLISH_ONLY
+      ? "en"
+      : this.getClosestSupportedLang(savedLang ?? browserLocale);
 
     const [defaultTranslations, translations] = await Promise.all([
       this.loadLanguage("en"),
@@ -354,7 +365,8 @@ export class LangSelector extends LitElement {
   }
 
   render() {
-    if (!this.isVisible) {
+    // Still in the page when hidden: translateText() resolves through it.
+    if (!this.isVisible || ENGLISH_ONLY) {
       return html``;
     }
     const currentLang =

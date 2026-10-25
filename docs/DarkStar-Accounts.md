@@ -783,7 +783,11 @@ month against R2's free million, and megabytes against its free 10 GB.
 - **Privacy**: the policy's retention table and deletion paragraph say a deleted account leaves
   the backups within 30 days, and that a backup is restored only to recover from a failure.
 - **Tests**: `tests/api/Backup.test.ts` (the AWS signing examples, backup and fetch through an
-  in-memory bucket including WAL writes, the schedule and its retry, the all-or-none keys).
+  in-memory bucket including WAL writes, the schedule and its retry, the all-or-none keys, the
+  access key ID pasted into both slots).
+- **Live 2026-10-25**: first backup taken by hand (5.9 KB compressed); the restore drill fetched
+  it on Tom's PC: `integrity: ok`, 11 accounts, 6 rounds, the leaderboard identical to the live
+  API's and the signing key the live JWKS serves. B6 is complete.
 
 ## 13. Tests
 

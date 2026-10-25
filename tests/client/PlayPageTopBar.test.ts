@@ -38,10 +38,12 @@ describe("play-page mobile top bar", () => {
     isOnCrazyGames.mockReturnValue(false);
   });
 
+  // The bar is a flex row: menu button, title, then the right slot.
   const rightSlot = () =>
-    Array.from(el.querySelector(".col-start-3")!.children).map((c) =>
-      c.tagName.toLowerCase(),
-    );
+    Array.from(
+      el.querySelector("#hamburger-btn")!.parentElement!.lastElementChild!
+        .children,
+    ).map((c) => c.tagName.toLowerCase());
 
   describe("off CrazyGames", () => {
     beforeEach(mount);

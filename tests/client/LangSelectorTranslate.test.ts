@@ -90,3 +90,29 @@ describe("LangSelector language loading", () => {
     expect(warn).toHaveBeenCalledWith("Unknown type", "object", [1, 2]);
   });
 });
+
+describe("LangSelector English only (Under a Dark Star)", () => {
+  it("ignores the browser language and a saved choice, and shows no flag", async () => {
+    vi.spyOn(navigator, "language", "get").mockReturnValue("fr-FR");
+    localStorage.setItem("lang", "de");
+    const fetchSpy = vi.fn();
+    vi.stubGlobal("fetch", fetchSpy);
+
+    const selector = new LangSelector();
+    document.body.appendChild(selector);
+    await vi.waitFor(() => expect(selector.translations).toBeDefined());
+    await selector.updateComplete;
+
+    expect(selector.currentLang).toBe("en");
+    expect(selector.translateText("main.title")).toBe("Under a Dark Star");
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(selector.querySelector("#lang-selector")).toBeNull();
+
+    // A stray language-selected event changes nothing either.
+    window.dispatchEvent(
+      new CustomEvent("language-selected", { detail: { lang: "fr" } }),
+    );
+    expect(selector.currentLang).toBe("en");
+    localStorage.removeItem("lang");
+  });
+});
