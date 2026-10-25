@@ -1051,6 +1051,25 @@ export class InputHandler {
       return;
     }
 
+    // A mouse drag whose release we never saw: Safari sometimes drops the
+    // pointerup (released over the browser chrome or outside the window), and
+    // the map then pans with the button up until the next click. `buttons`
+    // says what is held right now, so end the drag the moment the left button
+    // reads as up. Touch and pen keep their own up/cancel path.
+    if (
+      this.pointerDown &&
+      event.pointerType === "mouse" &&
+      typeof event.buttons === "number" &&
+      (event.buttons & 1) === 0
+    ) {
+      const hadSelection = this.selectionBoxActive;
+      this.resetPointerState();
+      if (hadSelection) {
+        this.eventBus.emit(new WarshipSelectionBoxCancelEvent());
+      }
+      this.canvas.style.cursor = "";
+    }
+
     this.pointers.set(event.pointerId, event);
 
     if (!this.pointerDown) {

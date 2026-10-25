@@ -1,11 +1,24 @@
 import { GameMapType } from "./Game";
 import { GameMapLoader, MapData } from "./GameMapLoader";
 
+/**
+ * Pauses before each retry of a map download. Phones lose downloads mid-way
+ * (iOS Safari drops an in-flight fetch when the player switches apps, and a
+ * cellular hand-off can cut one short: "Content-Length header of network
+ * response exceeds response body"), and a single lost download used to end
+ * the game start.
+ */
+const DEFAULT_RETRY_DELAYS_MS: readonly number[] = [500, 1500];
+
+/** A response the server gave deliberately; retrying will not change it. */
+class MapFetchRejected extends Error {}
+
 export class FetchGameMapLoader implements GameMapLoader {
   private maps: Map<GameMapType, MapData>;
 
   public constructor(
     private readonly pathResolver: string | ((path: string) => string),
+    private readonly retryDelaysMs: readonly number[] = DEFAULT_RETRY_DELAYS_MS,
   ) {
     this.maps = new Map<GameMapType, MapData>();
   }
@@ -50,15 +63,42 @@ export class FetchGameMapLoader implements GameMapLoader {
     return this.resolveUrl(`${map}/${path}`);
   }
 
+  /**
+   * Fetch `url` and read its body with `read`, retrying a lost download.
+   * The body read sits inside the retry because that is where a truncated
+   * transfer surfaces. A 4xx is the server's answer, not a lost download, so
+   * it fails at once; network errors and 5xx retry after each delay.
+   */
+  private async fetchWithRetry<T>(
+    url: string,
+    read: (response: Response) => Promise<T>,
+  ): Promise<T> {
+    for (let attempt = 0; ; attempt++) {
+      try {
+        const response = await fetch(url);
+        if (!response.ok) {
+          const message = `Failed to load ${url}: ${response.statusText}`;
+          if (response.status < 500) throw new MapFetchRejected(message);
+          throw new Error(message);
+        }
+        return await read(response);
+      } catch (err) {
+        if (err instanceof MapFetchRejected) throw err;
+        if (attempt >= this.retryDelaysMs.length) throw err;
+        console.warn(
+          `[MapLoader] ${url}: attempt ${attempt + 1} failed, retrying`,
+          err,
+        );
+        await new Promise((resolve) =>
+          setTimeout(resolve, this.retryDelaysMs[attempt]),
+        );
+      }
+    }
+  }
+
   private async loadBinaryFromUrl(url: string) {
     const startTime = performance.now();
-    const response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error(`Failed to load ${url}: ${response.statusText}`);
-    }
-
-    const data = await response.arrayBuffer();
+    const data = await this.fetchWithRetry(url, (res) => res.arrayBuffer());
     console.log(
       `[MapLoader] ${url}: ${(performance.now() - startTime).toFixed(0)}ms`,
     );
@@ -66,22 +106,12 @@ export class FetchGameMapLoader implements GameMapLoader {
   }
 
   private async loadJsonFromUrl(url: string) {
-    const response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error(`Failed to load ${url}: ${response.statusText}`);
-    }
-
-    return response.json();
+    return this.fetchWithRetry(url, (res) => res.json());
   }
 
   private async loadImageBitmap(url: string): Promise<ImageBitmap> {
     const startTime = performance.now();
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`Failed to load ${url}: ${response.statusText}`);
-    }
-    const blob = await response.blob();
+    const blob = await this.fetchWithRetry(url, (res) => res.blob());
     const bitmap = await createImageBitmap(blob);
     console.log(
       `[MapLoader] ${url}: ${(performance.now() - startTime).toFixed(0)}ms`,

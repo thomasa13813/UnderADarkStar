@@ -363,6 +363,8 @@
     "crashed": "Game crashed!",
     "desync_notice": "You are desynced from other players. What you see might differ from other players.",
     "join_failed": "Could not join the lobby. Please try again.",
+    "map_display_lost": "Your device's graphics stopped drawing the map. The game is still running. Reload to rejoin it.",
+    "map_display_reload": "Reload",
     "paste_discord": "Please paste the following in your bug report in Discord:",
     "spawn_failed": {
       "description": "Automatic spawn selection failed. You can't play this game.",

@@ -34,7 +34,7 @@ import {
   UserSettings,
 } from "../core/game/UserSettings";
 import { WorkerClient } from "../core/worker/WorkerClient";
-import { showInGameAlert } from "./InGameModal";
+import { showInGameAlert, showInGameConfirm } from "./InGameModal";
 import {
   AutoUpgradeEvent,
   DoBoatAttackEvent,
@@ -566,6 +566,23 @@ function mountWebGLFrameLoop(
     }
   });
   resizeObs.observe(glCanvas);
+  // A context loss the browser never repaired swaps the canvas (MapRenderer);
+  // follow the new element so resizes keep reaching the camera.
+  view.onCanvasReplaced = (canvas) => {
+    resizeObs.disconnect();
+    resizeObs.observe(canvas);
+  };
+  // Nothing brought the map back. The simulation is unaffected and a reload
+  // rejoins the same seat, so offer that rather than a silently blank map.
+  view.onRenderLost = () => {
+    void showInGameConfirm(translateText("error_modal.map_display_lost"), {
+      variant: "warning",
+      confirmText: translateText("error_modal.map_display_reload"),
+      cancelText: translateText("common.close"),
+    }).then((reload) => {
+      if (reload) window.location.reload();
+    });
+  };
 
   const syncCamera = (): void => {
     const scale = transformHandler.scale;
@@ -867,8 +884,10 @@ async function createClientGame(
       if (rendererDisposed) return;
       rendererDisposed = true;
       stopFrameLoop();
+      // Remove the live canvas, which may have replaced glCanvas mid-game.
+      const canvas = view.canvasElement;
       view.dispose();
-      glCanvas.remove();
+      canvas.remove();
       inputOverlay.remove();
     };
 

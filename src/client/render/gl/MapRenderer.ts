@@ -4,7 +4,10 @@
  * Wraps GPURenderer as a private implementation detail and survives WebGL
  * context loss: when the context is lost the renderer is disposed, and on
  * restore a fresh GPURenderer is created and `onContextRestored` fires so
- * the owner can re-upload all simulation state.
+ * the owner can re-upload all simulation state. A browser may never restore
+ * (mobile Chrome after a GPU-process crash), or the rebuild may fail, so a
+ * loss that is not repaired within RESTORE_TIMEOUT_MS swaps in a fresh canvas
+ * and builds on that instead; `onRenderLost` fires only if that fails too.
  *
  * This is a pure data sink. Input handling lives in InputHandler/EventBus;
  * camera state is pushed in each frame via setCameraState. Consumers only
@@ -36,8 +39,16 @@ import type { AttackTroopLabel } from "./passes/WorldTextPass";
 import { GPURenderer } from "./Renderer";
 import type { RenderSettings } from "./RenderSettings";
 
+/** How long to wait for the browser's own context restore before replacing the canvas. */
+const RESTORE_TIMEOUT_MS = 3000;
+/** Canvas replacements allowed per game, so a GPU that keeps dying can't loop. */
+const MAX_CANVAS_REPLACEMENTS = 3;
+
 export class MapRenderer {
   private renderer: GPURenderer | null = null;
+  private restoreTimer: ReturnType<typeof setTimeout> | null = null;
+  private canvasReplacementsLeft = MAX_CANVAS_REPLACEMENTS;
+  private disposed = false;
   private resizeObs: ResizeObserver | null = null;
   // Stored layer data for context-restore re-creation.
   private storedLayers: MapLayer[] = [];
@@ -53,6 +64,19 @@ export class MapRenderer {
    * geometry are gone).
    */
   onContextRestored: (() => void) | null = null;
+
+  /**
+   * Called when the canvas is swapped for a fresh one after an unrepaired
+   * context loss, so the owner can move anything bound to the old element.
+   */
+  onCanvasReplaced: ((canvas: HTMLCanvasElement) => void) | null = null;
+
+  /**
+   * Called when the map can no longer be drawn: the context was lost and
+   * neither a restore nor a fresh canvas brought it back. The game itself is
+   * unaffected; the owner should tell the player to reload.
+   */
+  onRenderLost: (() => void) | null = null;
 
   constructor(
     private canvas: HTMLCanvasElement,
@@ -78,13 +102,30 @@ export class MapRenderer {
         if (width > 0 && height > 0) this.renderer?.resize(width, height);
       }
     });
-    this.resizeObs.observe(canvas);
+    this.attachCanvas(canvas);
+  }
 
+  /** The canvas currently drawn to; changes if the canvas is replaced. */
+  get canvasElement(): HTMLCanvasElement {
+    return this.canvas;
+  }
+
+  private attachCanvas(canvas: HTMLCanvasElement): void {
+    this.resizeObs?.observe(canvas);
     canvas.addEventListener("webglcontextlost", this.handleContextLost, false);
     canvas.addEventListener(
       "webglcontextrestored",
       this.handleContextRestored,
       false,
+    );
+  }
+
+  private detachCanvas(canvas: HTMLCanvasElement): void {
+    this.resizeObs?.unobserve(canvas);
+    canvas.removeEventListener("webglcontextlost", this.handleContextLost);
+    canvas.removeEventListener(
+      "webglcontextrestored",
+      this.handleContextRestored,
     );
   }
 
@@ -105,33 +146,92 @@ export class MapRenderer {
   };
 
   private handleContextLost = (e: Event) => {
+    // Without preventDefault the browser never restores the context.
     e.preventDefault();
     if (this.renderer) {
       this.renderer.dispose();
       this.renderer = null;
     }
+    this.clearRestoreTimer();
+    this.restoreTimer = setTimeout(() => {
+      this.restoreTimer = null;
+      this.replaceCanvas();
+    }, RESTORE_TIMEOUT_MS);
   };
 
   private handleContextRestored = () => {
-    this.initRenderer();
-    // Re-apply stored layers to the new renderer.
-    if (this.storedLayers.length > 0 && this.storedLayerImages.size > 0) {
-      this.renderer?.setMapLayers(this.storedLayers, this.storedLayerImages);
-      // Re-apply visibility overrides.
-      for (const [id, vis] of this.layerVisibility) {
-        this.renderer?.setLayerVisible(id, vis);
-      }
-      // Re-apply alpha overrides.
-      for (const [id, alpha] of this.layerAlpha) {
-        this.renderer?.setLayerAlpha(id, alpha);
-      }
-      // Re-apply destroyed masks.
-      for (const [id, mask] of this.layerDestroyedMasks) {
-        this.renderer?.setLayerDestroyedMask(id, mask);
-      }
-    }
-    this.onContextRestored?.();
+    this.clearRestoreTimer();
+    if (!this.rebuild()) this.replaceCanvas();
   };
+
+  private clearRestoreTimer(): void {
+    if (this.restoreTimer !== null) {
+      clearTimeout(this.restoreTimer);
+      this.restoreTimer = null;
+    }
+  }
+
+  /**
+   * Create a fresh GPURenderer on the current canvas and re-apply everything
+   * that lived in GPU memory. False if any step throws: an event handler has
+   * no caller to report to, so a silent failure here used to leave the map
+   * blank for the rest of the game.
+   */
+  private rebuild(): boolean {
+    try {
+      this.initRenderer();
+      // Re-apply stored layers to the new renderer.
+      if (this.storedLayers.length > 0 && this.storedLayerImages.size > 0) {
+        this.renderer?.setMapLayers(this.storedLayers, this.storedLayerImages);
+        // Re-apply visibility overrides.
+        for (const [id, vis] of this.layerVisibility) {
+          this.renderer?.setLayerVisible(id, vis);
+        }
+        // Re-apply alpha overrides.
+        for (const [id, alpha] of this.layerAlpha) {
+          this.renderer?.setLayerAlpha(id, alpha);
+        }
+        // Re-apply destroyed masks.
+        for (const [id, mask] of this.layerDestroyedMasks) {
+          this.renderer?.setLayerDestroyedMask(id, mask);
+        }
+      }
+      this.onContextRestored?.();
+      return true;
+    } catch (err) {
+      console.error("[MapRenderer] rebuild after context loss failed", err);
+      try {
+        this.renderer?.dispose();
+      } catch {
+        // The context is already unusable; nothing left to release.
+      }
+      this.renderer = null;
+      return false;
+    }
+  }
+
+  /**
+   * Swap the canvas for a fresh element (a new element gets a new context)
+   * and build on it. The old canvas, and any late event from it, is dropped.
+   */
+  private replaceCanvas(): void {
+    if (this.disposed) return;
+    if (this.canvasReplacementsLeft <= 0) {
+      this.onRenderLost?.();
+      return;
+    }
+    this.canvasReplacementsLeft--;
+
+    const old = this.canvas;
+    const fresh = old.cloneNode(false) as HTMLCanvasElement;
+    this.detachCanvas(old);
+    old.replaceWith(fresh);
+    this.canvas = fresh;
+    this.attachCanvas(fresh);
+    this.onCanvasReplaced?.(fresh);
+
+    if (!this.rebuild()) this.onRenderLost?.();
+  }
 
   /**
    * Set when the context is hardware-accelerated but its MAX_TEXTURE_SIZE is
@@ -402,14 +502,14 @@ export class MapRenderer {
   // ---- Lifecycle ----
 
   dispose(): void {
+    this.disposed = true;
+    this.clearRestoreTimer();
+    this.detachCanvas(this.canvas);
     this.resizeObs?.disconnect();
     this.resizeObs = null;
     this.onContextRestored = null;
+    this.onCanvasReplaced = null;
+    this.onRenderLost = null;
     this.renderer?.dispose();
-    this.canvas.removeEventListener("webglcontextlost", this.handleContextLost);
-    this.canvas.removeEventListener(
-      "webglcontextrestored",
-      this.handleContextRestored,
-    );
   }
 }
