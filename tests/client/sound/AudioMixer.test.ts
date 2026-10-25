@@ -4,7 +4,10 @@ const howlInstances: any[] = [];
 let nextPlayId = 1;
 // vi.mock is hoisted above module-level consts, so anything the factory
 // closes over has to be hoisted with it.
-const { howlerVolume } = vi.hoisted(() => ({ howlerVolume: vi.fn() }));
+const { howlerVolume, howlerMute } = vi.hoisted(() => ({
+  howlerVolume: vi.fn(),
+  howlerMute: vi.fn(),
+}));
 
 vi.mock("howler", () => {
   class MockHowl {
@@ -58,7 +61,12 @@ vi.mock("howler", () => {
   }
   return {
     Howl: MockHowl,
-    Howler: { volume: howlerVolume, ctx: undefined, masterGain: undefined },
+    Howler: {
+      volume: howlerVolume,
+      mute: howlerMute,
+      ctx: undefined,
+      masterGain: undefined,
+    },
   };
 });
 
@@ -118,6 +126,7 @@ beforeEach(() => {
   howlInstances.length = 0;
   nextPlayId = 1;
   howlerVolume.mockClear();
+  howlerMute.mockClear();
   resetSettings();
   vi.spyOn(document, "hasFocus").mockReturnValue(true);
 });
@@ -226,6 +235,36 @@ describe("quick mute", () => {
     // A master slider move while muted stays silent.
     settings.setAudioVolume("master", 0.8);
     expect(howlerVolume).toHaveBeenLastCalledWith(0);
+  });
+
+  // iOS Safari ignores a media element's volume, so the html5 soundtrack is
+  // only silenced by Howler's mute flag, which sets the element's `muted`.
+  it("sets Howler's mute flag, which iOS honours on the html5 soundtrack", () => {
+    build({ master: 0.5 });
+    expect(howlerMute).toHaveBeenLastCalledWith(false);
+    settings.setSoundMuted(true);
+    expect(howlerMute).toHaveBeenLastCalledWith(true);
+    settings.setSoundMuted(false);
+    expect(howlerMute).toHaveBeenLastCalledWith(false);
+  });
+
+  it("unmutes before writing the level, so the level reaches the nodes", () => {
+    build({ master: 0.5 });
+    settings.setSoundMuted(true);
+    howlerMute.mockClear();
+    howlerVolume.mockClear();
+    settings.setSoundMuted(false);
+    expect(howlerMute.mock.invocationCallOrder[0]).toBeLessThan(
+      howlerVolume.mock.invocationCallOrder[0],
+    );
+  });
+
+  it("also holds the mute flag while master sits at zero", () => {
+    build({ master: 0.5 });
+    settings.setAudioVolume("master", 0);
+    expect(howlerMute).toHaveBeenLastCalledWith(true);
+    settings.setAudioVolume("master", 0.3);
+    expect(howlerMute).toHaveBeenLastCalledWith(false);
   });
 });
 

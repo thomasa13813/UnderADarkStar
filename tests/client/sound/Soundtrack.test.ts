@@ -53,7 +53,7 @@ vi.mock("howler", () => {
       howlInstances.push(this);
     }
   }
-  return { Howl: MockHowl, Howler: { volume: vi.fn() } };
+  return { Howl: MockHowl, Howler: { volume: vi.fn(), mute: vi.fn() } };
 });
 
 import {

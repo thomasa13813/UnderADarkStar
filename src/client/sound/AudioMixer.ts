@@ -254,10 +254,20 @@ export class AudioMixer {
     // Master is the one real GainNode Howler exposes; the rest is fan-out.
     // The quick mute lives here and nowhere else, so every channel -- the
     // html5 soundtrack included -- goes silent and comes back at its level.
+    //
+    // The volume write alone is not enough on iOS. Howler reaches an html5
+    // Howl by setting its media element's volume, and iOS Safari ignores that
+    // property (it is read-only there, always 1), so the soundtrack played on
+    // through the mute. Howler.mute() sets the element's `muted` flag instead,
+    // which iOS does honour, and it also holds every later track's element
+    // muted as it starts. Mute goes first: Howler.volume() skips the nodes
+    // while Howler is muted, so on the way back the unmute has to land before
+    // the level write can reach them.
+    const master = this.volumes.get("master") ?? 0;
+    const silent = this.muted || master === 0;
+    this.safely("set master mute", () => Howler.mute(silent));
     this.safely("set master volume", () =>
-      Howler.volume(
-        this.muted ? 0 : perceptualGain(this.volumes.get("master") ?? 0),
-      ),
+      Howler.volume(this.muted ? 0 : perceptualGain(master)),
     );
     for (const category of PLAYABLE) this.applyTo(category);
   }
