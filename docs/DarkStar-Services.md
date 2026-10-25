@@ -97,7 +97,7 @@ Two unrelated things under one account.
 | Thing                 | What it does                                                                                                                                                                       | Where                                                              |
 | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
 | Developer application | "Sign in with Discord". Discord tells our API who the player is (their Discord user id and display name, nothing else: scope `identify`). Needs a client ID (public) and a secret. | <https://discord.com/developers> → application "Under a Dark Star" |
-| Community server      | Where players report bugs and talk. Five channels: welcome, announcements, general, bug-reports, suggestions. Invite: <https://discord.gg/vTjcPKadD>                               | The Discord app                                                    |
+| Community server      | Where players report bugs and talk. Five channels: welcome, announcements, general, bug-reports, suggestions. Invite: <https://discord.gg/RWZWsxzhB3> (permanent, to the welcome channel; 2026-10-25)                               | The Discord app                                                    |
 
 - **The redirects** (OAuth2 page): `http://localhost:8787/auth/callback/discord` for development
   and `https://darkstar-api.january-games.com/auth/callback/discord` for production. A sign-in

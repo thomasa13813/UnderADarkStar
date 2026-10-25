@@ -1,16 +1,15 @@
 import { LitElement, html } from "lit";
 import { customElement } from "lit/decorators.js";
 import { assetUrl } from "../../core/AssetUrls";
-import { currentGameVersion, currentSourceUrl } from "../GameVersion";
+import { currentSourceUrl } from "../GameVersion";
 
 @customElement("page-footer")
 export class Footer extends LitElement {
-  // Per instance, not at module scope: currentGameVersion reads
-  // BOOTSTRAP_CONFIG, which the server injects into the page and which is not
-  // guaranteed to exist at the moment this module is first imported.
-  private readonly versionLabel = currentGameVersion();
   // The AGPL §13 offer of source, pointed at the deployed commit's tree so a
   // player reaches the code they are playing on (GameVersion.sourceUrlFor).
+  // Per instance, not at module scope: it reads BOOTSTRAP_CONFIG, which the
+  // server injects into the page and which is not guaranteed to exist at the
+  // moment this module is first imported.
   private readonly sourceUrl = currentSourceUrl();
 
   createRenderRoot() {
@@ -43,12 +42,8 @@ export class Footer extends LitElement {
               <span data-i18n="main.source"></span>
             </a>
           </div>
-          <!-- The nav bar shows the tagged version; the full string, commit
-               included, lives down here where a player can quote it in a bug
-               report. -->
-          <div class="footer-version text-xs mt-1 lg:mt-2 text-center px-4">
-            ${this.versionLabel}
-          </div>
+          <!-- No version line (Tom, 2026-10-25): releases are not tagged
+               with enough discipline for a public version label. -->
           <div
             class="text-xs mt-1 lg:mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 px-4 text-center"
           >

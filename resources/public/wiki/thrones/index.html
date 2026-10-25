@@ -21,8 +21,9 @@ a:hover{color:#bfdbfe}
 .brand{color:var(--head);text-decoration:none;font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-size:.95rem}
 .brand span{color:var(--accent);font-weight:600}
 .topbar .spacer{flex:1}
-.play{background:var(--accent-strong);color:#0b0d14;text-decoration:none;font-weight:700;padding:6px 14px;border-radius:999px;font-size:.9rem;white-space:nowrap}
-.play:hover{background:#93c5fd;color:#0b0d14}
+.play{display:inline-flex;border-radius:2px;transition:filter .2s}
+.play img{display:block;height:38px;width:auto;image-rendering:pixelated}
+.play:hover,.play:focus-visible{filter:brightness(1.12) drop-shadow(0 0 12px rgba(168,85,247,.45));outline:none}
 .layout{display:grid;grid-template-columns:240px minmax(0,1fr);gap:40px;max-width:1120px;margin:0 auto;padding:24px 16px 64px}
 nav.side{position:sticky;top:64px;align-self:start;max-height:calc(100vh - 80px);overflow:auto;font-size:.92rem}
 nav.side h2{font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin:18px 0 6px;border:0;padding:0}
@@ -72,7 +73,7 @@ h1{font-size:1.7rem}
 <header class="topbar">
 <a class="brand" href="/wiki/">Under a Dark Star <span>Wiki</span></a>
 <span class="spacer"></span>
-<a class="play" href="/">Play now</a>
+<a class="play" href="/" title="Play"><img src="/images/btn-play.svg" alt="Play" width="108" height="38" /></a>
 </header>
 <div class="layout">
 <nav class="side" aria-label="Wiki pages"><ul><li><a href="/wiki/">Wiki home</a></li></ul><h2>Start here</h2><ul><li><a href="/wiki/getting-started/">Getting started</a></li><li><a href="/wiki/the-round/">The round</a></li><li><a href="/wiki/combat/">Combat</a></li></ul><h2>The throne</h2><ul><li><a href="/wiki/hegemon/">The Hegemon</a></li><li><a href="/wiki/overthrowing-the-hegemon/">Overthrowing the Hegemon</a></li><li><a href="/wiki/thrones/" aria-current="page">Thrones and lobbies</a></li></ul><h2>Challengers</h2><ul><li><a href="/wiki/buildings/">Buildings</a></li><li><a href="/wiki/trade/">Trade and the economy</a></li><li><a href="/wiki/armies-and-destroyers/">Armies and Destroyers</a></li><li><a href="/wiki/stargates-and-warheads/">Stargates, warheads and shields</a></li><li><a href="/wiki/piracy/">Piracy</a></li><li><a href="/wiki/alliances-and-diplomacy/">Alliances and diplomacy</a></li></ul><h2>The galaxy</h2><ul><li><a href="/wiki/galaxy/">Nebulae and deep space</a></li><li><a href="/wiki/lords-and-barons/">Lords and Barons</a></li><li><a href="/wiki/maps/">Maps</a></li></ul><h2>Reference</h2><ul><li><a href="/wiki/controls/">Controls and hotkeys</a></li><li><a href="/wiki/interface/">The game screen</a></li><li><a href="/wiki/glossary/">Glossary</a></li><li><a href="/wiki/troubleshooting/">Troubleshooting</a></li></ul></nav>
@@ -129,7 +130,7 @@ together and friends grouped where possible. Lords fill the places left over.</p
 </div>
 <footer>
 <a href="/">Play Under a Dark Star</a>
-<a href="https://discord.gg/vTjcPKadD" rel="noopener">Discord</a>
+<a href="https://discord.gg/RWZWsxzhB3" rel="noopener">Discord</a>
 <a href="mailto:hello@january-games.com">hello@january-games.com</a>
 <a href="/terms.html">Terms</a>
 <a href="/privacy.html">Privacy</a>

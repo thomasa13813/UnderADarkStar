@@ -52,8 +52,8 @@ export class DesktopNavBar extends LitElement {
         class="hidden lg:flex w-full bg-zinc-900/90 backdrop-blur-md items-center justify-center gap-8 py-4 shrink-0 z-50 relative"
       >
         <!-- Stacked pixel-art title (Tom's title-stacked.svg, 2026-10-08).
-             No version under it (2026-10-08): the footer names the build,
-             and 56px is what the old wordmark + version column measured, so
+             No version under it (2026-10-08; the footer dropped its own
+             version line 2026-10-25), and 56px is what the old wordmark + version column measured, so
              the ribbon keeps its height. -->
         <img
           src=${assetUrl("images/TitleStacked.svg")}

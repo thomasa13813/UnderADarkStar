@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { DISCORD_INVITE_URL } from "../../src/client/CommunityLinks";
 import "../../src/client/components/DesktopNavBar";
 import "../../src/client/components/NavUtilityIcons";
 import "../../src/client/components/PlayPage";
@@ -79,7 +80,11 @@ describe("nav-utility-icons settings cogwheel", () => {
     const items = Array.from(
       icons.querySelectorAll<HTMLElement>(".nav-menu-item"),
     );
-    expect(items).toEqual([helpLink(icons), settingsButton(icons)]);
+    expect(items).toEqual([
+      helpLink(icons),
+      icons.querySelector(`a[href="${DISCORD_INVITE_URL}"]`),
+      settingsButton(icons),
+    ]);
   });
 
   it("opens the wiki in a new tab from the help icon", () => {
@@ -125,5 +130,23 @@ describe("the nav bars that host the cluster", () => {
     expect(cluster.getAttribute("size")).toBe("mobile");
     expect(settingsButton(cluster)).not.toBeNull();
     expect(cluster.nextElementSibling).toBeNull();
+  });
+});
+
+describe("nav-utility-icons Discord link", () => {
+  it("opens the community server's invite in a new tab", async () => {
+    document.body.innerHTML = "";
+    window.currentPageId = "page-play";
+    const icons = await mount("nav-utility-icons");
+    const link = icons.querySelector<HTMLAnchorElement>(
+      `a[href="${DISCORD_INVITE_URL}"]`,
+    );
+    expect(link).not.toBeNull();
+    expect(DISCORD_INVITE_URL).toBe("https://discord.gg/RWZWsxzhB3");
+    expect(link!.target).toBe("_blank");
+    expect(link!.getAttribute("data-i18n-aria-label")).toBe("main.discord");
+    expect(link!.querySelector("svg")?.getAttribute("aria-hidden")).toBe(
+      "true",
+    );
   });
 });

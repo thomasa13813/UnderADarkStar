@@ -333,8 +333,9 @@ a:hover{color:#bfdbfe}
 .brand{color:var(--head);text-decoration:none;font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-size:.95rem}
 .brand span{color:var(--accent);font-weight:600}
 .topbar .spacer{flex:1}
-.play{background:var(--accent-strong);color:#0b0d14;text-decoration:none;font-weight:700;padding:6px 14px;border-radius:999px;font-size:.9rem;white-space:nowrap}
-.play:hover{background:#93c5fd;color:#0b0d14}
+.play{display:inline-flex;border-radius:2px;transition:filter .2s}
+.play img{display:block;height:38px;width:auto;image-rendering:pixelated}
+.play:hover,.play:focus-visible{filter:brightness(1.12) drop-shadow(0 0 12px rgba(168,85,247,.45));outline:none}
 .layout{display:grid;grid-template-columns:240px minmax(0,1fr);gap:40px;max-width:1120px;margin:0 auto;padding:24px 16px 64px}
 nav.side{position:sticky;top:64px;align-self:start;max-height:calc(100vh - 80px);overflow:auto;font-size:.92rem}
 nav.side h2{font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin:18px 0 6px;border:0;padding:0}
@@ -472,7 +473,7 @@ function renderPage(
 <header class="topbar">
 <a class="brand" href="/wiki/">Under a Dark Star <span>Wiki</span></a>
 <span class="spacer"></span>
-<a class="play" href="/">Play now</a>
+<a class="play" href="/" title="Play"><img src="/images/btn-play.svg" alt="Play" width="108" height="38" /></a>
 </header>
 <div class="layout">
 ${nav}

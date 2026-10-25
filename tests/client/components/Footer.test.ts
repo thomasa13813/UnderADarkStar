@@ -1,22 +1,9 @@
-import version from "resources/version.txt?raw";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { ClientEnv } from "../../../src/client/ClientEnv";
-import {
-  composeGameVersion,
-  taggedGameVersion,
-} from "../../../src/client/GameVersion";
 import { Footer } from "../../../src/client/components/Footer";
 
-const SHA = "bf739f86c4e1d2a3b5c6d7e8f90123456789abcd";
-
-// version.txt is a build-time placeholder in the repo, so derive the expected
-// label from the same source the component reads rather than hardcoding it.
-// These mount tests set no BOOTSTRAP_CONFIG, so composeGameVersion has no
-// commit to fall back to and returns the file's value -- which keeps this
-// the right expectation for the mounted component below. The choice itself is
-// covered in tests/client/GameVersion.test.ts.
-const gameVersion = taggedGameVersion(version);
-
+// Tom, 2026-10-25: the footer no longer names the build. Releases are not
+// tagged with enough discipline for a public version label.
 describe("page-footer version line", () => {
   let footer: Footer;
 
@@ -29,41 +16,16 @@ describe("page-footer version line", () => {
 
   afterEach(() => {
     footer?.remove();
-    delete (window as { BOOTSTRAP_CONFIG?: unknown }).BOOTSTRAP_CONFIG;
     ClientEnv.reset();
   });
 
-  async function mount(): Promise<Footer> {
+  it("shows no version", async () => {
     footer = document.createElement("page-footer") as Footer;
     document.body.appendChild(footer);
     await footer.updateComplete;
-    return footer;
-  }
 
-  it("renders the game version", async () => {
-    await mount();
-
-    const line = footer.querySelector(".footer-version");
-    expect(line?.textContent?.trim()).toBe(gameVersion);
-  });
-
-  // End to end through the component: with a real BOOTSTRAP_CONFIG in the
-  // page and the placeholder still in version.txt, the line must name the
-  // commit rather than "vx.xx.xx". Expectation derived from the same helper
-  // so committing a real version.txt does not turn this red.
-  it("shows the commit rather than the placeholder on an untagged build", async () => {
-    (window as { BOOTSTRAP_CONFIG?: unknown }).BOOTSTRAP_CONFIG = {
-      gameEnv: "prod",
-      numWorkers: 1,
-      turnstileSiteKey: "1x00000000000000000000AA",
-      jwtAudience: "openfront.io",
-      instanceId: "test",
-      gitCommit: SHA,
-    };
-    await mount();
-
-    const line = footer.querySelector(".footer-version");
-    expect(line?.textContent?.trim()).toBe(composeGameVersion(version, SHA));
+    expect(footer.querySelector(".footer-version")).toBeNull();
+    expect(footer.textContent).not.toMatch(/\bv\d+\.\d+/i);
   });
 });
 
