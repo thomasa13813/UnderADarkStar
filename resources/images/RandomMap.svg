@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 120" width="240" height="120">
+  <!-- The Random map card: a die adrift in deep space (replaced the die over
+       a topographic Earth map in October 2026). -->
+  <defs>
+    <radialGradient id="space" cx="50%" cy="50%" r="75%">
+      <stop offset="0" stop-color="#1a2240"/>
+      <stop offset="0.55" stop-color="#0b1022"/>
+      <stop offset="1" stop-color="#04060e"/>
+    </radialGradient>
+    <radialGradient id="haze" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#5fd4ff" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#5fd4ff" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="2.5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <g id="pip"><circle r="0.1" fill="#0b1022"/></g>
+  </defs>
+
+  <rect width="240" height="120" fill="url(#space)"/>
+  <ellipse cx="120" cy="60" rx="70" ry="52" fill="url(#haze)"/>
+
+  <g fill="#ffffff">
+    <circle cx="18" cy="14" r="0.9" opacity="0.8"/>
+    <circle cx="42" cy="88" r="0.7" opacity="0.6"/>
+    <circle cx="61" cy="31" r="1.1" opacity="0.9"/>
+    <circle cx="29" cy="57" r="0.6" opacity="0.5"/>
+    <circle cx="74" cy="108" r="0.8" opacity="0.7"/>
+    <circle cx="9" cy="101" r="1" opacity="0.6"/>
+    <circle cx="191" cy="19" r="1" opacity="0.8"/>
+    <circle cx="212" cy="72" r="0.7" opacity="0.6"/>
+    <circle cx="176" cy="98" r="1.1" opacity="0.9"/>
+    <circle cx="228" cy="41" r="0.6" opacity="0.5"/>
+    <circle cx="163" cy="11" r="0.7" opacity="0.6"/>
+    <circle cx="231" cy="109" r="0.9" opacity="0.7"/>
+    <circle cx="96" cy="9" r="0.6" opacity="0.5"/>
+    <circle cx="148" cy="113" r="0.6" opacity="0.5"/>
+  </g>
+
+  <g filter="url(#glow)" stroke-linejoin="round">
+    <!-- Faces: top, left, right. -->
+    <polygon points="120,22 153,41 120,60 87,41" fill="#eef3fa" stroke="#eef3fa" stroke-width="5"/>
+    <polygon points="87,41 120,60 120,98 87,79" fill="#c4cedb" stroke="#c4cedb" stroke-width="5"/>
+    <polygon points="120,60 153,41 153,79 120,98" fill="#97a5b8" stroke="#97a5b8" stroke-width="5"/>
+    <polyline points="87,41 120,60 153,41 M120,60 120,98" fill="none" stroke="#5fd4ff" stroke-opacity="0.35" stroke-width="1"/>
+  </g>
+
+  <!-- Pips, drawn on each face's unit square. Top: five. -->
+  <g transform="matrix(33,-19,33,19,87,41)">
+    <use href="#pip" x="0.25" y="0.25"/>
+    <use href="#pip" x="0.75" y="0.25"/>
+    <use href="#pip" x="0.5" y="0.5"/>
+    <use href="#pip" x="0.25" y="0.75"/>
+    <use href="#pip" x="0.75" y="0.75"/>
+  </g>
+  <!-- Left: two. -->
+  <g transform="matrix(33,19,0,38,87,41)">
+    <use href="#pip" x="0.27" y="0.27"/>
+    <use href="#pip" x="0.73" y="0.73"/>
+  </g>
+  <!-- Right: three. -->
+  <g transform="matrix(33,-19,0,38,120,60)">
+    <use href="#pip" x="0.25" y="0.25"/>
+    <use href="#pip" x="0.5" y="0.5"/>
+    <use href="#pip" x="0.75" y="0.75"/>
+  </g>
+</svg>

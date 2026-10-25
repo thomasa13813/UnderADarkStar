@@ -27,6 +27,7 @@ import "./Difficulties";
 import "./DifficultyInfo";
 import "./FluentSlider";
 import "./map/MapPicker";
+import { renderFolderHeader } from "./SettingsFolder";
 
 const ACTIVE_CARD =
   "bg-malibu-blue/20 border-malibu-blue/50 shadow-[var(--shadow-malibu-blue)]";
@@ -58,6 +59,17 @@ const TEAM_COUNT_OPTIONS: TeamCountConfig[] = [
   Duos,
   HumansVsNations,
 ];
+
+function teamCountLabel(o: TeamCountConfig): string {
+  if (typeof o !== "string")
+    return translateText("public_lobby.teams", { num: o });
+  return o === HumansVsNations
+    ? translateText("public_lobby.teams_hvn")
+    : translateText(`host_modal.teams_${o}`);
+}
+
+/** Sections below the maps that fold away (solo and private lobbies). */
+type FolderKey = "difficulty" | "mode" | "options" | "hostCheats" | "units";
 
 function stateTextClass(active: boolean): string {
   return active ? "text-white" : "text-white/60";
@@ -206,12 +218,13 @@ export interface GameConfigSettingsData {
   map: {
     selected: GameMapType;
     useRandom: boolean;
-    randomMapDivider?: boolean;
     showMedals?: boolean;
     mapWins?: Map<GameMapType, Set<Difficulty>>;
-    // Maps in a folder that closes on a pick (solo and private lobbies).
-    collapsible?: boolean;
   };
+  // Every section in a folder (solo and private lobbies). The maps folder starts
+  // open and the rest start closed on their defaults; single-choice folders
+  // (maps, difficulty, mode) close again on a pick.
+  collapsible?: boolean;
   difficulty: {
     selected: Difficulty;
     disabled: boolean;
@@ -259,6 +272,7 @@ export class GameConfigSettings extends LitElement {
   @property({ attribute: false }) settings?: GameConfigSettingsData;
   @property({ attribute: false }) sectionGapClass = "space-y-6";
   @state() private mapSearchQuery = "";
+  @state() private openFolders = new Set<FolderKey>();
 
   createRenderRoot() {
     return this;
@@ -293,6 +307,7 @@ export class GameConfigSettings extends LitElement {
 
   private handleDifficultySelect = (difficulty: Difficulty) => {
     this.emit("difficulty-selected", { difficulty });
+    this.closeFolder("difficulty");
   };
 
   private handleDoomsdayClockSpeedChange = (e: Event) => {
@@ -302,11 +317,112 @@ export class GameConfigSettings extends LitElement {
 
   private handleGameModeSelect = (mode: GameMode) => {
     this.emit("game-mode-selected", { mode });
+    // Teams still needs a team count, picked in the same folder.
+    if (mode === GameMode.FFA) this.closeFolder("mode");
   };
 
   private handleTeamCountSelect = (count: TeamCountConfig) => {
     this.emit("team-count-selected", { count });
+    this.closeFolder("mode");
   };
+
+  private toggleFolder(key: FolderKey) {
+    const open = new Set(this.openFolders);
+    if (!open.delete(key)) open.add(key);
+    this.openFolders = open;
+  }
+
+  /** Close on a pick, and keep the header (now naming the pick) in view. */
+  private closeFolder(key: FolderKey) {
+    if (!this.settings?.collapsible || !this.openFolders.has(key)) return;
+    const open = new Set(this.openFolders);
+    open.delete(key);
+    this.openFolders = open;
+    void this.updateComplete.then(() =>
+      this.querySelector(
+        `[data-folder="${key}"] > button[aria-expanded]`,
+      )?.scrollIntoView({ block: "nearest" }),
+    );
+  }
+
+  /** A section's content, behind a folder header when the setup folds. */
+  private folder(
+    key: FolderKey,
+    summary: string,
+    content: TemplateResult,
+  ): TemplateResult {
+    if (!this.settings?.collapsible) return content;
+    const open = this.openFolders.has(key);
+    return html`<div class="space-y-4" data-folder=${key}>
+      ${renderFolderHeader({
+        summary,
+        open,
+        onToggle: () => this.toggleFolder(key),
+      })}
+      ${open
+        ? html`<div class="pl-2 border-l-2 border-white/10">${content}</div>`
+        : nothing}
+    </div>`;
+  }
+
+  private difficultySummary(settings: GameConfigSettingsData): string {
+    if (settings.difficulty.disabled) return translateText("common.disabled");
+    const key = DIFFICULTY_OPTIONS.find(
+      ([, value]) => value === settings.difficulty.selected,
+    )?.[0];
+    return key ? translateText(`difficulty.${key.toLowerCase()}`) : "";
+  }
+
+  private modeSummary(settings: GameConfigSettingsData): string {
+    if (settings.gameMode.selected === GameMode.FFA) {
+      return translateText("game_mode.ffa");
+    }
+    return `${translateText("game_mode.teams")} · ${teamCountLabel(settings.teamCount.selected)}`;
+  }
+
+  /** The sliders, then every option that is on. */
+  private optionsSummary(settings: GameConfigSettingsData): string {
+    const { bots, nations, toggles } = settings.options;
+    const slider = (labelKey: string, value: string) =>
+      `${translateText(labelKey).trim()} ${value}`;
+    const parts = [
+      slider(
+        bots.labelKey,
+        bots.value > 0 ? String(bots.value) : translateText(bots.disabledKey),
+      ),
+    ];
+    if (nations && !nations.hidden) {
+      parts.push(
+        slider(
+          nations.labelKey,
+          nations.value === 0
+            ? translateText(nations.disabledKey)
+            : nations.value === nations.defaultValue
+              ? translateText("common.map_default")
+              : String(nations.value),
+        ),
+      );
+    }
+    return [...parts, ...this.enabledToggleLabels(toggles)].join(" · ");
+  }
+
+  private enabledToggleLabels(toggles: ToggleOptionConfig[]): string[] {
+    return toggles
+      .filter((t) => t.checked && !t.hidden)
+      .map((t) => translateText(t.labelKey));
+  }
+
+  private unitsSummary(settings: GameConfigSettingsData): string {
+    const hidden = settings.unitTypes.hiddenUnits ?? [];
+    const names = unitOptions
+      .filter(
+        ({ type }) =>
+          settings.unitTypes.disabledUnits.includes(type) &&
+          !hidden.includes(type),
+      )
+      .map(({ translationKey }) => translateText(translationKey));
+    return names.length > 0 ? names.join(", ") : translateText("common.none");
+  }
 
   private handleOptionToggle = (toggle: ToggleOptionConfig) => {
     this.emit("option-toggle-changed", {
@@ -465,13 +581,12 @@ export class GameConfigSettings extends LitElement {
           html`<map-picker
             .selectedMap=${settings.map.selected}
             .useRandomMap=${settings.map.useRandom}
-            .randomMapDivider=${settings.map.randomMapDivider ?? false}
             .showMedals=${settings.map.showMedals ?? false}
             .mapWins=${settings.map.mapWins ?? new Map()}
             .onSelectMap=${this.handleSelectMap}
             .onSelectRandom=${this.handleSelectRandom}
             .searchQuery=${this.mapSearchQuery}
-            .collapsible=${settings.map.collapsible ?? false}
+            .collapsible=${settings.collapsible ?? false}
           ></map-picker>`,
           undefined,
           this.renderMapSearchInput(),
@@ -481,157 +596,165 @@ export class GameConfigSettings extends LitElement {
           "text-green-400",
           "bg-green-500/20",
           "difficulty.difficulty",
-          html`
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-              ${DIFFICULTY_OPTIONS.map(([key, value]) => {
-                const isSelected = settings.difficulty.selected === value;
-                const isDisabled = settings.difficulty.disabled;
-                return html`
-                  <div class="group/difficulty-card relative">
-                    <button
-                      ?disabled=${isDisabled}
-                      @click=${() =>
-                        !isDisabled &&
-                        this.handleDifficultySelect(value as Difficulty)}
-                      class="${isDisabled
-                        ? `${DISABLED_CARD} flex flex-col items-center p-4 gap-3 h-full`
-                        : cardClass(
-                            isSelected,
-                            "flex flex-col items-center p-4 gap-3 h-full",
-                          )}"
-                    >
-                      <difficulty-display
-                        .difficultyKey=${key}
-                        class="transform scale-125 origin-center ${isDisabled
-                          ? "pointer-events-none"
-                          : ""}"
-                      ></difficulty-display>
-                      <span
-                        class="${CARD_LABEL_CLASS} text-center mt-1 text-white"
+          this.folder(
+            "difficulty",
+            this.difficultySummary(settings),
+            html`
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                ${DIFFICULTY_OPTIONS.map(([key, value]) => {
+                  const isSelected = settings.difficulty.selected === value;
+                  const isDisabled = settings.difficulty.disabled;
+                  return html`
+                    <div class="group/difficulty-card relative">
+                      <button
+                        ?disabled=${isDisabled}
+                        @click=${() =>
+                          !isDisabled &&
+                          this.handleDifficultySelect(value as Difficulty)}
+                        class="${isDisabled
+                          ? `${DISABLED_CARD} flex flex-col items-center p-4 gap-3 h-full`
+                          : cardClass(
+                              isSelected,
+                              "flex flex-col items-center p-4 gap-3 h-full",
+                            )}"
                       >
-                        ${translateText(`difficulty.${key.toLowerCase()}`)}
-                      </span>
-                    </button>
-                    <difficulty-info
-                      .difficultyKey=${key}
-                      .disabled=${isDisabled}
-                    ></difficulty-info>
-                  </div>
-                `;
-              })}
-            </div>
-          `,
+                        <difficulty-display
+                          .difficultyKey=${key}
+                          class="transform scale-125 origin-center ${isDisabled
+                            ? "pointer-events-none"
+                            : ""}"
+                        ></difficulty-display>
+                        <span
+                          class="${CARD_LABEL_CLASS} text-center mt-1 text-white"
+                        >
+                          ${translateText(`difficulty.${key.toLowerCase()}`)}
+                        </span>
+                      </button>
+                      <difficulty-info
+                        .difficultyKey=${key}
+                        .disabled=${isDisabled}
+                      ></difficulty-info>
+                    </div>
+                  `;
+                })}
+              </div>
+            `,
+          ),
         )}
         ${renderSection(
           MODE_ICON,
           "text-purple-400",
           "bg-purple-500/20",
           "host_modal.mode",
-          html`
-            <div class="grid grid-cols-2 gap-4">
-              ${[GameMode.FFA, GameMode.Team].map((mode) => {
-                const isSelected = settings.gameMode.selected === mode;
-                return html`
-                  <button
-                    class="${cardClass(isSelected, "py-6 text-center")}"
-                    @click=${() => this.handleGameModeSelect(mode)}
-                  >
-                    <span
-                      class="text-sm font-bold text-white uppercase tracking-widest"
+          this.folder(
+            "mode",
+            this.modeSummary(settings),
+            html`
+              <div class="grid grid-cols-2 gap-4">
+                ${[GameMode.FFA, GameMode.Team].map((mode) => {
+                  const isSelected = settings.gameMode.selected === mode;
+                  return html`
+                    <button
+                      class="${cardClass(isSelected, "py-6 text-center")}"
+                      @click=${() => this.handleGameModeSelect(mode)}
                     >
-                      ${mode === GameMode.FFA
-                        ? translateText("game_mode.ffa")
-                        : translateText("game_mode.teams")}
-                    </span>
-                  </button>
-                `;
-              })}
-            </div>
-          `,
-        )}
-        ${settings.gameMode.selected === GameMode.FFA
-          ? nothing
-          : html`
-              <section class="space-y-6">
-                <div
-                  class="text-xs font-bold text-white/40 uppercase tracking-widest mb-4 pl-2"
-                >
-                  ${translateText("host_modal.team_count")}
-                </div>
-                <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
-                  ${TEAM_COUNT_OPTIONS.map((o) => {
-                    const isSelected = settings.teamCount.selected === o;
-                    return html`
-                      <button
-                        class="${cardClass(
-                          isSelected,
-                          "px-4 py-3 text-center",
-                        )}"
-                        @click=${() => this.handleTeamCountSelect(o)}
+                      <span
+                        class="text-sm font-bold text-white uppercase tracking-widest"
                       >
-                        <span class="${CARD_LABEL_CLASS} text-white">
-                          ${typeof o === "string"
-                            ? o === HumansVsNations
-                              ? translateText("public_lobby.teams_hvn")
-                              : translateText(`host_modal.teams_${o}`)
-                            : translateText("public_lobby.teams", { num: o })}
-                        </span>
-                      </button>
-                    `;
-                  })}
-                </div>
-              </section>
-            `}
+                        ${mode === GameMode.FFA
+                          ? translateText("game_mode.ffa")
+                          : translateText("game_mode.teams")}
+                      </span>
+                    </button>
+                  `;
+                })}
+              </div>
+              ${settings.gameMode.selected === GameMode.FFA
+                ? nothing
+                : html`
+                    <section class="space-y-6 mt-6">
+                      <div
+                        class="text-xs font-bold text-white/40 uppercase tracking-widest mb-4 pl-2"
+                      >
+                        ${translateText("host_modal.team_count")}
+                      </div>
+                      <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+                        ${TEAM_COUNT_OPTIONS.map((o) => {
+                          const isSelected = settings.teamCount.selected === o;
+                          return html`
+                            <button
+                              class="${cardClass(
+                                isSelected,
+                                "px-4 py-3 text-center",
+                              )}"
+                              @click=${() => this.handleTeamCountSelect(o)}
+                            >
+                              <span class="${CARD_LABEL_CLASS} text-white">
+                                ${teamCountLabel(o)}
+                              </span>
+                            </button>
+                          `;
+                        })}
+                      </div>
+                    </section>
+                  `}
+            `,
+          ),
+        )}
         ${renderSection(
           OPTIONS_ICON,
           "text-orange-400",
           "bg-orange-500/20",
           settings.options.titleKey,
-          html`
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <div
-                class="col-span-2 rounded-xl p-4 flex flex-col justify-center border transition-all duration-200 ${settings
-                  .options.bots.value > 0
-                  ? ACTIVE_CARD
-                  : INACTIVE_CARD}"
-              >
-                <fluent-slider
-                  min="0"
-                  max="400"
-                  step="1"
-                  .value=${settings.options.bots.value}
-                  labelKey=${settings.options.bots.labelKey}
-                  disabledKey=${settings.options.bots.disabledKey}
-                  @value-changed=${this.handleBotsChanged}
-                ></fluent-slider>
-              </div>
+          this.folder(
+            "options",
+            this.optionsSummary(settings),
+            html`
+              <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div
+                  class="col-span-2 rounded-xl p-4 flex flex-col justify-center border transition-all duration-200 ${settings
+                    .options.bots.value > 0
+                    ? ACTIVE_CARD
+                    : INACTIVE_CARD}"
+                >
+                  <fluent-slider
+                    min="0"
+                    max="400"
+                    step="1"
+                    .value=${settings.options.bots.value}
+                    labelKey=${settings.options.bots.labelKey}
+                    disabledKey=${settings.options.bots.disabledKey}
+                    @value-changed=${this.handleBotsChanged}
+                  ></fluent-slider>
+                </div>
 
-              ${settings.options.nations && !settings.options.nations.hidden
-                ? html`<div
-                    class="col-span-2 rounded-xl p-4 flex flex-col justify-center border transition-all duration-200 ${settings
-                      .options.nations.value > 0
-                      ? ACTIVE_CARD
-                      : INACTIVE_CARD}"
-                  >
-                    <fluent-slider
-                      min="0"
-                      max="400"
-                      step="1"
-                      .value=${settings.options.nations.value}
-                      .defaultValue=${settings.options.nations.defaultValue}
-                      defaultLabelKey="common.map_default"
-                      labelKey=${settings.options.nations.labelKey}
-                      disabledKey=${settings.options.nations.disabledKey}
-                      @value-changed=${this.handleNationsChanged}
-                    ></fluent-slider>
-                  </div>`
-                : nothing}
-              ${settings.options.toggles.map((toggle) =>
-                this.renderOptionToggle(toggle),
-              )}
-              ${settings.options.inputCards}
-            </div>
-          `,
+                ${settings.options.nations && !settings.options.nations.hidden
+                  ? html`<div
+                      class="col-span-2 rounded-xl p-4 flex flex-col justify-center border transition-all duration-200 ${settings
+                        .options.nations.value > 0
+                        ? ACTIVE_CARD
+                        : INACTIVE_CARD}"
+                    >
+                      <fluent-slider
+                        min="0"
+                        max="400"
+                        step="1"
+                        .value=${settings.options.nations.value}
+                        .defaultValue=${settings.options.nations.defaultValue}
+                        defaultLabelKey="common.map_default"
+                        labelKey=${settings.options.nations.labelKey}
+                        disabledKey=${settings.options.nations.disabledKey}
+                        @value-changed=${this.handleNationsChanged}
+                      ></fluent-slider>
+                    </div>`
+                  : nothing}
+                ${settings.options.toggles.map((toggle) =>
+                  this.renderOptionToggle(toggle),
+                )}
+                ${settings.options.inputCards}
+              </div>
+            `,
+          ),
         )}
         ${settings.hostCheats?.visible
           ? renderSection(
@@ -639,19 +762,25 @@ export class GameConfigSettings extends LitElement {
               "text-yellow-400",
               "bg-yellow-500/20",
               settings.hostCheats.titleKey,
-              html`
-                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                  ${settings.hostCheats.toggles.map((toggle) =>
-                    renderTextCardButton(
-                      translateText(toggle.labelKey),
-                      toggle.checked,
-                      () => this.handleHostCheatToggle(toggle),
-                      "p-4 text-center",
-                    ),
-                  )}
-                  ${settings.hostCheats.inputCards}
-                </div>
-              `,
+              this.folder(
+                "hostCheats",
+                this.enabledToggleLabels(settings.hostCheats.toggles).join(
+                  " · ",
+                ) || translateText("common.none"),
+                html`
+                  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    ${settings.hostCheats.toggles.map((toggle) =>
+                      renderTextCardButton(
+                        translateText(toggle.labelKey),
+                        toggle.checked,
+                        () => this.handleHostCheatToggle(toggle),
+                        "p-4 text-center",
+                      ),
+                    )}
+                    ${settings.hostCheats.inputCards}
+                  </div>
+                `,
+              ),
             )
           : nothing}
         ${renderSection(
@@ -659,14 +788,18 @@ export class GameConfigSettings extends LitElement {
           "text-teal-400",
           "bg-teal-500/20",
           settings.unitTypes.titleKey,
-          html`
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              ${this.renderUnitTypeOptions(
-                settings.unitTypes.disabledUnits,
-                settings.unitTypes.hiddenUnits,
-              )}
-            </div>
-          `,
+          this.folder(
+            "units",
+            this.unitsSummary(settings),
+            html`
+              <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                ${this.renderUnitTypeOptions(
+                  settings.unitTypes.disabledUnits,
+                  settings.unitTypes.hiddenUnits,
+                )}
+              </div>
+            `,
+          ),
           "space-y-6 pb-6",
         )}
       </div>

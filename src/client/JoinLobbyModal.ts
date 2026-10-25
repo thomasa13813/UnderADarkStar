@@ -541,7 +541,7 @@ export class JoinLobbyModal extends BaseModal {
       : "";
     const thumbnailUrl = c
       ? c.randomMap
-        ? assetUrl("images/RandomMap.webp")
+        ? assetUrl("images/RandomMap.svg")
         : assetUrl(
             `maps/${encodeURIComponent(normaliseMapKey(c.gameMap))}/thumbnail.webp`,
           )
@@ -1039,7 +1039,7 @@ export class JoinLobbyModal extends BaseModal {
       : getMapName(c.gameMap);
     const normalizedMap = normaliseMapKey(c.gameMap);
     const thumbnailUrl = c.randomMap
-      ? assetUrl("images/RandomMap.webp")
+      ? assetUrl("images/RandomMap.svg")
       : assetUrl(`maps/${encodeURIComponent(normalizedMap)}/thumbnail.webp`);
     const modeSubtitle = this.modeSubtitle(c);
 

@@ -1,4 +1,4 @@
-import { html, LitElement, nothing, svg } from "lit";
+import { html, LitElement, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
 import { assetUrl } from "../../../core/AssetUrls";
@@ -9,13 +9,15 @@ import {
   maps,
 } from "../../../core/game/Game";
 import { translateText } from "../../Utils";
+import { renderFolderHeader } from "../SettingsFolder";
 import "./MapDisplay";
 import { getFavoriteMaps, toggleFavoriteMap } from "./MapFavorites";
-const randomMap = assetUrl("images/RandomMap.webp");
+const randomMap = assetUrl("images/RandomMap.svg");
 
 /**
  * The map picker: every map in one grid, alphabetical by its translated name,
- * with the favourites star and a search box. Upstream grouped maps into
+ * with the favourites star and a search box. The Random card takes the first
+ * slot (it hides while searching). Upstream grouped maps into
  * featured, regional and arcade categories; the pool is small and space-only
  * now (roadmap P3), so the categories went with the Earth maps.
  *
@@ -29,7 +31,6 @@ export class MapPicker extends LitElement {
     GameMapType.EventHorizon;
   @property({ type: Boolean }) useRandomMap = false;
   @property({ type: Boolean }) showMedals = false;
-  @property({ type: Boolean }) randomMapDivider = false;
   @property({ type: String }) searchQuery = "";
   @property({ type: Boolean }) collapsible = false;
   @property({ attribute: false }) mapWins: Map<GameMapType, Set<Difficulty>> =
@@ -133,12 +134,13 @@ export class MapPicker extends LitElement {
     `;
   }
 
-  private renderMapGrid(mapList: MapInfo[]) {
+  private renderMapGrid(mapList: MapInfo[], withRandom = false) {
     // Keyed by map so cards keep their identity when the list shifts —
     // positional reuse would leave stale thumbnails behind.
     return html`<div
       class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
     >
+      ${withRandom ? this.renderRandomCard() : nothing}
       ${repeat(
         mapList,
         (map) => map.id,
@@ -158,7 +160,7 @@ export class MapPicker extends LitElement {
   private renderAllMaps() {
     return html`<div class="w-full">
       ${this.renderSectionHeading(translateText("map.all"))}
-      ${this.renderMapGrid(this.sortedMaps)}
+      ${this.renderMapGrid(this.sortedMaps, true)}
     </div>`;
   }
 
@@ -193,52 +195,12 @@ export class MapPicker extends LitElement {
   }
 
   private renderFolderHeader() {
-    return html`<button
-      type="button"
-      class="w-full flex items-center gap-3 px-4 py-3 rounded-xl border cursor-pointer transition-all duration-200 ${this
-        .folderOpen
-        ? "bg-white/5 border-white/10 hover:bg-white/10"
-        : "bg-malibu-blue/20 border-malibu-blue/50 hover:bg-malibu-blue/30"}"
-      aria-expanded=${this.folderOpen}
-      @click=${this.toggleFolder}
-    >
-      <svg
-        class="w-5 h-5 text-aquarius shrink-0"
-        viewBox="0 0 24 24"
-        fill="currentColor"
-      >
-        ${this.folderOpen
-          ? svg`<path d="M19.906 9c.382 0 .749.057 1.094.162V9a3 3 0 00-3-3h-3.879a.75.75 0 01-.53-.22L11.47 3.66A2.25 2.25 0 009.879 3H6a3 3 0 00-3 3v3.162A3.756 3.756 0 014.094 9h15.812zM4.094 10.5a2.25 2.25 0 00-2.227 2.568l.857 6A2.25 2.25 0 004.951 21H19.05a2.25 2.25 0 002.227-1.932l.857-6a2.25 2.25 0 00-2.227-2.568H4.094z" />`
-          : svg`<path d="M19.5 21a3 3 0 003-3v-4.5a3 3 0 00-3-3h-15a3 3 0 00-3 3V18a3 3 0 003 3h15zM1.5 10.146V6a3 3 0 013-3h5.379a2.25 2.25 0 011.59.659l2.122 2.121c.14.141.331.22.53.22H19.5a3 3 0 013 3v1.146A4.483 4.483 0 0019.5 9h-15a4.483 4.483 0 00-3 1.146z" />`}
-      </svg>
-      <span class="text-sm font-bold text-white uppercase tracking-wider">
-        ${translateText("map_component.folder")}
-      </span>
-      <span class="text-sm text-white/60 truncate">
-        ${this.selectedMapName}
-      </span>
-      <span
-        class="ml-auto text-xs text-white/50 uppercase tracking-wider shrink-0"
-      >
-        ${this.folderOpen
-          ? translateText("map_component.folder_close")
-          : translateText("map_component.folder_change")}
-      </span>
-      <svg
-        class="w-4 h-4 text-white/50 shrink-0 transition-transform duration-200 ${this
-          .folderOpen
-          ? "rotate-180"
-          : ""}"
-        viewBox="0 0 20 20"
-        fill="currentColor"
-      >
-        <path
-          fill-rule="evenodd"
-          d="M5.22 8.22a.75.75 0 011.06 0L10 11.94l3.72-3.72a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.22 9.28a.75.75 0 010-1.06z"
-          clip-rule="evenodd"
-        />
-      </svg>
-    </button>`;
+    return renderFolderHeader({
+      label: translateText("map_component.folder"),
+      summary: this.selectedMapName,
+      open: this.folderOpen,
+      onToggle: this.toggleFolder,
+    });
   }
 
   render() {
@@ -254,47 +216,38 @@ export class MapPicker extends LitElement {
   }
 
   private renderMaps() {
-    const isSearching = this.searchQuery.trim().length > 0;
-    return html`
-      <div class="space-y-8">
-        ${isSearching ? this.renderSearchResults() : this.renderAllMaps()}
-        <div
-          class="w-full ${this.randomMapDivider
-            ? "pt-4 border-t border-white/5"
-            : ""}"
-        >
-          ${this.renderSectionHeading(translateText("map_categories.special"))}
-          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            <button
-              type="button"
-              class="w-full h-full p-3 flex flex-col items-center justify-between rounded-xl border cursor-pointer transition-all duration-200 active:scale-95 gap-3 group ${this
-                .useRandomMap
-                ? "bg-malibu-blue/20 border-malibu-blue/50 shadow-[var(--shadow-malibu-blue-strong)]"
-                : "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20 hover:-translate-y-1"}"
-              @click=${this.handleSelectRandomMap}
-            >
-              <div
-                class="w-full aspect-[2/1] relative overflow-hidden rounded-lg bg-black/20"
-              >
-                <img
-                  src=${randomMap}
-                  alt=${translateText("map.random")}
-                  draggable="false"
-                  @dragstart=${this.preventImageDrag}
-                  class="w-full h-full object-cover ${this.useRandomMap
-                    ? "opacity-100"
-                    : "opacity-80"} group-hover:opacity-100 transition-opacity duration-200"
-                />
-              </div>
-              <div
-                class="text-xs font-bold text-white uppercase tracking-wider text-center leading-tight break-words hyphens-auto"
-              >
-                ${translateText("map.random")}
-              </div>
-            </button>
-          </div>
-        </div>
+    return this.searchQuery.trim()
+      ? this.renderSearchResults()
+      : this.renderAllMaps();
+  }
+
+  private renderRandomCard() {
+    return html`<button
+      type="button"
+      class="w-full h-full p-3 flex flex-col items-center justify-between rounded-xl border cursor-pointer transition-all duration-200 active:scale-95 gap-3 group ${this
+        .useRandomMap
+        ? "bg-malibu-blue/20 border-malibu-blue/50 shadow-[var(--shadow-malibu-blue-strong)]"
+        : "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20 hover:-translate-y-1"}"
+      @click=${this.handleSelectRandomMap}
+    >
+      <div
+        class="w-full aspect-[2/1] relative overflow-hidden rounded-lg bg-black/20"
+      >
+        <img
+          src=${randomMap}
+          alt=${translateText("map.random")}
+          draggable="false"
+          @dragstart=${this.preventImageDrag}
+          class="w-full h-full object-cover ${this.useRandomMap
+            ? "opacity-100"
+            : "opacity-80"} group-hover:opacity-100 transition-opacity duration-200"
+        />
       </div>
-    `;
+      <div
+        class="text-xs font-bold text-white uppercase tracking-wider text-center leading-tight break-words hyphens-auto"
+      >
+        ${translateText("map.random")}
+      </div>
+    </button>`;
   }
 }
