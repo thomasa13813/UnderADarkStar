@@ -392,10 +392,9 @@ export class NukeExecution implements Execution {
   // The shield arrays (DarkStar C5) this warhead cannot harm the inside of:
   // any other player's, built and standing when asked. Read at launch for
   // the alliance check and again at impact, so an array raised or lost in
-  // flight counts as it stands when the blast lands. The Antimatter Reaction
-  // goes through them (WH2): no zone holds it off.
+  // flight counts as it stands when the blast lands. Every warhead is kept
+  // out, the Antimatter Reaction included (revised 2026-10-25).
   private shields(outer: number): ShieldZone[] {
-    if (this.mg.config().nukeIgnoresShields(this.nukeType)) return [];
     return missileShieldsNear(this.mg, this.player.smallID(), this.dst, outer);
   }
 

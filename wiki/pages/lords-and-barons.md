@@ -25,8 +25,9 @@ Lords are the smarter AI players. Each map places its own set of Lords (see [[ma
   over its territory.
 - **One Shield Array.** Once a Lord owns at least one of every other building, it shields one of
   its Defense Posts, the one covering the most of its buildings.
-- **Shield breakers.** A Lord fires its Antimatter Reactions at shielded posts that shelter
-  something it wants to hit, never at bare ground.
+- **Warheads.** A Lord saves towards one warhead. It fires a Gamma Ray Burst at its target
+  wherever the blast spares its own and its friends' ground, whoever else it hits, and otherwise
+  an Antimatter Reaction if that fits on its target's ground.
 
 ### Difficulty
 

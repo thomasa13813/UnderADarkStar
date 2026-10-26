@@ -90,7 +90,7 @@ export const NUKE_MAGNITUDES: Readonly<
   Record<string, { inner: number; outer: number }>
 > = {
   // The Antimatter Reaction under a Dark Star (Config.nukeMagnitudes).
-  [UT_ATOM_BOMB]: { inner: 10, outer: 10 },
+  [UT_ATOM_BOMB]: { inner: 12, outer: 30 },
   [UT_HYDROGEN_BOMB]: { inner: 80, outer: 100 },
   [UT_MIRV_WARHEAD]: { inner: 12, outer: 18 },
   [UT_PROJECTILE]: {

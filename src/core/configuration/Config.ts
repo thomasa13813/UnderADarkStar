@@ -322,13 +322,15 @@ export const SHIELD_ARRAY_DEFAULTS = {
 // Tithes (docs/DarkStar-Rework.md TI1-TI11, decided 2026-10-25): the throne
 // aims a tithe at any tile outside its domain; when it lands, every
 // challenger owning a tile within `radius` of the landing pays the throne
-// all its gold above `reserve`. One in flight at a time, the next launchable
-// `cooldownSeconds` after the last lands. An AI Hegemon tithes every
-// `aiIntervalSeconds` from `aiFirstSeconds` of play, when anyone is above
-// the reserve.
+// `sharePercent` of its gold above `reserve` (revised 2026-10-25, Tom: half,
+// not all; a per-city allowance was tried and dropped). One in flight at a time, the
+// next launchable `cooldownSeconds` after the last lands. An AI Hegemon
+// tithes every `aiIntervalSeconds` from `aiFirstSeconds` of play, when
+// anyone is above the reserve.
 export const TITHE_DEFAULTS = {
   radius: 50,
   reserve: 500_000n,
+  sharePercent: 50n,
   cooldownSeconds: 10,
   aiFirstSeconds: 60,
   aiIntervalSeconds: 60,
@@ -1564,11 +1566,9 @@ export class Config {
       case UnitType.MIRVWarhead:
         return { inner: 12, outer: 18 };
       case UnitType.AtomBomb:
-        // Under a Dark Star the Antimatter Reaction: a clean 10-tile circle
-        // (docs/DarkStar-Rework.md §3).
-        return this.hegemonConfig().enabled
-          ? { inner: 10, outer: 10 }
-          : { inner: 12, outer: 30 };
+        // Under a Dark Star the Antimatter Reaction, which keeps the old
+        // Nuclear Warhead's blast (revised 2026-10-25 from a 10-tile circle).
+        return { inner: 12, outer: 30 };
       case UnitType.HydrogenBomb:
         return { inner: 80, outer: 100 };
     }
@@ -1582,12 +1582,6 @@ export class Config {
   nukeErasesGround(unitType: UnitType): boolean {
     if (this.hegemonConfig().enabled) return unitType === UnitType.AtomBomb;
     return this.waterNukes();
-  }
-
-  // Whether a warhead goes through shield arrays (WH2): only the Antimatter
-  // Reaction, and only under a Dark Star (the arrays exist nowhere else).
-  nukeIgnoresShields(unitType: UnitType): boolean {
-    return this.hegemonConfig().enabled && unitType === UnitType.AtomBomb;
   }
 
   nukeAllianceBreakThreshold(): number {

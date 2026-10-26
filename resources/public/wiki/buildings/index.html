@@ -95,7 +95,7 @@ Under a Dark Star: what it does, what it costs, what each level adds, and how it
 <tr><td><strong>Spaceport</strong></td><td>as the Industrial Zone, <strong>same shared count</strong></td><td>5 s</td><td>Yes, no cap</td><td>Sends freighters; each level is one more chance to send one, one more docking berth and +5 repair, and supports one Destroyer</td></tr>
 <tr><td><strong>Defense Post</strong></td><td>50k → 100k → 150k → 200k → 250k (cap), <strong>Shield Arrays count</strong></td><td>5 s</td><td>No</td><td>Within 30 tiles, attackers lose 5× the troops and advance 3× slower</td></tr>
 <tr><td><strong>Stargate</strong></td><td>500k flat, new or per upgrade</td><td>10 s</td><td>Yes, no cap</td><td>Range 180 at level 1, +75 per level; fires troops or warheads, 5 s reload</td></tr>
-<tr><td><strong>Shield Array</strong></td><td>2M flat, <strong>on one of your Defense Posts</strong></td><td>10 s</td><td>No</td><td>Keeps the post&#39;s defence; no other player&#39;s Gamma Ray Burst harms anything within 100 tiles</td></tr>
+<tr><td><strong>Shield Array</strong></td><td>2M flat, <strong>on one of your Defense Posts</strong></td><td>10 s</td><td>No</td><td>Keeps the post&#39;s defence; no other player&#39;s warhead harms anything within 100 tiles</td></tr>
 </tbody></table></div>
 <h2 id="2-rules-every-building-follows">2. Rules every building follows</h2>
 <h3 id="2-1-placing">2.1 Placing</h3>
@@ -158,8 +158,8 @@ destroyed, not captured</strong> — unless it carries a Shield Array (§3.6), w
 <li><strong>Elimination:</strong> all your buildings are destroyed.</li>
 <li><strong>Warheads:</strong> everything within the blast&#39;s outer radius is destroyed outright, all levels,
 whoever owns it, the launcher&#39;s own included (Gamma Ray Burst 100 tiles, Antimatter Reaction
-10, which also erases the ground into deep space). The only exception is a building inside
-another player&#39;s Shield Array, which keeps out a Gamma Ray Burst but not a Reaction (§3.6).</li>
+30, which also erases the ground into deep space). The only exception is a building inside
+another player&#39;s Shield Array, which keeps out both (§3.6).</li>
 <li><strong>The Hegemon&#39;s strike:</strong> a strike&#39;s bubble captures the buildings it rolls over (posts are
 destroyed). Retake the tile while the bubble lasts and you get the building back, levels
 intact. When the bubble pops, whatever buildings it still holds are destroyed.</li>
@@ -343,21 +343,20 @@ gate for a <strong>punitive strike</strong> for 30 seconds (§3.7).</li>
 <li><strong>Price</strong> never climbs: 500k for a new gate, 500k per level.</li>
 </ul>
 <h3 id="3-6-shield-array">3.6 Shield Array</h3>
-<p><strong>Upgrades a Defense Post: keeps Gamma Ray Bursts off everything within 100 tiles.</strong></p>
+<p><strong>Upgrades a Defense Post: keeps warheads off everything within 100 tiles.</strong></p>
 <ul>
 <li><strong>Built on a post.</strong> A Shield Array goes only on one of your own finished Defense Posts, and
 turns it into a <strong>shielded post</strong>: its icon replaces the post&#39;s. It cannot stand on bare
 ground. While the array is going up the post keeps defending; when it stands, it is the post.</li>
 <li><strong>The post&#39;s defence stays:</strong> within 30 tiles, attackers lose 5× the troops and advance 3×
 slower (§3.4).</li>
-<li><strong>The shield.</strong> When <strong>another player&#39;s</strong> Gamma Ray Burst lands, the blast does nothing within
-<strong>100 tiles</strong> of the shielded post (a Gamma Ray Burst&#39;s own radius): no nebula lost, no troops
-killed, no building destroyed. The ground outside is cleared as usual, and a burst aimed at the
-post itself does nothing at all. The Hegemon&#39;s bursts are kept out like anyone&#39;s; <strong>your own</strong>
-are not.</li>
-<li><strong>What gets through.</strong> An <strong>Antimatter Reaction</strong>: aimed at the post, it erases the post&#39;s
-ground and the shield with it. Troops too: the Hegemon&#39;s strikes and every Stargate shot land
-inside. And the Hegemon&#39;s tithes.</li>
+<li><strong>The shield.</strong> When <strong>another player&#39;s</strong> warhead lands, Gamma Ray Burst or Antimatter
+Reaction, the blast does nothing within <strong>100 tiles</strong> of the shielded post (a Gamma Ray Burst&#39;s
+own radius): no nebula lost or erased, no troops killed, no building destroyed. The ground
+outside is hit as usual, and a warhead aimed at the post itself does nothing at all. The
+Hegemon&#39;s warheads are kept out like anyone&#39;s; <strong>your own</strong> are not.</li>
+<li><strong>What gets through.</strong> Troops: the Hegemon&#39;s strikes and every Stargate shot land inside, and
+conquest takes the post. And the Hegemon&#39;s tithes.</li>
 <li><strong>Captured intact.</strong> Unlike a plain post, a shielded post taken by conquest is <strong>captured</strong>,
 shield and defence, and protects its new owner.</li>
 <li><strong>Construction.</strong> Nothing is shielded while the array is under construction.</li>
@@ -470,8 +469,9 @@ one-per-level limit.</li>
 <li><strong>One Shield Array.</strong> Once a Lord owns at least one of every other building (Population
 Center, Industrial Zone, Spaceport, Defense Post and Stargate), it shields one of its Defense
 Posts: the one whose shield would cover the most of its buildings. Only one.</li>
-<li><strong>Antimatter Reactions</strong> they keep for shields: a Lord fires one at a shielded post that
-shelters something it wants to hit, before any Gamma Ray Burst, and never at bare ground.</li>
+<li><strong>Warheads.</strong> A Lord fires a Gamma Ray Burst at its target wherever the blast spares its own
+and its friends&#39; ground, bystanders be damned; where it cannot, an Antimatter Reaction if that
+fits on the target&#39;s ground.</li>
 </ul>
 
 

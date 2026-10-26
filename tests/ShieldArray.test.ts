@@ -32,8 +32,9 @@ import { executeTicks } from "./util/utils";
 // a shield array is built only on one of the player's own defense posts,
 // which it upgrades. The shielded post keeps the post's defence (30 tiles)
 // and adds a 100-tile shield, the Gamma Ray Burst's own radius, that no
-// Gamma Ray Burst can harm the inside of. The Antimatter Reaction goes
-// through it (WH2); strikes and gate shots (troops) land inside it. A plain
+// other player's warhead can harm the inside of, the Antimatter Reaction
+// included (revised 2026-10-25); strikes and gate shots (troops) land inside
+// it. A plain
 // post is destroyed when taken; a shielded one is captured intact.
 //
 // big_plains is 200×200: the Dark Star's radius is 18 and the moat 15; a
@@ -372,17 +373,15 @@ describe("What a shielded post does (SH3, SH4)", () => {
     expect(array.isActive()).toBe(false);
   });
 
-  test("an Antimatter Reaction goes through: the post dies with its tile (WH2)", () => {
+  test("an Antimatter Reaction is kept out too (revised 2026-10-25)", () => {
     build(east, UnitType.Stargate, tileOf(east, 10));
     const site = tileOf(west, 30);
     const array = shieldedPost(west, site);
-    const city = build(west, UnitType.City, tileOf(west, 30, 40));
+    const tiles = west.numTilesOwned();
     strike(east, UnitType.AtomBomb, site);
-    expect(array.isActive()).toBe(false);
-    expect(west.units(UnitType.ShieldArray)).toHaveLength(0);
-    // Only the 10-tile circle is touched.
-    expect(city.isActive()).toBe(true);
-    expect(game.owner(site).isPlayer()).toBe(false);
+    expect(array.isActive()).toBe(true);
+    expect(west.numTilesOwned()).toBe(tiles);
+    expect(game.isLand(site)).toBe(true);
   });
 
   test("strikes are troops: they land inside a shield", () => {

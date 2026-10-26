@@ -17,6 +17,7 @@ import { PseudoRandom } from "../../PseudoRandom";
 import { assertNever, calculateBoundingBox } from "../../Util";
 import { ConstructionExecution } from "../ConstructionExecution";
 import { MoveWarshipExecution } from "../MoveWarshipExecution";
+import { TitheExecution } from "../TitheExecution";
 import { UpgradeStructureExecution } from "../UpgradeStructureExecution";
 import { nearestTileDist, nearestTileDistCapped } from "../Util";
 import { NationHegemonBehavior } from "./NationHegemonBehavior";
@@ -275,7 +276,7 @@ export class NationStructureBehavior {
     const game = this.game;
     const tithe = game.titheInFlight();
     if (tithe === null || !tithe.touches(this.player)) return false;
-    const reserve = game.config().titheConfig().reserve;
+    const reserve = TitheExecution.threshold(game, this.player);
     if (this.player.gold() <= reserve) return false;
     const ticks = game.ticks();
     if (

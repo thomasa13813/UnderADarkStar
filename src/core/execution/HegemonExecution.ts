@@ -96,8 +96,8 @@ export class HegemonExecution implements Execution {
   }
 
   // TI9: an AI Hegemon tithes once a minute from the round's second minute,
-  // whenever some challenger holds more than the reserve, aimed at the
-  // richest of them. With nobody worth it, it looks again every second.
+  // whenever some challenger holds more than its threshold, aimed at the
+  // one who would pay the most. With nobody worth it, it looks again every second.
   private tithe(hegemon: Player, ticks: number): void {
     const mg = this.mg!;
     if (ticks % 10 !== 0) return;
@@ -112,10 +112,14 @@ export class HegemonExecution implements Execution {
     }
     if (TitheExecution.readyInTicks(mg) !== 0) return;
     let richest: Player | null = null;
+    let richestDue = 0n;
     for (const p of mg.players()) {
       if (p.isHegemon() || !p.isAlive() || p.numTilesOwned() === 0) continue;
-      if (p.gold() <= cfg.reserve) continue;
-      if (richest === null || p.gold() > richest.gold()) richest = p;
+      const due = TitheExecution.due(mg, p);
+      if (due > richestDue) {
+        richest = p;
+        richestDue = due;
+      }
     }
     if (richest === null) return;
     const tile = this.titheAim(richest);

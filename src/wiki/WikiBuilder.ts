@@ -101,10 +101,11 @@ export function wikiParams(): Record<string, string> {
     grbCost: gold(5_000_000),
     grbRadius: 100,
     arCost: gold(5_000_000),
-    arRadius: 10,
+    arRadius: 30,
     // Tithes (docs/DarkStar-Rework.md §2).
     titheRadius: tithe.radius,
     titheReserve: gold(Number(tithe.reserve)),
+    titheShare: Number(tithe.sharePercent),
     titheCooldown: tithe.cooldownSeconds,
     titheAiFirst: tithe.aiFirstSeconds,
     titheAiInterval: tithe.aiIntervalSeconds,

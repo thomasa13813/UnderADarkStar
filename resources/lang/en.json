@@ -48,7 +48,7 @@
   "build_menu": {
     "desc": {
       "army": "Patrols your nebula and shoots at incoming attacks; each hit kills 10% of the attacking troops. One per Industrial Zone level",
-      "atom_bomb": "Erases a 10-tile circle into deep space, with everything on it; goes through Shield Arrays",
+      "atom_bomb": "Erases a 30-tile blast into deep space, with everything on it; Shield Arrays keep it out",
       "city": "Increases max population",
       "defense_post": "Increases defenses of nearby borders",
       "factory": "Builds a trade network that sends supply deliveries; each level supports one Army",
@@ -57,7 +57,7 @@
       "missile_silo": "Used to launch nukes",
       "port": "Sends freighters to generate gold; each level supports one Destroyer",
       "sam_launcher": "Defends against incoming nukes",
-      "shield_array": "Upgrades one of your Defense Posts: no Gamma Ray Burst can harm anything within 100 tiles, the Hegemon's included, and the post is captured intact instead of destroyed. Antimatter Reactions, strikes and gate shots go through",
+      "shield_array": "Upgrades one of your Defense Posts: no other player's warhead can harm anything within 100 tiles, the Hegemon's included, and the post is captured intact instead of destroyed. Strikes, gate shots and tithes go through",
       "stargate": "Fires troops or warheads through space at any tile in range; a shot lands like a fleet, even on the Dark Star, and a launch draws the Hegemon's eye",
       "warship": "Captures freighters, destroys ships and fleets. One per Spaceport level"
     },
@@ -1196,7 +1196,7 @@
     "more": "… and {count} more",
     "nobody": "Nobody under the ring holds more than 500k",
     "payer": "{name}: {gold}",
-    "tooltip": "Tithe: takes all gold above 500k from everyone within 50 tiles of where it lands",
+    "tooltip": "Tithe: takes half of everyone's gold above 500k within 50 tiles of where it lands",
     "total": "If it landed now: {gold}"
   },
   "troubleshooting": {
@@ -1263,7 +1263,7 @@
       "port_info_warships": "Spaceports also let you launch destroyers.",
       "propose_alliance": "Lords make strong allies. Right-click the Lord marked with a target and propose an alliance.",
       "send_boat": "Fleets carry your troops across deep space. Right-click enemy territory on the far side of deep space to open the radial menu, then select the fleet.",
-      "shield_info": "Shield Array: built on one of your Defense Posts, it shields {shield} tiles around it from every other player's Gamma Ray Burst, the Hegemon's included, and the post is captured intact instead of destroyed. An Antimatter Reaction goes straight through, and so do the Hegemon's strikes and every Stargate shot.",
+      "shield_info": "Shield Array: built on one of your Defense Posts, it shields {shield} tiles around it from every other player's warhead, the Hegemon's included, and the post is captured intact instead of destroyed. The Hegemon's strikes, tithes and every Stargate shot still get through.",
       "spawn": "Click anywhere on the map to pick where you spawn.",
       "spawn_wait": "Spot picked! You can still move it until the timer runs out — the game starts then.",
       "strike_info": "The Hegemon cannot expand, but it can strike: a strike flies from the Dark Star, lands on your nebula and razes it. The nebula it holds is its bubble.",
@@ -1271,7 +1271,7 @@
       "traitor_info": "Traitors get a large defense debuff for 30 seconds, so be careful.",
       "troop_rate": "This is your troop growth rate. Growth slows down and turns orange once your troops approach half of your max.",
       "troops": "Keep an eye on your troop count. Attacking with too few troops leaves you weak — let them regrow between attacks.",
-      "warhead_info_launch": "Gamma Ray Bursts and Antimatter Reactions launch from a ready gate whose range covers the target. A Gamma Ray Burst clears a wide circle; an Antimatter Reaction erases a small one into deep space, shields and all.",
+      "warhead_info_launch": "Gamma Ray Bursts and Antimatter Reactions launch from a ready gate whose range covers the target. A Gamma Ray Burst clears a wide circle; an Antimatter Reaction erases a smaller one into deep space.",
       "warhead_info_punish": "A launch flags the gate for {flag} seconds: the Hegemon may answer with a punitive strike, paid for by a levy on every player's troops, yours included."
     },
     "step_counter": "Step {current} of {total}",

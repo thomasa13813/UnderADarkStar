@@ -3,7 +3,7 @@
 > **The rework**: four changes Tom decided on 2026-10-25 that reshape the throne's economy, the
 > missile game, defence and the stargate. They are written here as one plan because they lean on
 > each other. The tithe makes gold dangerous to hold. The Antimatter Reaction is the one warhead a
-> shield cannot stop. A shield grows to cover a whole Gamma Ray Burst. The gate becomes the road
+> shield cannot stop (reversed the same day: shields stop both). A shield grows to cover a whole Gamma Ray Burst. The gate becomes the road
 > for gold and troops as well as for war. Companion to `DarkStar-Design.md` (H2, H4, H6, H9, H18,
 > H19, C4, C5, S6); **F25** in the design doc's table points here. Rule ids are **TI** (tithes),
 > **WH** (warheads), **SH** (shields), **GN** (the gate network) and **RW** (the roadmap).
@@ -22,7 +22,8 @@
 - **Two warheads that do different things.** Today the Nuclear and Antimatter Warheads do the
   same thing at two sizes. After the rework one is the **area weapon** (Gamma Ray Burst) and the
   other is the **surgical, permanent one** (Antimatter Reaction): it erases the ground itself
-  and is the one warhead a shield cannot stop.
+  and, as first decided, the one warhead a shield cannot stop (reversed 2026-10-25: shields
+  stop both).
 - **Defence in one line of buildings.** The Shield Array becomes the top of the Defense Post
   rather than a separate building, and its shield grows to the full size of a Gamma Ray Burst.
 - **The stargate as a network.** A gate already decides how far your warheads and troops can
@@ -43,11 +44,14 @@
   who owns **at least one tile within 50 tiles** of the landing tile pays **all of its gold above
   500k** to the Hegemon. A player at or below 500k pays nothing. The amount is worked out
   **at landing, not at launch**: a player who sees the ring and spends their gold before it
-  lands pays nothing. That is intended counterplay, not a loophole.
+  lands pays nothing. That is intended counterplay, not a loophole. **[Revised 2026-10-25,
+  built]** A payer gives **half** of its gold above 500k: with 1M it pays 250k. (An allowance of
+  250k per Population Center level was tried the same day and dropped as too generous.)
 - **TI3 — The reserve is meant to be low.** At 500k a player cannot save up for a Shield Array
   (2M) or a warhead (5M) without being exposed to a tithe. That is deliberate: the throne can
   keep a troublesome player from ever affording the expensive buildings, and tithing hoarders
-  is the point.
+  is the point. [Revised 2026-10-25] Softened by the half share and the Population Center
+  allowance (TI2): builders keep more, hoarders still lose.
 - **TI4 — Shields do not stop a tithe.** A Shield Array's perimeter does not keep a tithe out.
 - **TI5 — Cooldown.** **One tithe in flight at a time.** The next may be launched **10 s after
   the last one lands**.
@@ -106,17 +110,17 @@
 | Replaces              | the Antimatter Warhead (hydrogen bomb)                                            | the Nuclear Warhead (atom bomb)                                                               |
 | Cost                  | 5M                                                                                | 5M                                                                                            |
 | Launched from         | the nearest ready stargate in range (C4); the throne's from the Dark Star         | the same                                                                                      |
-| Blast                 | today's Antimatter Warhead blast: radius 100 (inner 80)                           | **radius 10**                                                                                 |
+| Blast                 | today's Antimatter Warhead blast: radius 100 (inner 80)                           | **inner 12, outer 30** (rev.)                                                                 |
 | What it does          | clears the nebula (it becomes neutral, with fallout), kills troops and structures | **erases the nebula**: every tile in the circle becomes **deep space**, with everything on it |
-| Shield Array          | **kept out**: nothing inside the shield is harmed (SH3)                           | **goes through** the shield                                                                   |
+| Shield Array          | **kept out**: nothing inside the shield is harmed (SH3)                           | **kept out** (rev. 2026-10-25)                                                                |
 | Punitive strike (H19) | flags the gate; levy **25%**                                                      | flags the gate; levy **25%**                                                                  |
 
 - **WH1 — The Nuclear Warhead is gone.** There is no longer a 1M missile; both warheads cost 5M.
-- **WH2 — The Antimatter Reaction is the shield breaker.** It is the only warhead that harms
-  anything inside a shield. Aimed at a shielded post (SH1), it erases the post's tile, and the
-  shield goes with it. The other ways to end a shield are troops: conquest takes the post
-  intact (SH4), and a Hegemon strike that takes the post's tile destroys it when its bubble
-  pops (H8).
+- **WH2 — ~~The Antimatter Reaction is the shield breaker.~~ [Reversed 2026-10-25, Tom, built]**
+  Shields keep the Antimatter Reaction out like the Gamma Ray Burst (it made the Reaction too
+  strong and shields too weak), and its blast is the old Nuclear Warhead's (inner 12, outer 30)
+  instead of 10 tiles. The ways to end a shield are troops: conquest takes the post intact (SH4),
+  and a Hegemon strike that takes the post's tile destroys it when its bubble pops (H8).
 - **WH3 — The Dark Star is still unharmed (H7).** Neither warhead touches a domain tile; an
   Antimatter Reaction on the domain does nothing. On deep space it does nothing either.
 - **WH4 — Both incur the punitive strike** at today's Antimatter levy, **25%**, for either
@@ -147,7 +151,7 @@ means the Gamma Ray Burst after this change, so each one must be rewritten, not 
 - Lords (`NationNukeBehavior`): today they choose between a cheap small warhead and a dear big
   one. Now both cost the same. **[Decided 2026-10-25]** A Lord fires a Gamma Ray Burst as it
   fires an Antimatter Warhead today. Its Antimatter Reaction is for **shields**: aimed at a
-  shielded post that covers a target it wants, never spent on erasing strategic ground. `NationStructureBehavior` reads the atom bomb's radius
+  shielded post that covers a target it wants, never spent on erasing strategic ground. **[Revised 2026-10-25, Tom]** Shields stop the Reaction now, so a Lord tries a Gamma Ray Burst and falls back to an Antimatter Reaction where only the smaller blast fits its target's ground. `NationStructureBehavior` reads the atom bomb's radius
   for its own spacing and must be checked.
 - Punitive badge colours: red for Nuclear, white for Antimatter today. Keep one colour per
   warhead so the throne can still tell which was fired.
@@ -181,7 +185,8 @@ means the Gamma Ray Burst after this change, so each one must be rewritten, not 
   - **Troops pass through, as today.** Gate shots and strikes (the throne's raze strike and the
     punitive strike alike) land inside a shield and fight as they do now. A shield stops
     missiles, not troops.
-  - An **Antimatter Reaction** goes through (WH2), and so does a **tithe** (TI4).
+  - A **tithe** goes through (TI4). [Revised 2026-10-25] The Antimatter Reaction does not
+    (WH2 reversed).
 - **SH4 — Captured, not destroyed.** A **plain** Defense Post is still destroyed when an enemy
   takes its tile. A **shielded** post is **captured intact**, with its shield and its defence,
   and protects its new owner from then on (C5's rule, kept). So the upgrade buys two things:
@@ -315,6 +320,14 @@ Milky Way, AI only, 20 minutes; `--no-tithe` (added for this) switches off the A
   stands.
 - **Overthrows**: two of three FFA rounds fell with tithes on, none of two without. Too few runs to
   read anything into; the playtest decides.
+- **After the revision** (seeds a, b, c; half tithes over the Population Center allowance,
+  Reactions kept out, Lords' fallback): 11–15 tithes landed a round and took **nothing** (Lords
+  spend down to thresholds their Population Centers raise into the millions); 0–3 Antimatter
+  Reactions and still no Gamma Ray Burst; 7–15 Shield Arrays; all three rounds overthrown
+  (16:43, 17:01, 12:51).
+- **After the second revision** (flat 500k, half share; Lords' bursts may hit bystanders):
+  tithes took 0.7–1.0M a round from 12–15 landings; Lords fired 0–3 Gamma Ray Bursts and 0–1
+  Antimatter Reactions; 11–14 Shield Arrays; all three rounds overthrown (13:48, 16:21, 16:00).
 - Not measurable here: Lords build no Shield Arrays and do not supply invaders, so 100-tile shields
   and gate-fed invasions wait for the playtest.
 
@@ -352,6 +365,17 @@ Milky Way, AI only, 20 minutes; `--no-tithe` (added for this) switches off the A
 | **Q16** | Do Lords build Shield Arrays?                              | Yes, one: once a Lord owns at least one of every other building, it shields the post covering most of its buildings (`maybeShieldAPost`). |
 
 ## 8. Changelog
+
+- **2026-10-25, second revision (Tom)** — The Population Center allowance is dropped (too much):
+  tithes take half the gold above a flat 500k. Lords may fire a Gamma Ray Burst with collateral:
+  under a Dark Star, any difficulty, the blast must spare only their own and their friends'
+  ground; otherwise they fall back to an Antimatter Reaction. Built.
+
+- **2026-10-25, revision (Tom)** — Tithes take **half** the excess, over a threshold of 500k plus
+  250k per Population Center level (TI2, TI3, TI10). The Antimatter Reaction is **kept out by
+  shields** and its blast is the old Nuclear Warhead's, 12/30 (WH2 reversed, SH3). Lords no
+  longer aim it at shields: they try a Gamma Ray Burst, then fall back to a Reaction where only
+  the smaller blast fits their target's ground. Built the same day.
 
 - **2026-10-25, RW5 follow-up** — Q15 and Q16 answered and built: Lords save towards one 5M
   warhead, and shield one post once they own one of everything else. Re-measured (seeds a, b, c):

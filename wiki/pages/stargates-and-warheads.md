@@ -31,7 +31,7 @@ the Dark Star itself.
 | Warhead                 | Price       | Radius              | What it does                                                   |
 | ----------------------- | ----------- | ------------------- | -------------------------------------------------------------- |
 | **Gamma Ray Burst**     | {{grbCost}} | {{grbRadius}} tiles | Clears the nebula, kills troops and buildings; shields stop it |
-| **Antimatter Reaction** | {{arCost}}  | {{arRadius}} tiles  | **Erases** the nebula into deep space; goes through shields    |
+| **Antimatter Reaction** | {{arCost}}  | {{arRadius}} tiles  | **Erases** the nebula into deep space; shields stop it         |
 
 - **Launch.** A warhead launches from **the nearest ready Stargate whose range covers the
   target**, and spends that gate's charge. With none, there is no launch. A warhead reaches only
@@ -40,7 +40,7 @@ the Dark Star itself.
   Every building in the blast is destroyed outright, all levels.
 - **A Gamma Ray Burst** leaves the ground behind as neutral, irradiated nebula. **An Antimatter
   Reaction** leaves deep space: the ground is gone for good, and fleets can cross where it was.
-  It is the one warhead a [[#shield-array|Shield Array]] cannot stop.
+  [[#shield-array|Shield Arrays]] keep both out.
 - **The Dark Star** is immune: warheads do nothing to its tiles.
 - **The Hegemon** fires warheads from the centre of the Dark Star, with no gate and no reload.
 - Warheads cannot be recalled once launched.
@@ -57,7 +57,7 @@ An AI Hegemon punishes every launch except from very small players.
 
 ## Shield Array
 
-**Built on a Defense Post, it keeps every other player's Gamma Ray Burst off everything within
+**Built on a Defense Post, it keeps every other player's warheads off everything within
 {{shieldR}} tiles.**
 
 - **On a post only.** A Shield Array is built on one of your own Defense Posts and turns it into
@@ -66,12 +66,12 @@ An AI Hegemon punishes every launch except from very small players.
 - **Price.** {{shieldCost}} gold on top of the post, one level, no upgrades. {{shieldBuild}}
   seconds to build, and it shields nothing until it is finished. It still counts as a post for
   the post's climbing price.
-- **What it stops.** When another player's Gamma Ray Burst lands, the blast does nothing inside
-  the shield: no nebula lost, no troops killed, no building destroyed. The ground outside is
-  cleared as usual, and a burst aimed at the post itself does nothing at all. The Hegemon's
-  bursts are kept out like anyone's; your own are not.
-- **What gets through.** An **Antimatter Reaction**: aimed at the post, it erases the post's
-  ground and the shield with it. Troops: the Hegemon's strikes and every Stargate shot land
-  inside. And the Hegemon's tithes.
+- **What it stops.** When another player's warhead lands, Gamma Ray Burst or Antimatter
+  Reaction, the blast does nothing inside the shield: no nebula lost or erased, no troops killed,
+  no building destroyed. The ground outside is hit as usual, and a warhead aimed at the post
+  itself does nothing at all. The Hegemon's warheads are kept out like anyone's; your own are
+  not.
+- **What gets through.** Troops: the Hegemon's strikes and every Stargate shot land inside, and
+  conquest takes the post. And the Hegemon's tithes.
 - **Captured intact.** A plain Defense Post is destroyed when its tile is taken; a shielded post
   is captured, shield and defence, and protects its new owner.

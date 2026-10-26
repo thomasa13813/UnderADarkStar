@@ -6,8 +6,8 @@ order: 3
 related: getting-started, hegemon, buildings
 ---
 
-**Antimatter Reaction.** The small warhead: {{arCost}} gold, erases a {{arRadius}}-tile circle
-into deep space and goes through shields. See [[stargates-and-warheads]].
+**Antimatter Reaction.** The small warhead: {{arCost}} gold, erases a {{arRadius}}-tile blast
+into deep space. See [[stargates-and-warheads]].
 
 **Army.** A defensive land unit that patrols your nebula and kills a share of attacking troops.
 See [[armies-and-destroyers]].
@@ -86,7 +86,7 @@ lands on the launching gate. See [[hegemon#punitive-strikes]].
 **Shadow tax.** The Hegemon's income: {{tax}}% of everything the challengers earn, taken from
 nobody.
 
-**Shield Array.** An upgrade of a Defense Post that keeps other players' Gamma Ray Bursts off
+**Shield Array.** An upgrade of a Defense Post that keeps other players' warheads off
 everything within {{shieldR}} tiles. See [[stargates-and-warheads#shield-array]].
 
 **Spaceport.** A building that sends freighters and launches Destroyers. See [[buildings]].
@@ -100,7 +100,7 @@ everything within {{shieldR}} tiles. See [[stargates-and-warheads#shield-array]]
 Population Center and Spaceport it passes. See [[trade]].
 
 **Tithe.** The Hegemon's aimed levy: every challenger owning a tile within {{titheRadius}} tiles
-of where it lands pays the throne all its gold above {{titheReserve}}. See [[hegemon#tithes]].
+of where it lands pays the throne half its gold above {{titheReserve}}. See [[hegemon#tithes]].
 
 **Throne.** A public lobby that runs rounds back to back, and the seat of the Hegemon. See
 [[thrones]].

@@ -30,9 +30,8 @@ job is to survive the timer. Everyone else's job is to bring it down.
 - **Punitive strikes:** its answer to a warhead launch (below).
 - **Tithes:** gold taken from everyone under an aimed ring (below).
 - **Warheads,** fired from the centre of the Dark Star at the normal price, with no launcher and
-  no reload. Its Gamma Ray Bursts are kept out by
-  [[stargates-and-warheads#shield-array|Shield Arrays]] like anyone else's; its Antimatter
-  Reactions go through, like anyone else's.
+  no reload. They are kept out by [[stargates-and-warheads#shield-array|Shield Arrays]] like
+  anyone else's.
 - **Destroyers** in the moat around the Dark Star, which defend it.
 - **Gifts:** the Hegemon may build or upgrade any challenger building on any challenger's
   nebula, paying from its own gold. The building belongs to the host from the moment it is
@@ -101,8 +100,9 @@ attack slot of the radial menu).
   **ring of {{titheRadius}} tiles** drawn on the aim tile the whole way, so everyone can see where
   it will land. The throne hears its launch, and so does every player the ring touches.
 - **The bill.** When it lands, every challenger (players, Lords and Barons alike) who owns **at
-  least one tile within {{titheRadius}} tiles** of the landing pays the Hegemon **all of its gold
-  above {{titheReserve}}**. A player at or below {{titheReserve}} pays nothing.
+  least one tile within {{titheRadius}} tiles** of the landing pays the Hegemon **{{titheShare}}% of
+  its gold above {{titheReserve}}**: a player holding 1M pays 250k. A player at or below
+  {{titheReserve}} pays nothing.
 - **Reckoned at landing.** What you hold when it comes down is what counts. See the ring and spend
   your gold, or give it away to anyone your Stargates reach, and you pay nothing. That is the
   point: gold is for spending, not hoarding.
@@ -112,8 +112,8 @@ attack slot of the radial menu).
   now, and how much.
 - **On top of the shadow tax.** Tithes are extra income; the {{tax}}% shadow tax still runs.
 
-The reserve is meant to be low: at {{titheReserve}} no one can quietly save up for a Shield Array or
-a warhead under the throne's eye.
+The limit is meant to be low: a player who hoards for a Shield Array or a warhead under the
+throne's eye risks losing half of it.
 
 ## The AI Hegemon
 
@@ -127,7 +127,7 @@ When no human holds the throne, an AI plays it. The AI Hegemon:
   highest-level Population Center;
 - punishes every flagged Stargate launch, except from very small players;
 - tithes once a minute from the round's second minute ({{titheAiFirst}} seconds in), whenever
-  some challenger holds more than {{titheReserve}}, aimed at the richest of them;
+  some challenger holds more than {{titheReserve}}, aimed at the one who would pay the most;
 - once an invader holds {{laststand}}% of the disc, sends everything above a {{reserve}}% reserve
   after them until they are evicted.
 
@@ -143,4 +143,3 @@ When no human holds the throne, an AI plays it. The AI Hegemon:
 - Gifts can build up a weak challenger as a rival to a strong one.
 - Answer warhead launches. A punitive strike costs every challenger troops and wipes out the gate.
 - Tithe the hoarders. Aim where the rich crowd together, and watch them scramble to spend.
-  A player who cannot keep {{titheReserve}} cannot save for a warhead.

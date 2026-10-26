@@ -20,7 +20,7 @@ import { PathStatus } from "../pathfinding/types";
 // at any tile outside its domain; it flies from the Dark Star's centre on the
 // strike's arc and at the strike's speed, the ring drawn on the aim tile all
 // the way. When it lands, every challenger owning a tile within the radius
-// pays the throne all its gold above the reserve, reckoned at landing, so a
+// pays the throne half its gold above the reserve, reckoned at landing, so a
 // player who spends (or gives away) its gold under the ring pays nothing.
 // Shields do not stop it. One in flight at a time; the next may be launched
 // the cooldown after the last lands.
@@ -78,15 +78,27 @@ export class TitheExecution implements Execution, TitheInFlight {
     return owners;
   }
 
-  // What each owner under the ring would pay now: all its gold above the
-  // reserve. Players at or below the reserve are left out.
+  // The gold a player may hold safe from a tithe (TI2): the reserve, the
+  // same for everyone.
+  static threshold(mg: Game, _player: Player): Gold {
+    return mg.config().titheConfig().reserve;
+  }
+
+  // What a player would pay now: the share of its gold above its threshold.
+  static due(mg: Game, player: Player): Gold {
+    const excess = player.gold() - TitheExecution.threshold(mg, player);
+    if (excess <= 0n) return 0n;
+    return (excess * mg.config().titheConfig().sharePercent) / 100n;
+  }
+
+  // What each owner under the ring would pay now. Players at or below their
+  // threshold are left out.
   static dues(mg: Game, tile: TileRef): { payer: Player; gold: Gold }[] {
-    const reserve = mg.config().titheConfig().reserve;
     const dues: { payer: Player; gold: Gold }[] = [];
     for (const id of TitheExecution.ownersUnder(mg, tile)) {
       const payer = mg.playerBySmallID(id);
       if (!payer.isPlayer() || !payer.isAlive()) continue;
-      const gold = payer.gold() - reserve;
+      const gold = TitheExecution.due(mg, payer);
       if (gold > 0n) dues.push({ payer, gold });
     }
     return dues;

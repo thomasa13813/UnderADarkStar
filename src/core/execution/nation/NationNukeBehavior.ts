@@ -84,34 +84,56 @@ export class NationNukeBehavior {
       return;
     }
 
-    // Under a Dark Star the Antimatter Reaction is the shield breaker (WH2):
-    // a Lord spends it first on a shielded post that shelters something it
-    // wants to hit, and never on erasing ground for its own sake.
+    // Under a Dark Star both warheads cost 5M. A Lord tries a Gamma Ray Burst
+    // first; when no spot of its target holds the burst's 100 tiles, the
+    // Antimatter Reaction's 30 may fit (Tom, 2026-10-25). Elsewhere the
+    // engine's choice: the hydrogen bomb when affordable, else the atom bomb.
     const darkStar = config.hegemonConfig().enabled;
-    if (darkStar && this.maybeCrackShield(nukeTarget)) {
-      return;
-    }
-
     const hydroCost = this.getPerceivedNukeCost(UnitType.HydrogenBomb);
     const atomCost = this.getPerceivedNukeCost(UnitType.AtomBomb);
-    let nukeType: UnitType;
+    const candidates: (UnitType.AtomBomb | UnitType.HydrogenBomb)[] = [];
     if (
-      !this.game.config().isUnitDisabled(UnitType.HydrogenBomb) &&
+      !config.isUnitDisabled(UnitType.HydrogenBomb) &&
       this.player.gold() >= hydroCost
     ) {
-      nukeType = UnitType.HydrogenBomb;
-    } else if (
-      !darkStar &&
-      !this.game.config().isUnitDisabled(UnitType.AtomBomb) &&
-      (!this.isHydroNation || this.isUnderHeavyAttack()) &&
-      this.player.gold() >= atomCost
-    ) {
-      nukeType = UnitType.AtomBomb;
-    } else {
-      return;
+      candidates.push(UnitType.HydrogenBomb);
     }
-    const range = this.game.config().nukeMagnitudes(nukeType).outer;
+    if (
+      !config.isUnitDisabled(UnitType.AtomBomb) &&
+      this.player.gold() >= atomCost &&
+      (darkStar ||
+        (candidates.length === 0 &&
+          (!this.isHydroNation || this.isUnderHeavyAttack())))
+    ) {
+      candidates.push(UnitType.AtomBomb);
+    }
+    if (candidates.length === 0) return;
 
+    const difficulty = config.gameConfig().difficulty;
+    this.removeOldNukeEvents();
+    for (const nukeType of candidates) {
+      const best = this.bestNukeTile(nukeTarget, nukeType, silos);
+      if (
+        best !== null &&
+        (best.value > 0 || difficulty !== Difficulty.Impossible)
+      ) {
+        this.sendNuke(best.tile, nukeType, nukeTarget);
+        return;
+      }
+    }
+    if (difficulty === Difficulty.Impossible) {
+      this.maybeDestroyEnemySam(nukeTarget);
+    }
+  }
+
+  // The best tile of the target's for this warhead, and its score; null when
+  // no sampled tile qualifies.
+  private bestNukeTile(
+    nukeTarget: Player,
+    nukeType: UnitType.AtomBomb | UnitType.HydrogenBomb,
+    silos: Unit[],
+  ): { tile: TileRef; value: number } | null {
+    const range = this.game.config().nukeMagnitudes(nukeType).outer;
     const structures = nukeTarget.units(Structures.types);
     const structureTiles = structures.map((u) => u.tile());
     const difficulty = this.game.config().gameConfig().difficulty;
@@ -127,7 +149,6 @@ export class NationNukeBehavior {
 
     let bestTile: TileRef | null = null;
     let bestValue = -1; // -1 is important, so that we can also nuke land without structures
-    this.removeOldNukeEvents();
 
     outer: for (const tile of new Set(allTiles)) {
       if (tile === null) continue;
@@ -135,7 +156,7 @@ export class NationNukeBehavior {
         // Add radius / 2 in case there is a piece of unwanted territory inside the outer radius that we miss.
         .concat(boundingBoxTiles(this.game, tile, Math.floor(range / 2)));
       for (const t of boundingBox) {
-        if (!this.isValidNukeTile(t, nukeTarget)) {
+        if (!this.isValidNukeTile(t, nukeTarget, nukeType)) {
           continue outer;
         }
       }
@@ -166,14 +187,7 @@ export class NationNukeBehavior {
         bestValue = value;
       }
     }
-    if (
-      bestTile !== null &&
-      (bestValue > 0 || difficulty !== Difficulty.Impossible)
-    ) {
-      this.sendNuke(bestTile, nukeType, nukeTarget);
-    } else if (difficulty === Difficulty.Impossible) {
-      this.maybeDestroyEnemySam(nukeTarget);
-    }
+    return bestTile === null ? null : { tile: bestTile, value: bestValue };
   }
 
   // Under a Dark Star: a warhead on the Dark Star does nothing (H8), yet the
@@ -654,11 +668,27 @@ export class NationNukeBehavior {
     return false;
   }
 
-  private isValidNukeTile(t: TileRef, nukeTarget: Player | null): boolean {
+  private isValidNukeTile(
+    t: TileRef,
+    nukeTarget: Player | null,
+    nukeType: UnitType,
+  ): boolean {
     const difficulty = this.game.config().gameConfig().difficulty;
 
     const owner = this.game.owner(t);
     if (owner === nukeTarget) return true;
+    // Under a Dark Star a Gamma Ray Burst may hit bystanders, at any
+    // difficulty: only the Lord's own and its friends' ground is spared
+    // (Tom, 2026-10-25). Its 100 tiles otherwise never fit on one target.
+    if (
+      nukeType === UnitType.HydrogenBomb &&
+      this.game.config().hegemonConfig().enabled
+    ) {
+      return (
+        !owner.isPlayer() ||
+        (owner !== this.player && !this.player.isFriendly(owner))
+      );
+    }
     // On Hard & Impossible, allow TerraNullius (hit small islands) and in team games other non-friendly players
     if (
       (difficulty === Difficulty.Hard ||
@@ -778,7 +808,7 @@ export class NationNukeBehavior {
       case UnitType.MissileSilo:
       case UnitType.Stargate:
         return 50_000 * level;
-      // A shield array (C5) shelters itself, so a Gamma Ray Burst only ever
+      // A shield array (C5) shelters itself, so a warhead only ever
       // hits it when it stands inside the blast but outside every other array.
       case UnitType.ShieldArray:
         return 30_000;
@@ -789,60 +819,6 @@ export class NationNukeBehavior {
       default:
         return 0;
     }
-  }
-
-  /**
-   * Under a Dark Star: an Antimatter Reaction on the target's shielded post
-   * (WH2) when the shield shelters something worth hitting. Erasing the post's
-   * tile takes the shield with it, opening its zone to the next Gamma Ray
-   * Burst. The shield sheltering the most is cracked first; one reaction is
-   * in flight at a time, and none lands on the Lord's own or a friend's
-   * ground. Returns whether one was sent.
-   */
-  private maybeCrackShield(target: Player): boolean {
-    const config = this.game.config();
-    if (config.isUnitDisabled(UnitType.AtomBomb)) return false;
-    if (this.player.gold() < this.cost(UnitType.AtomBomb)) return false;
-    if (this.player.units(UnitType.AtomBomb).length > 0) return false;
-
-    const shelter2 = config.shieldArrayRadius() * config.shieldArrayRadius();
-    const structures = target.units(Structures.types);
-    let best: Unit | null = null;
-    let bestValue = 0;
-    for (const shield of target.units(UnitType.ShieldArray)) {
-      if (shield.isUnderConstruction()) continue;
-      const tile = shield.tile();
-      let value = 0;
-      for (const unit of structures) {
-        if (unit === shield) continue;
-        if (this.game.euclideanDistSquared(tile, unit.tile()) > shelter2) {
-          continue;
-        }
-        value += this.structureValue(unit);
-      }
-      if (value <= bestValue) continue;
-      if (!this.erasesOnlyFoes(tile)) continue;
-      if (this.player.canBuild(UnitType.AtomBomb, tile) === false) continue;
-      best = shield;
-      bestValue = value;
-    }
-    if (best === null) return false;
-    this.sendNuke(best.tile(), UnitType.AtomBomb, target);
-    return true;
-  }
-
-  // Whether an Antimatter Reaction on this tile would erase none of the
-  // Lord's own or a friend's ground.
-  private erasesOnlyFoes(tile: TileRef): boolean {
-    const radius = this.game.config().nukeMagnitudes(UnitType.AtomBomb).outer;
-    const friendly = this.game.circleSearch(tile, radius, (t: TileRef) => {
-      const owner = this.game.owner(t);
-      return (
-        owner.isPlayer() &&
-        (owner === this.player || this.player.isFriendly(owner))
-      );
-    });
-    return friendly.size === 0;
   }
 
   private sendNuke(

@@ -24,11 +24,11 @@ import { executeTicks } from "./util/utils";
 
 // The warheads after the rework (docs/DarkStar-Rework.md §3, WH1-WH6): the
 // Gamma Ray Burst (the engine's hydrogen bomb) clears a 100-tile circle and
-// is kept out by shields; the Antimatter Reaction (the atom bomb) erases a
-// 10-tile circle into deep space and goes through shields. Both cost 5M and
-// draw the same 25% levy. Whether a warhead erases is its nature: the Void
-// missiles option is ignored under a Dark Star. Lords spend the Antimatter
-// Reaction on shields.
+// is kept out by shields; the Antimatter Reaction (the atom bomb) erases the
+// old Nuclear Warhead's blast (12/30) into deep space and is kept out too
+// (revised 2026-10-25). Both cost 5M and draw the same 25% levy. Whether a
+// warhead erases is its nature: the Void missiles option is ignored under a
+// Dark Star. Lords try a Gamma Ray Burst, then a Reaction.
 //
 // big_plains is 200×200: the Dark Star's radius is 18 and the moat 15.
 
@@ -138,15 +138,15 @@ function landWithin(target: TileRef, r: number): number {
 describe("Prices and sizes (WH1)", () => {
   beforeEach(() => start());
 
-  test("both warheads cost 5M; the Antimatter Reaction is a 10-tile circle", () => {
+  test("both warheads cost 5M; the Antimatter Reaction keeps the Nuclear Warhead's blast", () => {
     const cfg = game.config();
     expect(cfg.unitInfo(UnitType.AtomBomb).cost(game, east)).toBe(5_000_000n);
     expect(cfg.unitInfo(UnitType.HydrogenBomb).cost(game, east)).toBe(
       5_000_000n,
     );
     expect(cfg.nukeMagnitudes(UnitType.AtomBomb)).toEqual({
-      inner: 10,
-      outer: 10,
+      inner: 12,
+      outer: 30,
     });
     expect(cfg.nukeMagnitudes(UnitType.HydrogenBomb)).toEqual({
       inner: 80,
@@ -160,19 +160,22 @@ describe("Prices and sizes (WH1)", () => {
   });
 });
 
-describe("The Antimatter Reaction erases (WH2, WH3)", () => {
+describe("The Antimatter Reaction erases (WH3)", () => {
   beforeEach(() => start());
 
-  test("every nebula tile in its circle becomes deep space, owner and all", () => {
+  test("the nebula in its blast becomes deep space, owner and all", () => {
     build(east, UnitType.Stargate, tileOf(east, 10));
     const target = tileOf(west, 30);
-    expect(landWithin(target, 10)).toBeGreaterThan(300);
-    const outside = landWithin(target, 14) - landWithin(target, 10);
+    expect(landWithin(target, 12)).toBeGreaterThan(400);
+    // The ring past the blast's outer radius.
+    const ring = () => landWithin(target, 36) - landWithin(target, 31);
+    const before = ring();
     const tiles = west.numTilesOwned();
     strike(east, UnitType.AtomBomb, target);
-    expect(landWithin(target, 10)).toBe(0);
-    // Nothing beyond the circle.
-    expect(landWithin(target, 14)).toBe(outside);
+    // Everything inside the inner radius is gone; the edge undulates
+    // between the inner and outer radii, as the Void missiles' did.
+    expect(landWithin(target, 12)).toBe(0);
+    expect(ring()).toBe(before);
     expect(west.numTilesOwned()).toBeLessThan(tiles);
     expect(game.owner(target).isPlayer()).toBe(false);
   });
@@ -189,25 +192,23 @@ describe("The Antimatter Reaction erases (WH2, WH3)", () => {
     const g = game.darkStar()!;
     const target = game.ref(g.cx, g.cy);
     const domainTiles = hegemon.numTilesOwned();
-    const land = landWithin(target, 10);
+    const land = landWithin(target, 12);
     strike(east, UnitType.AtomBomb, target);
     expect(hegemon.numTilesOwned()).toBe(domainTiles);
-    expect(landWithin(target, 10)).toBe(land);
+    expect(landWithin(target, 12)).toBe(land);
   });
 
-  test("on deep space it does nothing", () => {
+  test("deep space stays deep space", () => {
     build(east, UnitType.Stargate, tileOf(east, 10));
-    // The middle of the moat on the west side. The moat is 15 wide, so the
-    // circle reaches the Dark Star's rim on one side (untouched) and two
-    // tiles of west's nebula on the other (erased); the deep space between
-    // stays deep space.
+    // The middle of the moat on the west side: the blast reaches the Dark
+    // Star's rim on one side (untouched) and west's nebula on the other.
     const g = game.darkStar()!;
     const target = game.ref(
       g.cx - g.radius - Math.floor(g.moatWidth / 2),
       g.cy,
     );
     expect(game.isLand(target)).toBe(false);
-    const water = [...game.circleSearch(target, 10, (t) => !game.isLand(t))];
+    const water = [...game.circleSearch(target, 30, (t) => !game.isLand(t))];
     expect(water.length).toBeGreaterThan(100);
     const domainTiles = hegemon.numTilesOwned();
     strike(east, UnitType.AtomBomb, target);
@@ -219,7 +220,7 @@ describe("The Antimatter Reaction erases (WH2, WH3)", () => {
     const target = tileOf(west, 2);
     expect(hegemon.canBuild(UnitType.AtomBomb, target)).not.toBe(false);
     strike(hegemon, UnitType.AtomBomb, target);
-    expect(landWithin(target, 10)).toBe(0);
+    expect(landWithin(target, 12)).toBe(0);
   });
 });
 
@@ -244,7 +245,7 @@ describe("The Gamma Ray Burst never erases (WH5)", () => {
   });
 });
 
-describe("Lords crack shields with the Antimatter Reaction (§3.2)", () => {
+describe("Lords' warheads under a Dark Star", () => {
   // The Lord (east) is a Nation; its nuke behaviour is driven directly with
   // stubbed attack and emoji behaviours that point it at west.
   function lord(): NationNukeBehavior {
@@ -264,59 +265,51 @@ describe("Lords crack shields with the Antimatter Reaction (§3.2)", () => {
     );
   }
 
-  function shieldedPost(tile: TileRef): Unit {
-    build(west, UnitType.DefensePost, tile);
-    return build(west, UnitType.ShieldArray, tile);
-  }
-
-  beforeEach(() => start(false, PlayerType.Nation));
-
-  test("it aims an Antimatter Reaction at a shielded post sheltering a target", () => {
-    build(east, UnitType.Stargate, tileOf(east, 10));
-    const site = tileOf(west, 30);
-    shieldedPost(site);
-    build(west, UnitType.City, tileOf(west, 30, 20));
-    lord().maybeSendNuke();
-    executeTicks(game, 2);
-    const reactions = east.units(UnitType.AtomBomb);
-    expect(reactions).toHaveLength(1);
-    expect(reactions[0].targetTile()).toBe(site);
-    expect(east.units(UnitType.HydrogenBomb)).toHaveLength(0);
+  beforeEach(async () => {
+    await start(false, PlayerType.Nation);
+    // West a little deeper, so a 30-tile blast fits wholly on its nebula.
+    settle(west, -1, 66);
   });
 
-  test("with no shield it never fires a reaction", () => {
-    // (Nor, here, a Gamma Ray Burst: on Easy and Medium a Lord wants the
-    // whole 100-tile circle on its target's ground, and this map is small.)
+  test("a Gamma Ray Burst may hit bystanders and neutral ground", () => {
+    // West's 100-tile circle spills over the moat and the map's edge: no
+    // matter, only the Lord's own and its friends' ground is spared.
     build(east, UnitType.Stargate, tileOf(east, 10));
-    build(west, UnitType.City, tileOf(west, 30, 20));
+    build(west, UnitType.City, tileOf(west, 33));
     lord().maybeSendNuke();
     executeTicks(game, 2);
+    expect(east.units(UnitType.HydrogenBomb)).toHaveLength(1);
     expect(east.units(UnitType.AtomBomb)).toHaveLength(0);
   });
 
-  test("a shield sheltering nothing is not worth a reaction", () => {
-    build(east, UnitType.Stargate, tileOf(east, 10));
-    shieldedPost(tileOf(west, 30));
-    lord().maybeSendNuke();
-    executeTicks(game, 2);
-    expect(east.units(UnitType.AtomBomb)).toHaveLength(0);
-  });
-
-  test("never on its own ground", () => {
-    // West holds a pocket past east's block (which ends at x 182), its post
-    // 7 tiles from east's land and a city beside it.
-    const g = game.darkStar()!;
-    for (let x = 183; x < 200; x++) {
-      for (let y = g.cy - 20; y <= g.cy + 20; y++) {
+  test("never on a friend's ground: then an Antimatter Reaction, if one fits", () => {
+    // An ally of the Lord's holds a strip along the map's west edge, within
+    // a Gamma Ray Burst's reach of every tile of west's but outside an
+    // Antimatter Reaction's from the middle of west's block.
+    const ally = game.addPlayer(
+      new PlayerInfo("ally", PlayerType.Human, "c9", "ally"),
+    );
+    for (let x = 0; x < 3; x++) {
+      for (let y = 20; y < 180; y++) {
         const t = game.ref(x, y);
-        if (game.isLand(t)) west.conquer(t);
+        if (game.isLand(t) && !game.hasOwner(t)) ally.conquer(t);
       }
     }
-    const post = game.ref(189, g.cy);
+    east.createAllianceRequest(ally)?.accept();
+    expect(east.isFriendly(ally)).toBe(true);
     build(east, UnitType.Stargate, tileOf(east, 10));
-    shieldedPost(post);
-    build(west, UnitType.City, game.ref(197, g.cy - 14));
-    expect(game.x(tileOf(east, 49))).toBe(182);
+    build(west, UnitType.City, tileOf(west, 33));
+    lord().maybeSendNuke();
+    executeTicks(game, 2);
+    expect(east.units(UnitType.HydrogenBomb)).toHaveLength(0);
+    expect(east.units(UnitType.AtomBomb)).toHaveLength(1);
+  });
+
+  test("nothing without 5M", () => {
+    build(east, UnitType.Stargate, tileOf(east, 10));
+    build(west, UnitType.City, tileOf(west, 33));
+    east.removeGold(east.gold());
+    east.addGold(4_000_000n);
     lord().maybeSendNuke();
     executeTicks(game, 2);
     expect(east.units(UnitType.AtomBomb)).toHaveLength(0);

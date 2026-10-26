@@ -35,7 +35,7 @@ All in `src/core/configuration/Config.ts` unless stated.
 | Harbour reach                                       | `harbourMaxRange`                                                                   | 250                                                                                                                               |
 | Overland freighter speed                            | `freighterLandTicksPerTile`                                                         | 2                                                                                                                                 |
 | Destroyer repair                                    | `warshipPassiveHealing*`, `warshipPortHealingBonusPerLevel`                         | 1/tick within 150 of a harbour; docked: `level` berths, `5 × level`/tick shared                                                   |
-| Warheads                                            | `unitInfo`, `nukeMagnitudes`                                                        | Antimatter Reaction (`AtomBomb`) 5M, radius 10, erases, through shields; Gamma Ray Burst (`HydrogenBomb`) 5M, 80/100              |
+| Warheads                                            | `unitInfo`, `nukeMagnitudes`                                                        | Antimatter Reaction (`AtomBomb`) 5M, 12/30, erases; Gamma Ray Burst (`HydrogenBomb`) 5M, 80/100; shields stop both                |
 | Punitive strike                                     | `HEGEMON_DEFAULTS` `punitive*`                                                      | flag 30 s, levy 25% (`punitiveLevyPercent`), radius 34, halt 5 s, AI skips under 5% of land                                       |
 | Units supported                                     | `UNIT_SUPPORT_DEFAULTS`; `PlayerImpl.unitSupport`                                   | 1 Destroyer per finished Port level, 1 Army per finished Factory level; Hegemon and corsair uncapped; nothing disbands            |
 | Army                                                | `ARMY_DEFAULTS`; `ArmyExecution.ts`                                                 | patrol 40, 1 tick/tile, shot range 40, cooldown 10 s, shot speed 3, casualties 10%; cost `min(1M, 250k × (n+1))` on its own count |
@@ -98,6 +98,11 @@ Notes for Tom, not decisions.
 
 ## 3. Changelog
 
+- **2026-10-25, revision** — The Antimatter Reaction keeps the old Nuclear Warhead's blast
+  (12/30) and no longer goes through shields (`nukeIgnoresShields` removed). Lords try a Gamma
+  Ray Burst, then a Reaction (`NationNukeBehavior.bestNukeTile`); the shield-cracking aim is gone.
+  Tithes take half the excess over 500k (`TITHE_DEFAULTS.sharePercent`). Lords' Gamma Ray
+  Bursts may hit bystanders (`NationNukeBehavior.isValidNukeTile`).
 - **2026-10-25** — The rework (`docs/DarkStar-Rework.md`, F25), on `feat/rework`. Shield Arrays go
   only on the builder's own finished Defense Posts (`shieldedPostSpawn`), replace the post when
   they stand (`ConstructionExecution.replacePost`), count towards the post's price, keep its

@@ -111,18 +111,33 @@ function tithe(target: TileRef): void {
 describe("The tithe lands (TI1, TI2)", () => {
   beforeEach(() => start());
 
-  test("everyone under the ring pays all gold above 500k; the rest pay nothing", () => {
+  test("everyone under the ring pays half its gold above 500k; the rest pay nothing", () => {
     setGold(east, 3_000_000n);
     setGold(west, 3_000_000n);
     const before = hegemon.gold();
     // 20 tiles into east's block: the ring (50) never reaches west's, which
     // is 66 tiles across the Dark Star at the nearest.
     tithe(tileOf(1, 20));
-    expect(east.gold()).toBeLessThan(RESERVE + 100_000n);
-    expect(west.gold()).toBeGreaterThanOrEqual(3_000_000n);
+    // Half of the 2.5M above the reserve; income in flight adds a little.
     const taken = hegemon.gold() - before;
-    expect(taken).toBeGreaterThan(2_400_000n);
+    expect(taken).toBeGreaterThanOrEqual(1_250_000n);
+    expect(taken).toBeLessThan(1_300_000n);
+    expect(east.gold()).toBeGreaterThanOrEqual(1_750_000n);
+    expect(east.gold()).toBeLessThan(1_850_000n);
+    expect(west.gold()).toBeGreaterThanOrEqual(3_000_000n);
     expect(game.titheCollected()).toBe(taken);
+  });
+
+  test("the reserve is the same for everyone: Population Centers hide nothing", () => {
+    setGold(east, 1_000_000n);
+    game.addExecution(
+      new ConstructionExecution(east, UnitType.City, tileOf(1, 20)),
+    );
+    executeTicks(game, 3);
+    expect(east.units(UnitType.City)).toHaveLength(1);
+    expect(TitheExecution.threshold(game, east)).toBe(RESERVE);
+    setGold(east, 1_000_000n);
+    expect(TitheExecution.due(game, east)).toBe(250_000n);
   });
 
   test("a player at or below the reserve pays nothing", () => {
@@ -165,8 +180,9 @@ describe("The tithe lands (TI1, TI2)", () => {
     expect(east.units(UnitType.ShieldArray)).toHaveLength(1);
     setGold(east, 3_000_000n);
     tithe(tileOf(1, 20));
-    expect(east.gold()).toBeLessThan(RESERVE + 100_000n);
-    expect(baron.gold()).toBeLessThan(RESERVE + 100_000n);
+    expect(east.gold()).toBeLessThan(1_850_000n);
+    // Half of the 500k above the reserve.
+    expect(baron.gold()).toBeLessThan(RESERVE + 300_000n);
   });
 
   test("the projectile carries the tithe flag, for the ring", () => {
@@ -221,7 +237,7 @@ describe("Who may tithe, and when (TI1, TI5, TI8)", () => {
     setGold(west, 2_000_000n);
     const option = TitheExecution.option(game, tileOf(1, 20));
     expect(option.readyInTicks).toBe(0);
-    expect(option.payers).toEqual([{ name: "east", gold: 1_500_000n }]);
+    expect(option.payers).toEqual([{ name: "east", gold: 750_000n }]);
   });
 });
 
@@ -290,7 +306,10 @@ describe("Lords spend down under a ring (TI10)", () => {
     }
     // Spent down: the throne took little or nothing.
     expect(game.titheCollected()).toBeLessThan(1_000_000n);
-    expect(east.gold()).toBeLessThanOrEqual(RESERVE + 1_000_000n);
+    // Down to its threshold, which its new Population Center levels raised.
+    expect(east.gold()).toBeLessThanOrEqual(
+      TitheExecution.threshold(game, east) + 1_000_000n,
+    );
   });
 
   test("a ring elsewhere leaves it alone", () => {

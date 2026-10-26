@@ -106,9 +106,8 @@ function units(...us: UnitState[]): Map<number, UnitState> {
 
 describe("extractNukeTelegraphs", () => {
   it("computes target x/y and blast radii", () => {
-    // The atom bomb is the Antimatter Reaction under a Dark Star: 10 tiles.
     const [t] = extractNukeTelegraphs(units(nuke({ targetTile: 305 })), MAP_W);
-    expect(t).toMatchObject({ x: 5, y: 3, innerRadius: 10, outerRadius: 10 });
+    expect(t).toMatchObject({ x: 5, y: 3, innerRadius: 12, outerRadius: 30 });
   });
 
   it("draws a tithe's 50-tile ring on its projectile (TI1)", () => {
