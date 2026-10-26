@@ -109,6 +109,31 @@ describe("Armies on big_plains", () => {
     expect(army.warshipState().patrolTile).toBe(game.ref(90, 50));
   });
 
+  test("an order cuts a rest short and the army walks straight there", () => {
+    build(defender, UnitType.Factory, game.ref(20, 30));
+    const army = deployArmy(game.ref(20, 30));
+    // Wait until it rests at a patrol stop (up to 6 s there).
+    let last = army.tile();
+    for (let i = 0; i < 300; i++) {
+      executeTicks(game, 1);
+      if (army.tile() === last && army.targetTile() === undefined) break;
+      last = army.tile();
+    }
+    expect(army.targetTile()).toBeUndefined();
+    const resting = army.tile();
+    const goal = game.ref(90, 50);
+    game.addExecution(new MoveWarshipExecution(defender, [army.id()], goal));
+    executeTicks(game, 2);
+    expect(army.tile()).not.toBe(resting);
+    // One tile a tick on the shortest way, give or take a tick.
+    const steps = Math.max(
+      Math.abs(game.x(resting) - 90),
+      Math.abs(game.y(resting) - 50),
+    );
+    executeTicks(game, steps);
+    expect(army.tile()).toBe(goal);
+  });
+
   test("a shot at an attack's front kills 10% of its troops", () => {
     build(defender, UnitType.Factory, game.ref(90, 30));
     deployArmy(game.ref(90, 30));
@@ -189,6 +214,61 @@ describe("Armies on big_plains", () => {
     expect(army.isActive()).toBe(false);
     expect(defender.units(UnitType.Army)).toHaveLength(0);
   });
+});
+
+describe("Armies on a large realm", () => {
+  test("a long order across the realm arrives", async () => {
+    // The world map; the realm is all the nebula in a 500×350 box over Asia,
+    // about 150k tiles: far more than a flood from the army could search.
+    const game = await setup(
+      "world",
+      { infiniteGold: true, instantBuild: true },
+      [new PlayerInfo("realm", PlayerType.Human, null, "realm_id")],
+    );
+    const realm = game.player("realm_id");
+    const inBox = (x: number, y: number) =>
+      x >= 1100 && x < 1600 && y >= 100 && y < 450;
+    for (let x = 1100; x < 1600; x++) {
+      for (let y = 100; y < 450; y++) {
+        if (game.isLand(game.ref(x, y))) realm.conquer(game.ref(x, y));
+      }
+    }
+    executeTicks(game, 20);
+    let start: TileRef | null = null;
+    for (let x = 1350; start === null; x++) {
+      if (game.isLand(game.ref(x, 275))) start = game.ref(x, 275);
+    }
+    // The farthest tile of the start's landmass, by walking steps.
+    const steps = new Map<TileRef, number>([[start, 0]]);
+    const queue = [start];
+    let goal = start;
+    for (let head = 0; head < queue.length; head++) {
+      const t = queue[head];
+      if (steps.get(t)! > steps.get(goal)!) goal = t;
+      game.forEachNeighborWithDiag(t, (n) => {
+        if (steps.has(n) || !game.isLand(n) || game.isInDarkStar(n)) return;
+        if (!inBox(game.x(n), game.y(n))) return;
+        steps.set(n, steps.get(t)! + 1);
+        queue.push(n);
+      });
+    }
+    expect(steps.get(goal)!).toBeGreaterThan(200);
+
+    game.addExecution(
+      new ConstructionExecution(realm, UnitType.Factory, start),
+    );
+    executeTicks(game, 3);
+    game.addExecution(new ConstructionExecution(realm, UnitType.Army, start));
+    executeTicks(game, 3);
+    const army = realm.units(UnitType.Army)[0];
+    game.addExecution(new MoveWarshipExecution(realm, [army.id()], goal));
+    let arrived = false;
+    for (let i = 0; i < steps.get(goal)! + 100 && !arrived; i++) {
+      executeTicks(game, 1);
+      arrived = army.tile() === goal;
+    }
+    expect(arrived).toBe(true);
+  }, 60_000);
 });
 
 describe("Lords and armies", () => {

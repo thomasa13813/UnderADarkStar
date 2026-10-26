@@ -11,10 +11,12 @@ import {
   UnitType,
 } from "../game/Game";
 import { TileRef } from "../game/GameMap";
+import { BucketQueue } from "../pathfinding/algorithms/PriorityQueue";
 import { PseudoRandom } from "../PseudoRandom";
 
-// The most tiles a path search over the owner's nebula may visit.
-const MAX_PATH_SEARCH = 40_000;
+// The most tiles a path search over the owner's nebula may settle: only a
+// goal it cannot reach, or one behind a long detour, costs this much.
+const MAX_PATH_SEARCH = 200_000;
 // Ticks an army rests at a patrol stop before choosing the next.
 const PATROL_REST_MIN = 20;
 const PATROL_REST_MAX = 60;
@@ -141,6 +143,8 @@ export class ArmyExecution implements Execution {
       this.path = [];
       this.pathGoal = null;
       army.setTargetTile(undefined);
+      // An order cuts any rest short: it sets out this tick.
+      this.nextMoveTick = ticks;
     }
     if (ticks < this.nextMoveTick) return;
     const cfg = this.mg.config().armyConfig();
@@ -215,39 +219,44 @@ export class ArmyExecution implements Execution {
     return null;
   }
 
-  // Breadth-first over the owner's nebula (8-connected), never into the Dark
-  // Star; the path excludes the start and ends at the goal, or is empty.
+  // A* over the owner's nebula (8-connected, a step costs 1, so the
+  // Chebyshev distance is exact in the open), never into the Dark Star; the
+  // path excludes the start and ends at the goal, or is empty. Heading for
+  // the goal keeps a long order across a large realm cheap, where a flood
+  // from the army gave up about a hundred tiles out (Tom, 2026-10-25).
   private findPath(from: TileRef, goal: TileRef, owner: Player): TileRef[] {
     const mg = this.mg;
     if (from === goal) return [];
+    const gx = mg.x(goal);
+    const gy = mg.y(goal);
+    const h = (t: TileRef) =>
+      Math.max(Math.abs(mg.x(t) - gx), Math.abs(mg.y(t) - gy));
+    const queue = new BucketQueue(2 * (mg.width() + mg.height()));
+    const g = new Map<TileRef, number>([[from, 0]]);
     const prev = new Map<TileRef, TileRef>();
-    prev.set(from, from);
-    const queue: TileRef[] = [from];
-    let head = 0;
-    while (head < queue.length && prev.size < MAX_PATH_SEARCH) {
-      const tile = queue[head++];
-      let found = false;
+    const closed = new Set<TileRef>();
+    queue.push(from, h(from));
+    while (!queue.isEmpty() && closed.size < MAX_PATH_SEARCH) {
+      const tile = queue.pop();
+      if (closed.has(tile)) continue;
+      closed.add(tile);
+      if (tile === goal) {
+        const path: TileRef[] = [];
+        for (let t = goal; t !== from; t = prev.get(t)!) path.push(t);
+        return path.reverse();
+      }
+      const next = g.get(tile)! + 1;
       mg.forEachNeighborWithDiag(tile, (n) => {
-        if (found || prev.has(n)) return;
+        if (closed.has(n)) return;
         if (!mg.isLand(n) || mg.owner(n) !== owner || mg.isInDarkStar(n)) {
           return;
         }
+        const known = g.get(n);
+        if (known !== undefined && known <= next) return;
+        g.set(n, next);
         prev.set(n, tile);
-        if (n === goal) {
-          found = true;
-          return;
-        }
-        queue.push(n);
+        queue.push(n, next + h(n));
       });
-      if (found) {
-        const path: TileRef[] = [];
-        let t = goal;
-        while (t !== from) {
-          path.push(t);
-          t = prev.get(t)!;
-        }
-        return path.reverse();
-      }
     }
     return [];
   }
