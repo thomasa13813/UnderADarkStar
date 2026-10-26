@@ -206,6 +206,8 @@ export interface UnitUpdate {
   samUpgrade?: SamLauncherState;
   // Silos only: exposed to a punitive strike (H19) until this tick.
   punitiveFlag?: PunitiveFlag;
+  // Projectiles only: the throne's tithe (TI1), drawn with its ring.
+  tithe?: true;
 }
 
 export interface AttackUpdate {

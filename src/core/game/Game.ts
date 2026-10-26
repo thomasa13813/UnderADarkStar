@@ -276,6 +276,13 @@ export const MissileLaunchers = unitTypeGroup([
   UnitType.Stargate,
 ] as const);
 
+// DarkStar: the structures that give a defense post's defence (SH3): a post,
+// and a post upgraded with a shield array (a shielded post).
+export const DefensePosts = unitTypeGroup([
+  UnitType.DefensePost,
+  UnitType.ShieldArray,
+] as const);
+
 export const BuildMenus = unitTypeGroup([
   ...Structures.types,
   ...BuildableAttacks.types,
@@ -364,6 +371,8 @@ export interface UnitParamsMap {
     trajectory: TrajectoryTile[];
     // A gate shot carries its troops (a strike's ride on the Attack instead).
     troops?: number;
+    // The throne's tithe (TI1): no troops, a ring on the aim tile.
+    tithe?: boolean;
   };
 
   [UnitType.Stargate]: Record<string, never>;
@@ -481,8 +490,8 @@ export interface StrikeInFlight {
   isPunitive(): boolean;
 }
 
-// The warheads a silo fires: the atom bomb is the Nuclear Warhead, the
-// hydrogen bomb the Antimatter Warhead (S6).
+// The warheads a silo fires: the atom bomb is the Antimatter Reaction, the
+// hydrogen bomb the Gamma Ray Burst (S6, renamed by the rework, WH1).
 export type Warhead = UnitType.AtomBomb | UnitType.HydrogenBomb;
 
 // A silo exposed to a punitive strike (H19): flagged by its latest missile
@@ -503,6 +512,24 @@ export interface HegemonStrike {
   // The struck player commits troops against the landed strike (H17):
   // returns how many were spent cancelling it, at most the troops offered.
   counter(troops: number): number;
+}
+
+// The throne's tithe between launch and landing (TitheExecution, TI1-TI5).
+// Lords read it to spend their gold down before it lands (TI10).
+export interface TitheInFlight {
+  aimTile(): TileRef;
+  landsAtTick(): Tick;
+  // Whether the ring, as territory stands now, touches the player's nebula.
+  touches(player: Player): boolean;
+}
+
+// What the throne's radial menu shows for a tithe on a tile (TI7).
+export interface TitheOption {
+  // Ticks until the throne may tithe again: 0 = now. While one is in
+  // flight, until it lands plus the cooldown is not known: null.
+  readyInTicks: number | null;
+  // Who the ring would take from if it landed now, and how much.
+  payers: { name: string; gold: Gold }[];
 }
 
 // A stargate shot between launch and landing (GateShotExecution): the HUD's
@@ -907,6 +934,9 @@ export interface Player {
   // Donation
   canDonateGold(recipient: Player): boolean;
   canDonateTroops(recipient: Player): boolean;
+  // Under a Dark Star: whether one of this player's finished stargates
+  // reaches the recipient, the road for gold and troops (GN1, GN5).
+  inGateReach(recipient: Player): boolean;
   donateTroops(recipient: Player, troops: number): boolean;
   donateGold(recipient: Player, gold: Gold): boolean;
   canDeleteUnit(): boolean;
@@ -1123,6 +1153,13 @@ export interface Game extends GameMap {
   removeHegemonStrike(strike: HegemonStrike): void;
   // One live strike per target: in flight or landed.
   hegemonStrikeOn(target: Player): boolean;
+  // The throne's tithe (TI1-TI5): one in flight at a time, and the tick the
+  // last one landed, for the cooldown; the gold tithes have brought in.
+  titheInFlight(): TitheInFlight | null;
+  setTitheInFlight(tithe: TitheInFlight | null): void;
+  lastTitheLandedTick(): Tick | null;
+  recordTitheLanded(gold: Gold): void;
+  titheCollected(): Gold;
   // Stargate shots in the air (C4).
   gateShotsInFlight(): GateShotInFlight[];
   addGateShotInFlight(shot: GateShotInFlight): void;
@@ -1157,8 +1194,11 @@ export interface Game extends GameMap {
   /** Incremented each time the water navigation graph is rebuilt (e.g. after nuke terrain change). */
   waterGraphVersion(): number;
 
-  /** Queue a land tile for conversion to water (batched every few ticks). Tile must be unowned. */
-  queueWaterConversion(tile: TileRef): void;
+  /**
+   * Queue a land tile for conversion to water (batched every few ticks), or
+   * when `erase` is false leave it as land with fallout. Tile must be unowned.
+   */
+  queueWaterConversion(tile: TileRef, erase: boolean): void;
 
   /** Queue a tile that was inside a nuke blast radius (for nukeable layer destruction). */
   queueNukeImpact(tile: TileRef): void;
@@ -1182,6 +1222,9 @@ export interface PlayerActions {
   // DarkStar: set when the querying player is the Hegemon and the tile holds
   // a challenger's silo flagged by a missile launch (H19).
   punitiveStrike?: PunitiveStrikeOption;
+  // DarkStar: set when the querying player is the Hegemon and the tile lies
+  // outside its domain: a tithe aimed there (TI7).
+  tithe?: TitheOption;
 }
 
 // A flagged silo the Hegemon may punish: the warhead that flagged it, when
@@ -1274,6 +1317,9 @@ export interface PlayerInteraction {
   canTarget: boolean;
   canDonateGold: boolean;
   canDonateTroops: boolean;
+  // Under a Dark Star: whether a transfer could reach them at all (the
+  // throne reaches everyone; anyone else needs a gate in range, GN1).
+  inGateReach: boolean;
   canEmbargo: boolean;
   allianceInfo?: AllianceInfo;
 }

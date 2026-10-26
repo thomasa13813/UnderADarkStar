@@ -23,7 +23,10 @@ Lords are the smarter AI players. Each map places its own set of Lords (see [[ma
   build Defense Posts when the attack is heavy.
 - **Attitude.** A Lord has an attitude toward you, from Hostile to Friendly, shown when you hover
   over its territory.
-- **Never built:** Lords never build Shield Arrays.
+- **One Shield Array.** Once a Lord owns at least one of every other building, it shields one of
+  its Defense Posts, the one covering the most of its buildings.
+- **Shield breakers.** A Lord fires its Antimatter Reactions at shielded posts that shelter
+  something it wants to hit, never at bare ground.
 
 ### Difficulty
 

@@ -7,6 +7,7 @@ import {
   maxBulkAmount,
   PlayerActions,
   PlayerBuildableUnitType,
+  PlayerType,
   STRUCTURE_BULK_STEPS,
   Structures,
   UnitType,
@@ -37,6 +38,7 @@ const chatIcon = assetUrl("images/ChatIconWhite.svg");
 const donateGoldIcon = assetUrl("images/DonateGoldIconWhite.svg");
 const donateTroopIcon = assetUrl("images/DonateTroopIconWhite.svg");
 const emojiIcon = assetUrl("images/EmojiIconWhite.svg");
+const goldCoinIcon = assetUrl("images/GoldCoinIcon.svg");
 const infoIcon = assetUrl("images/InfoIcon.svg");
 const swordIcon = assetUrl("images/SwordIconWhite.svg");
 const targetIcon = assetUrl("images/TargetIconWhite.svg");
@@ -109,6 +111,8 @@ export const COLORS = {
   infoDetails: "#7f8c8d",
   infoEmoji: "#fbbf24",
   trade: "#0891b2",
+  donateGold: "#f59e0b",
+  tithe: "#d4a017",
   embargo: "#7c3aed",
   tooltip: {
     cost: "#f59e0b",
@@ -282,34 +286,6 @@ const allyBreakElement: MenuElement = {
       params.myPlayer,
       params.selected!,
     );
-    params.closeMenu();
-  },
-};
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const allyDonateGoldElement: MenuElement = {
-  id: "ally_donate_gold",
-  name: "donate gold",
-  disabled: (params: MenuElementParams) =>
-    !params.playerActions?.interaction?.canDonateGold,
-  color: COLORS.ally,
-  icon: donateGoldIcon,
-  action: (params: MenuElementParams) => {
-    params.playerActionHandler.handleDonateGold(params.selected!);
-    params.closeMenu();
-  },
-};
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const allyDonateTroopsElement: MenuElement = {
-  id: "ally_donate_troops",
-  name: "donate troops",
-  disabled: (params: MenuElementParams) =>
-    !params.playerActions?.interaction?.canDonateTroops,
-  color: COLORS.ally,
-  icon: donateTroopIcon,
-  action: (params: MenuElementParams) => {
-    params.playerActionHandler.handleDonateTroops(params.selected!);
     params.closeMenu();
   },
 };
@@ -664,10 +640,84 @@ function gateShotMenuElement(params: MenuElementParams): MenuElement | null {
   };
 }
 
+// How many payers the tithe's tooltip lists by name before summing the rest.
+const TITHE_PAYERS_SHOWN = 5;
+
+// The throne's tithe (TI1, TI7): in its stargate menu, on the clicked tile.
+// The tooltip shows the cooldown and who the ring would take from if it
+// landed now. Null for anyone but the throne, or on the Dark Star.
+function titheMenuElement(params: MenuElementParams): MenuElement | null {
+  const option = params.playerActions?.tithe;
+  if (option === undefined || !params.myPlayer.isHegemon()) return null;
+  const tooltipItems: TooltipItem[] = [
+    {
+      text: translateText("tithe.tooltip"),
+      className: "text-white font-bold",
+    },
+  ];
+  if (option.readyInTicks === null) {
+    tooltipItems.push({
+      text: translateText("tithe.in_flight"),
+      className: "text-yellow-300",
+    });
+  } else if (option.readyInTicks > 0) {
+    tooltipItems.push({
+      text: translateText("tithe.cooldown", {
+        seconds: Math.ceil(option.readyInTicks / 10),
+      }),
+      className: "text-yellow-300",
+    });
+  }
+  if (option.payers.length === 0) {
+    tooltipItems.push({
+      text: translateText("tithe.nobody"),
+      className: "text-slate-300",
+    });
+  } else {
+    const payers = [...option.payers].sort((a, b) =>
+      b.gold > a.gold ? 1 : b.gold < a.gold ? -1 : 0,
+    );
+    for (const payer of payers.slice(0, TITHE_PAYERS_SHOWN)) {
+      tooltipItems.push({
+        text: translateText("tithe.payer", {
+          name: payer.name,
+          gold: renderNumber(payer.gold),
+        }),
+        className: "text-slate-300",
+      });
+    }
+    if (payers.length > TITHE_PAYERS_SHOWN) {
+      tooltipItems.push({
+        text: translateText("tithe.more", {
+          count: payers.length - TITHE_PAYERS_SHOWN,
+        }),
+        className: "text-slate-300",
+      });
+    }
+    const total = payers.reduce((sum, p) => sum + p.gold, 0n);
+    tooltipItems.push({
+      text: translateText("tithe.total", { gold: renderNumber(total) }),
+      className: "text-amber-300",
+    });
+  }
+  return {
+    id: "attack_tithe",
+    name: "tithe",
+    icon: goldCoinIcon,
+    color: COLORS.tithe,
+    tooltipItems,
+    disabled: () => params.game.inSpawnPhase() || option.readyInTicks !== 0,
+    action: () => {
+      params.playerActionHandler.handleTithe(params.tile);
+      params.closeMenu();
+    },
+  };
+}
+
 // The stargate menu (Tom, 2026-10-09): everything in it is fired from a
 // gate (or, for the Hegemon, from the Dark Star itself), so the slot wears
 // the gate and the gate shot inside wears the sword. The centre button
-// keeps the sword for the ground attack.
+// keeps the sword for the ground attack. The throne's holds its tithe too.
 export const attackMenuElement: MenuElement = {
   id: Slot.Attack,
   name: "radial_attack",
@@ -678,26 +728,10 @@ export const attackMenuElement: MenuElement = {
   subMenu: (params: MenuElementParams) => {
     if (params === undefined) return [];
     const items = createMenuElements(params, "attack", "attack");
+    const tithe = titheMenuElement(params);
+    if (tithe !== null) items.push(tithe);
     const gateShot = gateShotMenuElement(params);
     return gateShot === null ? items : [...items, gateShot];
-  },
-};
-
-const donateGoldRadialElement: MenuElement = {
-  id: Slot.Attack,
-  name: "radial_donate_gold",
-  disabled: (params: MenuElementParams) =>
-    params.game.inSpawnPhase() ||
-    !params.playerActions?.interaction?.canDonateGold,
-  icon: donateGoldIcon,
-  color: "#f59e0b",
-  action: (params: MenuElementParams) => {
-    if (!params.selected) return;
-    params.playerPanel.openSendGoldModal(
-      params.playerActions,
-      params.tile,
-      params.selected,
-    );
   },
 };
 
@@ -789,12 +823,12 @@ export const buildMenuElement: MenuElement = {
 };
 
 // A gift (H18): the Hegemon builds on a challenger's land at its own cost
-// and the host owns the result. Takes the ally slot, which the throne can
-// never use (H9). Shown only when the worker offered a host.
+// and the host owns the result. The first item of the throne's handshake
+// (GN10); shown only when the worker offered a host.
 export function giftMenuElement(params: MenuElementParams): MenuElement {
   const host = params.selected;
   return {
-    id: Slot.Ally,
+    id: "ally_gift",
     name: "gift",
     disabled: (p: MenuElementParams) =>
       p.game.inSpawnPhase() || p.playerActions.giftHost === undefined,
@@ -819,10 +853,11 @@ export function giftMenuElement(params: MenuElementParams): MenuElement {
   };
 }
 
-// Reinforce the throne (H9): a challenger's ally slot when the target is the
-// Hegemon, who allies with nobody. Sends troops sized by the attack ratio, as
-// the team-mode donation does; the sim clamps to the room on the throne and,
-// while someone holds the Dark Star, throws them into the counter-attack.
+// Reinforce the throne (H9, GN5): a challenger's Donate troops when the
+// target is the Hegemon, who allies with nobody; it needs a gate that
+// reaches the Dark Star. Sends troops sized by the attack ratio; the sim
+// clamps to the room on the throne and, while someone holds the Dark Star,
+// throws them into the counter-attack.
 export function reinforceThroneElement(params: MenuElementParams): MenuElement {
   const throne = params.selected;
   const room =
@@ -845,7 +880,13 @@ export function reinforceThroneElement(params: MenuElementParams): MenuElement {
       className: "text-white font-bold",
     },
   ];
-  if (room === 0) {
+  const reach = params.playerActions.interaction?.inGateReach === true;
+  if (!reach) {
+    tooltipItems.push({
+      text: translateText("handshake.throne_out_of_reach"),
+      className: "text-red-400",
+    });
+  } else if (room === 0) {
     tooltipItems.push({
       text: translateText("dark_star.reinforce_full"),
       className: "text-red-400",
@@ -878,7 +919,7 @@ export function reinforceThroneElement(params: MenuElementParams): MenuElement {
     });
   }
   return {
-    id: Slot.Ally,
+    id: "ally_donate_troops",
     name: "reinforce",
     icon: donateTroopIcon,
     color: COLORS.ally,
@@ -890,6 +931,155 @@ export function reinforceThroneElement(params: MenuElementParams): MenuElement {
         p.playerActionHandler.handleDonateTroops(throne, troops);
       }
       p.closeMenu();
+    },
+  };
+}
+
+// Why a transfer to the selected player is refused, for the greyed item's
+// tooltip (GN8): out of reach, the lobby's toggle (between challengers,
+// GN11), or the donation cooldown. Null when it is allowed.
+function transferBlockReason(
+  params: MenuElementParams,
+  kind: "gold" | "troops",
+): string | null {
+  const interaction = params.playerActions.interaction;
+  const allowed =
+    kind === "gold"
+      ? interaction?.canDonateGold === true
+      : interaction?.canDonateTroops === true;
+  if (allowed) return null;
+  if (interaction?.inGateReach !== true) {
+    return translateText("handshake.out_of_reach");
+  }
+  const selected = params.selected;
+  const config = params.game.config();
+  const toggled = kind === "gold" ? config.donateGold() : config.donateTroops();
+  if (
+    !toggled &&
+    selected !== null &&
+    !selected.isHegemon() &&
+    !params.myPlayer.isHegemon() &&
+    selected.type() === PlayerType.Human
+  ) {
+    return translateText("handshake.toggle_off");
+  }
+  return translateText("handshake.cooldown");
+}
+
+function reasonTooltip(title: string, reason: string | null): TooltipItem[] {
+  const items: TooltipItem[] = [
+    { text: title, className: "text-white font-bold" },
+  ];
+  if (reason !== null) items.push({ text: reason, className: "text-red-400" });
+  return items;
+}
+
+// Donate troops (GN8): the troop slider's share of your troops, to anyone
+// within your gates' reach (the throne reaches everyone).
+function donateTroopsElement(params: MenuElementParams): MenuElement {
+  const troops = Math.floor(
+    (params.uiState?.attackRatio ?? 1) * params.myPlayer.troops(),
+  );
+  const reason = transferBlockReason(params, "troops");
+  return {
+    id: "ally_donate_troops",
+    name: "donate_troops",
+    icon: donateTroopIcon,
+    color: COLORS.ally,
+    tooltipItems: reasonTooltip(
+      translateText("handshake.donate_troops", {
+        troops: renderTroops(troops),
+        name: params.selected?.displayName() ?? "",
+      }),
+      reason,
+    ),
+    disabled: (p: MenuElementParams) =>
+      p.game.inSpawnPhase() || reason !== null || troops < 1,
+    action: (p: MenuElementParams) => {
+      if (p.selected !== null && troops >= 1) {
+        p.playerActionHandler.handleDonateTroops(p.selected, troops);
+      }
+      p.closeMenu();
+    },
+  };
+}
+
+// Donate gold (GN8): opens the gold dialog.
+function donateGoldElement(params: MenuElementParams): MenuElement {
+  const reason = transferBlockReason(params, "gold");
+  return {
+    id: "ally_donate_gold",
+    name: "donate_gold",
+    icon: donateGoldIcon,
+    color: COLORS.donateGold,
+    tooltipItems: reasonTooltip(
+      translateText("handshake.donate_gold", {
+        name: params.selected?.displayName() ?? "",
+      }),
+      reason,
+    ),
+    disabled: (p: MenuElementParams) =>
+      p.game.inSpawnPhase() || reason !== null,
+    action: (p: MenuElementParams) => {
+      if (p.selected === null) return;
+      p.playerPanel.openSendGoldModal(p.playerActions, p.tile, p.selected);
+    },
+  };
+}
+
+// Propose an alliance, or extend one in its extension window (GN7: no range
+// limit), with a reason when it is not available.
+function allianceElement(params: MenuElementParams): MenuElement {
+  const extending =
+    params.playerActions.interaction?.allianceInfo?.inExtensionWindow === true;
+  const base = extending ? allyExtendElement : allyRequestElement;
+  const available = !base.disabled(params);
+  return {
+    ...base,
+    displayed: true,
+    tooltipItems: reasonTooltip(
+      translateText(extending ? "handshake.extend" : "handshake.propose", {
+        name: params.selected?.displayName() ?? "",
+      }),
+      available ? null : translateText("handshake.proposal_unavailable"),
+    ),
+  };
+}
+
+// The handshake (GN8, GN10): the ally slot opens Donate troops, Donate gold
+// and, between challengers, Propose alliance (or Extend). For the throne it
+// opens Gift (when the worker offered a host), Donate troops and Donate
+// gold; on the Hegemon, a challenger's Donate troops is the reinforcement.
+export function handshakeMenuElement(params: MenuElementParams): MenuElement {
+  return {
+    id: Slot.Ally,
+    name: "handshake",
+    icon: allianceIcon,
+    color: COLORS.ally,
+    tooltipItems: [
+      {
+        text: translateText("handshake.title", {
+          name: params.selected?.displayName() ?? "",
+        }),
+        className: "title",
+      },
+    ],
+    disabled: (p: MenuElementParams) => p.game.inSpawnPhase(),
+    subMenu: (p: MenuElementParams) => {
+      if (p === undefined) return [];
+      if (p.myPlayer.isHegemon()) {
+        return [
+          ...(p.playerActions.giftHost !== undefined
+            ? [giftMenuElement(p)]
+            : []),
+          donateTroopsElement(p),
+          donateGoldElement(p),
+        ];
+      }
+      if (p.selected?.isHegemon()) {
+        return [reinforceThroneElement(p), donateGoldElement(p)];
+      }
+      return [donateTroopsElement(p), donateGoldElement(p), allianceElement(p)];
     },
   };
 }
@@ -1012,9 +1202,7 @@ export function punishMenuElement(params: MenuElementParams): MenuElement {
         text: translateText("dark_star.punish_tooltip", {
           name: target?.displayName() ?? "",
           warhead: translateText(
-            antimatter
-              ? "dark_star.warhead_antimatter"
-              : "dark_star.warhead_nuclear",
+            antimatter ? "dark_star.warhead_grb" : "dark_star.warhead_reaction",
           ),
         }),
         className: "text-white font-bold",
@@ -1061,10 +1249,7 @@ export const centerButtonElement: CenterButtonElement = {
       return false;
     }
 
-    if (isFriendlyTarget(params) && !isDisconnectedTarget(params)) {
-      return !params.playerActions.interaction?.canDonateTroops;
-    }
-
+    // Always the ground attack (GN9): donations live in the handshake.
     return !params.playerActions.canAttack;
   },
   action: (params: MenuElementParams) => {
@@ -1074,22 +1259,10 @@ export const centerButtonElement: CenterButtonElement = {
         params.playerActionHandler.handleSpawn(params.tile);
       }
     } else {
-      if (isFriendlyTarget(params) && !isDisconnectedTarget(params)) {
-        const selectedPlayer = params.selected as PlayerView;
-        const ratio = params.uiState?.attackRatio ?? 1;
-        const troopsToDonate = Math.floor(ratio * params.myPlayer.troops());
-        if (troopsToDonate > 0) {
-          params.playerActionHandler.handleDonateTroops(
-            selectedPlayer,
-            troopsToDonate,
-          );
-        }
-      } else {
-        params.playerActionHandler.handleAttack(
-          params.myPlayer,
-          params.selected?.id() ?? null,
-        );
-      }
+      params.playerActionHandler.handleAttack(
+        params.myPlayer,
+        params.selected?.id() ?? null,
+      );
     }
     params.closeMenu();
   },
@@ -1110,20 +1283,6 @@ export const rootMenuElement: MenuElement = {
       tileOwner.isPlayer() &&
       (tileOwner as PlayerView).id() === params.myPlayer.id();
 
-    const inExtensionWindow =
-      params.playerActions.interaction?.allianceInfo?.inExtensionWindow;
-
-    // After game-over, nukes can target teammates in multiplayer (nukeSpawn allows it,
-    // but not in singleplayer). Show the attack submenu so mobile users can access
-    // nukes in the aftergame.
-    const hasBuildableAttacks =
-      params.playerActions.buildableUnits?.some(
-        (bu) => BuildableAttacks.has(bu.type) && bu.canBuild !== false,
-      ) ?? false;
-
-    const showDonateInsteadOfAttack =
-      isFriendlyTarget(params) && !isDisconnected && !hasBuildableAttacks;
-
     const menuItems: (MenuElement | null)[] = [
       infoMenuElement,
       ...(isOwnTerritory
@@ -1135,22 +1294,15 @@ export const rootMenuElement: MenuElement = {
               : isAllied && !isDisconnected
                 ? allyBreakElement
                 : boatMenuElement,
-            // The Hegemon allies with no one: its ally slot is the gift (H18),
-            // and a challenger's ally slot on the throne is the reinforcement (H9).
-            params.playerActions.giftHost !== undefined
-              ? giftMenuElement(params)
-              : params.selected?.isHegemon() && !params.myPlayer.isHegemon()
-                ? reinforceThroneElement(params)
-                : inExtensionWindow
-                  ? allyExtendElement
-                  : allyRequestElement,
-            // A flagged silo (H19): the throne's attack slot is Punish.
+            // The handshake: every transfer, the gift and the alliance
+            // (GN8-GN10).
+            handshakeMenuElement(params),
+            // A flagged silo (H19): the throne's attack slot is Punish;
+            // otherwise always the stargate menu (GN9).
             params.playerActions.punitiveStrike !== undefined &&
             params.myPlayer.isHegemon()
               ? punishMenuElement(params)
-              : showDonateInsteadOfAttack
-                ? donateGoldRadialElement
-                : attackMenuElement,
+              : attackMenuElement,
           ]),
     ];
 

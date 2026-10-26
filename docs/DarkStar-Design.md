@@ -100,6 +100,9 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   centre**, as its strikes do: no launcher, no reload, gold is the only limit. A gate its strike
   captured is never fired (H19), MIRVs stay off. [Revised 2026-09-29] Its warheads are **kept out
   of shield arrays like anyone else's** (C5); its strikes, like every gate shot, pass through.
+  [Reworked 2026-10-25, F25, built on `feat/rework`] The throne's warheads are now the Gamma Ray
+  Burst and the Antimatter Reaction, both 5M; its Gamma Ray Bursts are kept out by shields, its
+  Antimatter Reactions go through (WH2, WH6: it may erase anywhere).
 - **H3 — Strength scales with the map, not the player count** — for the troop ceiling. Gold scales
   with the round's economy (H4).
 - **H4 — Strength target.** [Revised 2026-09-24] The Hegemon is a **large pool that refills slowly**,
@@ -126,6 +129,10 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   (Milky Way ≈ 6.2M). **Shadow tax 3%** of everything the challengers earn each tick — workers,
   trade, trains, piracy and conquest alike, read from their lifetime income totals — about a
   mid-table challenger's income, rising with the round.
+  [Extended 2026-10-25, F25, built on `feat/rework`] On top of the shadow tax the throne aims
+  **tithes** (TI1-TI11, `docs/DarkStar-Rework.md` §2): every challenger owning a tile within 50
+  tiles of the landing pays all its gold above 500k. The shadow tax stays until `HegemonSim` and
+  play show what tithes bring in (TI6).
 - **H5 — Strength is decoupled from territory.** The Hegemon's regeneration and ceilings **do not fall**
   as its domain is conquered, and an invader gains **no benefit** (no troop cap, income, etc.) from
   domain tiles it holds. **Troop bleed:** each domain tile the Hegemon loses costs it
@@ -135,6 +142,8 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   and one invader.** Invader status is defined purely by occupancy — the invader is whichever
   challenger holds any tile inside the domain. Everyone else can take part only indirectly, by
   reinforcing the Hegemon with troops (H9, open since 2026-10-04); donations to the invader stay closed.
+  [Reworked 2026-10-25, F25, built on `feat/rework`] Donations to the invader are open: anyone whose
+  gate reaches the invader may supply them (GN12).
 - **H7 — Invasion is the only way to kill the Hegemon.** The domain **cannot be harmed by nukes** — it _can_ be targeted, the nuke simply does nothing to domain
   tiles (decided 2026-09-20: better than making it untargetable) — and the engine's
   non-combat elimination paths (enclosed-cluster capture, the <100-tile mop-up handing tiles to
@@ -171,6 +180,11 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   collapses (H5) and neither side can move; the other challengers' donations finish the failed
   invasion and free the slot, and are how rivals compete for the throne by proxy. [2026-10-23: the
   extreme case, an invader with no nebula at all beyond the moat, is now settled by H20.]
+  [Reworked 2026-10-25, F25, built on `feat/rework`] **The gate network** (GN1-GN12): every transfer
+  needs no alliance, only reach. The throne reaches everyone, with **troops and gold**; a challenger
+  reaches a player who owns a tile within range of one of its finished gates, and reinforces (or
+  sends gold to) the throne only when a gate reaches the Dark Star. Cooldowns apply; the lobby
+  toggles hold between challengers. All transfers live in the radial menu's handshake (GN8-GN10).
 - **H10 — Destroyers of the Dark Star.** [Revised 2026-09-24] The Hegemon may build **destroyers**
   (the engine's warship, S7) **without a port** — it has none (H2). They **spawn in the moat** and are
   purely defensive: they move to intercept fleets bound for the domain and harass the trade of the
@@ -283,6 +297,9 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   at once: a gifted fourth city costs the Hegemon what a first one does. The escalating count
   (cities, ports, factories, defence posts) is the builder's own burden, not the giver's; the gift
   still counts as the host's build, so the host's own next one costs them more.
+  [Reworked 2026-10-25, F25, built on `feat/rework`] The throne's Gift moves one level down, into
+  its handshake beside Donate troops and Donate gold (GN10). A gifted Shield Array needs a Defense
+  Post of the host's to stand on (SH2).
 - **H19 — Missile launches invite a punitive strike.** [Decided 2026-09-26; built the same day,
   §6.16] A challenger who fires a
   missile from a silo (Nuclear or Antimatter Warhead, S6; the target does not matter, the Dark Star
@@ -328,6 +345,8 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
     untouched.
   - **AI Hegemon.** Strikes any flag as soon as it may, except against a challenger holding less than
     `punitiveAIMinLandPermille` of the map's nebulae (tunable, 50–100‰ to start).
+    [Reworked 2026-10-25, F25, built on `feat/rework`] Both warheads draw the same **25%** levy (WH4;
+    the Nuclear Warhead's 10% went with it). The punitive radius stays 34.
 - **H20 — An invader must keep a homeland.** [Decided 2026-10-23, Tom; built the same day] The
   moment the invader holds **no nebula beyond the moat**, it is **eliminated**, and every Dark Star
   tile it held **returns to the Hegemon at once** — by fiat, not reconquest, and with no troops
@@ -403,6 +422,9 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   gate upgrades for as long as the gold lasts, each level adding 75 to its range. Lords still
   stop at level 5 when upgrading a gate towards the moat (their own limit, not a rule), so their
   behaviour is unchanged apart from the cheaper price and the faster reload.
+  [Reworked 2026-10-25, F25, built on `feat/rework`] A gate is also the road for **troops and
+  gold**: its range decides whom its owner can supply, no alliance needed (GN1-GN3). Transfers spend
+  no charge.
 - **C5 — Shield arrays.** [Decided 2026-09-28; built the same day, §6.23; revised 2026-09-29,
   §6.24; price 5M → 2M 2026-09-30] A challenger **structure** (**2M gold**, 10 s build, **one level, no upgrades**) that
   projects a perimeter of `shieldArrayRadius` (**40** tiles since 2026-10-12: half a level-1 SAM's
@@ -421,6 +443,10 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   of the throne's strike only conquest removes one — hence the price (Tom's baseline; F21). Lords
   do not build arrays yet (F21). Icon: a crenelated generator under a dashed dome (the silhouette
   of the Echo Base shield generator, not its name).
+  [Reworked 2026-10-25, F25, built on `feat/rework`] A Shield Array is built **only on a Defense
+  Post**, which it upgrades into a **shielded post** (SH1): the post's defence stays, the shield
+  grows to **100 tiles** (the Gamma Ray Burst's radius), and a shielded post is captured intact
+  (SH4). The Antimatter Reaction goes through it (WH2), and so do tithes (TI4).
 - **C6 — Armies and fleet support.** [Decided and built 2026-10-23, Tom] Each **level** of a
   finished spaceport supports one destroyer, and each level of a finished industrial zone one
   **army**. With no support to spare, nothing new deploys. Losing support disbands nothing: the
@@ -471,6 +497,10 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   [Decided 2026-09-28] **Missile silos are removed** the same way (hard-off under a Dark Star, the
   enum kept for the wire): the stargate is the launcher (C4), so a missile's reach is a gate's, and
   the shield array (C5) is the defence. The **Hegemon may fire missiles** from the Dark Star (H2).
+  [Reworked 2026-10-25, F25, built on `feat/rework`] The Nuclear Warhead is gone. The engine's
+  hydrogen bomb is the **Gamma Ray Burst** (5M, radius 100, kept out by shields) and its atom bomb
+  the **Antimatter Reaction** (5M, a 10-tile circle erased into deep space, through shields).
+  Whether a warhead erases is its nature: the Void missiles option is hidden and ignored (WH5).
 - **S7 — Economy.** [Direction agreed 2026-09-24; revised 2026-09-26] The engine's structure stays:
   cities and factories joined by rail, ports spawning trade ships. [Revised 2026-09-26] **The economy
   goes to space.** (1) **Trade lanes**: a railroad is a **straight line** between its two stations —
@@ -554,6 +584,8 @@ destroyers and the challenger table). The playtest checks left over from them ar
 | F21 | **Missiles on gates, shields and the throne's warheads (C4, C5, H2). [Open 2026-09-28]** The shield radius (35; **40** since 2026-10-12, a tenth more on Tom's feel for play, rounded even) is the cap Tom set, not a tuned number; the throne's missiles have no reload — gold-limited only — and may want a cadence once the shadow tax is tuned (F1); Lords do not build shield arrays and the AI Hegemon fires no missiles; a shield refusing gate shots was considered and left as no (gates are meant to matter more, not less). [2026-09-29] The array now shelters its zone from every missile, the throne's included, and costs 5M — Tom's baseline, not a tuned number. To judge in play: whether a level-1 gate's 180 leaves a warhead any target worth 1M, whether a 5M array around a capital is worth it or unanswerable (the throne's strike and conquest are the only answers), and whether a hole in the blast reads clearly on screen. [2026-09-30] The array drops to 2M and the gate to a flat 500k with a 5 s reload and no level cap: the same questions, at the new prices — plus whether warheads at a 5 s cadence and unbounded reach bring back the oppression that tying them to gates was meant to end.                                                                                                                                                                                                                                                     |
 | F22 | **Piracy: eliminated challengers as raiders (C1). [Open 2026-10-14]** Tom's proposal, shaped the same day: an eliminated challenger may _embrace piracy_, spawning one free anonymous ship (the corsair) that raids freighters for troops (100 a raid, 2,500 cap) and gold, and may beach on any non-Hegemon coast to claim exactly 100 tiles and return as a tiny challenger; sunk, it respawns after a climbing cooldown. Decided: the return, landings on players' coasts, the 100-tile floor, anonymity, two-click control, raid gold; target the Sunday 2026-10-18 test behind a lobby toggle. Every shaping question decided the same day (scuttle a leaving pirate, no hold survives a sinking, slow heal, flat 10k raid gold, free 100-tile bite); numbers are levers. Rules PR1–PR18 in `docs/DarkStar-Piracy.md`. [Built 2026-10-15, live 2026-10-17; C1 amended, the cues wired (embrace, beaching; no raid cue) and **no piracy data tracked** (PR14), all 2026-10-17.]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | F23 | **The strike front (H17). [Closed 2026-10-24 — decided and built]** Tom: a strike and the struck player's counter-attack made an odd, organic front that advanced and retreated at once, unlike every other front. Cause and measurement in `docs/DarkStar-Combat.md` §4. Tom's decision: strikes are fought by **cancelling**, one front only, the bubble is never retaken, the strike pops the moment it stops advancing, and **strike troops never come home**; the cancel is weighted by the target's troop ceiling so a disproportionate strike is cheaper to cancel. See H17's revision. Still to judge in play and in `HegemonSim`: the weighting share (`strikeCounterCeilingPercent`, 100), the AI throne's strike size now that nothing returns, and Lords offering half their army (`STRIKE_COUNTER_SHARE`).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| F24 | **Persistent rooms, drop-in pirates and the rewind (§2, §5.2). [Open 2026-10-25]** Tom's proposal: a fixed set of public rooms (two FFA, two team, 50 humans each, two to start, one-minute countdown) running rounds back to back in place of the launch lines; latecomers drop in as pirates, team rooms balancing them; the intermission plays the finished round backwards, the fiction being a Hegemon who rules by turning back time. Rules L32–L41 and open questions in `docs/DarkStar-Lobbies.md` §14. Server cost is negligible (the server only relays turns); the work is the scheduler, a mid-round pirate spawn and team assignment in the sim, and a client-side keyframe recorder for the rewind.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| F25 | **The rework: tithes, warheads, shields, the gate network. [Decided 2026-10-25; RW0-RW4 built the same day on `feat/rework`, released together; RW5 balance to come]** Tom's decisions: the throne aims **tithes** that take every challenger's gold above 500k within 50 tiles of the landing, on top of the shadow tax (H4); the warheads become the **Gamma Ray Burst** (today's Antimatter blast, 5M) and the **Antimatter Reaction** (5M, erases a 10-tile circle to deep space, goes through shields), both levied at 25% (H19), the Nuclear Warhead and the Void missiles option gone (S6); the **Shield Array is built only on a Defense Post**, shields 100 tiles (the Gamma Ray Burst's radius), lets troops through as today and is captured intact (C5); a **gate lets its owner send troops and gold** to any player in its range, no alliance needed, through a two-level handshake menu; the throne reaches everyone, supplying it (troops or gold) needs a gate, and the invader may be supplied (C4, H6, H9); special thrones off. Rules TI/WH/SH/GN, roadmap RW0–RW5 and questions in `docs/DarkStar-Rework.md` (Q1–Q14 all answered the same day). The rules here change as each step is built.                                                                                                                                                                                                                                                                      |
 
 ## 5. Engine foundation — what we reuse
 
@@ -626,6 +658,8 @@ persistence was OpenFront's closed-source API, which we do not have.
   game's winner is _the_ Hegemon?". [Decided 2026-09-29] The answer is **thrones**: a fixed pool
   of 15 named persistent public lobbies, each with its own seat that the round's winner inherits.
   Full design, decisions L1–L15 and the implementation plan: **`docs/DarkStar-Lobbies.md`**.
+  [Proposed 2026-10-25, F24] Persistent drop-in rooms in place of the launch lines, latecomers
+  as pirates, and a rewound intermission: Lobbies doc §14.
 
 ### 5.3 Maps
 
@@ -2215,6 +2249,10 @@ hydrogen-bomb removal (closed by S6).
 
 ## 11. Changelog
 
+- **2026-10-25, rework built** — **F25: RW0-RW4 built on `feat/rework`**, to be released together (Tom). Special thrones off; the Gamma Ray Burst and the Antimatter Reaction (5M each, 25% levy, the reaction erasing 10 tiles through shields, Lords spending it on shielded posts); Shield Arrays only on Defense Posts, 100-tile shields, captured intact; the gate network and the handshake menu; tithes with the AI throne's timer, Lords spending down, the ring, Tom's cue and `HegemonSim` output. H2, H4, H6, H9, H18, H19, C4, C5 and S6 carry notes. RW5 (the balance pass) is next.
+- **2026-10-25, rework answers** — **F25: every question answered (Q10–Q14).** Donations move under the handshake; challengers may send the throne gold within gate range; the lobby toggles still apply; the invader can be supplied, reversing H6's closure once built. RW0–RW4 ready to build.
+- **2026-10-25, rework** — **F25 opened: tithes, two new warheads, shielded posts, the gate network.** Tom's decisions from a design conversation, written up in `docs/DarkStar-Rework.md` as the implementation plan (RW0–RW5) with nine questions (Q1–Q9), answered by Tom the same day (shields let troops through and are captured intact at a 100-tile radius; gate transfers need no alliance; Q10–Q14 now open). Nothing built; H2, H4, H9, H17–H19, C4, C5 and S6 stand as written until each step lands.
+- **2026-10-25, rooms** — **F24 opened: persistent rooms with drop-in, and the rewind.** Tom's proposal from a design conversation, written up as L32–L41 in `docs/DarkStar-Lobbies.md` §14 (proposed, not decided): four fixed public rooms with a 50-player cap replacing the launch lines, latecomers as pirates, a rewound intermission and its lore. §5.2 points to it.
 - **2026-10-25, map name** — **Warship Warship is now Destroyers of Worlds.** Tom's call: the
   old title predates the destroyer rename. Display name only (`en.json`, `info.json`, the
   manifest, the `GameMapType` string, `CREDITS.md`); the folder, the `WarshipWarship` id and the

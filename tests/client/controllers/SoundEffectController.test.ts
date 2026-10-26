@@ -218,11 +218,12 @@ describe("SoundEffectController", () => {
     const noOwner = { isPlayer: () => false };
 
     // One projectile across its life: created at the gate, in flight, landed.
-    function shot(id: number, owner: object) {
+    function shot(id: number, owner: object, tithe = false) {
       const state = { created: true, active: true, landed: false };
       const unit = {
         id: () => id,
         type: () => UnitType.Projectile,
+        isTithe: () => tithe,
         isActive: () => state.active,
         reachedTarget: () => state.landed,
         createdAt: () => (state.created ? tick : -1),
@@ -340,6 +341,48 @@ describe("SoundEffectController", () => {
       tickWithUnits(s.unit);
       expect(played).toEqual(["launch", "landing"]);
       expect((controller as any).shotDefender.size).toBe(0);
+    });
+
+    // The tithe (docs/DarkStar-Rework.md §2.2): heard at launch by the throne
+    // and by whoever's nebula the ring touches; never on landing.
+    describe("the tithe", () => {
+      let myTilesUnderRing: number;
+      beforeEach(() => {
+        myTilesUnderRing = 0;
+        game.config = () => ({ titheConfig: () => ({ radius: 50 }) });
+        game.circleSearch = (tile: number, radius: number) => {
+          expect(tile).toBe(TILE);
+          expect(radius).toBe(50);
+          return new Set(Array.from({ length: myTilesUnderRing }, (_, i) => i));
+        };
+      });
+
+      it("the throne hears its own launch, and nothing on landing", () => {
+        game.myPlayer = () => throne;
+        tileOwner = asOwner(rival);
+        const t = shot(1, throne, true);
+        tickWithUnits(t.unit);
+        t.land();
+        tickWithUnits(t.unit);
+        expect(played).toEqual(["tithe"]);
+      });
+
+      it("a player under the ring hears the launch", () => {
+        myTilesUnderRing = 3;
+        tileOwner = asOwner(rival);
+        const t = shot(1, throne, true);
+        tickWithUnits(t.unit);
+        expect(played).toEqual(["tithe"]);
+      });
+
+      it("a player outside the ring hears nothing", () => {
+        tileOwner = asOwner(rival);
+        const t = shot(1, throne, true);
+        tickWithUnits(t.unit);
+        t.land();
+        tickWithUnits(t.unit);
+        expect(played).toEqual([]);
+      });
     });
 
     it("plays the throne's own strike to the throne, not to a bystander", () => {

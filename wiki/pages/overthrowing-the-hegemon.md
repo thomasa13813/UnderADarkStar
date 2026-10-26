@@ -41,9 +41,13 @@ Hegemon alike. A sliver of the disc cannot be sat on: an invasion has to keep mo
 
 ## Reinforcing the throne
 
-Anyone may donate troops to the Hegemon while its pool has room, with no alliance needed and the
-lobby's donation setting ignored. While someone is invading, every troop donated joins the
-counter-attack against them at once. Nobody may donate to the invader.
+Anyone whose [[stargates-and-warheads|Stargate]] reaches the Dark Star may donate troops (or gold)
+to the Hegemon while its pool has room, with no alliance needed and the lobby's donation setting
+ignored. While someone is invading, every troop donated joins the counter-attack against them at
+once.
+
+The invader can be supplied too: anyone whose gate reaches the invader's nebula may send them
+troops and gold, so a coalition can feed an invasion through its gates.
 
 Expect rivals to do exactly this when you are close to winning. The challenger who is not
 invading has every reason to stop the one who is.

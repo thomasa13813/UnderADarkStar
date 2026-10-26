@@ -5,6 +5,7 @@
 > Companion to `DarkStar-Design.md` (§2 round loop, §3 rules R1–R6, §5.2 continuity) and
 > `DarkStar-Roadmap.md` phase P6, which this document expands and supersedes.
 > T1–T5 are built (T1–T4 2026-10-03, §10.1–§10.4; T5 2026-10-10, §10.6); T6 is not. Changelog at the end.
+> §14 (2026-10-25) proposes replacing the launch lines with persistent drop-in rooms; not decided.
 
 ## 1. Goals
 
@@ -715,8 +716,148 @@ home page's three cards do when a type's head has nobody; the win-screen and Thr
 strings; the registry changes and tests (`ThroneRegistry` stays pure: the queue is an ordering
 over the existing gathering state, plus `create` / `retire` actions).
 
-## 14. Changelog
+## 14. Proposal (2026-10-25): persistent rooms with drop-in [Proposed, not decided]
 
+Tom's direction from a design conversation on 2026-10-25, written up so the rules can be argued
+and numbered. Nothing here is built and nothing above is superseded yet. If adopted it replaces
+the launch lines (L16–L28, L31), revisits L1, L9, L10 and L22, and closes the special line.
+
+**The idea.** In place of lines of gathering thrones created and culled on demand, a small fixed
+set of **persistent rooms**, each a throne with a player cap, running rounds back to back. Players
+drop in and out; anyone arriving after a round has started joins it as a **pirate**. A round still
+lasts at most 20 minutes and ends on the overthrow or the timer, and the room starts its next
+round either way. Between rounds the finished round **plays backwards** behind the lobby (§14.1,
+§14.3). Tom's reasons: theme (a standing court ruled by a Hegemon, not a queue) and a population
+that consolidates as it grows. About 200 concurrent players at this stage would be a success, and
+needing more rooms then is a problem of success; the real risk is a slow start while the population
+is small.
+
+### 14.0 Proposed rules
+
+| #   | Proposal                                                                                                                                                                                                                                                                                                                                                             |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| L32 | **Fixed rooms.** Four at launch: **two FFA, two team, no special.** Each room is a throne as today (name, seat, holder, reign, the winner's window and pick); only the scheduling around it changes. The count is config; rooms are added when demand asks (Q5 below).                                                                                               |
+| L33 | **Cap of 50 humans per room**, or the map's capacity if lower. Lords and Barons do not count against it.                                                                                                                                                                                                                                                             |
+| L34 | **Two humans to start, a one-minute countdown**, immediate when full. A dip below two holds the countdown as today (L10). Replaces the two-minute countdown.                                                                                                                                                                                                         |
+| L35 | **A room starts its next round as soon as one ends**, however early (an overthrow at minute 6 is followed by the intermission and the next lobby at once). Rooms therefore drift out of step and a fresh start cannot be promised to a newcomer; drop-in (L36) is the answer to the wait.                                                                            |
+| L36 | **Drop-in as a pirate.** A player who joins a room whose round is running enters it as a pirate, never as a territorial challenger, and from then on follows the piracy rules (PR1–PR18: raiding, the landing, the return as a small challenger). Piracy is therefore always on in public rooms.                                                                     |
+| L37 | **Team rooms balance latecomers.** With a fixed team count, a newcomer joins the team with the fewest players; an imbalance of one is accepted. In Duos, Trios or Quads, latecomers form a new team, which later arrivals fill to the split's size before another is formed. A pirate keeps their team (Piracy §4 already: they may not land on a teammate's coast). |
+| L38 | **Steering.** The home page's main button puts a player in, in order of preference: a gathering room that already has humans; a running room under its cap, as a pirate; an empty room. The lobby browser still lists every room, with Watch on a running round.                                                                                                     |
+| L39 | **An empty room stands still.** With no humans, no clock runs and nothing is simulated: the room waits in its lobby with its seat and its pick. A running round whose last human leaves ends void (seat open, reign 0, as §3.2) and the room gathers again; in the fiction, the Hegemon turns back an empty galaxy.                                                  |
+| L40 | **The winner's map must fit the room.** The picker offers only maps whose capacity holds the humans in the room when the window opens. (The alternative, the overflow dropping in as pirates on a smaller map, is Q4.)                                                                                                                                               |
+| L41 | **The intermission is the rewind.** When a round ends, the finished galaxy plays backwards to its first tick behind the lobby, which can be minimised to watch, then dissolves into the next map. The winner's 30-second window (L4) runs during it. Players who lacked the round's history (arrived during the intermission) see a generic transition.              |
+
+### 14.1 The lore: the Hegemon turns back time
+
+The Hegemon rules the galaxy by reversing the flow of time: at the end of each cycle the galaxy is
+reset to its state at the start of the reign, twenty minutes before. The fiction then explains the
+round loop:
+
+- **Why every round resets** the galaxy: the Hegemon resets it.
+- **Why the timer favours the throne** (R4): survive the cycle and time turns back with the
+  Hegemon still on top.
+- **Why the slayer is the next Hegemon** (R3): whoever brings the throne down seizes the power to
+  turn back time.
+- **Why the map changes:** the new Hegemon chooses which galaxy, or which age, to restore (the
+  winner's map pick, L4 and L40).
+- **Why latecomers arrive as pirates:** they fast-forward into a present already divided, with no
+  place in it but deep space. The catch-up replay a late joiner already runs (§14.3) is that
+  fast-forward on screen.
+
+The rewind (L41) shows the reset happening. Its last frame, tick 0, is an empty galaxy of neutral
+nebulae, a natural point to cross into whatever galaxy the new Hegemon chose.
+
+### 14.2 What it costs
+
+**The server: close to nothing.** The server never simulates; every client runs the simulation
+and the server collects intents and sends one turn every 100 ms (`ServerEnv.turnIntervalMs`).
+A running room costs:
+
+- **CPU:** one small turn encoded ten times a second and the same bytes sent to everyone in the
+  room.
+- **Memory:** the round's turns, kept so late joiners can catch up (`GameServer.turns`): 12,000
+  mostly empty turns for a full round, a few MB at worst.
+- **Bandwidth:** roughly a few KB/s per connected player, so 200 players is well under 1 MB/s
+  outbound, plus a burst of a few hundred KB to each late joiner.
+
+An empty room costs nothing at all under L39. 200 concurrent players is light work for a lockstep
+relay.
+
+**The clients carry the load.** Each of 50 players simulates all 50, so older phones are the limit,
+not the server. That is within what the engine already runs for OpenFront's public games. The
+other client cost is the late joiner's catch-up: a drop-in at minute 18 replays 18 minutes of
+turns before playing (Q1).
+
+### 14.3 The rewind, technically
+
+The simulation cannot run backwards: a tick destroys information (troops lost, a tile's previous
+owner), so many states lead to the same next state. The rewind needs only the picture:
+
+- **Record.** During the round the client keeps a **keyframe of tile ownership** every few seconds
+  of game time, compressed (ownership is long runs). A few hundred keyframes for a full round, a
+  few MB.
+- **Play back.** After the round the renderer draws the keyframes in reverse through the same
+  per-tile owner texture it already draws territory from, dissolving between them. At about 40×
+  (20 minutes in 30 seconds) a few seconds between keyframes reads as continuous.
+- **Territory first.** Empires shrinking back to their spawns needs territory alone. Fleets flying
+  backwards and blasts un-exploding are a second pass.
+- **The renderer stays alive** after the round instead of freezing on the final frame, with the
+  lobby as an overlay above it.
+- **Late joiners have the history** because their catch-up replay passes through every tick, so
+  they record keyframes on the way. Only a player arriving during the intermission has none (L41).
+
+### 14.4 Engine work
+
+- **Scheduling (server).** `ThroneRegistry` keeps the throne state machine (§3.2) but drops the
+  lines, the floor and the cull: a fixed set of rooms by type, each with its own countdown (L34).
+  The special line retires; `ThroneModifiers` stays for a later special room.
+- **Room lifetime (server).** Today a started game with nobody connected is reaped after about 30 s
+  (`GameServer.phase()`). Under L39 a running round with no humans ends void and the room's next
+  lobby waits idle; the registry already outlives its games, so this is mostly the void path.
+- **Drop-in as a pirate (core).** Piracy today begins from an eliminated challenger
+  (`embrace_piracy`); a newcomer has no player in the simulation. A new intent and execution create
+  the player mid-round and put them straight into a corsair, with tests. The server's side of a
+  late join exists: Watch already joins a running round and the client catches up by replay; what
+  changes is that the joiner is a player, not a spectator.
+- **Team assignment mid-round (core).** Teams are fixed at round start today
+  (`GameImpl.populateTeams`). L37's smallest-team rule is a small addition; forming a new team
+  mid-round for Duos, Trios and Quads is larger (a new team, its colour, its place in the HUD). The
+  win check is unaffected: only the throne ends a round.
+- **The map picker (client and master)** filters by the room's population (L40) and the master
+  validates it.
+- **Client.** The steering button (L38), drop-in from the lobby browser, the keyframe recorder and
+  the reversed playback (§14.3), the minimisable intermission lobby.
+
+### 14.5 Open questions
+
+- **Q1 — Catch-up time.** How long a phone takes to replay 18 minutes of a large map before a
+  drop-in can play. To measure first (headless replay timing in the `HegemonSim` style); if it is
+  long, the joiner watches a fast-forward, which the lore welcomes, but it has a ceiling.
+- **Q2 — An early challenger window?** Tom's preference is that latecomers always start as pirates.
+  Whether the first minute or two after launch should still seat a newcomer as a challenger.
+- **Q3 — Rewind length.** A fixed length (about 30 s) at whatever speed the round's length needs,
+  or a length that scales with the round.
+- **Q4 — The overflow (L40).** Whether the winner may pick a map too small for the room, with the
+  overflow dropping in as pirates.
+- **Q5 — Adding rooms.** The rule for opening a fifth room (e.g. every room of a type above 75 % of
+  its cap) and retiring it (empty past a grace, as L20).
+- **Q6 — Low-population scattering.** With few players the rooms can still split them (six players,
+  three rooms of two). L38's steering is the answer to judge in play; the minimum (two humans, L34)
+  stays the knob.
+- **Q7 — The death screen (L31).** Under rooms the dead player's choices are piracy, spectating, or
+  joining another room's gathering lobby.
+
+## 15. Changelog
+
+- **2026-10-25, special line off** — The special throne line is closed for now
+  (`docs/DarkStar-Rework.md` RW0): its floor is 0 (`throneRegistryFromEnv`), so no special throne
+  opens and the lobby browser hides its pane and card (L29). The code stays for later.
+- **2026-10-25** — **Proposal: persistent rooms with drop-in, and the rewind** (§14, proposed, not
+  decided). Tom's direction: four fixed rooms (two FFA, two team, no special), 50 humans each, two
+  to start with a one-minute countdown, immediate when full; rooms restart when a round ends;
+  latecomers drop in as pirates, team rooms balancing them; the intermission plays the finished
+  round backwards, with the lore of a Hegemon who turns back time. Numbered L32–L41 with open
+  questions Q1–Q7; nothing above is superseded until Tom decides.
 - **2026-10-17** â **L31 amended for piracy** (Â§10.7): the death screen's fourth action,
   _Embrace piracy_, recorded (the Piracy doc's slice D).
 - **2026-10-12** — **The dead may join the head of the line** (L31, §10.7): the "You died"

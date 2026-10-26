@@ -4,6 +4,7 @@ import {
   Game,
   GameMode,
   Gold,
+  MAX_UPGRADE_AMOUNT,
   Player,
   PlayerType,
   Structures,
@@ -178,6 +179,24 @@ const DEFENSE_POST_RATIO_PER_POST = 0.4;
 // Reusable neighbor buffer for hot loops; the simulation is single-threaded.
 const NEIGHBOR_SCRATCH: TileRef[] = [0, 0, 0, 0];
 
+/**
+ * TI10: what a Lord keeps aside for the building it orders under a tithe ring
+ * while it sizes its upgrades (no building it orders costs more).
+ */
+const TITHE_BUILD_ALLOWANCE = 1_000_000n;
+
+/** The buildings a Lord owns one of each before it shields a post (Q16). */
+const SHIELD_PREREQUISITES: readonly UnitType[] = [
+  UnitType.City,
+  UnitType.Factory,
+  UnitType.Port,
+  UnitType.DefensePost,
+  UnitType.Stargate,
+];
+
+/** The engine's atom bomb outer radius, which structure spacing was tuned to. */
+const ATOM_BOMB_SPACING = 30;
+
 export class NationStructureBehavior {
   private reachableStationsCache: Array<{
     tile: TileRef;
@@ -191,6 +210,10 @@ export class NationStructureBehavior {
   private builtCrowdedMapFirstStructure = false;
   private _hasHighStartingGold: boolean | null = null;
   private _postSaveUpStartTick: number | null = null;
+  // TI10: set while spending down under a tithe ring (savings suspended), and
+  // the tick of the last order placed that way.
+  private titheSpending = false;
+  private lastTitheOrderTick: number | null = null;
 
   constructor(
     private random: PseudoRandom,
@@ -236,6 +259,124 @@ export class NationStructureBehavior {
       this.placementsCount++;
     }
     return built;
+  }
+
+  /**
+   * TI10: a tithe ring on our nebula. Before it lands, spend everything above
+   * the reserve: a building in the usual order at its real price (the
+   * warhead savings suspended), and in the same breath the rest in levels of
+   * our best upgradable buildings, sized to stop at the reserve with room
+   * left for the building (none costs more than TITHE_BUILD_ALLOWANCE). One
+   * round of orders every two ticks, so the last round's payments are in
+   * before the next is sized. Barons do not react (they have no structure
+   * behaviour). Returns whether it ordered.
+   */
+  spendBeforeTithe(): boolean {
+    const game = this.game;
+    const tithe = game.titheInFlight();
+    if (tithe === null || !tithe.touches(this.player)) return false;
+    const reserve = game.config().titheConfig().reserve;
+    if (this.player.gold() <= reserve) return false;
+    const ticks = game.ticks();
+    if (
+      this.lastTitheOrderTick !== null &&
+      ticks - this.lastTitheOrderTick < 2
+    ) {
+      return false;
+    }
+
+    this.titheSpending = true;
+    let built: boolean;
+    try {
+      built = this.doHandleStructures();
+    } finally {
+      this.titheSpending = false;
+    }
+    if (built) {
+      this.lastStructureTick = ticks;
+      this.placementsCount++;
+    }
+    const upgraded = this.upgradeDownTo(
+      built ? reserve + TITHE_BUILD_ALLOWANCE : reserve,
+    );
+    if (built || upgraded) this.lastTitheOrderTick = ticks;
+    return built || upgraded;
+  }
+
+  // As many levels as fit above the reserve, on our best upgradable
+  // building: Population Centers first, then the rest.
+  private upgradeDownTo(reserve: Gold): boolean {
+    const budget = this.player.gold() - reserve;
+    for (const types of [
+      [UnitType.City],
+      [UnitType.Factory, UnitType.Port, UnitType.Stargate],
+    ]) {
+      const unit = this.findBestStructureToUpgrade(this.player.units(types));
+      if (unit === null) continue;
+      const info = this.game.config().unitInfo(unit.type());
+      let total = 0n;
+      let levels = 0;
+      while (levels < MAX_UPGRADE_AMOUNT) {
+        const next = info.cost(this.game, this.player, levels);
+        if (total + next > budget) break;
+        total += next;
+        levels++;
+      }
+      if (levels === 0) continue;
+      this.game.addExecution(
+        new UpgradeStructureExecution(this.player, unit.id(), levels),
+      );
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Under a Dark Star: once a Lord owns at least one of every other building
+   * (Population Center, Industrial Zone, Spaceport, Defense Post, Stargate),
+   * it wants one Shield Array (Tom, 2026-10-25, Q16), on the post whose
+   * shield would cover the most of its buildings. One only.
+   */
+  private maybeShieldAPost(): boolean {
+    const config = this.game.config();
+    if (
+      !config.hegemonConfig().enabled ||
+      config.isUnitDisabled(UnitType.ShieldArray) ||
+      this.player.units(UnitType.ShieldArray).length > 0
+    ) {
+      return false;
+    }
+    for (const type of SHIELD_PREREQUISITES) {
+      if (config.isUnitDisabled(type)) continue;
+      if (this.player.units(type).length === 0) return false;
+    }
+    if (this.player.gold() < this.cost(UnitType.ShieldArray)) return false;
+
+    const r2 = config.shieldArrayRadius() * config.shieldArrayRadius();
+    const structures = this.player.units(Structures.types);
+    let best: Unit | null = null;
+    let bestCovered = -1;
+    for (const post of this.player.units(UnitType.DefensePost)) {
+      if (post.isUnderConstruction()) continue;
+      let covered = 0;
+      for (const unit of structures) {
+        if (this.game.euclideanDistSquared(post.tile(), unit.tile()) <= r2) {
+          covered += unit.level();
+        }
+      }
+      if (covered > bestCovered) {
+        best = post;
+        bestCovered = covered;
+      }
+    }
+    if (best === null) return false;
+    if (this.player.canBuild(UnitType.ShieldArray, best.tile()) === false) {
+      return false;
+    }
+    this.game.addExecution(
+      new ConstructionExecution(this.player, UnitType.ShieldArray, best.tile()),
+    );
+    return true;
   }
 
   /**
@@ -596,6 +737,10 @@ export class NationStructureBehavior {
       return true;
     }
 
+    if (this.maybeShieldAPost()) {
+      return true;
+    }
+
     // Build order for non-city structures (priority order)
     const buildOrder: UnitType[] = [
       UnitType.Port,
@@ -777,6 +922,7 @@ export class NationStructureBehavior {
    */
   private getPerceivedCost(type: UnitType): Gold {
     const realCost = this.cost(type);
+    if (this.titheSpending) return realCost;
 
     const saveUpTarget = this.getSaveUpTarget();
     if (saveUpTarget === 0n || this.player.gold() >= saveUpTarget) {
@@ -814,8 +960,12 @@ export class NationStructureBehavior {
     }
 
     // Save up a limited amount in team games, synced with NationNukeBehavior
-    // Saving up for a MIRV is not relevant
-    if (this.game.config().gameConfig().gameMode === GameMode.Team) {
+    // Saving up for a MIRV is not relevant. Under a Dark Star too: one 5M
+    // warhead, not five, or Lords never fire at all (Tom, 2026-10-25, Q15).
+    if (
+      this.game.config().gameConfig().gameMode === GameMode.Team ||
+      config.hegemonConfig().enabled
+    ) {
       return this.cost(UnitType.HydrogenBomb);
     }
 
@@ -1650,14 +1800,16 @@ export class NationStructureBehavior {
     };
   }
 
-  /** Shared spacing constants derived from atom bomb range. */
+  /**
+   * Shared spacing constants derived from the engine's atom bomb range (30).
+   * Fixed: under a Dark Star the atom bomb is the 10-tile Antimatter Reaction,
+   * and spacing structures against it would only crowd them together.
+   */
   private spacingConstants(): {
     borderSpacing: number;
     structureSpacing: number;
   } {
-    const borderSpacing = this.game
-      .config()
-      .nukeMagnitudes(UnitType.AtomBomb).outer;
+    const borderSpacing = ATOM_BOMB_SPACING;
     return { borderSpacing, structureSpacing: borderSpacing * 2 };
   }
 }

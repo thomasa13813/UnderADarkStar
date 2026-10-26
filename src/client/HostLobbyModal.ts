@@ -575,10 +575,8 @@ export class HostLobbyModal extends BaseModal {
                     labelKey: "host_modal.anonymous_players",
                     checked: this.anonymizeNames,
                   },
-                  {
-                    labelKey: "game_settings.water_nukes",
-                    checked: this.waterNukes,
-                  },
+                  // No Void missiles toggle: under a Dark Star whether a
+                  // warhead erases is its nature (docs/DarkStar-Rework.md WH5).
                   {
                     labelKey: "game_settings.piracy",
                     descriptionKey: "game_settings.piracy_desc",

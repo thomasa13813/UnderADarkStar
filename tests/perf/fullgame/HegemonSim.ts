@@ -11,7 +11,7 @@
  *                                             [--loss 100] [--slow 100] [--ceiling 100]
  *                                             [--set key=value,...] [--human]
  *                                             [--difficulty easy|medium|hard|impossible]
- *                                             [--teams N]
+ *                                             [--teams N] [--no-tithe]
  *
  * Troop figures are the sim's; the HUD shows them divided by 10.
  */
@@ -129,6 +129,14 @@ async function main(): Promise<void> {
       shorthand("ceiling", "troopCeilingPercentOfWholeMapCap");
       return { ...d, ...set };
     }
+    // --no-tithe: the AI throne never tithes (TI9), to measure what tithes
+    // change against a round without them.
+    titheConfig() {
+      const d = super.titheConfig();
+      return process.argv.includes("--no-tithe")
+        ? { ...d, aiFirstSeconds: Number.MAX_SAFE_INTEGER }
+        : d;
+    }
   }
   const config = new SimConfig(gameConfig, null, false);
   const terrain = await loadTerrainMap(
@@ -240,6 +248,12 @@ async function main(): Promise<void> {
   // Missile launches that flagged a silo (H19): one per (silo, expiry).
   const flagsSeen = new Set<string>();
   let flaggedLaunches = 0;
+  // Tithes landed (TI1), counted by the tick each one came down.
+  let tithesLanded = 0;
+  // Challengers' warheads, by unit id (the flag count misses launches the
+  // AI throne answers within its 10-tick sample).
+  const warheadsSeen = new Map<number, UnitType>();
+  let lastTitheTick: number | null = null;
 
   // AI stargates (C4, §6.8 stage 5): every gate built or upgraded, every
   // shot and its fate (landed / turned back / joined; the pocket still held
@@ -403,6 +417,15 @@ async function main(): Promise<void> {
     lowestTiles = Math.min(lowestTiles, game.hegemonDomainTiles());
     lowestTroops = Math.min(lowestTroops, hegemon.troops());
 
+    for (const u of game.units(UnitType.AtomBomb, UnitType.HydrogenBomb)) {
+      if (u.owner() !== hegemon) warheadsSeen.set(u.id(), u.type());
+    }
+    const landedAt = game.lastTitheLandedTick();
+    if (landedAt !== null && landedAt !== lastTitheTick) {
+      lastTitheTick = landedAt;
+      tithesLanded++;
+    }
+
     // Flagged silos (H19): count each launch once.
     if (elapsed % 10 === 0) {
       for (const p of game.players()) {
@@ -522,6 +545,22 @@ async function main(): Promise<void> {
         ? ` = ${Math.round(strikeTotals.lost / strikeTotals.popped)} troops/tile`
         : "") +
       `; flagged launches ${flaggedLaunches}`,
+  );
+  // Tithes beside the shadow tax (docs/DarkStar-Rework.md TI6): what the
+  // throne earned, and how much of it the tithes brought in. The rest is
+  // the shadow tax, plus any donations it received.
+  const titheGold = game.titheCollected();
+  const fired = [...warheadsSeen.values()];
+  log(
+    `Challenger warheads: ${fired.filter((t) => t === UnitType.HydrogenBomb).length} Gamma Ray Bursts, ` +
+      `${fired.filter((t) => t === UnitType.AtomBomb).length} Antimatter Reactions`,
+  );
+  log(
+    `Shield Arrays standing at the end: ${game.units(UnitType.ShieldArray).length}`,
+  );
+  log(
+    `Throne gold: earned ${k(Number(hegemon.goldEarned()))}, tithes ${k(Number(titheGold))} (${tithesLanded} landed), ` +
+      `shadow tax and donations ${k(Number(hegemon.goldEarned() - titheGold))}`,
   );
   // Landlocked pockets: a beachhead whose territory touches no water and is
   // not the owner's mainland stands only by the tag (§6.10).

@@ -1,6 +1,6 @@
 ---
 title: The Hegemon
-description: The Hegemon rules the Dark Star - a huge troop pool and a shadow tax, but no expansion. Strikes, tyranny, punitive strikes, gifts and the AI Hegemon explained.
+description: The Hegemon rules the Dark Star - a huge troop pool and a shadow tax, but no expansion. Strikes, tithes, punitive strikes, gifts and the AI Hegemon.
 section: The throne
 order: 1
 related: overthrowing-the-hegemon, stargates-and-warheads, the-round, thrones
@@ -28,15 +28,18 @@ job is to survive the timer. Everyone else's job is to bring it down.
 
 - **Strikes:** its attack on challenger territory (below).
 - **Punitive strikes:** its answer to a warhead launch (below).
+- **Tithes:** gold taken from everyone under an aimed ring (below).
 - **Warheads,** fired from the centre of the Dark Star at the normal price, with no launcher and
-  no reload. They are kept out by [[stargates-and-warheads#shield-array|Shield Arrays]] like
-  anyone else's.
+  no reload. Its Gamma Ray Bursts are kept out by
+  [[stargates-and-warheads#shield-array|Shield Arrays]] like anyone else's; its Antimatter
+  Reactions go through, like anyone else's.
 - **Destroyers** in the moat around the Dark Star, which defend it.
 - **Gifts:** the Hegemon may build or upgrade any challenger building on any challenger's
   nebula, paying from its own gold. The building belongs to the host from the moment it is
   placed and cannot be refused. Gifts let the throne pick favourites, and a gift counts as the
   host's own build, so their next building costs them more.
-- **Troop donations** to any challenger.
+- **Donations** of troops or gold to any challenger, reachable from anywhere. Its handshake (the
+  ally slot) holds **Gift**, **Donate troops** and **Donate gold**.
 
 ## Strikes
 
@@ -79,8 +82,8 @@ The Hegemon can therefore never eliminate anyone. It can only cut the strong dow
 Launching a warhead flags the launching Stargate for {{flag}} seconds. The Hegemon may answer by
 clicking the gate:
 
-- **The levy.** Every living challenger, the launcher included, is levied {{levyN}}% (Nuclear) or
-  {{levyA}}% (Antimatter) of the troops they have at home.
+- **The levy.** Every living challenger, the launcher included, is levied {{levy}}% of the troops
+  they have at home, whichever warhead was fired.
 - **The strike.** The levy lands on the gate as a strike that captures it and razes everything
   within {{pRadius}} tiles. There is no tyranny penalty and no recall.
 - **The pop.** When nothing in reach is left, or the gate's owner has cancelled it, the strike
@@ -88,6 +91,29 @@ clicking the gate:
 
 A player already under a punitive strike cannot be flagged again until it ends. Every warhead a
 challenger fires is a gamble that the whole galaxy pays for.
+
+## Tithes
+
+The Hegemon may aim a **tithe** at any tile outside the Dark Star, from its Stargate menu (the
+attack slot of the radial menu).
+
+- **The flight.** The tithe flies from the centre of the Dark Star on a strike's arc, with a
+  **ring of {{titheRadius}} tiles** drawn on the aim tile the whole way, so everyone can see where
+  it will land. The throne hears its launch, and so does every player the ring touches.
+- **The bill.** When it lands, every challenger (players, Lords and Barons alike) who owns **at
+  least one tile within {{titheRadius}} tiles** of the landing pays the Hegemon **all of its gold
+  above {{titheReserve}}**. A player at or below {{titheReserve}} pays nothing.
+- **Reckoned at landing.** What you hold when it comes down is what counts. See the ring and spend
+  your gold, or give it away to anyone your Stargates reach, and you pay nothing. That is the
+  point: gold is for spending, not hoarding.
+- **Shields do not stop it.** A Shield Array's dome keeps out Gamma Ray Bursts, not tithes.
+- **One at a time.** Only one tithe may be in flight; the next may be launched {{titheCooldown}}
+  seconds after the last one lands. The menu shows the wait, who the ring would take from right
+  now, and how much.
+- **On top of the shadow tax.** Tithes are extra income; the {{tax}}% shadow tax still runs.
+
+The reserve is meant to be low: at {{titheReserve}} no one can quietly save up for a Shield Array or
+a warhead under the throne's eye.
 
 ## The AI Hegemon
 
@@ -100,6 +126,8 @@ When no human holds the throne, an AI plays it. The AI Hegemon:
   members count together, and the team's strongest member is struck. It aims at that challenger's
   highest-level Population Center;
 - punishes every flagged Stargate launch, except from very small players;
+- tithes once a minute from the round's second minute ({{titheAiFirst}} seconds in), whenever
+  some challenger holds more than {{titheReserve}}, aimed at the richest of them;
 - once an invader holds {{laststand}}% of the disc, sends everything above a {{reserve}}% reserve
   after them until they are evicted.
 
@@ -109,7 +137,10 @@ When no human holds the throne, an AI plays it. The AI Hegemon:
   keep the biggest challengers from snowballing.
 - Strikes against small players are ruinous because of tyranny. Aim at the strong.
 - The invasion slot admits one challenger at a time. A stalled invader is hit by your whole
-  troop income automatically (see [[overthrowing-the-hegemon]]), and anyone may donate troops to
-  the throne, so the challengers who are not invading may well help you.
+  troop income automatically (see [[overthrowing-the-hegemon]]), and anyone whose Stargate reaches
+  the Dark Star may donate troops to the throne, so the challengers who are not invading may
+  well help you. They may feed the invader through their gates too.
 - Gifts can build up a weak challenger as a rival to a strong one.
 - Answer warhead launches. A punitive strike costs every challenger troops and wipes out the gate.
+- Tithe the hoarders. Aim where the rich crowd together, and watch them scramble to spend.
+  A player who cannot keep {{titheReserve}} cannot save for a warhead.

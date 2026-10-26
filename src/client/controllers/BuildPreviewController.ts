@@ -476,11 +476,18 @@ export class BuildPreviewController implements Controller {
 
     const u = this.ghostUnit.buildableUnit;
 
-    // Upgrade-target tile — only when upgrading an existing unit.
+    // Upgrade-target tile — when upgrading an existing unit, or when a
+    // shield array would go onto the defense post it upgrades (SH1): that
+    // post is highlighted and the shield's ring sits on it.
     let upgradeTargetTile: number | null = null;
     if (u.canUpgrade !== false) {
       upgradeTargetTile = this.game.unit(u.canUpgrade)?.tile() ?? null;
     }
+    const shieldedPost =
+      u.type === UnitType.ShieldArray && u.canBuild !== false
+        ? u.canBuild
+        : null;
+    if (shieldedPost !== null) upgradeTargetTile = shieldedPost;
 
     // Range circle: SAM placement preview shows targetable radius; nuke
     // previews show the outer blast radius at the target tile.
@@ -512,11 +519,7 @@ export class BuildPreviewController implements Controller {
     }
     let radiusTileX = this.game.x(tileRef);
     let radiusTileY = this.game.y(tileRef);
-    if (
-      rangeRadius > 0 &&
-      u.canUpgrade !== false &&
-      upgradeTargetTile !== null
-    ) {
+    if (rangeRadius > 0 && upgradeTargetTile !== null) {
       radiusTileX = this.game.x(upgradeTargetTile);
       radiusTileY = this.game.y(upgradeTargetTile);
     }
@@ -534,7 +537,7 @@ export class BuildPreviewController implements Controller {
       radiusTileX,
       radiusTileY,
       canBuild: u.canBuild !== false,
-      canUpgrade: u.canUpgrade !== false,
+      canUpgrade: u.canUpgrade !== false || shieldedPost !== null,
       cost: Number(cost),
       multiplier: multiplier,
       showCost: this.userSettings.cursorCostLabel(),

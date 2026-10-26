@@ -197,6 +197,8 @@ export class SoundEffectController implements Controller {
    * third player across the map (Tom, 2026-10-04).
    */
   private handleProjectile(unit: UnitView): void {
+    // A tithe is heard at launch only (onTitheLaunch).
+    if (unit.isTithe()) return;
     if (unit.isActive()) {
       this.shotDefender.set(unit.id(), this.ownerSmallID(unit.targetTile()));
       return;
@@ -240,7 +242,33 @@ export class SoundEffectController implements Controller {
     }
   }
 
+  /**
+   * A tithe leaving the Dark Star (docs/DarkStar-Rework.md §2.2, S8): the
+   * throne hears its own launch, and every player whose nebula the ring
+   * touches hears the warning. Nobody else.
+   */
+  private onTitheLaunch(unit: UnitView): void {
+    const me = this.game.myPlayer();
+    const target = unit.targetTile();
+    if (me === null || target === undefined) return;
+    if (unit.owner() === me) {
+      this.emit("tithe");
+      return;
+    }
+    const mine = me.smallID();
+    const touched = this.game.circleSearch(
+      target,
+      this.game.config().titheConfig().radius,
+      (tile) => this.game.ownerID(tile) === mine,
+    );
+    if (touched.size > 0) this.emit("tithe");
+  }
+
   private onProjectileLaunch(unit: UnitView): void {
+    if (unit.isTithe()) {
+      this.onTitheLaunch(unit);
+      return;
+    }
     const defender = this.ownerSmallID(unit.targetTile());
     this.shotDefender.set(unit.id(), defender);
     if (this.involvesMe(unit, defender)) this.emit("launch");

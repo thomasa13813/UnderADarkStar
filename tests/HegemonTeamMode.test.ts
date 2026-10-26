@@ -8,6 +8,7 @@ import {
   Player,
   PlayerInfo,
   PlayerType,
+  UnitType,
 } from "../src/core/game/Game";
 import { TileRef } from "../src/core/game/GameMap";
 import { setup } from "./util/Setup";
@@ -157,25 +158,38 @@ describe("A team game under a Dark Star (T5)", () => {
       settle(game, game.player("d"), 3);
     });
 
-    test("teammates donate to each other as the engine has it", () => {
+    // A finished stargate on the player's one tile (GN1).
+    const gate = (p: Player) =>
+      p.buildUnit(UnitType.Stargate, Array.from(p.tiles())[0], {});
+
+    test("teammates need a gate's reach too, and anyone in reach may be supplied (GN1)", () => {
       expect(a.isOnSameTeam(b)).toBe(true);
       expect(a.isOnSameTeam(c)).toBe(false);
+      expect(a.canDonateTroops(b)).toBe(false);
+      expect(a.canDonateGold(b)).toBe(false);
+      gate(a);
+      expect(a.inGateReach(b)).toBe(true);
       expect(a.canDonateTroops(b)).toBe(true);
       expect(a.canDonateGold(b)).toBe(true);
-      expect(a.canDonateTroops(c)).toBe(false);
+      // No team or alliance needed: reach is the only test.
+      expect(a.canDonateTroops(c)).toBe(a.inGateReach(c));
     });
 
-    test("anyone reinforces the throne, the throne reinforces anyone, gold stays closed", () => {
+    test("a gate reaching the Dark Star supplies the throne; the throne supplies anyone (GN4, GN5)", () => {
+      gate(a);
+      gate(c);
       const max = game.config().maxTroops(hegemon);
       expect(hegemon.troops()).toBe(max);
       expect(a.canDonateTroops(hegemon)).toBe(false);
       hegemon.setTroops(max - 1);
       expect(a.canDonateTroops(hegemon)).toBe(true);
       expect(c.canDonateTroops(hegemon)).toBe(true);
+      expect(b.canDonateTroops(hegemon)).toBe(false);
       expect(hegemon.canDonateTroops(a)).toBe(true);
       expect(hegemon.canDonateTroops(c)).toBe(true);
-      expect(hegemon.canDonateGold(a)).toBe(false);
-      expect(a.canDonateGold(hegemon)).toBe(false);
+      expect(hegemon.canDonateGold(b)).toBe(true);
+      expect(a.canDonateGold(hegemon)).toBe(true);
+      expect(b.canDonateGold(hegemon)).toBe(false);
     });
 
     test("the throne allies with no one", () => {

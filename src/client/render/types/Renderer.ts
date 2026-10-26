@@ -140,6 +140,9 @@ export interface UnitState {
   // states.
   punitiveWarhead?: number | null;
   punitiveExpiresTick?: number | null;
+  // Projectiles only: the throne's tithe (TI1), telegraphed with its ring.
+  // Optional: test fixtures build partial states.
+  tithe?: boolean;
 }
 
 /** Minimal dead-unit data needed by the FX pass. */

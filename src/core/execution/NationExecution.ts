@@ -182,6 +182,10 @@ export class NationExecution implements Execution {
       return;
     }
 
+    // TI10: a tithe ring on our nebula — spend down before it lands, every
+    // tick it allows, whatever else this tick holds.
+    this.structureBehavior.spendBeforeTithe();
+
     if (ticks % this.attackRate !== this.attackTick) {
       // Call handleStructures twice between regular attack ticks (at 1/3 and 2/3 of the interval)
       // Otherwise it is possible that we earn more gold than we can spend

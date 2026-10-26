@@ -301,21 +301,37 @@ export const STARGATE_DEFAULTS = {
 };
 
 // Shield arrays (C5 in docs/DarkStar-Design.md, decided 2026-09-28, revised
-// 2026-09-29): a challenger structure whose perimeter no missile can harm the
-// inside of. It intercepts nothing and refuses no launch — a warhead lands as
-// usual and the blast is simply kept off the tiles inside. The throne's
-// missiles are kept out like anyone else's; strikes and gate shots (troops,
-// not missiles) pass through.
+// 2026-09-29; SH1-SH4 in docs/DarkStar-Rework.md, 2026-10-25): built only on
+// a defense post, which it upgrades into a shielded post. Its perimeter no
+// Gamma Ray Burst can harm the inside of. It intercepts nothing and refuses
+// no launch — a warhead lands as usual and the blast is simply kept off the
+// tiles inside. The throne's missiles are kept out like anyone else's; the
+// Antimatter Reaction goes through (WH2), and so do strikes and gate shots
+// (troops, not missiles) and tithes.
 export const SHIELD_ARRAY_DEFAULTS = {
-  // The protected radius in tiles: half the range of the level-1 SAM it
-  // replaces (70) was the first cap (decided 2026-09-28); raised to 39 and
-  // then an even 40 on 2026-10-12, Tom finding 35 a touch too small.
-  // A single level, so upgrades buy nothing.
-  radius: 40,
+  // The protected radius in tiles: the Gamma Ray Burst's outer radius
+  // (nukeMagnitudes, HydrogenBomb), so a burst aimed at the post does
+  // nothing at all (SH3, 2026-10-25; 40 before). A single level.
+  radius: 100,
   // Lowered 2026-09-30 from the 5M baseline for a zone nothing short of
   // conquest can clear; F21 keeps it open to tuning.
   costGold: 2_000_000,
   constructionSeconds: 10,
+};
+
+// Tithes (docs/DarkStar-Rework.md TI1-TI11, decided 2026-10-25): the throne
+// aims a tithe at any tile outside its domain; when it lands, every
+// challenger owning a tile within `radius` of the landing pays the throne
+// all its gold above `reserve`. One in flight at a time, the next launchable
+// `cooldownSeconds` after the last lands. An AI Hegemon tithes every
+// `aiIntervalSeconds` from `aiFirstSeconds` of play, when anyone is above
+// the reserve.
+export const TITHE_DEFAULTS = {
+  radius: 50,
+  reserve: 500_000n,
+  cooldownSeconds: 10,
+  aiFirstSeconds: 60,
+  aiIntervalSeconds: 60,
 };
 
 // Fleet and army support (Tom, 2026-10-23): each level of a finished
@@ -480,17 +496,15 @@ export const HEGEMON_DEFAULTS = {
   levellerCapacityWeight: 1,
   // Punitive strikes (H19): a missile launch flags the silo for this long
   // after its latest launch; the Hegemon may answer with a strike funded by a
-  // levy on every living challenger's troops at home (a share by warhead:
-  // Nuclear = the atom bomb, Antimatter = the hydrogen bomb). The strike
-  // razes only within punitiveRadius of the silo (the Nuclear Warhead's outer
-  // blast radius), and pops when nothing within it is left. An AI Hegemon
-  // strikes every flag except on a challenger holding less than this share
-  // of the map's land (permille).
+  // levy on every living challenger's troops at home, the same share for
+  // either warhead (WH4, 2026-10-25: the Nuclear Warhead's 10% went with it).
+  // The strike razes only within punitiveRadius of the silo, and pops when
+  // nothing within it is left. An AI Hegemon strikes every flag except on a
+  // challenger holding less than this share of the map's land (permille).
   punitiveFlagSeconds: 30,
-  punitiveLevyPercentNuclear: 10,
-  punitiveLevyPercentAntimatter: 25,
-  // 34 = the Nuclear Warhead's outer blast (30) with 25% more area (Tom,
-  // 2026-09-26: the first cut felt weak).
+  punitiveLevyPercent: 25,
+  // 34 = the retired Nuclear Warhead's outer blast (30) with 25% more area
+  // (Tom, 2026-09-26: the first cut felt weak). Kept when the warhead went.
   punitiveRadius: 34,
   punitiveAIMinLandPermille: 50,
   // AI challengers (Nations) treat the throne as the objective
@@ -612,6 +626,9 @@ export class Config {
   }
   stargateCooldown(): number {
     return this.stargateConfig().cooldownSeconds * 10;
+  }
+  titheConfig(): typeof TITHE_DEFAULTS {
+    return TITHE_DEFAULTS;
   }
   shieldArrayConfig(): typeof SHIELD_ARRAY_DEFAULTS {
     return SHIELD_ARRAY_DEFAULTS;
@@ -1006,10 +1023,10 @@ export class Config {
         break;
       case UnitType.AtomBomb:
         info = {
-          // 1M under a Dark Star (decided 2026-09-26, with H19); the engine's
-          // 750k elsewhere.
+          // The Antimatter Reaction under a Dark Star, 5M like the Gamma Ray
+          // Burst (WH1, 2026-10-25); the engine's 750k elsewhere.
           cost: this.costWrapper(
-            () => (this.hegemonConfig().enabled ? 1_000_000 : 750_000),
+            () => (this.hegemonConfig().enabled ? 5_000_000 : 750_000),
             UnitType.AtomBomb,
           ),
         };
@@ -1051,9 +1068,11 @@ export class Config {
         break;
       case UnitType.DefensePost:
         info = {
+          // A shielded post is still a post for the escalating price (SH2).
           cost: this.costWrapper(
             (numUnits: number) => Math.min(250_000, (numUnits + 1) * 50_000),
             UnitType.DefensePost,
+            UnitType.ShieldArray,
           ),
           constructionDuration: this.instantBuild() ? 0 : 5 * 10,
         };
@@ -1545,11 +1564,30 @@ export class Config {
       case UnitType.MIRVWarhead:
         return { inner: 12, outer: 18 };
       case UnitType.AtomBomb:
-        return { inner: 12, outer: 30 };
+        // Under a Dark Star the Antimatter Reaction: a clean 10-tile circle
+        // (docs/DarkStar-Rework.md §3).
+        return this.hegemonConfig().enabled
+          ? { inner: 10, outer: 10 }
+          : { inner: 12, outer: 30 };
       case UnitType.HydrogenBomb:
         return { inner: 80, outer: 100 };
     }
     throw new Error(`Unknown nuke type: ${unitType}`);
+  }
+
+  // Whether a warhead's blast turns nebula into deep space. Under a Dark Star
+  // it is the warhead's nature (WH5): the Antimatter Reaction erases, the
+  // Gamma Ray Burst never does, and the Void missiles option is ignored.
+  // Elsewhere the lobby's option decides for every warhead.
+  nukeErasesGround(unitType: UnitType): boolean {
+    if (this.hegemonConfig().enabled) return unitType === UnitType.AtomBomb;
+    return this.waterNukes();
+  }
+
+  // Whether a warhead goes through shield arrays (WH2): only the Antimatter
+  // Reaction, and only under a Dark Star (the arrays exist nowhere else).
+  nukeIgnoresShields(unitType: UnitType): boolean {
+    return this.hegemonConfig().enabled && unitType === UnitType.AtomBomb;
   }
 
   nukeAllianceBreakThreshold(): number {

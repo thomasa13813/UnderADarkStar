@@ -6,6 +6,7 @@ import { HegemonExecution } from "./execution/HegemonExecution";
 import { RazeExecution } from "./execution/RazeExecution";
 import { RecomputeRailClusterExecution } from "./execution/RecomputeRailClusterExecution";
 import { SpawnTimerExecution } from "./execution/SpawnTimerExecution";
+import { TitheExecution } from "./execution/TitheExecution";
 import { WinCheckExecution } from "./execution/WinCheckExecution";
 import {
   AllPlayers,
@@ -299,6 +300,10 @@ export class GameRunner {
     if (tile !== null && player.isHegemon()) {
       const option = RazeExecution.punitiveOption(this.game, tile);
       if (option !== null) actions.punitiveStrike = option;
+      // A tithe (TI7): the cooldown, and who the ring would take from now.
+      if (this.game.isValidRef(tile) && !this.game.isInDarkStar(tile)) {
+        actions.tithe = TitheExecution.option(this.game, tile);
+      }
     }
 
     if (tile !== null && this.game.hasOwner(tile)) {
@@ -322,6 +327,7 @@ export class GameRunner {
         canBreakAlliance: player.isAlliedWith(other),
         canDonateGold: player.canDonateGold(other),
         canDonateTroops: player.canDonateTroops(other),
+        inGateReach: player.isHegemon() || player.inGateReach(other),
         canEmbargo: !player.hasEmbargoAgainst(other),
         allianceInfo: player.allianceInfo(other) ?? undefined,
       };

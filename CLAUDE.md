@@ -74,6 +74,7 @@ The game server only serves `index.html` and the WebSocket. All other assets (JS
 | `wiki/pages/`                         | The player wiki (help icon, `/wiki/`); rebuild with `npm run wiki` after any rules change  |
 | `docs/DarkStar-Lobbies.md`            | Public lobbies / thrones design (P6)                                                       |
 | `docs/DarkStar-Piracy.md`             | Piracy: eliminated challengers as raiders (draft, F22)                                     |
+| `docs/DarkStar-Rework.md`             | Tithes, GRB / Antimatter Reaction, shielded posts, gate network: plan RW0–RW5 (F25)        |
 | `docs/DarkStar-Accounts.md`           | Accounts / leaderboard design (P5)                                                         |
 | `docs/DarkStar-Launch.md`             | Ordered steps to the public release                                                        |
 | `docs/DarkStar-Services.md`           | The third-party services and how they connect                                              |

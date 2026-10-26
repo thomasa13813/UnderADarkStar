@@ -38,7 +38,8 @@ export type SoundEffect =
   | "victory"
   | "defeat"
   | "embrace"
-  | "beaching";
+  | "beaching"
+  | "tithe";
 
 export const soundEffectUrls: ReadonlyMap<SoundEffect, string> = new Map([
   ["ka-ching", assetUrl("sounds/effects/ka-ching.mp3")],
@@ -84,6 +85,9 @@ export const soundEffectUrls: ReadonlyMap<SoundEffect, string> = new Map([
   // A raid has no cue: it would repeat too often (Tom).
   ["embrace", assetUrl("sounds/effects/embrace.mp3")],
   ["beaching", assetUrl("sounds/effects/beaching.mp3")],
+  // The throne's tithe (docs/DarkStar-Rework.md §2.2): Tom's cue of
+  // 2026-10-25, at launch.
+  ["tithe", assetUrl("sounds/effects/tithe.mp3")],
 ]);
 
 export type AmbienceTrack = "city" | "factory" | "missile-silo" | "sam-silo";
@@ -154,6 +158,8 @@ const CUE_CATEGORY: Record<SoundEffect, Exclude<CueCategory, "ambience">> = {
   // pirate and the coast's owner (SoundEffectController).
   embrace: "effects",
   beaching: "effects",
+  // A tithe's launch: the throne, and every player its ring touches.
+  tithe: "effects",
 };
 
 /** Channel of a cue. A pure function of the name — call sites never choose. */

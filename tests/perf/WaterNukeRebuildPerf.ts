@@ -114,7 +114,7 @@ function queueCrater(cx: number, cy: number, radius: number): number {
       if (dx * dx + dy * dy > r2) continue;
       const tile = game.ref(x, y);
       if (game.isLand(tile) && !game.hasOwner(tile)) {
-        game.queueWaterConversion(tile);
+        game.queueWaterConversion(tile, true);
         queued++;
       }
     }

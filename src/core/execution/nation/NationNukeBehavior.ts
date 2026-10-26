@@ -84,6 +84,14 @@ export class NationNukeBehavior {
       return;
     }
 
+    // Under a Dark Star the Antimatter Reaction is the shield breaker (WH2):
+    // a Lord spends it first on a shielded post that shelters something it
+    // wants to hit, and never on erasing ground for its own sake.
+    const darkStar = config.hegemonConfig().enabled;
+    if (darkStar && this.maybeCrackShield(nukeTarget)) {
+      return;
+    }
+
     const hydroCost = this.getPerceivedNukeCost(UnitType.HydrogenBomb);
     const atomCost = this.getPerceivedNukeCost(UnitType.AtomBomb);
     let nukeType: UnitType;
@@ -93,6 +101,7 @@ export class NationNukeBehavior {
     ) {
       nukeType = UnitType.HydrogenBomb;
     } else if (
+      !darkStar &&
       !this.game.config().isUnitDisabled(UnitType.AtomBomb) &&
       (!this.isHydroNation || this.isUnderHeavyAttack()) &&
       this.player.gold() >= atomCost
@@ -684,28 +693,7 @@ export class NationNukeBehavior {
     let tileValue = targets
       .filter((unit) => dist(this.game, unit.tile()))
       .filter((unit) => !inMissileShield(this.game, shields, unit.tile()))
-      .map((unit): number => {
-        const level = unit.level();
-        switch (unit.type()) {
-          case UnitType.City:
-            return 25_000 * level;
-          case UnitType.DefensePost:
-            return 5_000 * level;
-          case UnitType.MissileSilo:
-          case UnitType.Stargate:
-            return 50_000 * level;
-          // A shield array (C5) shelters itself, so it is only ever hit
-          // when it stands inside the blast but outside every other array.
-          case UnitType.ShieldArray:
-            return 30_000;
-          case UnitType.Port:
-            return 15_000 * level;
-          case UnitType.Factory:
-            return 15_000 * level;
-          default:
-            return 0;
-        }
-      })
+      .map((unit) => this.structureValue(unit))
       .reduce((prev, cur) => prev + cur, 0);
 
     const difficulty = this.game.config().gameConfig().difficulty;
@@ -777,6 +765,84 @@ export class NationNukeBehavior {
       .reduce((prev, cur) => prev + cur, 0);
 
     return tileValue;
+  }
+
+  // What a structure is worth to a warhead.
+  private structureValue(unit: Unit): number {
+    const level = unit.level();
+    switch (unit.type()) {
+      case UnitType.City:
+        return 25_000 * level;
+      case UnitType.DefensePost:
+        return 5_000 * level;
+      case UnitType.MissileSilo:
+      case UnitType.Stargate:
+        return 50_000 * level;
+      // A shield array (C5) shelters itself, so a Gamma Ray Burst only ever
+      // hits it when it stands inside the blast but outside every other array.
+      case UnitType.ShieldArray:
+        return 30_000;
+      case UnitType.Port:
+        return 15_000 * level;
+      case UnitType.Factory:
+        return 15_000 * level;
+      default:
+        return 0;
+    }
+  }
+
+  /**
+   * Under a Dark Star: an Antimatter Reaction on the target's shielded post
+   * (WH2) when the shield shelters something worth hitting. Erasing the post's
+   * tile takes the shield with it, opening its zone to the next Gamma Ray
+   * Burst. The shield sheltering the most is cracked first; one reaction is
+   * in flight at a time, and none lands on the Lord's own or a friend's
+   * ground. Returns whether one was sent.
+   */
+  private maybeCrackShield(target: Player): boolean {
+    const config = this.game.config();
+    if (config.isUnitDisabled(UnitType.AtomBomb)) return false;
+    if (this.player.gold() < this.cost(UnitType.AtomBomb)) return false;
+    if (this.player.units(UnitType.AtomBomb).length > 0) return false;
+
+    const shelter2 = config.shieldArrayRadius() * config.shieldArrayRadius();
+    const structures = target.units(Structures.types);
+    let best: Unit | null = null;
+    let bestValue = 0;
+    for (const shield of target.units(UnitType.ShieldArray)) {
+      if (shield.isUnderConstruction()) continue;
+      const tile = shield.tile();
+      let value = 0;
+      for (const unit of structures) {
+        if (unit === shield) continue;
+        if (this.game.euclideanDistSquared(tile, unit.tile()) > shelter2) {
+          continue;
+        }
+        value += this.structureValue(unit);
+      }
+      if (value <= bestValue) continue;
+      if (!this.erasesOnlyFoes(tile)) continue;
+      if (this.player.canBuild(UnitType.AtomBomb, tile) === false) continue;
+      best = shield;
+      bestValue = value;
+    }
+    if (best === null) return false;
+    this.sendNuke(best.tile(), UnitType.AtomBomb, target);
+    return true;
+  }
+
+  // Whether an Antimatter Reaction on this tile would erase none of the
+  // Lord's own or a friend's ground.
+  private erasesOnlyFoes(tile: TileRef): boolean {
+    const radius = this.game.config().nukeMagnitudes(UnitType.AtomBomb).outer;
+    const friendly = this.game.circleSearch(tile, radius, (t: TileRef) => {
+      const owner = this.game.owner(t);
+      return (
+        owner.isPlayer() &&
+        (owner === this.player || this.player.isFriendly(owner))
+      );
+    });
+    return friendly.size === 0;
   }
 
   private sendNuke(

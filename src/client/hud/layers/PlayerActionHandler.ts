@@ -16,6 +16,7 @@ import {
   SendSpawnIntentEvent,
   SendStrikeIntentEvent,
   SendTargetPlayerIntentEvent,
+  SendTitheIntentEvent,
 } from "../../Transport";
 import { UIState } from "../../UIState";
 import { PlayerView } from "../../view";
@@ -57,6 +58,11 @@ export class PlayerActionHandler {
   // A punitive strike (H19): the galaxy's levy, no slider.
   handlePunitiveStrike(targetTile: TileRef) {
     this.eventBus.emit(new SendPunitiveStrikeIntentEvent(targetTile));
+  }
+
+  // The throne's tithe at a tile (TI1).
+  handleTithe(targetTile: TileRef) {
+    this.eventBus.emit(new SendTitheIntentEvent(targetTile));
   }
 
   // A stargate shot (C4): sized by the troop slider like a boat.

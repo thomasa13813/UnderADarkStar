@@ -16,6 +16,10 @@ Every challenger earns a steady **6,000 gold a second**. Barons earn half that. 
 base income: it takes a {{tax}}% **shadow tax** on everything the challengers earn, without
 deducting anything from them (see [[hegemon]]).
 
+**Gold is for spending.** The Hegemon's **tithe** takes everything above {{titheReserve}} from
+everyone under its ring when it lands (see [[hegemon#tithes]]). When a ring falls on your
+nebula, spend, or give your gold away to anyone your Stargates reach, before it comes down.
+
 ## Trade lanes and supply deliveries
 
 An **Industrial Zone** builds a trade network: straight **trade lanes** to Population Centers,

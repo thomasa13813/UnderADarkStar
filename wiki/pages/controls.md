@@ -30,7 +30,7 @@ These are the default keys. You can rebind them in **Settings**.
 | <kbd>Enter</kbd>                                    | Build the unit under the cursor                                       |
 | <kbd>Space</kbd>                                    | Alternate view (terrain / territories)                                |
 | <kbd>M</kbd>                                        | Toggle the coordinate grid                                            |
-| <kbd>U</kbd>                                        | Swap a Nuclear or Antimatter Warhead's arc direction                  |
+| <kbd>U</kbd>                                        | Swap a warhead's arc direction                                        |
 | <kbd>C</kbd>                                        | Center the camera on your territory                                   |
 | <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> | Move the camera                                                       |
 | <kbd>Q</kbd> / <kbd>E</kbd>                         | Zoom out / in                                                         |
@@ -50,15 +50,15 @@ These are the default keys. You can rebind them in **Settings**.
 Press a number to build the matching unit under the cursor. Each icon in the build bar shows its
 digit.
 
-| Key          | Builds                                                  |
-| ------------ | ------------------------------------------------------- |
-| <kbd>1</kbd> | [[buildings#3-1-population-center\|Population Center]]  |
-| <kbd>2</kbd> | [[buildings#3-2-industrial-zone\|Industrial Zone]]      |
-| <kbd>3</kbd> | [[buildings#3-3-spaceport\|Spaceport]]                  |
-| <kbd>4</kbd> | [[buildings#3-4-defense-post\|Defense Post]]            |
-| <kbd>5</kbd> | [[buildings#3-6-shield-array\|Shield Array]]            |
-| <kbd>6</kbd> | [[buildings#3-5-stargate\|Stargate]]                    |
-| <kbd>7</kbd> | [[armies-and-destroyers#destroyers\|Destroyer]]         |
-| <kbd>8</kbd> | [[stargates-and-warheads#warheads\|Nuclear Warhead]]    |
-| <kbd>9</kbd> | [[stargates-and-warheads#warheads\|Antimatter Warhead]] |
-| <kbd>0</kbd> | [[armies-and-destroyers#armies\|Army]]                  |
+| Key          | Builds                                                   |
+| ------------ | -------------------------------------------------------- |
+| <kbd>1</kbd> | [[buildings#3-1-population-center\|Population Center]]   |
+| <kbd>2</kbd> | [[buildings#3-2-industrial-zone\|Industrial Zone]]       |
+| <kbd>3</kbd> | [[buildings#3-3-spaceport\|Spaceport]]                   |
+| <kbd>4</kbd> | [[buildings#3-4-defense-post\|Defense Post]]             |
+| <kbd>5</kbd> | [[buildings#3-6-shield-array\|Shield Array]]             |
+| <kbd>6</kbd> | [[buildings#3-5-stargate\|Stargate]]                     |
+| <kbd>7</kbd> | [[armies-and-destroyers#destroyers\|Destroyer]]          |
+| <kbd>8</kbd> | [[stargates-and-warheads#warheads\|Antimatter Reaction]] |
+| <kbd>9</kbd> | [[stargates-and-warheads#warheads\|Gamma Ray Burst]]     |
+| <kbd>0</kbd> | [[armies-and-destroyers#armies\|Army]]                   |

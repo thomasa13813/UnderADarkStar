@@ -67,7 +67,8 @@ export type Intent =
   | LeaveSeatIntent
   | EmbracePiracyIntent
   | PirateLandIntent
-  | CounterStrikeIntent;
+  | CounterStrikeIntent
+  | TitheIntent;
 
 export type AttackIntent = z.infer<typeof AttackIntentSchema>;
 export type CancelAttackIntent = z.infer<typeof CancelAttackIntentSchema>;
@@ -76,6 +77,7 @@ export type BoatAttackIntent = z.infer<typeof BoatAttackIntentSchema>;
 export type StrikeIntent = z.infer<typeof StrikeIntentSchema>;
 export type PunitiveStrikeIntent = z.infer<typeof PunitiveStrikeIntentSchema>;
 export type CounterStrikeIntent = z.infer<typeof CounterStrikeIntentSchema>;
+export type TitheIntent = z.infer<typeof TitheIntentSchema>;
 export type GateShotIntent = z.infer<typeof GateShotIntentSchema>;
 export type GiftUnitIntent = z.infer<typeof GiftUnitIntentSchema>;
 export type EmbargoAllIntent = z.infer<typeof EmbargoAllIntentSchema>;
@@ -758,6 +760,13 @@ export const CounterStrikeIntentSchema = z.object({
   troops: zb.float({ min: 0 }),
 });
 
+// The throne's tithe (TI1): aimed at a tile outside the Dark Star, it takes
+// the gold above the reserve from every challenger under its ring on landing.
+export const TitheIntentSchema = z.object({
+  type: z.literal("tithe"),
+  tile: zb.uint(),
+});
+
 // A stargate shot (C4): troops fired from the nearest ready gate in range at
 // a tile, landing as a fleet does.
 export const GateShotIntentSchema = z.object({
@@ -971,6 +980,7 @@ export const IntentSchema = z.discriminatedUnion("type", [
   EmbracePiracyIntentSchema,
   PirateLandIntentSchema,
   CounterStrikeIntentSchema,
+  TitheIntentSchema,
 ]);
 
 // StampedIntent = Intent with server-stamped clientID (used in turns and execution)

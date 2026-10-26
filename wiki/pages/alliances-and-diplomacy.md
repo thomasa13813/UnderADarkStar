@@ -28,14 +28,26 @@ Breaking an alliance (<kbd>L</kbd>) ends it, halts trade and weakens your defenc
   an icon appears above your name and you suffer a 50% defence penalty.
 - Barons are less likely to ally with a traitor, and players will think twice.
 
-## Donations
+## Donations: the gate network
 
-- **Troops:** donate a share of your troops (your attack ratio) to an ally who is low on troops or
-  needs the extra power for an attack.
-- **Gold:** donate gold to an ally saving for a building, a Stargate or a warhead.
-- **To the throne:** anyone may donate troops to the Hegemon while its pool has room, no alliance
-  needed. While someone is invading, those troops join the counter-attack at once. Nobody may
-  donate to the invader. See [[overthrowing-the-hegemon#reinforcing-the-throne]].
+Troops and gold travel through your [[stargates-and-warheads|Stargates]]. You may send either to
+**any player who owns a tile within range of one of your finished Stargates**: no alliance is
+needed, and the range is the only test. Upgrading a gate widens your circle of clients as well as
+your reach. A transfer arrives at once and spends no gate charge.
+
+- **Where:** right-click the player and open the **handshake** (the ally slot): **Donate troops**
+  (your attack ratio's share), **Donate gold** (opens the gold dialog) and **Propose alliance**.
+  A greyed item tells you why: out of reach, on cooldown, or switched off in this game.
+- **Cooldown:** after a donation you must wait a few seconds before sending the same player
+  more.
+- **Lobby settings:** a game may switch off gold or troop donations between challengers.
+- **To the throne:** you may send the Hegemon troops or gold only if one of your gates reaches
+  the Dark Star. Troops go into its pool while it has room; while someone is invading, they join
+  the counter-attack at once. See [[overthrowing-the-hegemon#reinforcing-the-throne]].
+- **To the invader:** the player holding the Dark Star can be supplied like anyone in reach.
+- **From the throne:** the Hegemon reaches everyone, with troops and gold, whatever the lobby
+  settings say.
+- **Alliances** are not limited by range: you may propose, extend or break one from anywhere.
 
 ## Embargoes
 

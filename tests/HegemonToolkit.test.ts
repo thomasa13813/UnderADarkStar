@@ -123,6 +123,12 @@ describe("Nothing is built on the Dark Star (H2)", () => {
   });
 });
 
+// A finished stargate on the player's home ground: the gate network's reach
+// (GN1) for gold and troops. Range 180 reaches across this small map.
+function gate(player: Player) {
+  player.buildUnit(UnitType.Stargate, homeTile(player), {});
+}
+
 describe("The Hegemon donates troops to anyone (H9)", () => {
   beforeEach(() => start());
 
@@ -137,10 +143,14 @@ describe("The Hegemon donates troops to anyone (H9)", () => {
     expect(hegemon.canDonateTroops(east)).toBe(true);
   });
 
-  test("gold stays closed, and challengers among themselves are unchanged", () => {
-    expect(hegemon.canDonateGold(east)).toBe(false);
+  test("the throne sends gold to anyone; challengers need a gate (GN4, GN5)", () => {
+    expect(hegemon.canDonateGold(east)).toBe(true);
+    expect(hegemon.canDonateGold(west)).toBe(true);
     expect(east.canDonateGold(hegemon)).toBe(false);
-    // Allies only, toggle on, as the engine has it.
+    gate(east);
+    expect(east.canDonateGold(hegemon)).toBe(true);
+    // Between challengers the lobby's toggle still holds (GN11), gate or not.
+    expect(game.config().donateTroops()).toBe(false);
     expect(east.canDonateTroops(west)).toBe(false);
   });
 
@@ -157,8 +167,20 @@ describe("The Hegemon donates troops to anyone (H9)", () => {
   });
 });
 
-describe("Anyone reinforces the throne (H9)", () => {
-  beforeEach(() => start());
+describe("Anyone whose gate reaches the Dark Star reinforces the throne (H9, GN5)", () => {
+  beforeEach(async () => {
+    await start();
+    gate(east);
+    gate(west);
+  });
+
+  test("without a gate there is no reinforcement", async () => {
+    await start();
+    hegemon.setTroops(game.config().maxTroops(hegemon) - 1);
+    expect(east.canDonateTroops(hegemon)).toBe(false);
+    gate(east);
+    expect(east.canDonateTroops(hegemon)).toBe(true);
+  });
 
   // The eastern half of the domain to east, who keeps nothing beyond the moat:
   // an exhausted invader whose troop cap has collapsed (H5).

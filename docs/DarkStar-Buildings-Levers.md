@@ -15,9 +15,9 @@ All in `src/core/configuration/Config.ts` unless stated.
 | Lever                                               | Where                                                                               | Value                                                                                                                             |
 | --------------------------------------------------- | ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | Population Center, Industrial Zone, Spaceport price | `unitInfo` (`City`, `Factory`, `Port`)                                              | `min(1M, 125k × 2^n)`; Port and Factory share `n`                                                                                 |
-| Defense Post price                                  | `unitInfo` (`DefensePost`)                                                          | `min(250k, 50k × (n+1))`                                                                                                          |
+| Defense Post price                                  | `unitInfo` (`DefensePost`)                                                          | `min(250k, 50k × (n+1))`, `n` counts Shield Arrays too (shielded posts)                                                           |
 | Stargate                                            | `STARGATE_DEFAULTS`                                                                 | 500k, 10 s, range 180 +75/level, reload 5 s                                                                                       |
-| Shield Array                                        | `SHIELD_ARRAY_DEFAULTS`                                                             | 2M, 10 s, radius 40                                                                                                               |
+| Shield Array                                        | `SHIELD_ARRAY_DEFAULTS`                                                             | 2M, 10 s, radius 100 (= the Gamma Ray Burst's outer); only on an own Defense Post (`PlayerImpl.shieldedPostSpawn`)                |
 | Build times                                         | `unitInfo`                                                                          | City / Factory 20 ticks; Port / DefensePost 50; Stargate / ShieldArray 100                                                        |
 | Price count                                         | `costWrapper`                                                                       | `Σ min(unitsOwned, unitsConstructed)`; levels count; gift = `costFn(0)`                                                           |
 | Troops per center level                             | `cityTroopIncrease`                                                                 | 250,000 (25,000 shown)                                                                                                            |
@@ -35,8 +35,8 @@ All in `src/core/configuration/Config.ts` unless stated.
 | Harbour reach                                       | `harbourMaxRange`                                                                   | 250                                                                                                                               |
 | Overland freighter speed                            | `freighterLandTicksPerTile`                                                         | 2                                                                                                                                 |
 | Destroyer repair                                    | `warshipPassiveHealing*`, `warshipPortHealingBonusPerLevel`                         | 1/tick within 150 of a harbour; docked: `level` berths, `5 × level`/tick shared                                                   |
-| Warheads                                            | `unitInfo`, `nukeMagnitudes`                                                        | Nuclear 1M, radius 12/30; Antimatter 5M, radius 80/100                                                                            |
-| Punitive strike                                     | `HEGEMON_DEFAULTS` `punitive*`                                                      | flag 30 s, levy 10% / 25%, radius 34, halt 5 s, AI skips under 5% of land                                                         |
+| Warheads                                            | `unitInfo`, `nukeMagnitudes`                                                        | Antimatter Reaction (`AtomBomb`) 5M, radius 10, erases, through shields; Gamma Ray Burst (`HydrogenBomb`) 5M, 80/100              |
+| Punitive strike                                     | `HEGEMON_DEFAULTS` `punitive*`                                                      | flag 30 s, levy 25% (`punitiveLevyPercent`), radius 34, halt 5 s, AI skips under 5% of land                                       |
 | Units supported                                     | `UNIT_SUPPORT_DEFAULTS`; `PlayerImpl.unitSupport`                                   | 1 Destroyer per finished Port level, 1 Army per finished Factory level; Hegemon and corsair uncapped; nothing disbands            |
 | Army                                                | `ARMY_DEFAULTS`; `ArmyExecution.ts`                                                 | patrol 40, 1 tick/tile, shot range 40, cooldown 10 s, shot speed 3, casualties 10%; cost `min(1M, 250k × (n+1))` on its own count |
 | Lord armies                                         | `NationStructureBehavior.handleArmies`                                              | not on Easy; move armies to the largest land attack's front, deploy one if supported                                              |
@@ -98,6 +98,14 @@ Notes for Tom, not decisions.
 
 ## 3. Changelog
 
+- **2026-10-25** — The rework (`docs/DarkStar-Rework.md`, F25), on `feat/rework`. Shield Arrays go
+  only on the builder's own finished Defense Posts (`shieldedPostSpawn`), replace the post when
+  they stand (`ConstructionExecution.replacePost`), count towards the post's price, keep its
+  defence (`DefensePosts` group in the attack checks) and shield 100 tiles. Warheads: the atom
+  bomb is the Antimatter Reaction (5M, 10/10, `nukeErasesGround`, `nukeIgnoresShields`), the
+  hydrogen bomb the Gamma Ray Burst (5M, 80/100); one 25% levy. Lords: structure spacing pinned
+  at 30 (`ATOM_BOMB_SPACING`); under a tithe ring they build at real prices and bulk-upgrade
+  down to 500k (`spendBeforeTithe`). The audit's note on `punitiveRadius`'s comment is fixed.
 - **2026-10-24** — Army casualties doubled, 5% → 10% of the attack's troops per hit
   (`ARMY_DEFAULTS.casualtyPercent`; Tom: 5% felt too anemic to draw players to the unit).
 - **2026-10-23** — Army look and newsfeed (Tom).

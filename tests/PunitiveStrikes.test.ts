@@ -199,10 +199,10 @@ describe("The flag (H19)", () => {
     expect(option.siloTile).toBe(tile);
     expect(option.warhead).toBe(UnitType.AtomBomb);
     const cfg = game.config().hegemonConfig();
-    expect(option.levyPercent).toBe(cfg.punitiveLevyPercentNuclear);
+    expect(option.levyPercent).toBe(cfg.punitiveLevyPercent);
     expect(option.levyTroops).toBe(
-      Math.floor((east.troops() * cfg.punitiveLevyPercentNuclear) / 100) +
-        Math.floor((west.troops() * cfg.punitiveLevyPercentNuclear) / 100),
+      Math.floor((east.troops() * cfg.punitiveLevyPercent) / 100) +
+        Math.floor((west.troops() * cfg.punitiveLevyPercent) / 100),
     );
     punish(tile);
     expect(RazeExecution.punitiveOption(game, tile)).toBeNull();
@@ -255,7 +255,7 @@ describe("The levy and the strike (H19)", () => {
     hegemon.setTroops(ceiling);
     const eastTroops = east.troops();
     const westTroops = west.troops();
-    const pct = game.config().hegemonConfig().punitiveLevyPercentNuclear;
+    const pct = game.config().hegemonConfig().punitiveLevyPercent;
     punish(tile);
 
     const flight = game.strikesInFlight();
@@ -282,11 +282,11 @@ describe("The levy and the strike (H19)", () => {
     expect(hegemon.troops()).toBe(ceiling);
   });
 
-  test("an Antimatter flag draws the larger levy", () => {
+  test("a Gamma Ray Burst flag draws the same levy as any (WH4)", () => {
     const tile = inland(east, 1);
     buildSilo(east, tile);
     fire(east, UnitType.HydrogenBomb);
-    const pct = game.config().hegemonConfig().punitiveLevyPercentAntimatter;
+    const pct = game.config().hegemonConfig().punitiveLevyPercent;
     const expected =
       Math.floor((east.troops() * pct) / 100) +
       Math.floor((west.troops() * pct) / 100);

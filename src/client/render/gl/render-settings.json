@@ -263,7 +263,7 @@
     "conquestLifetimeMs": 2500,
     "conquestFadeIn": 0.1,
     "conquestFadeOut": 0.6,
-    "nukeRadiusAtom": 70,
+    "nukeRadiusAtom": 28,
     "nukeRadiusHydro": 160,
     "nukeRadiusMirv": 70,
     "strikeImpactRadius": 24,

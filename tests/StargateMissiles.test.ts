@@ -231,7 +231,11 @@ describe("The throne's missiles (H2, revised 2026-09-28)", () => {
 
   test("cost the same gold as anyone's", () => {
     const cost = game.config().unitInfo(UnitType.AtomBomb).cost(game, hegemon);
-    expect(cost).toBe(1_000_000n);
+    // The Antimatter Reaction, 5M like the Gamma Ray Burst (WH1).
+    expect(cost).toBe(5_000_000n);
+    expect(
+      game.config().unitInfo(UnitType.HydrogenBomb).cost(game, hegemon),
+    ).toBe(5_000_000n);
     expect(cost).toBe(
       game.config().unitInfo(UnitType.AtomBomb).cost(game, east),
     );

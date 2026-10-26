@@ -1,5 +1,5 @@
 import type { NukeTelegraphData, UnitState } from "../../types";
-import { NUKE_MAGNITUDES } from "../../types";
+import { NUKE_MAGNITUDES, TITHE_RADIUS } from "../../types";
 
 // Must match RelationMatrix.ts
 const RELATION_FRIENDLY = 1;
@@ -41,6 +41,15 @@ function classifyOwner(
  * smallID plus the relation matrix from RelationMatrix.ts; omit them in
  * replay / spectator mode to color everything as enemy.
  */
+// The ring a flight telegraphs: the warhead's blast, or for a tithe (which
+// rides a projectile) its own wider ring (TI1).
+function telegraphMagnitude(
+  u: UnitState,
+): { inner: number; outer: number } | undefined {
+  if (u.tithe) return { inner: TITHE_RADIUS, outer: TITHE_RADIUS };
+  return NUKE_MAGNITUDES[u.unitType];
+}
+
 export function extractNukeTelegraphs(
   units: ReadonlyMap<number, UnitState>,
   mapW: number,
@@ -57,7 +66,7 @@ export function extractNukeTelegraphs(
     const plan = motionPlans?.get(u.id);
     if (plan && plan.startTick > currentTick) continue;
 
-    const mag = NUKE_MAGNITUDES[u.unitType];
+    const mag = telegraphMagnitude(u);
     if (!mag) continue;
     telegraphs.push({
       x: u.targetTile % mapW,
@@ -113,7 +122,8 @@ export const BADGE_OUTER_RADIUS = 5;
 
 /**
  * Punitive-strike badges (DarkStar H19): a ring around every silo flagged by
- * a missile launch, red for a Nuclear Warhead and white for Antimatter,
+ * a missile launch, red for an Antimatter Reaction and white for a Gamma
+ * Ray Burst (the badge colours of the old Nuclear and Antimatter Warheads),
  * drawn through the telegraph pass. Seen by the Hegemon and by the silo's
  * owner only; a flag past its tick is gone whether or not the unit update
  * said so.
@@ -172,7 +182,7 @@ export function extractNukeTelegraphsFromIds(
     const plan = motionPlans?.get(u.id);
     if (plan && plan.startTick > currentTick) continue;
 
-    const mag = NUKE_MAGNITUDES[u.unitType];
+    const mag = telegraphMagnitude(u);
     if (!mag) continue;
     telegraphs.push({
       x: u.targetTile % mapW,

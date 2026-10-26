@@ -71,7 +71,7 @@ export class NukeExecution implements Execution {
     const inner2 = magnitude.inner * magnitude.inner;
     const outer2 = magnitude.outer * magnitude.outer;
 
-    if (this.mg.config().waterNukes()) {
+    if (this.mg.config().nukeErasesGround(this.nuke.type())) {
       // Smooth irregular boundary for water nukes.
       // Generate random radii at angular samples, then smooth them so the
       // boundary undulates gently instead of creating spiky flower shapes.
@@ -392,8 +392,10 @@ export class NukeExecution implements Execution {
   // The shield arrays (DarkStar C5) this warhead cannot harm the inside of:
   // any other player's, built and standing when asked. Read at launch for
   // the alliance check and again at impact, so an array raised or lost in
-  // flight counts as it stands when the blast lands.
+  // flight counts as it stands when the blast lands. The Antimatter Reaction
+  // goes through them (WH2): no zone holds it off.
   private shields(outer: number): ShieldZone[] {
+    if (this.mg.config().nukeIgnoresShields(this.nukeType)) return [];
     return missileShieldsNear(this.mg, this.player.smallID(), this.dst, outer);
   }
 
@@ -410,6 +412,7 @@ export class NukeExecution implements Execution {
     // The blast keeps its full circle; a shield array (C5) only punches a
     // hole in it. The far side of the array is still hit.
     const shields = this.shields(magnitude.outer);
+    const erase = config.nukeErasesGround(this.nukeType);
 
     // Retrieve all impacted players and the number of tiles
     const tilesPerPlayers = new Map<Player, number>();
@@ -424,9 +427,9 @@ export class NukeExecution implements Execution {
         tilesPerPlayers.set(owner, (tilesPerPlayers.get(owner) ?? 0) + 1);
       }
 
-      // Queue land tiles for batched water conversion
+      // Queue land tiles for batched water conversion (or fallout)
       if (mg.isLand(tile)) {
-        mg.queueWaterConversion(tile);
+        mg.queueWaterConversion(tile, erase);
       }
 
       // Record every tile in the blast radius for nukeable layer destruction.

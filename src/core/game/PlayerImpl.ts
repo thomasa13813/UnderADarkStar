@@ -1235,23 +1235,74 @@ export class PlayerImpl implements Player {
     this.outgoingQuickChats_.set(recipient.smallID(), this.mg.ticks());
   }
 
+  // The gate network (docs/DarkStar-Rework.md GN1-GN12): under a Dark Star a
+  // transfer needs no alliance, only reach. The throne reaches everyone
+  // (GN4); anyone else reaches a player through one of its finished
+  // stargates (GN1, GN5). Elsewhere the engine's rule stands: allies only.
+  private canTransferTo(recipient: Player): boolean {
+    if (!this.mg.config().hegemonConfig().enabled) {
+      return this.isFriendly(recipient);
+    }
+    return this.isHegemon() || this.inGateReach(recipient);
+  }
+
+  // Whether one of this player's finished stargates has some tile of the
+  // recipient's within range. The nearest tile of a territory to a point
+  // outside it lies on its border, so the border is enough. The throne is
+  // reached when a gate's range touches the Dark Star's disc (GN5).
+  inGateReach(recipient: Player): boolean {
+    const mg = this.mg;
+    const config = mg.config();
+    const gates: { x: number; y: number; r2: number }[] = [];
+    for (const gate of this.units(UnitType.Stargate)) {
+      if (!gate.isActive() || gate.isUnderConstruction()) continue;
+      const range = config.stargateRange(gate.level());
+      gates.push({
+        x: mg.x(gate.tile()),
+        y: mg.y(gate.tile()),
+        r2: range * range,
+      });
+    }
+    if (gates.length === 0) return false;
+    if (recipient.isHegemon()) {
+      const g = mg.darkStar();
+      if (g === null) return false;
+      return gates.some((gate) => {
+        const reach = Math.sqrt(gate.r2) + g.radius;
+        const dx = gate.x - g.cx;
+        const dy = gate.y - g.cy;
+        return dx * dx + dy * dy <= reach * reach;
+      });
+    }
+    for (const tile of recipient.borderTiles()) {
+      const x = mg.x(tile);
+      const y = mg.y(tile);
+      for (const gate of gates) {
+        const dx = x - gate.x;
+        const dy = y - gate.y;
+        if (dx * dx + dy * dy <= gate.r2) return true;
+      }
+    }
+    return false;
+  }
+
   canDonateGold(recipient: Player): boolean {
     if (recipient === this) {
       return false;
     }
-    // The throne neither gives nor takes gold (H9: only troop donations from
-    // the Hegemon are open); isFriendly already fails, this is the rule stated.
-    if (this.isHegemon() || recipient.isHegemon()) {
+    if (!this.isAlive() || !recipient.isAlive()) {
       return false;
     }
-    if (
-      !this.isAlive() ||
-      !recipient.isAlive() ||
-      !this.isFriendly(recipient)
-    ) {
+    // Before the rework the throne neither gave nor took gold (H9); now it
+    // sends gold to anyone and receives it through gates (GN4, GN5).
+    if (!this.canTransferTo(recipient)) {
       return false;
     }
+    // The lobby's toggle holds between challengers; the throne's transfers
+    // ignore it (GN11).
     if (
+      !this.isHegemon() &&
+      !recipient.isHegemon() &&
       recipient.type() === PlayerType.Human &&
       this.mg.config().donateGold() === false
     ) {
@@ -1278,20 +1329,24 @@ export class PlayerImpl implements Player {
       return false;
     }
     if (recipient.isHegemon()) {
-      // Anyone may reinforce the throne while its pool has room (H9): no
-      // alliance needed, the lobby's donation toggle ignored. While someone
-      // holds the Dark Star the order throws the troops straight at the
-      // invader (DonateTroopsExecution), so rivals can finish a failed
-      // invasion and clear the slot for a bid of their own.
+      // Anyone whose gate reaches the Dark Star may reinforce the throne
+      // while its pool has room (H9, GN5): no alliance needed, the lobby's
+      // donation toggle ignored. While someone holds the Dark Star the order
+      // throws the troops straight at the invader (DonateTroopsExecution),
+      // so rivals can finish a failed invasion and clear the slot for a bid
+      // of their own.
       if (recipient.troops() >= this.mg.config().maxTroops(recipient)) {
+        return false;
+      }
+      if (!this.canTransferTo(recipient)) {
         return false;
       }
     } else if (!this.isHegemon()) {
       // The Hegemon may donate troops to ANY challenger, friend or not,
-      // whatever the lobby's donation toggle says (H9, H15: the throne is the
-      // balance of power, and its pool is the price). Everyone else needs an
-      // ally.
-      if (!this.isFriendly(recipient)) {
+      // whatever the lobby's donation toggle says (H9, H15, GN4: the throne
+      // is the balance of power, and its pool is the price). Everyone else
+      // needs reach (GN1), or an ally outside a Dark Star.
+      if (!this.canTransferTo(recipient)) {
         return false;
       }
       if (
@@ -1863,11 +1918,35 @@ export class PlayerImpl implements Player {
       case UnitType.City:
       case UnitType.Factory:
       case UnitType.Stargate:
-      case UnitType.ShieldArray:
         return this.landBasedStructureSpawn(targetTile, validTiles);
+      case UnitType.ShieldArray:
+        return this.shieldedPostSpawn(targetTile);
       default:
         assertNever(unitType);
     }
+  }
+
+  // A shield array is built only on one of the player's own finished defense
+  // posts, which it replaces when it stands (SH1): the post nearest the tile,
+  // within the reach an upgrade snaps to, that no array is going up on.
+  private shieldedPostSpawn(targetTile: TileRef): TileRef | false {
+    if (this.mg.owner(targetTile) !== this) return false;
+    const upgrading = new Set(
+      this.units(UnitType.ShieldArray).map((u) => u.tile()),
+    );
+    const post = findClosestBy(
+      this.mg.nearbyUnits(
+        targetTile,
+        this.mg.config().structureMinDist(),
+        UnitType.DefensePost,
+        ({ unit }) => unit.owner() === this && !upgrading.has(unit.tile()),
+      ),
+      (entry) => entry.distSquared,
+    );
+    if (post === null || (post.unit as Unit).isMarkedForDeletion()) {
+      return false;
+    }
+    return post.unit.tile();
   }
 
   nukeSpawn(tile: TileRef, nukeType: UnitType): TileRef | false {

@@ -623,7 +623,7 @@ describe("NationStructureBehavior.sampleTilesNearFront", () => {
       isValidCoord: () => true,
       ref: () => nextRef++, // unique ref per call
       owner: () => player,
-      manhattanDist: () => 50, // within [0.75×50, 1.5×50] = [38, 75]
+      manhattanDist: () => 30, // within [0.75×30, 1.5×30] = [23, 45]
     };
     const random = new PseudoRandom(0);
     vi.spyOn(random, "randElement").mockImplementation((arr: any[]) => arr[0]);
@@ -652,7 +652,7 @@ describe("NationStructureBehavior.sampleTilesNearFront", () => {
       isValidCoord: () => true,
       ref: (x: number) => x,
       owner: () => player,
-      manhattanDist: () => 50,
+      manhattanDist: () => 30,
     };
     const random = new PseudoRandom(0);
     vi.spyOn(random, "randElement").mockImplementation((arr: any[]) => arr[0]);
@@ -678,7 +678,7 @@ describe("NationStructureBehavior.sampleTilesNearFront", () => {
       isValidCoord: () => true,
       ref: (x: number) => x,
       owner: () => player,
-      manhattanDist: () => 50,
+      manhattanDist: () => 30,
     };
     const random = new PseudoRandom(0);
     vi.spyOn(random, "randElement").mockImplementation((arr: any[]) => arr[0]);
@@ -799,7 +799,8 @@ describe("NationStructureBehavior.getAttackFrontTiles", () => {
 // ── countDefensePostsNearFront ───────────────────────────────────────────────
 
 describe("NationStructureBehavior.countDefensePostsNearFront", () => {
-  const OUTER_RANGE = 50;
+  // ATOM_BOMB_SPACING: the spacing is fixed, not read from the config.
+  const OUTER_RANGE = 30;
 
   function makeCountGame(distFn: (a: number, b: number) => number): any {
     return {
@@ -873,6 +874,7 @@ describe("NationStructureBehavior.doHandleStructures — crowded-map exception",
           difficulty: opts.difficulty ?? Difficulty.Medium,
         }),
         startingGold: () => 0n,
+        hegemonConfig: () => ({ enabled: false }),
       }),
       sharedWaterComponents: () => null, // landlocked -> Factory preferred
       nations: () => Array(400).fill({}),
@@ -917,6 +919,7 @@ describe("NationStructureBehavior.doHandleStructures — crowded-map exception",
       isUnitDisabled: () => false,
       gameConfig: () => ({ difficulty: Difficulty.Impossible }),
       startingGold: () => 10_000_000n, // above HIGH_STARTING_GOLD_THRESHOLD
+      hegemonConfig: () => ({ enabled: false }),
     });
     const behavior = makeBehavior(game, makeCrowdedPlayer());
     const spy = vi

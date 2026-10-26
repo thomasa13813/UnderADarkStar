@@ -53,11 +53,15 @@ export const STRUCTURE_TYPES: ReadonlySet<string> = new Set([
   UT_SHIELD_ARRAY,
 ]);
 
-/** The shield array's protected radius in tiles (DarkStar C5). Keep it equal
- *  to SHIELD_ARRAY_DEFAULTS.radius in src/core/configuration/Config.ts: the
- *  render types cannot import core. A blast is kept off the tiles inside; it
- *  refuses no launch. */
-export const SHIELD_ARRAY_RADIUS = 40;
+/** The shield array's protected radius in tiles (DarkStar C5, SH3: the Gamma
+ *  Ray Burst's outer radius). Keep it equal to SHIELD_ARRAY_DEFAULTS.radius
+ *  in src/core/configuration/Config.ts: the render types cannot import core.
+ *  A blast is kept off the tiles inside; it refuses no launch. */
+export const SHIELD_ARRAY_RADIUS = 100;
+
+/** The tithe's ring in tiles (TI1). Keep it equal to TITHE_DEFAULTS.radius
+ *  in src/core/configuration/Config.ts: the render types cannot import core. */
+export const TITHE_RADIUS = 50;
 
 export const NUKE_TYPES: ReadonlySet<string> = new Set([
   UT_ATOM_BOMB,
@@ -85,7 +89,8 @@ export const PROJECTILE_TELEGRAPH_RADIUS = 8;
 export const NUKE_MAGNITUDES: Readonly<
   Record<string, { inner: number; outer: number }>
 > = {
-  [UT_ATOM_BOMB]: { inner: 12, outer: 30 },
+  // The Antimatter Reaction under a Dark Star (Config.nukeMagnitudes).
+  [UT_ATOM_BOMB]: { inner: 10, outer: 10 },
   [UT_HYDROGEN_BOMB]: { inner: 80, outer: 100 },
   [UT_MIRV_WARHEAD]: { inner: 12, outer: 18 },
   [UT_PROJECTILE]: {

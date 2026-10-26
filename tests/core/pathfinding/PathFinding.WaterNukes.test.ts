@@ -39,7 +39,7 @@ function nukeCircle(game: Game, cx: number, cy: number, r: number): void {
         !game.hasOwner(tile) &&
         !game.map().isImpassable(tile)
       ) {
-        game.queueWaterConversion(tile);
+        game.queueWaterConversion(tile, true);
       }
     }
   }

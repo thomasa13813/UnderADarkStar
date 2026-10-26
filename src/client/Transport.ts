@@ -118,6 +118,11 @@ export class SendPunitiveStrikeIntentEvent implements GameEvent {
   constructor(public readonly tile: TileRef) {}
 }
 
+// The throne's tithe aimed at a tile (TI1).
+export class SendTitheIntentEvent implements GameEvent {
+  constructor(public readonly tile: TileRef) {}
+}
+
 // Troops committed against a landed Hegemon strike on us (H17).
 export class SendCounterStrikeIntentEvent implements GameEvent {
   constructor(public readonly troops: number) {}
@@ -378,6 +383,9 @@ export class Transport {
     this.subscribe(SendStrikeIntentEvent, (e) => this.onSendStrikeIntent(e));
     this.subscribe(SendPunitiveStrikeIntentEvent, (e) =>
       this.onSendPunitiveStrikeIntent(e),
+    );
+    this.subscribe(SendTitheIntentEvent, (e) =>
+      this.sendIntent({ type: "tithe", tile: e.tile }),
     );
     this.subscribe(SendCounterStrikeIntentEvent, (e) =>
       this.onSendCounterStrikeIntent(e),

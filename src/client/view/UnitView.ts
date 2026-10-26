@@ -84,6 +84,7 @@ function unitStateFromUpdate(u: UnitUpdate): UnitState {
     samUpgradeDuration: u.samUpgrade?.duration ?? null,
     punitiveWarhead: punitiveWarhead(u),
     punitiveExpiresTick: u.punitiveFlag?.expiresTick ?? null,
+    tithe: u.tithe === true,
   };
 }
 
@@ -119,6 +120,7 @@ function applyUpdateInPlace(target: UnitState, u: UnitUpdate): void {
   target.samUpgradeDuration = u.samUpgrade?.duration ?? null;
   target.punitiveWarhead = punitiveWarhead(u);
   target.punitiveExpiresTick = u.punitiveFlag?.expiresTick ?? null;
+  target.tithe = u.tithe === true;
 }
 
 export class UnitView {
@@ -283,6 +285,11 @@ export class UnitView {
   targetUnitId(): number | undefined {
     return this.state.targetUnitId ?? undefined;
   }
+  // A projectile carrying the throne's tithe (TI1).
+  isTithe(): boolean {
+    return this.state.tithe === true;
+  }
+
   targetTile(): TileRef | undefined {
     return this.state.targetTile ?? undefined;
   }

@@ -110,14 +110,16 @@ export const QUEUED_LOBBIES_PER_TYPE = 6;
 
 // Under a Dark Star: the throne lines from the environment
 // (docs/DarkStar-Lobbies.md §9, L16), or null when the server runs upstream's
-// per-type queues instead (PUBLIC_LOBBIES=queue). Three lines, FFA, team and
-// special, each at the same floor (T5 opened the team line).
+// per-type queues instead (PUBLIC_LOBBIES=queue). Two lines, FFA and team, at
+// the same floor (T5 opened the team line). The special line is off
+// (docs/DarkStar-Rework.md RW0): a floor of 0 opens no special throne, and the
+// lobby browser hides a pane and a card with nothing in them (L29).
 export function throneRegistryFromEnv(): ThroneRegistry | null {
   if (ServerEnv.publicLobbyMode() !== "thrones") return null;
   const floor = ServerEnv.throneFloor();
   return new ThroneRegistry({
     names: throneNames,
-    floor: { ffa: floor, team: floor, special: floor },
+    floor: { ffa: floor, team: floor, special: 0 },
     minPlayers: ServerEnv.throneMinPlayers(),
     countdownMs: ServerEnv.throneCountdownMs(),
     windowMs: ServerEnv.throneWindowMs(),

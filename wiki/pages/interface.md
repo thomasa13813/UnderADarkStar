@@ -48,9 +48,11 @@ the menu you can:
 - open the **info menu** for the player under the cursor;
 - send a **fleet** to the spot (only if your territory touches deep space);
 - fire a **Stargate** shot or launch a warhead from the gate slot;
-- **donate troops** or **gold** to an ally;
-- **reinforce the throne:** send troops to the Hegemon (see
-  [[overthrowing-the-hegemon#reinforcing-the-throne]]).
+- open the **handshake** (the ally slot): **donate troops** or **gold** to anyone your
+  Stargates reach, and **propose an alliance** (see [[alliances-and-diplomacy#donations-the-gate-network]]).
+  On the Hegemon, donating troops reinforces the throne (see
+  [[overthrowing-the-hegemon#reinforcing-the-throne]]);
+- **attack** with the centre button: it always sends a ground attack.
 
 ## Info menu
 
@@ -61,7 +63,7 @@ warheads they have sent you, and whether they are a traitor. From here you can:
 - **stop** or **start trading** with them;
 - place a **target mark** your allies can see;
 - send a **quick chat** message or an **emoji**;
-- with an ally, **donate** troops or gold.
+- **donate** troops or gold, when your Stargates reach them.
 
 See [[alliances-and-diplomacy]].
 

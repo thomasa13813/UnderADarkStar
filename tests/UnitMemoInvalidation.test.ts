@@ -185,7 +185,7 @@ describe("water-path memo across a real water conversion", () => {
     const lakeSeed = land.reduce((a, b) =>
       oceanDist(a) >= oceanDist(b) ? a : b,
     );
-    g.queueWaterConversion(lakeSeed);
+    g.queueWaterConversion(lakeSeed, true);
     g.executeNextTick();
     expect(map.isWater(lakeSeed)).toBe(true);
 
@@ -200,7 +200,7 @@ describe("water-path memo across a real water conversion", () => {
     // ... then the whole land half floods, merging the lake into the ocean
     // (a thin corridor is not enough: the hierarchical pathfinder plans on the
     // quarter-resolution minimap, whose cells only flip with area coverage)
-    for (const t of all) if (convertible(t)) g.queueWaterConversion(t);
+    for (const t of all) if (convertible(t)) g.queueWaterConversion(t, true);
     for (let tick = 0; tick < 25; tick++) {
       g.executeNextTick();
       expect(memoized.findPath(far, lakeSeed)).toEqual(

@@ -21,6 +21,7 @@ import type {
 } from "../../../../../src/client/render/types";
 import {
   UT_ATOM_BOMB,
+  UT_PROJECTILE,
   UT_WARSHIP,
 } from "../../../../../src/client/render/types";
 
@@ -105,8 +106,17 @@ function units(...us: UnitState[]): Map<number, UnitState> {
 
 describe("extractNukeTelegraphs", () => {
   it("computes target x/y and blast radii", () => {
+    // The atom bomb is the Antimatter Reaction under a Dark Star: 10 tiles.
     const [t] = extractNukeTelegraphs(units(nuke({ targetTile: 305 })), MAP_W);
-    expect(t).toMatchObject({ x: 5, y: 3, innerRadius: 12, outerRadius: 30 });
+    expect(t).toMatchObject({ x: 5, y: 3, innerRadius: 10, outerRadius: 10 });
+  });
+
+  it("draws a tithe's 50-tile ring on its projectile (TI1)", () => {
+    const [t] = extractNukeTelegraphs(
+      units(nuke({ unitType: UT_PROJECTILE, tithe: true, targetTile: 305 })),
+      MAP_W,
+    );
+    expect(t).toMatchObject({ x: 5, y: 3, innerRadius: 50, outerRadius: 50 });
   });
 
   it("skips inactive nukes, nukes without a target, and non-nuke units", () => {

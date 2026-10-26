@@ -26,6 +26,7 @@ import {
   PIRACY_DEFAULTS,
   SHIELD_ARRAY_DEFAULTS,
   STARGATE_DEFAULTS,
+  TITHE_DEFAULTS,
   UNIT_SUPPORT_DEFAULTS,
 } from "../core/configuration/Config";
 
@@ -69,6 +70,7 @@ export function wikiParams(): Record<string, string> {
   const a = SHIELD_ARRAY_DEFAULTS;
   const p = PIRACY_DEFAULTS;
   const army = ARMY_DEFAULTS;
+  const tithe = TITHE_DEFAULTS;
   const params: Record<string, string | number> = {
     minutes: h.defaultRoundMinutes,
     ceiling: h.troopCeilingPercentOfWholeMapCap,
@@ -87,17 +89,25 @@ export function wikiParams(): Record<string, string> {
     floor: h.tyrannyFloorPermille / 10,
     stall: h.invasionStallSeconds,
     flag: h.punitiveFlagSeconds,
-    levyN: h.punitiveLevyPercentNuclear,
-    levyA: h.punitiveLevyPercentAntimatter,
+    levy: h.punitiveLevyPercent,
     pRadius: h.punitiveRadius,
     gateCost: gold(g.costGold),
     gateBase: g.rangeBase,
     gatePer: g.rangePerLevel,
     gateReload: g.cooldownSeconds,
     gateBuild: g.constructionSeconds,
-    // The warhead prices under a Dark Star (Config.unitInfo, S6).
-    nukeCost: gold(1_000_000),
-    hCost: gold(5_000_000),
+    // The warheads under a Dark Star (Config.unitInfo and nukeMagnitudes,
+    // docs/DarkStar-Rework.md §3): Gamma Ray Burst and Antimatter Reaction.
+    grbCost: gold(5_000_000),
+    grbRadius: 100,
+    arCost: gold(5_000_000),
+    arRadius: 10,
+    // Tithes (docs/DarkStar-Rework.md §2).
+    titheRadius: tithe.radius,
+    titheReserve: gold(Number(tithe.reserve)),
+    titheCooldown: tithe.cooldownSeconds,
+    titheAiFirst: tithe.aiFirstSeconds,
+    titheAiInterval: tithe.aiIntervalSeconds,
     shieldCost: gold(a.costGold),
     shieldR: a.radius,
     shieldBuild: a.constructionSeconds,

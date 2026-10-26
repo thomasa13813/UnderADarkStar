@@ -30,6 +30,7 @@ import { RazeExecution } from "./RazeExecution";
 import { RetreatExecution } from "./RetreatExecution";
 import { SpawnExecution } from "./SpawnExecution";
 import { TargetPlayerExecution } from "./TargetPlayerExecution";
+import { TitheExecution } from "./TitheExecution";
 import { TransportShipExecution } from "./TransportShipExecution";
 import { TribeSpawner } from "./TribeSpawner";
 import { UpgradeStructureExecution } from "./UpgradeStructureExecution";
@@ -114,6 +115,9 @@ export class Executor {
       case "punitive_strike":
         // The answer to a missile launch (H19), levied from the galaxy.
         return new RazeExecution(player, intent.tile, null, true);
+      case "tithe":
+        // The throne's tithe (TI1); TitheExecution refuses anyone else.
+        return new TitheExecution(player, intent.tile);
       case "counter_strike":
         // The struck player cancelling a landed strike (H17).
         return new CounterStrikeExecution(player, intent.troops);

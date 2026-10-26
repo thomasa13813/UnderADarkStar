@@ -2,6 +2,7 @@ import { renderTroops } from "../../client/Utils";
 import { AttackLogicInput } from "../configuration/Config";
 import {
   Attack,
+  DefensePosts,
   Execution,
   Game,
   HegemonStrike,
@@ -97,12 +98,11 @@ export class RazeExecution implements Execution, StrikeInFlight, HegemonStrike {
     private punitiveStrike = false,
   ) {}
 
-  // The levy a warhead draws, as a share of each challenger's troops at home.
-  static levyPercent(mg: Game, warhead: Warhead): number {
-    const cfg = mg.config().hegemonConfig();
-    return warhead === UnitType.HydrogenBomb
-      ? cfg.punitiveLevyPercentAntimatter
-      : cfg.punitiveLevyPercentNuclear;
+  // The levy a warhead draws, as a share of each challenger's troops at home:
+  // the same for either warhead since the rework (WH4). The warhead is kept
+  // in the signature so the lever can split again.
+  static levyPercent(mg: Game, _warhead: Warhead): number {
+    return mg.config().hegemonConfig().punitiveLevyPercent;
   }
 
   // What the galaxy would pay right now for a strike on this warhead.
@@ -737,10 +737,12 @@ export class RazeExecution implements Execution, StrikeInFlight, HegemonStrike {
         isTraitor: this.target.isTraitor(),
         isDisconnectedTeammate: false,
       },
-      defenderHasDefensePost: this.mg.hasUnitNearby(
+      // A shielded post is a post (SH3).
+      defenderHasDefensePost: this.mg.anyUnitNearby(
         tile,
         this.mg.config().defensePostRange(),
-        UnitType.DefensePost,
+        DefensePosts.types,
+        () => true,
         this.target.id(),
       ),
       falloutRatio: this.mg.hasFallout(tile)

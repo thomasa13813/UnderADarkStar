@@ -202,6 +202,8 @@ describe("The Dark Star fights back (H13)", () => {
     // (The pool breathes by one second of regeneration around its pin, so the
     // bound below allows one surplus send; a second send of the donation
     // would drain it by 100k.)
+    // West's gate reaches the Dark Star (GN5).
+    west.buildUnit(UnitType.Stargate, Array.from(west.tiles())[0], {});
     game.addExecution(new DonateTroopsExecution(west, hegemon.id(), 100_000));
     executeTicks(game, 2);
     expect(hegemon.outgoingAttacks()).toHaveLength(1);

@@ -44,6 +44,8 @@ export class UnitImpl implements Unit {
   private _missileTimerQueue: number[] = [];
   // Silos only: exposed to a punitive strike (H19) since a launch.
   private _punitiveFlag: PunitiveFlag | undefined;
+  // A Projectile carrying the throne's tithe (TI1), not a strike's troops.
+  private _tithe = false;
   private _hasTrainStation: boolean = false;
   private _level: number = 1;
   private _targetable: boolean = true;
@@ -76,6 +78,7 @@ export class UnitImpl implements Unit {
       };
     }
     this._troops = "troops" in params ? (params.troops ?? 0) : 0;
+    this._tithe = "tithe" in params && params.tithe === true;
     this._lastSetSafeFromPirates =
       "lastSetSafeFromPirates" in params
         ? (params.lastSetSafeFromPirates ?? 0)
@@ -185,6 +188,7 @@ export class UnitImpl implements Unit {
       trainType: this._trainType,
       loaded: this._loaded,
     };
+    if (this._tithe) update.tithe = true;
     return update;
   }
 
@@ -559,8 +563,8 @@ export class UnitImpl implements Unit {
   }
 
   // The flag lives until punitiveFlagSeconds after the LATEST launch, and
-  // carries the severer warhead fired meanwhile (the Antimatter Warhead
-  // outranks the Nuclear one), not the most recent.
+  // carries the severer warhead fired meanwhile (the Gamma Ray Burst
+  // outranks the Antimatter Reaction), not the most recent.
   punitiveFlag(): PunitiveFlag | undefined {
     const flag = this._punitiveFlag;
     if (flag === undefined) return undefined;

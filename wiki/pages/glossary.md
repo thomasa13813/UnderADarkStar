@@ -1,13 +1,13 @@
 ---
 title: Glossary
-description: Every term in Under a Dark Star, from Antimatter Warhead to tyranny - the Hegemon, challengers, nebulae, strikes, bubbles, corsairs and more.
+description: Every term in Under a Dark Star, from Antimatter Reaction to tyranny - the Hegemon, challengers, nebulae, strikes, bubbles, corsairs and more.
 section: Reference
 order: 3
 related: getting-started, hegemon, buildings
 ---
 
-**Antimatter Warhead.** The large warhead: {{hCost}} gold, a 100-tile blast. See
-[[stargates-and-warheads]].
+**Antimatter Reaction.** The small warhead: {{arCost}} gold, erases a {{arRadius}}-tile circle
+into deep space and goes through shields. See [[stargates-and-warheads]].
 
 **Army.** A defensive land unit that patrols your nebula and kills a share of attacking troops.
 See [[armies-and-destroyers]].
@@ -44,6 +44,9 @@ Hegemon's seat and the only nebula it can own. See [[overthrowing-the-hegemon]].
 **Freighter.** A trade ship sailing between two players' Spaceports and paying both. See
 [[trade]].
 
+**Gamma Ray Burst.** The large warhead: {{grbCost}} gold, a {{grbRadius}}-tile blast that Shield
+Arrays keep out. See [[stargates-and-warheads]].
+
 **Gift.** A building the Hegemon places or upgrades on a challenger's nebula at its own cost. The
 host owns it and cannot refuse it.
 
@@ -69,8 +72,6 @@ level supports one Army. See [[buildings]].
 **Nebula** (plural **nebulae**). The ground of the galaxy: every tile of territory is nebula. See
 [[galaxy]].
 
-**Nuclear Warhead.** The small warhead: {{nukeCost}} gold, a 30-tile blast.
-
 **Overthrow.** Eliminating the Hegemon.
 
 **Pirate.** An eliminated challenger sailing on as a corsair. See [[piracy]].
@@ -85,8 +86,8 @@ lands on the launching gate. See [[hegemon#punitive-strikes]].
 **Shadow tax.** The Hegemon's income: {{tax}}% of everything the challengers earn, taken from
 nobody.
 
-**Shield Array.** A building that keeps other players' warheads off everything within
-{{shieldR}} tiles. See [[stargates-and-warheads#shield-array]].
+**Shield Array.** An upgrade of a Defense Post that keeps other players' Gamma Ray Bursts off
+everything within {{shieldR}} tiles. See [[stargates-and-warheads#shield-array]].
 
 **Spaceport.** A building that sends freighters and launches Destroyers. See [[buildings]].
 
@@ -97,6 +98,9 @@ nobody.
 
 **Supply delivery.** A shipment riding an Industrial Zone's trade network, paying gold at every
 Population Center and Spaceport it passes. See [[trade]].
+
+**Tithe.** The Hegemon's aimed levy: every challenger owning a tile within {{titheRadius}} tiles
+of where it lands pays the throne all its gold above {{titheReserve}}. See [[hegemon#tithes]].
 
 **Throne.** A public lobby that runs rounds back to back, and the seat of the Hegemon. See
 [[thrones]].

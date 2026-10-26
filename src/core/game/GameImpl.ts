@@ -32,6 +32,7 @@ import {
   GameType,
   GameUpdates,
   GateShotInFlight,
+  Gold,
   HegemonStrike,
   HumansVsNations,
   MessageType,
@@ -48,6 +49,8 @@ import {
   TeamGameSpawnAreas,
   TerrainType,
   TerraNullius,
+  Tick,
+  TitheInFlight,
   Trios,
   Unit,
   UnitInfo,
@@ -150,6 +153,9 @@ export class GameImpl implements Game {
   // slot (H6): whoever is in here is the invader.
   private _domainTilesHeld = new Map<Player, number>();
   private _strikesInFlight: StrikeInFlight[] = [];
+  private _titheInFlight: TitheInFlight | null = null;
+  private _lastTitheLandedTick: Tick | null = null;
+  private _titheCollected: Gold = 0n;
   private _gateShotsInFlight: GateShotInFlight[] = [];
   private _hegemonStrikes: HegemonStrike[] = [];
   private _lastInvaderGainTick = 0;
@@ -335,6 +341,28 @@ export class GameImpl implements Game {
 
   removeStrikeInFlight(strike: StrikeInFlight): void {
     this._strikesInFlight = this._strikesInFlight.filter((s) => s !== strike);
+  }
+
+  titheInFlight(): TitheInFlight | null {
+    return this._titheInFlight;
+  }
+
+  setTitheInFlight(tithe: TitheInFlight | null): void {
+    this._titheInFlight = tithe;
+  }
+
+  lastTitheLandedTick(): Tick | null {
+    return this._lastTitheLandedTick;
+  }
+
+  recordTitheLanded(gold: Gold): void {
+    this._titheInFlight = null;
+    this._lastTitheLandedTick = this._ticks;
+    this._titheCollected += gold;
+  }
+
+  titheCollected(): Gold {
+    return this._titheCollected;
   }
 
   gateShotsInFlight(): GateShotInFlight[] {
@@ -523,12 +551,12 @@ export class GameImpl implements Game {
     this.recordTileUpdate(tile);
   }
 
-  queueWaterConversion(tile: TileRef): void {
+  queueWaterConversion(tile: TileRef, erase: boolean): void {
     if (!this.isLand(tile)) return;
     if (this.hasOwner(tile)) {
       throw Error(`cannot queue water conversion, tile ${tile} has owner`);
     }
-    if (!this._config.waterNukes()) {
+    if (!erase) {
       this.setFallout(tile, true);
       return;
     }

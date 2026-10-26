@@ -92,7 +92,7 @@ describe("Water Nukes", () => {
       expect(game.hasOwner(target)).toBe(false);
 
       // Queue the tile for water conversion (simulates nuke queueing)
-      game.queueWaterConversion(target);
+      game.queueWaterConversion(target, true);
 
       // Another actor conquers the tile before the tick flushes the queue
       player.conquer(target);
@@ -149,7 +149,7 @@ describe("Water Nukes", () => {
       for (let i = 0; i < 21; i++) navGame.executeNextTick();
       for (let y = 50; y < 52; y++) {
         for (let x = 50; x < 52; x++) {
-          navGame.queueWaterConversion(navGame.ref(x, y));
+          navGame.queueWaterConversion(navGame.ref(x, y), true);
         }
       }
 

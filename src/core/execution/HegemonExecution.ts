@@ -14,6 +14,7 @@ import { TileRef } from "../game/GameMap";
 import { AttackExecution } from "./AttackExecution";
 import { PlayerExecution } from "./PlayerExecution";
 import { RazeExecution } from "./RazeExecution";
+import { TitheExecution } from "./TitheExecution";
 
 // The rules of the Hegemon role (docs/DarkStar-Design.md), registered by
 // GameRunner when hegemon mode is on.
@@ -59,6 +60,9 @@ export class HegemonExecution implements Execution {
   private fullSinceTick: number | null = null;
   private lastStrikeEndTick = 0;
 
+  // An AI Hegemon's tithes (TI9): the game second of the last one.
+  private lastTitheSecond: number | null = null;
+
   init(mg: Game, ticks: number): void {
     this.mg = mg;
   }
@@ -87,7 +91,54 @@ export class HegemonExecution implements Execution {
     if (hegemon.type() !== PlayerType.Human) {
       this.punish(hegemon, ticks);
       this.punishLaunches(hegemon, ticks);
+      this.tithe(hegemon, ticks);
     }
+  }
+
+  // TI9: an AI Hegemon tithes once a minute from the round's second minute,
+  // whenever some challenger holds more than the reserve, aimed at the
+  // richest of them. With nobody worth it, it looks again every second.
+  private tithe(hegemon: Player, ticks: number): void {
+    const mg = this.mg!;
+    if (ticks % 10 !== 0) return;
+    const cfg = mg.config().titheConfig();
+    const elapsed = mg.elapsedGameSeconds();
+    if (elapsed < cfg.aiFirstSeconds) return;
+    if (
+      this.lastTitheSecond !== null &&
+      elapsed - this.lastTitheSecond < cfg.aiIntervalSeconds
+    ) {
+      return;
+    }
+    if (TitheExecution.readyInTicks(mg) !== 0) return;
+    let richest: Player | null = null;
+    for (const p of mg.players()) {
+      if (p.isHegemon() || !p.isAlive() || p.numTilesOwned() === 0) continue;
+      if (p.gold() <= cfg.reserve) continue;
+      if (richest === null || p.gold() > richest.gold()) richest = p;
+    }
+    if (richest === null) return;
+    const tile = this.titheAim(richest);
+    if (tile === null) return;
+    mg.addExecution(new TitheExecution(hegemon, tile));
+    this.lastTitheSecond = elapsed;
+  }
+
+  // The centre of the target's largest territory (where its name sits);
+  // failing that (no cluster yet, or the centre on the Dark Star), the
+  // strike's aim.
+  private titheAim(target: Player): TileRef | null {
+    const mg = this.mg!;
+    const box = target.largestClusterBoundingBox;
+    if (box !== null) {
+      const x = Math.floor((box.min.x + box.max.x) / 2);
+      const y = Math.floor((box.min.y + box.max.y) / 2);
+      if (mg.isValidCoord(x, y)) {
+        const tile = mg.ref(x, y);
+        if (!mg.isInDarkStar(tile)) return tile;
+      }
+    }
+    return this.aimAt(target);
   }
 
   // H4: the throne has no economy of its own. Its income is the shadow tax —

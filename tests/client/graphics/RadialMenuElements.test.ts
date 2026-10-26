@@ -3,6 +3,7 @@ import {
   attackMenuElement,
   buildMenuElement,
   COLORS,
+  MenuElement,
   MenuElementParams,
   rootMenuElement,
   Slot,
@@ -97,6 +98,9 @@ describe("RadialMenuElements", () => {
       isHegemon: vi.fn(() => false),
       isAlliedWith: vi.fn(() => false),
       isPlayer: vi.fn(() => true),
+      displayName: vi.fn(() => "Them"),
+      troops: vi.fn(() => 1_000),
+      type: vi.fn(() => "HUMAN"),
       isTraitor: vi.fn(() => false),
       isDisconnected: vi.fn(() => false),
     } as unknown as PlayerView;
@@ -216,6 +220,7 @@ describe("RadialMenuElements", () => {
       const enemyPlayer = {
         id: () => 2,
         isPlayer: vi.fn(() => true),
+        displayName: vi.fn(() => "Them"),
       } as unknown as PlayerView;
       mockParams.selected = enemyPlayer;
 
@@ -246,6 +251,7 @@ describe("RadialMenuElements", () => {
       const enemyPlayer = {
         id: () => 2,
         isPlayer: vi.fn(() => true),
+        displayName: vi.fn(() => "Them"),
       } as unknown as PlayerView;
       mockParams.selected = enemyPlayer;
 
@@ -335,6 +341,10 @@ describe("RadialMenuElements", () => {
   });
 
   describe("rootMenuElement", () => {
+    // The ally slot opens the handshake (GN8): proposals live one level down.
+    const handshake = (items: MenuElement[]): MenuElement[] =>
+      items.find((item) => item.id === Slot.Ally)!.subMenu!(mockParams);
+
     it("should have correct basic properties", () => {
       expect(rootMenuElement.id).toBe("root");
       expect(rootMenuElement.name).toBe("root");
@@ -356,6 +366,7 @@ describe("RadialMenuElements", () => {
       const enemyPlayer = {
         id: () => 2,
         isPlayer: vi.fn(() => true),
+        displayName: vi.fn(() => "Them"),
       } as unknown as PlayerView;
       mockGame.owner = vi.fn(() => enemyPlayer);
 
@@ -384,6 +395,7 @@ describe("RadialMenuElements", () => {
         isHegemon: vi.fn(() => false),
         isAlliedWith: vi.fn(() => true),
         isPlayer: vi.fn(() => true),
+        displayName: vi.fn(() => "Them"),
         isTraitor: vi.fn(() => false),
         isDisconnected: vi.fn(() => false),
       } as unknown as PlayerView;
@@ -402,6 +414,7 @@ describe("RadialMenuElements", () => {
         isHegemon: vi.fn(() => false),
         isAlliedWith: vi.fn(() => true),
         isPlayer: vi.fn(() => true),
+        displayName: vi.fn(() => "Them"),
       } as unknown as PlayerView;
       mockParams.selected = allyPlayer;
       mockGame.owner = vi.fn(() => allyPlayer);
@@ -418,7 +431,9 @@ describe("RadialMenuElements", () => {
       };
 
       const subMenu = rootMenuElement.subMenu!(mockParams);
-      const extendMenu = subMenu.find((item) => item.id === "ally_extend");
+      const extendMenu = handshake(subMenu).find(
+        (item) => item.id === "ally_extend",
+      );
 
       expect(extendMenu).toBeDefined();
     });
@@ -429,6 +444,7 @@ describe("RadialMenuElements", () => {
         isHegemon: vi.fn(() => false),
         isAlliedWith: vi.fn(() => true),
         isPlayer: vi.fn(() => true),
+        displayName: vi.fn(() => "Them"),
       } as unknown as PlayerView;
       mockParams.selected = allyPlayer;
       mockGame.owner = vi.fn(() => allyPlayer);
@@ -445,7 +461,9 @@ describe("RadialMenuElements", () => {
       };
 
       const subMenu = rootMenuElement.subMenu!(mockParams);
-      const extendMenu = subMenu.find((item) => item.id === "ally_extend");
+      const extendMenu = handshake(subMenu).find(
+        (item) => item.id === "ally_extend",
+      );
 
       expect(extendMenu).toBeUndefined();
     });
@@ -456,6 +474,7 @@ describe("RadialMenuElements", () => {
         isHegemon: vi.fn(() => false),
         isAlliedWith: vi.fn(() => true),
         isPlayer: vi.fn(() => true),
+        displayName: vi.fn(() => "Them"),
       } as unknown as PlayerView;
       mockParams.selected = allyPlayer;
       mockGame.owner = vi.fn(() => allyPlayer);
@@ -472,7 +491,9 @@ describe("RadialMenuElements", () => {
       };
 
       const subMenu = rootMenuElement.subMenu!(mockParams);
-      const extendMenu = subMenu.find((item) => item.id === "ally_extend");
+      const extendMenu = handshake(subMenu).find(
+        (item) => item.id === "ally_extend",
+      );
 
       expect(extendMenu).toBeDefined();
       expect(extendMenu!.disabled(mockParams)).toBe(true);
@@ -484,6 +505,7 @@ describe("RadialMenuElements", () => {
         isHegemon: vi.fn(() => false),
         isAlliedWith: vi.fn(() => true),
         isPlayer: vi.fn(() => true),
+        displayName: vi.fn(() => "Them"),
       } as unknown as PlayerView;
       mockParams.selected = allyPlayer;
       mockGame.owner = vi.fn(() => allyPlayer);
@@ -500,7 +522,9 @@ describe("RadialMenuElements", () => {
       };
 
       const subMenu = rootMenuElement.subMenu!(mockParams);
-      const extendMenu = subMenu.find((item) => item.id === "ally_extend");
+      const extendMenu = handshake(subMenu).find(
+        (item) => item.id === "ally_extend",
+      );
 
       expect(extendMenu).toBeDefined();
       expect(extendMenu!.disabled(mockParams)).toBe(false);
@@ -528,6 +552,7 @@ describe("RadialMenuElements", () => {
       const enemyPlayer = {
         id: () => 2,
         isPlayer: vi.fn(() => true),
+        displayName: vi.fn(() => "Them"),
       } as unknown as PlayerView;
       mockParams.selected = enemyPlayer;
 
@@ -617,6 +642,7 @@ describe("RadialMenuElements", () => {
       const enemyPlayer = {
         id: () => 2,
         isPlayer: vi.fn(() => true),
+        displayName: vi.fn(() => "Them"),
       } as unknown as PlayerView;
       mockParams.selected = enemyPlayer;
 
@@ -659,6 +685,7 @@ describe("RadialMenuElements", () => {
       const enemyPlayer = {
         id: () => 2,
         isPlayer: vi.fn(() => true),
+        displayName: vi.fn(() => "Them"),
       } as unknown as PlayerView;
       mockParams.selected = enemyPlayer;
 
@@ -695,6 +722,7 @@ describe("RadialMenuElements", () => {
       const enemyPlayer = {
         id: () => 2,
         isPlayer: vi.fn(() => true),
+        displayName: vi.fn(() => "Them"),
       } as unknown as PlayerView;
       mockParams.selected = enemyPlayer;
 
@@ -787,6 +815,7 @@ describe("RadialMenuElements", () => {
       const enemyPlayer = {
         id: () => 2,
         isPlayer: vi.fn(() => true),
+        displayName: vi.fn(() => "Them"),
       } as unknown as PlayerView;
       mockParams.selected = enemyPlayer;
 
