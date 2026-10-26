@@ -172,7 +172,7 @@ describe("The handshake (GN8)", () => {
     );
   });
 
-  test("the throne's handshake: Gift, Donate troops, Donate gold (GN10)", () => {
+  test("the throne's handshake: Gift, Donate army, Donate troops, Donate gold (GN10)", () => {
     // The throne's root menu is tested elsewhere (its strike slot); its ally
     // slot is this element.
     const throneHandshake = (q: MenuElementParams) =>
@@ -180,10 +180,14 @@ describe("The handshake (GN8)", () => {
     const p = params({ me: player("throne", true), giftHost: "them" });
     expect(throneHandshake(p).map((i) => i.id)).toEqual([
       "ally_gift",
+      "ally_donate_army",
       "ally_donate_troops",
       "ally_donate_gold",
     ]);
-    // No host on offer: no gift.
+    // With no army on the host's build list, Donate army is offered but off.
+    const army = throneHandshake(p).find((i) => i.id === "ally_donate_army")!;
+    expect(army.disabled(p)).toBe(true);
+    // No host on offer: no gift, no army.
     const q = params({ me: player("throne", true) });
     expect(throneHandshake(q).map((i) => i.id)).toEqual([
       "ally_donate_troops",

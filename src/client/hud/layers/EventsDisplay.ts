@@ -3,7 +3,12 @@ import { customElement, query, state } from "lit/decorators.js";
 import { DirectiveResult } from "lit/directive.js";
 import { unsafeHTML, UnsafeHTMLDirective } from "lit/directives/unsafe-html.js";
 import { EventBus } from "../../../core/EventBus";
-import { AllPlayers, MessageType, UnitType } from "../../../core/game/Game";
+import {
+  AllPlayers,
+  MessageType,
+  PUNITIVE_FLAG_MESSAGE,
+  UnitType,
+} from "../../../core/game/Game";
 import {
   AllianceExpiredUpdate,
   AllianceRequestReplyUpdate,
@@ -18,7 +23,10 @@ import {
 } from "../../../core/game/GameUpdates";
 import { UserSettings } from "../../../core/game/UserSettings";
 import { Controller } from "../../Controller";
-import { SendAllianceRequestIntentEvent } from "../../Transport";
+import {
+  SendAllianceRequestIntentEvent,
+  SendPunitiveStrikeIntentEvent,
+} from "../../Transport";
 
 import { onlyImages } from "../../../core/Util";
 import { GoToPlayerEvent, GoToUnitEvent } from "../../TransformHandler";
@@ -43,6 +51,20 @@ interface GameEvent {
   onDelete?: () => void;
   focusID?: number;
   unitView?: UnitView;
+  // A flagged gate the throne may punish from this line (H19): the line
+  // carries a Strike button and lives exactly as long as the flag.
+  punitiveGate?: UnitView;
+}
+
+// A gate's punitive flag is still live (H19): standing, flagged, unexpired.
+// A strike ordered on its owner, or the gate changing hands, clears it.
+function punitiveFlagLive(gate: UnitView, ticks: number): boolean {
+  const s = gate.state;
+  return (
+    s.isActive &&
+    (s.punitiveWarhead ?? null) !== null &&
+    (s.punitiveExpiresTick ?? 0) > ticks
+  );
 }
 
 const TIER_1_TYPES: ReadonlySet<MessageType> = new Set([
@@ -215,7 +237,10 @@ export class EventsDisplay extends LitElement implements Controller {
     }
 
     let remainingEvents = this.events.filter((event) => {
-      const expired = this.game.ticks() - event.createdAt >= 80;
+      const expired =
+        event.punitiveGate !== undefined
+          ? !punitiveFlagLive(event.punitiveGate, this.game.ticks())
+          : this.game.ticks() - event.createdAt >= 80;
       const isInboundWarning =
         event.type === MessageType.NUKE_INBOUND ||
         event.type === MessageType.HYDROGEN_BOMB_INBOUND ||
@@ -297,6 +322,7 @@ export class EventsDisplay extends LitElement implements Controller {
 
     const unitView =
       event.unitID !== undefined ? this.game.unit(event.unitID) : undefined;
+    const punitive = event.message === PUNITIVE_FLAG_MESSAGE;
     this.addEvent({
       description: description,
       createdAt: this.game.ticks(),
@@ -304,7 +330,9 @@ export class EventsDisplay extends LitElement implements Controller {
       type: event.messageType,
       unsafeDescription: true,
       unitView: unitView,
-      focusID: event.focusPlayerID,
+      // The punitive line jumps to the gate, not to its owner.
+      focusID: punitive ? undefined : event.focusPlayerID,
+      punitiveGate: punitive ? unitView : undefined,
     });
   }
 
@@ -587,6 +615,19 @@ export class EventsDisplay extends LitElement implements Controller {
     });
   }
 
+  // The throne answers a flagged gate from its event line (H19): the same
+  // order as clicking the gate. The line goes once the order is sent; the
+  // sim refuses it if the flag is gone by then.
+  private punish(event: GameEvent) {
+    const gate = event.punitiveGate;
+    if (gate === undefined) return;
+    if (punitiveFlagLive(gate, this.game.ticks())) {
+      this.eventBus.emit(new SendPunitiveStrikeIntentEvent(gate.tile()));
+    }
+    this.events = this.events.filter((e) => e !== event);
+    this.requestUpdate();
+  }
+
   private getEventDescription(
     event: GameEvent,
   ): string | DirectiveResult<typeof UnsafeHTMLDirective> {
@@ -644,6 +685,14 @@ export class EventsDisplay extends LitElement implements Controller {
                   className: "text-left",
                 })
               : this.getEventDescription(event)}
+          ${event.punitiveGate
+            ? this.renderButton({
+                content: translateText("events_display.punitive_strike_button"),
+                onClick: () => this.punish(event),
+                className:
+                  "ml-2 px-2 py-0.5 rounded bg-red-700 hover:bg-red-600 text-white text-sm",
+              })
+            : ""}
         </td>
       </tr>
     `;

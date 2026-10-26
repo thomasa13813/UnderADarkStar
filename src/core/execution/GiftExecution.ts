@@ -8,6 +8,7 @@ import {
   UnitType,
 } from "../game/Game";
 import { TileRef } from "../game/GameMap";
+import { ArmyExecution } from "./ArmyExecution";
 import { ConstructionExecution } from "./ConstructionExecution";
 import { UpgradeStructureExecution } from "./UpgradeStructureExecution";
 
@@ -18,6 +19,9 @@ import { UpgradeStructureExecution } from "./UpgradeStructureExecution";
 // through the host's own rules (`canBuild` / `canUpgradeUnit`) with the
 // Hegemon as payer, so nothing can be gifted that the host could not build
 // (never on the Dark Star, H2). The host cannot refuse.
+// The throne may also donate an Army (Tom, 2026-10-25): deployed for the host
+// on the host's nebula, at the flat first-army price, only while the host's
+// industrial zones have support to spare (C6).
 export class GiftExecution implements Execution {
   private active = true;
   private mg: Game;
@@ -38,8 +42,8 @@ export class GiftExecution implements Execution {
       this.active = false;
       return;
     }
-    if (!Structures.has(this.unitType)) {
-      console.warn(`cannot gift ${this.unitType}: not a structure`);
+    if (!Structures.has(this.unitType) && this.unitType !== UnitType.Army) {
+      console.warn(`cannot gift ${this.unitType}: not a structure or army`);
       this.active = false;
       return;
     }
@@ -74,6 +78,19 @@ export class GiftExecution implements Execution {
         "events_display.dark_star_gift_refused",
         MessageType.ATTACK_FAILED,
         this.hegemon.id(),
+      );
+      return;
+    }
+
+    if (this.unitType === UnitType.Army) {
+      if (
+        host.canBuild(UnitType.Army, this.tile, null, this.hegemon) === false
+      ) {
+        console.warn(`cannot donate an army to ${host.name()}`);
+        return;
+      }
+      mg.addExecution(
+        new ArmyExecution({ owner: host, patrolTile: this.tile }, this.hegemon),
       );
       return;
     }

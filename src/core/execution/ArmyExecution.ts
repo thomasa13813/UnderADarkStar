@@ -35,21 +35,44 @@ export class ArmyExecution implements Execution {
   private lastShotTick = -Infinity;
   private lastObservedPatrolTile: TileRef | undefined;
 
-  constructor(private input: UnitParams<UnitType.Army> & OwnerComp) {}
+  // `payer` is who is charged: the Hegemon, for an army it donates (Tom,
+  // 2026-10-25), at the flat first-army price.
+  constructor(
+    private input: UnitParams<UnitType.Army> & OwnerComp,
+    private payer: Player = input.owner,
+  ) {}
 
   init(mg: Game, ticks: number): void {
     this.mg = mg;
     const owner = this.input.owner;
-    const spawn = owner.canBuild(UnitType.Army, this.input.patrolTile);
+    const spawn = owner.canBuild(
+      UnitType.Army,
+      this.input.patrolTile,
+      null,
+      this.payer,
+    );
     if (spawn === false) {
       console.warn(
         `Failed to deploy army for ${owner.name()} at ${this.input.patrolTile}`,
       );
       return;
     }
-    this.army = owner.buildUnit(UnitType.Army, spawn, {
-      patrolTile: this.input.patrolTile,
-    });
+    this.army = owner.buildUnit(
+      UnitType.Army,
+      spawn,
+      { patrolTile: this.input.patrolTile },
+      this.payer,
+    );
+    if (this.payer !== owner) {
+      mg.displayMessage(
+        "events_display.dark_star_gift_army",
+        MessageType.DONATION_RECEIVED,
+        owner.id(),
+        undefined,
+        undefined,
+        this.army.id(),
+      );
+    }
     this.random = new PseudoRandom(ticks + this.army.id());
     this.lastObservedPatrolTile = this.input.patrolTile;
   }

@@ -13,13 +13,6 @@ export class MoveWarshipExecution implements Execution {
       console.warn(`MoveWarshipExecution: position ${this.position} not valid`);
       return;
     }
-    // The throne's destroyers never leave the moat (H10).
-    if (this.owner.isHegemon() && !mg.isInMoat(this.position)) {
-      console.warn(
-        `MoveWarshipExecution: the Hegemon's ships stay in the moat`,
-      );
-      return;
-    }
     // Get water component of new TargetTile for connectivity check
     const newPatrolTileWaterComponent = mg.getWaterComponent(this.position);
     // Armies (Tom, 2026-10-23) take the same order on their owner's own

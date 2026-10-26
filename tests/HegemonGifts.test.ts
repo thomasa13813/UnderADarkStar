@@ -271,3 +271,77 @@ describe("Gifts that are refused (H18)", () => {
     expect(east.units(UnitType.AtomBomb)).toHaveLength(0);
   });
 });
+
+// Donating an army (Tom, 2026-10-25): the throne deploys an Army for a
+// challenger whose industrial zones have support to spare (C6), at the flat
+// first-army price.
+describe("Donating an army", () => {
+  function messagesOver(player: Player, ticks: number): DisplayMessageUpdate[] {
+    const all: DisplayMessageUpdate[] = [];
+    for (let i = 0; i < ticks; i++) all.push(...messagesFor(player));
+    return all;
+  }
+
+  test("the host owns it, the throne pays the first-army price, the host is told", () => {
+    east.buildUnit(UnitType.Factory, homeTile(east), {});
+    const price = game.unitInfo(UnitType.Army).cost(game, east, 0, hegemon);
+    expect(price).toBeGreaterThan(0n);
+    const throneGold = hegemon.gold();
+    const hostGold = east.gold();
+    gift(hegemon, east, UnitType.Army, homeTile(east));
+    const told = messagesOver(east, 3);
+    const armies = east.units(UnitType.Army);
+    expect(armies).toHaveLength(1);
+    expect(armies[0].owner()).toBe(east);
+    expect(hegemon.gold()).toBe(throneGold - price);
+    expect(east.gold()).toBe(hostGold);
+    expect(
+      told.some((m) => m.message === "events_display.dark_star_gift_army"),
+    ).toBe(true);
+  });
+
+  test("the throne's build list offers it only while the host has support", () => {
+    const tile = homeTile(east);
+    const offer = () =>
+      east
+        .buildableUnits(tile, [UnitType.Army], hegemon)
+        .find((b) => b.type === UnitType.Army)!;
+    expect(offer().canBuild).toBe(false);
+    east.buildUnit(UnitType.Factory, tile, {});
+    expect(offer().canBuild).not.toBe(false);
+    gift(hegemon, east, UnitType.Army, tile);
+    executeTicks(game, 3);
+    expect(offer().canBuild).toBe(false);
+  });
+
+  test("refused without support to spare: nothing deployed, nothing paid", () => {
+    const throneGold = hegemon.gold();
+    gift(hegemon, east, UnitType.Army, homeTile(east));
+    executeTicks(game, 3);
+    expect(east.units(UnitType.Army)).toHaveLength(0);
+    expect(hegemon.gold()).toBe(throneGold);
+
+    east.buildUnit(UnitType.Factory, homeTile(east), {});
+    gift(hegemon, east, UnitType.Army, homeTile(east));
+    gift(hegemon, east, UnitType.Army, homeTile(east));
+    executeTicks(game, 3);
+    // One level of zone supports one army.
+    expect(east.units(UnitType.Army)).toHaveLength(1);
+  });
+
+  test("refused when the throne cannot pay", () => {
+    east.buildUnit(UnitType.Factory, homeTile(east), {});
+    hegemon.removeGold(hegemon.gold());
+    gift(hegemon, east, UnitType.Army, homeTile(east));
+    executeTicks(game, 3);
+    expect(east.units(UnitType.Army)).toHaveLength(0);
+  });
+
+  test("only the Hegemon donates armies", () => {
+    east.buildUnit(UnitType.Factory, homeTile(east), {});
+    west.addGold(1_000_000_000n);
+    gift(west, east, UnitType.Army, homeTile(east));
+    executeTicks(game, 3);
+    expect(east.units(UnitType.Army)).toHaveLength(0);
+  });
+});

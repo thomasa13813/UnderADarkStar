@@ -1004,6 +1004,50 @@ function donateTroopsElement(params: MenuElementParams): MenuElement {
   };
 }
 
+// Donate an army (Tom, 2026-10-25): the throne deploys an Army for the host,
+// paying the flat first-army price, when the host's industrial zones have
+// support to spare. The worker's build list for the host says whether it can.
+function donateArmyElement(params: MenuElementParams): MenuElement {
+  const army = (params.playerActions.buildableUnits ?? []).find(
+    (b) => b.type === UnitType.Army,
+  );
+  const cost = army?.cost ?? 0n;
+  const reason =
+    army !== undefined && army.canBuild !== false
+      ? null
+      : army !== undefined && params.myPlayer.gold() < cost
+        ? translateText("handshake.army_no_gold")
+        : translateText("handshake.army_no_support");
+  return {
+    id: "ally_donate_army",
+    name: "donate_army",
+    icon:
+      flattenedBuildTable.find((i) => i.unitType === UnitType.Army)?.icon ?? "",
+    color: COLORS.ally,
+    tooltipItems: [
+      ...reasonTooltip(
+        translateText("handshake.donate_army", {
+          name: params.selected?.displayName() ?? "",
+        }),
+        reason,
+      ),
+      {
+        text: `${renderNumber(cost)} ${translateText("player_panel.gold")}`,
+        className: "cost",
+      },
+    ],
+    disabled: (p: MenuElementParams) =>
+      p.game.inSpawnPhase() || reason !== null,
+    action: (p: MenuElementParams) => {
+      const host = p.playerActions.giftHost;
+      if (host !== undefined && reason === null) {
+        p.eventBus.emit(new GiftUnitIntentEvent(UnitType.Army, p.tile, host));
+      }
+      p.closeMenu();
+    },
+  };
+}
+
 // Donate gold (GN8): opens the gold dialog.
 function donateGoldElement(params: MenuElementParams): MenuElement {
   const reason = transferBlockReason(params, "gold");
@@ -1048,8 +1092,8 @@ function allianceElement(params: MenuElementParams): MenuElement {
 
 // The handshake (GN8, GN10): the ally slot opens Donate troops, Donate gold
 // and, between challengers, Propose alliance (or Extend). For the throne it
-// opens Gift (when the worker offered a host), Donate troops and Donate
-// gold; on the Hegemon, a challenger's Donate troops is the reinforcement.
+// opens Gift and Donate army (when the worker offered a host), Donate troops
+// and Donate gold; on the Hegemon, a challenger's Donate troops is the reinforcement.
 export function handshakeMenuElement(params: MenuElementParams): MenuElement {
   return {
     id: Slot.Ally,
@@ -1070,7 +1114,7 @@ export function handshakeMenuElement(params: MenuElementParams): MenuElement {
       if (p.myPlayer.isHegemon()) {
         return [
           ...(p.playerActions.giftHost !== undefined
-            ? [giftMenuElement(p)]
+            ? [giftMenuElement(p), donateArmyElement(p)]
             : []),
           donateTroopsElement(p),
           donateGoldElement(p),

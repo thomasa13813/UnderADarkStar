@@ -9,10 +9,15 @@ import {
   Player,
   PlayerInfo,
   PlayerType,
+  PUNITIVE_FLAG_MESSAGE,
   Unit,
   UnitType,
 } from "../src/core/game/Game";
 import { TileRef } from "../src/core/game/GameMap";
+import {
+  DisplayMessageUpdate,
+  GameUpdateType,
+} from "../src/core/game/GameUpdates";
 import { setup } from "./util/Setup";
 import { TestConfig } from "./util/TestConfig";
 import { executeTicks } from "./util/utils";
@@ -179,6 +184,37 @@ describe("The flag (H19)", () => {
     const second = silo.punitiveFlag()!;
     expect(second.warhead).toBe(UnitType.HydrogenBomb);
     expect(second.expiresTick).toBeGreaterThan(first.expiresTick);
+  });
+
+  test("the throne is told of a fresh flag, once, on a line naming the gate (2026-10-25)", () => {
+    const silo = buildSilo(east, inland(east, 1));
+    const told = (): DisplayMessageUpdate[] => {
+      const lines: DisplayMessageUpdate[] = [];
+      for (let i = 0; i < 2; i++) {
+        const updates = game.executeNextTick();
+        lines.push(
+          ...(
+            updates[GameUpdateType.DisplayEvent] as DisplayMessageUpdate[]
+          ).filter(
+            (u) =>
+              u.message === PUNITIVE_FLAG_MESSAGE &&
+              u.playerID === hegemon.smallID(),
+          ),
+        );
+      }
+      return lines;
+    };
+    game.addExecution(new NukeExecution(UnitType.AtomBomb, east, centre()));
+    const first = told();
+    expect(first).toHaveLength(1);
+    expect(first[0].unitID).toBe(silo.id());
+    expect(first[0].focusPlayerID).toBe(east.smallID());
+    expect(first[0].params?.unit).toBe(UnitType.AtomBomb);
+    // A second launch while the flag stands refreshes it quietly.
+    silo.reloadMissile();
+    game.addExecution(new NukeExecution(UnitType.AtomBomb, east, centre()));
+    expect(told()).toHaveLength(0);
+    expect(silo.punitiveFlag()).toBeDefined();
   });
 
   test("no flag arises while the throne is already striking the player", () => {

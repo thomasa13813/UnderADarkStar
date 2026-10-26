@@ -32,13 +32,15 @@ job is to survive the timer. Everyone else's job is to bring it down.
 - **Warheads,** fired from the centre of the Dark Star at the normal price, with no launcher and
   no reload. They are kept out by [[stargates-and-warheads#shield-array|Shield Arrays]] like
   anyone else's.
-- **Destroyers** in the moat around the Dark Star, which defend it.
+- **Destroyers** anywhere in deep space, which defend the Dark Star and hunt pirates (see
+  [[armies-and-destroyers]]).
 - **Gifts:** the Hegemon may build or upgrade any challenger building on any challenger's
   nebula, paying from its own gold. The building belongs to the host from the moment it is
   placed and cannot be refused. Gifts let the throne pick favourites, and a gift counts as the
   host's own build, so their next building costs them more.
-- **Donations** of troops or gold to any challenger, reachable from anywhere. Its handshake (the
-  ally slot) holds **Gift**, **Donate troops** and **Donate gold**.
+- **Donations** of troops or gold to any challenger, reachable from anywhere, and **Armies** to
+  any challenger whose Industrial Zones have support to spare (a flat 250k). Its handshake (the
+  ally slot) holds **Gift**, **Donate army**, **Donate troops** and **Donate gold**.
 
 ## Strikes
 
@@ -78,8 +80,8 @@ The Hegemon can therefore never eliminate anyone. It can only cut the strong dow
 
 ## Punitive strikes
 
-Launching a warhead flags the launching Stargate for {{flag}} seconds. The Hegemon may answer by
-clicking the gate:
+Launching a warhead flags the launching Stargate for {{flag}} seconds. The Hegemon is told in its
+events feed and may answer with the line's **Strike** button, or by clicking the gate:
 
 - **The levy.** Every living challenger, the launcher included, is levied {{levy}}% of the troops
   they have at home, whichever warhead was fired.

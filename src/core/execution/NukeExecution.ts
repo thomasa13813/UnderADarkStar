@@ -6,6 +6,7 @@ import {
   MessageType,
   MissileLaunchers,
   Player,
+  PUNITIVE_FLAG_MESSAGE,
   Structures,
   TerraNullius,
   TrajectoryTile,
@@ -267,7 +268,21 @@ export class NukeExecution implements Execution {
             this.nukeType === UnitType.HydrogenBomb) &&
           !this.mg.hegemonStrikeOn(this.player)
         ) {
+          const fresh = silo.punitiveFlag() === undefined;
           silo.flagForPunishment(this.nukeType);
+          // The throne is told of a fresh flag; the line carries the
+          // Strike button (H19, 2026-10-25), live while the flag is.
+          if (fresh) {
+            this.mg.displayMessage(
+              PUNITIVE_FLAG_MESSAGE,
+              MessageType.ATTACK_REQUEST,
+              this.mg.hegemon()!.id(),
+              undefined,
+              { name: this.player.displayName(), unit: this.nukeType },
+              silo.id(),
+              this.player.id(),
+            );
+          }
         }
       }
       return;

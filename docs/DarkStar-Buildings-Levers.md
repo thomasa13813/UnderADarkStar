@@ -98,6 +98,10 @@ Notes for Tom, not decisions.
 
 ## 3. Changelog
 
+- **2026-10-25, the throne's reach** — The throne's Donate army (`GiftExecution` accepts
+  `UnitType.Army`; `ArmyExecution` takes a payer; flat first-army price through `costWrapper`).
+  The throne's destroyers: placed and moved anywhere in deep space (`PlayerImpl.warshipSpawn`,
+  `MoveWarshipExecution`), never take freighters, engage corsairs (`WarshipExecution`).
 - **2026-10-25, revision** — The Antimatter Reaction keeps the old Nuclear Warhead's blast
   (12/30) and no longer goes through shields (`nukeIgnoresShields` removed). Lords try a Gamma
   Ray Burst, then a Reaction (`NationNukeBehavior.bestNukeTile`); the shield-cracking aim is gone.

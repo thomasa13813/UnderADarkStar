@@ -110,6 +110,9 @@ included), or upgrade one already there. It pays from its own gold, and the host
   Shield Array (which needs one of the host's Defense Posts to stand on: gift the post first).
 - **The gift counts as the host's own build**, so the host's next one costs them more.
 - A gift follows every placement rule of §2.1 and is under construction like any build.
+- **Donate army:** the Hegemon may also deploy an Army (§3.8) for a challenger whose Industrial
+  Zones have support to spare, for a flat 250k. It is the host's own Army and uses up their
+  support.
 
 ## 3. The buildings
 
@@ -203,8 +206,8 @@ included), or upgrade one already there. It pays from its own gold, and the host
 
 - **Raiders.** A Destroyer can capture a freighter only in open deep space, never while it is on
   nebula or has touched shoreline space in the last 2 seconds. A captured freighter pays only its
-  captor, at the captor's nearest spaceport. A freighter caught by the Hegemon's Destroyers is
-  simply lost. A pirate corsair scuttles it.
+  captor, at the captor's nearest spaceport. The Hegemon's Destroyers never take freighters. A
+  pirate corsair scuttles it.
 - **Destroyers.** You need a spaceport with a harbour on the body of space you click. A Destroyer
   launches from your harbour nearest the click and costs 250k → 500k → 750k → 1M (cap).
   - **One per level:** each level of a finished spaceport supports one Destroyer. With none to
@@ -288,6 +291,9 @@ A warhead launch flags its Stargate for 30 seconds. In that window the Hegemon m
   within 34 tiles.
 - **The pop.** When the strike pops, the gate and every building it captured are destroyed.
 
+The Hegemon is told of each flag in its events feed, with a **Strike** button that orders the
+punitive strike.
+
 An AI Hegemon punishes every flagged launch except from very small players (under 5% of the
 nebula).
 
@@ -319,6 +325,8 @@ Not a building, but every one is supported by an Industrial Zone.
   Army's shot killed, the attacker how many they lost.
 - **Look and hotkey:** on the map a pixel star in your colours; in the build bar three rank
   chevrons, hotkey 0.
+- **From the Hegemon:** the Hegemon may donate an Army to you if your zones have support to spare
+  (§2.7).
 
 ## 4. Income compared
 

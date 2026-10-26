@@ -1,5 +1,7 @@
 import { ConstructionExecution } from "../src/core/execution/ConstructionExecution";
+import { EmbracePiracyExecution } from "../src/core/execution/EmbracePiracyExecution";
 import { MoveWarshipExecution } from "../src/core/execution/MoveWarshipExecution";
+import { PlayerExecution } from "../src/core/execution/PlayerExecution";
 import { TransportShipExecution } from "../src/core/execution/TransportShipExecution";
 import { WarshipExecution } from "../src/core/execution/WarshipExecution";
 import {
@@ -15,9 +17,9 @@ import { setup } from "./util/Setup";
 import { executeTicks } from "./util/utils";
 
 // Destroyers of the Dark Star (H10, docs/DarkStar-Design.md §6.15): the
-// throne's warships, built without a port, living in the moat, engaging only
-// fleets bound for the Dark Star, the invader's trade and warships that enter
-// the moat.
+// throne's warships, built without a port anywhere in deep space and moved
+// like anyone's (revised 2026-10-25), engaging only fleets bound for the Dark
+// Star, warships that enter the moat and pirates' corsairs; never trade.
 
 let game: Game;
 let hegemon: Player;
@@ -93,7 +95,7 @@ beforeEach(async () => {
 });
 
 describe("Building destroyers (H10)", () => {
-  test("the throne builds in the moat without a port, nowhere else", () => {
+  test("the throne builds in the moat without a port, never on land", () => {
     const g = game.darkStar()!;
     expect(hegemon.units(UnitType.Port)).toHaveLength(0);
     const moat = moatTile(1);
@@ -128,7 +130,7 @@ describe("Building destroyers (H10)", () => {
   });
 });
 
-describe("Destroyers stay in the moat (H10)", () => {
+describe("Destroyers posted in the moat (H10)", () => {
   test("patrol tiles are moat tiles", () => {
     const ship = buildDestroyer(moatTile(1));
     for (let i = 0; i < 200; i++) {
@@ -137,16 +139,9 @@ describe("Destroyers stay in the moat (H10)", () => {
     }
   });
 
-  test("a move order out of the moat is ignored", () => {
+  test("a move order is obeyed like anyone's", () => {
     const moat = moatTile(1);
     const ship = buildDestroyer(moat);
-    east.conquer(outerShore(1)); // make sure it is land the throne cannot sail to
-    game.addExecution(
-      new MoveWarshipExecution(hegemon, [ship.id()], outerShore(1)),
-    );
-    executeTicks(game, 2);
-    expect(ship.warshipState().patrolTile).toBe(moat);
-
     const other = moatTile(1, 4);
     game.addExecution(new MoveWarshipExecution(hegemon, [ship.id()], other));
     executeTicks(game, 2);
@@ -193,24 +188,20 @@ describe("Destroyers pick their fights (H10)", () => {
     }
   });
 
-  test("only the invader's trade is harassed", () => {
+  test("trade is never raided, not even the invader's (2026-10-25)", () => {
     const ship = buildDestroyer(moatTile(1));
     const westPort = west.buildUnit(UnitType.Port, outerShore(-1), {});
     const trader = east.buildUnit(UnitType.TradeShip, moatTile(1, 3), {
       targetUnit: westPort,
     });
-    executeTicks(game, 3);
-    expect(ship.targetUnit()).toBeUndefined();
-    expect(trader.owner()).toBe(east);
-
     east.conquer(domainShore(1)); // east is now the invader
     expect(game.darkStarInvader()).toBe(east);
-    let taken = false;
-    for (let i = 0; i < 60 && !taken; i++) {
+    for (let i = 0; i < 60; i++) {
       game.executeNextTick();
-      taken = trader.owner() !== east || !trader.isActive();
+      expect(ship.targetUnit()).toBeUndefined();
     }
-    expect(taken).toBe(true);
+    expect(trader.owner()).toBe(east);
+    expect(trader.isActive()).toBe(true);
   });
 
   test("an enemy warship is engaged only inside the moat", () => {
@@ -243,5 +234,107 @@ describe("Destroyers move to intercept (H10)", () => {
       before,
     );
     expect(nearMoat(ship.tile())).toBe(true);
+  });
+});
+
+// Beyond the moat (revised 2026-10-25). half_land_half_ocean is 16×16: x < 8
+// is land, x >= 8 one body of water; the smallest Dark Star the engine allows
+// sits at (8, 8) with a one-tile moat, leaving open deep space in the east.
+describe("Destroyers beyond the moat (H10, 2026-10-25)", () => {
+  let north: Player;
+  let pirate: Player;
+
+  function settle(player: Player, tiles: { x: number; y: number }[]) {
+    for (const { x, y } of tiles) player.conquer(game.ref(x, y));
+    player.setSpawnTile(game.ref(tiles[0].x, tiles[0].y));
+    game.addExecution(new PlayerExecution(player));
+  }
+
+  beforeEach(async () => {
+    game = await setup(
+      "half_land_half_ocean",
+      { piracy: { enabled: true }, hegemon: { enabled: true } },
+      [
+        new PlayerInfo("north", PlayerType.Human, "client1", "north"),
+        new PlayerInfo("pirate", PlayerType.Human, "client3", "pirate"),
+      ],
+      undefined,
+      undefined,
+      true,
+      [],
+      { center: [8, 8], radius: 4, moat: 1 },
+    );
+    hegemon = game.hegemon()!;
+    north = game.player("north");
+    pirate = game.player("pirate");
+    const n: { x: number; y: number }[] = [];
+    const p: { x: number; y: number }[] = [];
+    for (let x = 0; x < 8; x++) {
+      for (let y = 0; y < 16; y++) {
+        const tile = game.ref(x, y);
+        if (!game.isLand(tile) || game.isInDarkStar(tile)) continue;
+        (y < 8 ? n : p).push({ x, y });
+      }
+    }
+    settle(north, n);
+    settle(pirate, p);
+    hegemon.addGold(1_000_000_000n);
+    north.addGold(1_000_000_000n);
+    executeTicks(game, 5);
+  });
+
+  test("the throne builds anywhere in deep space", () => {
+    const open = game.ref(15, 15);
+    expect(game.isWater(open)).toBe(true);
+    expect(game.isInMoat(open)).toBe(false);
+    expect(hegemon.canBuild(UnitType.Warship, open)).toBe(open);
+    const ship = buildDestroyer(open);
+    expect(ship.warshipState().patrolTile).toBe(open);
+  });
+
+  test("a destroyer sent out of the moat goes there and stays", () => {
+    const g = game.darkStar()!;
+    const moat = game.ref(g.cx + g.radius + 1, g.cy);
+    expect(game.isInMoat(moat)).toBe(true);
+    const ship = buildDestroyer(moat);
+    const post = game.ref(14, 14);
+    game.addExecution(new MoveWarshipExecution(hegemon, [ship.id()], post));
+    executeTicks(game, 2);
+    expect(ship.warshipState().patrolTile).toBe(post);
+    executeTicks(game, 40);
+    expect(game.isInMoat(ship.tile())).toBe(false);
+    expect(game.manhattanDist(ship.tile(), post)).toBeLessThan(8);
+  });
+
+  test("a pirate's corsair is engaged anywhere", () => {
+    const ship = buildDestroyer(game.ref(13, 14));
+    for (const tile of Array.from(pirate.tiles())) pirate.relinquish(tile);
+    executeTicks(game, 2);
+    while (game.ticks() < pirate.pirateRespawnAt()) game.executeNextTick();
+    game.addExecution(new EmbracePiracyExecution(pirate, game.ref(15, 15)));
+    executeTicks(game, 2);
+    const corsair = pirate.units(UnitType.Warship)[0];
+    expect(corsair).toBeDefined();
+    expect(game.isInMoat(corsair.tile())).toBe(false);
+    let engaged = false;
+    for (let i = 0; i < 10 && !engaged; i++) {
+      game.executeNextTick();
+      engaged = ship.targetUnit() === corsair;
+    }
+    expect(engaged).toBe(true);
+  });
+
+  test("a challenger's destroyer outside the moat is left alone", () => {
+    const ship = buildDestroyer(game.ref(13, 14));
+    const port = north.buildUnit(UnitType.Port, game.ref(7, 2), {});
+    expect(port.isActive()).toBe(true);
+    const other = north.buildUnit(UnitType.Warship, game.ref(15, 15), {
+      patrolTile: game.ref(15, 15),
+    });
+    expect(game.isInMoat(other.tile())).toBe(false);
+    for (let i = 0; i < 10; i++) {
+      game.executeNextTick();
+      expect(ship.targetUnit()).not.toBe(other);
+    }
   });
 });

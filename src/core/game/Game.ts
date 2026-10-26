@@ -1363,6 +1363,10 @@ export enum MessageType {
 export const PIRATE_LANDED_MESSAGE = "events_display.pirate_landed";
 export const PIRATE_LANDING_MESSAGE = "events_display.pirate_landing";
 
+// A punitive flag (H19): the throne's line that carries the Strike button.
+// Named here so the client's events feed recognises it.
+export const PUNITIVE_FLAG_MESSAGE = "events_display.dark_star_punitive_flag";
+
 // Message categories used for filtering events in the EventsDisplay
 export enum MessageCategory {
   ATTACK = "ATTACK",

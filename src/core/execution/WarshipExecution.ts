@@ -26,7 +26,8 @@ export class WarshipExecution implements Execution {
   private lastObservedPatrolTile: TileRef | undefined;
   private activeHealingRemainder = 0;
   private lastEmittedCombat = false;
-  // A destroyer of the Dark Star (H10): portless, moat-bound, defensive.
+  // A destroyer of the Dark Star (H10): portless, defensive, never a raider;
+  // it goes wherever the throne sends it (revised 2026-10-25).
   private hegemon = false;
   // A pirate's corsair (docs/DarkStar-Piracy.md, PR2–PR6, PR11): portless,
   // never fires on fleets, scuttles the freighters it catches into a hold of
@@ -158,9 +159,10 @@ export class WarshipExecution implements Execution {
       return;
     }
 
-    // Priority 4, the throne's destroyers (H10): with nothing in range, go
-    // and meet an invasion fleet that is still on its way.
-    if (this.hegemon && this.intercept()) {
+    // Priority 4, the throne's destroyers (H10): with nothing in range, one
+    // stationed in the moat goes and meets an invasion fleet still on its
+    // way. One the throne sent elsewhere keeps to its post.
+    if (this.hegemon && this.stationedInMoat() && this.intercept()) {
       return;
     }
 
@@ -314,6 +316,10 @@ export class WarshipExecution implements Execution {
     if (this.pirate) {
       return this.findBestTarget([UnitType.Warship, UnitType.TradeShip], true);
     }
+    // The throne's destroyers never raid commerce (H10, 2026-10-25).
+    if (this.hegemon) {
+      return this.findBestTarget([UnitType.TransportShip, UnitType.Warship]);
+    }
     return this.findBestTarget(
       [UnitType.TransportShip, UnitType.Warship, UnitType.TradeShip],
       true,
@@ -396,10 +402,9 @@ export class WarshipExecution implements Execution {
           // A freighter on its land leg is beyond a deep-space ship's reach
           // (S7, §6.18): slow inland, but safe.
           mg.isLand(unit.tile()) ||
-          // A destroyer has no port to bring a prize to: the invader's ship
-          // is simply lost to them (H10). A corsair scuttles its prize
-          // where it stands (PR5), so it needs no port either.
-          (!hasReachablePort && !this.hegemon && !this.pirate) ||
+          // A corsair scuttles its prize where it stands (PR5), so it needs
+          // no port.
+          (!hasReachablePort && !this.pirate) ||
           // The Dark Star's water is not a corsair's hunting ground (PR5).
           (this.pirate && mg.isInMoat(unit.tile())) ||
           patrolTile === undefined ||
@@ -813,8 +818,9 @@ export class WarshipExecution implements Execution {
   }
 
   // The throne's destroyers are purely defensive (H10): they engage fleets
-  // bound for the Dark Star (whoever sent them), the current invader's trade
-  // ships, and warships that have entered the moat. Nothing else, ever.
+  // bound for the Dark Star (whoever sent them), warships that have entered
+  // the moat, and pirates' corsairs anywhere. They never raid commerce
+  // (revised 2026-10-25). Nothing else, ever.
   private hegemonMayEngage(unit: Unit, type: UnitType): boolean {
     const mg = this.mg;
     switch (type) {
@@ -823,14 +829,17 @@ export class WarshipExecution implements Execution {
         return dst !== undefined && mg.isInDarkStar(dst);
       }
       case UnitType.Warship:
-        return mg.isInMoat(unit.tile());
-      case UnitType.TradeShip: {
-        const invader = mg.darkStarInvader();
-        return invader !== null && unit.owner() === invader;
-      }
+        return unit.owner().isPirate() || mg.isInMoat(unit.tile());
       default:
         return false;
     }
+  }
+
+  // The throne's destroyer is posted in the moat, its home: it patrols
+  // there and goes to meet invasions.
+  private stationedInMoat(): boolean {
+    const patrolTile = this.warship.warshipState().patrolTile;
+    return patrolTile !== undefined && this.mg.isInMoat(patrolTile);
   }
 
   // With nothing in range, sail along the moat towards the landing point of
@@ -987,8 +996,10 @@ export class WarshipExecution implements Execution {
       if (
         !this.mg.isWater(tile) ||
         (!allowShoreline && this.mg.isShoreline(tile)) ||
-        // The throne's destroyers never leave the moat (H10).
-        (this.hegemon && !this.mg.isInMoat(tile))
+        // A throne's destroyer posted in the moat patrols the moat (H10).
+        (this.hegemon &&
+          this.mg.isInMoat(patrolTile) &&
+          !this.mg.isInMoat(tile))
       ) {
         attempts++;
         if (attempts === maxAttemptBeforeExpand) {

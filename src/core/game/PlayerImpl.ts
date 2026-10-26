@@ -2062,9 +2062,9 @@ export class PlayerImpl implements Player {
       return false;
     }
     // The throne has no port (H2): its destroyers spawn where it points,
-    // anywhere in the moat, and nowhere else (H10).
+    // anywhere in deep space (H10, revised 2026-10-25).
     if (this.isHegemon()) {
-      return this.mg.isInMoat(tile) ? tile : false;
+      return tile;
     }
     // A pirate's corsair spawns where the pirate points (PR3): any deep
     // space outside the Dark Star and its moat, once the cooldown has run

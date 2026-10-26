@@ -69,7 +69,7 @@ launched and repaired.
 
 - A **Destroyer** can capture another player's freighter in open deep space (never on nebula or
   just off the coast). The captured freighter pays only its captor.
-- A freighter caught by the Hegemon's Destroyers is simply lost.
+- The Hegemon's Destroyers never take freighters.
 - A **pirate corsair** scuttles freighters and takes gold and troops for itself (see [[piracy]]).
 
 Long routes across open space pay the most and are the most exposed. Destroyers of your own guard

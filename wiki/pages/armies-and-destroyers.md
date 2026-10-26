@@ -62,4 +62,10 @@ Lords (except on Easy) send their Armies to the front of a land attack and deplo
 - **Control.** Attack-click a Destroyer to select it, then attack-click where it should go.
   <kbd>F</kbd> selects all of your Destroyers; Shift-drag selects several.
 
-The Hegemon's Destroyers spawn in the moat around the Dark Star and only defend.
+The Hegemon's Destroyers need no spaceport: it places them anywhere in deep space and moves them
+like anyone's. They only defend: they sink fleets bound for the Dark Star, Destroyers that enter
+the moat, and pirate corsairs anywhere, and they never take freighters. Only the moat repairs
+them. One posted in the moat patrols it and sails to meet invasion fleets.
+
+The Hegemon may also **donate an Army** to a challenger whose Industrial Zones have support to
+spare, for a flat 250k: it becomes that player's own Army.

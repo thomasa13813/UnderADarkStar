@@ -101,8 +101,8 @@ export class UnitDisplay extends LitElement implements Controller {
   private canBuild(item: UnitType): boolean {
     if (this.game?.config().isUnitDisabled(item)) return false;
     const player = this.game?.myPlayer();
-    // The throne needs no port for its destroyers, placed on any moat tile
-    // (H10), places structures only as gifts on a challenger's land (H18),
+    // The throne needs no port for its destroyers, placed anywhere in deep
+    // space (H10), places structures only as gifts on a challenger's land (H18),
     // and fires its warheads from the Dark Star itself (H2, revised
     // 2026-09-28) — never a MIRV (S6).
     if (player?.isHegemon()) {

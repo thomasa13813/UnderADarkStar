@@ -191,6 +191,12 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   player currently invading the Dark Star; they never engage anyone else. [Built 2026-09-25, §6.15]
   Placed on any moat tile from the attack menu; moat-bound; the moat repairs them; they answer an
   enemy warship only inside the moat; the AI Hegemon does not build them yet.
+  [Revised 2026-10-25, Tom, built on `feat/rework`] **Anywhere in deep space:** the throne places a
+  destroyer on any deep-space tile and moves it like any player's. A destroyer posted in the moat
+  patrols the moat and sails to meet invasions as before; one sent elsewhere keeps to its post. It
+  still needs no port, and only the moat repairs it. **Never a raider:** it never takes a
+  freighter, the invader's included. **Pirates' corsairs** are engaged anywhere. It still answers a
+  challenger's warship only inside the moat, and a fleet only when bound for the Dark Star (§6.15).
 - **H11 — AI Hegemon personality.** Defensive by default; when its troops have sat at the ceiling for a
   while it may launch a punitive attack at the most powerful challenger. [Decided 2026-09-20 — the
   "leveller"] Only while nobody is invading; "most powerful" is the largest **threat** (see below), and
@@ -300,6 +306,11 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   [Reworked 2026-10-25, F25, built on `feat/rework`] The throne's Gift moves one level down, into
   its handshake beside Donate troops and Donate gold (GN10). A gifted Shield Array needs a Defense
   Post of the host's to stand on (SH2).
+  [Decided and built 2026-10-25, Tom, on `feat/rework`] **Donate army:** the throne may deploy an
+  **Army** (C6) for any challenger whose industrial zones have support to spare, on the
+  challenger's clicked nebula, from their nearest zone. The throne pays the flat first-army price
+  (250k); the army is the host's from the start, counts against the host's support, and the host
+  is told. The handshake holds it beside Gift. The throne still has no armies of its own.
 - **H19 — Missile launches invite a punitive strike.** [Decided 2026-09-26; built the same day,
   §6.16] A challenger who fires a
   missile from a silo (Nuclear or Antimatter Warhead, S6; the target does not matter, the Dark Star
@@ -343,6 +354,11 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   - **The throne's gate.** A captured gate in the bubble is never the throne's launcher: its own
     missiles fly from the Dark Star (H2, revised 2026-09-28), and a captured gate's charge stays
     untouched.
+  - **The notification.** [Decided and built 2026-10-25, Tom] A launch was easy to miss. A fresh
+    flag now puts a line in the throne's events feed ("X fired a … from a Stargate") with a
+    **Strike** button: the same order as clicking the gate. The line stays while the flag is live
+    and goes when it lapses, the gate falls, a strike on the player clears it, or the button is
+    pressed; a refreshed flag adds no second line.
   - **AI Hegemon.** Strikes any flag as soon as it may, except against a challenger holding less than
     `punitiveAIMinLandPermille` of the map's nebulae (tunable, 50–100‰ to start).
     [Reworked 2026-10-25, F25, built on `feat/rework`] Both warheads draw the same **25%** levy (WH4;
@@ -1545,6 +1561,13 @@ nothing in range they **sail to meet** an inbound invasion fleet.
   nearest moat water (`moatTileToward`; one exactly-rounded square root and division, integer
   otherwise) — and the destroyer paths there, firing once the fleet is in range. With no such fleet
   it patrols as before.
+- **Revised 2026-10-25 (Tom).** `warshipSpawn` takes any deep-space tile for the throne;
+  `MoveWarshipExecution` lost its moat check. `WarshipExecution`: random patrol tiles stay in the
+  moat only while the ship's patrol tile is there (`stationedInMoat`), and only such a ship
+  intercepts; the throne's `findTargetUnit` drops trade ships (never a raider); `hegemonMayEngage`
+  adds any pirate's warship. Healing is unchanged (the moat only). Tests: the invader's trade is
+  left alone; on a small Dark Star with open water, a destroyer built and posted beyond the moat
+  stays there, engages a corsair, and leaves a challenger's destroyer alone.
 - **Tests.** `tests/HegemonDestroyers.test.ts` (11): built in the moat without a port and nowhere
   else, the menu agrees, a challenger still needs a port, the build order spawns where pointed;
   patrol tiles stay in the ring, a move order out of the moat is ignored while one within it is
@@ -2250,6 +2273,11 @@ hydrogen-bomb removal (closed by S6).
 
 ## 11. Changelog
 
+- **2026-10-25, the throne's reach** — Tom: the Hegemon's destroyers may be placed and moved
+  anywhere in deep space, never raid freighters (the invader's included) and engage pirates'
+  corsairs anywhere (H10); a fresh punitive flag puts a line with a **Strike** button in the
+  throne's events feed (H19); the throne may **donate an Army** to a challenger with support to
+  spare, at the flat 250k (H18). Built on `feat/rework`.
 - **2026-10-25, rework revised** — Tom: tithes take **half** the gold above 500k (an allowance per
   Population Center level was tried and dropped); the Antimatter Reaction is **kept out by shields** and keeps the old
   Nuclear Warhead's 12/30 blast (WH2 reversed). Lords save towards one 5M warhead (Q15), shield
