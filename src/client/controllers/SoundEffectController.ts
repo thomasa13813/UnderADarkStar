@@ -299,6 +299,10 @@ export class SoundEffectController implements Controller {
       case UnitType.Warship:
         if (unit.owner() === myPlayer) this.emit("build-warship");
         break;
+      // A donated army is heard by the challenger it now belongs to.
+      case UnitType.Army:
+        if (unit.owner() === myPlayer) this.emit("army");
+        break;
       case UnitType.City:
         if (unit.owner() === myPlayer) this.emit("build-city");
         break;

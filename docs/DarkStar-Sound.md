@@ -115,6 +115,7 @@ game. Player-facing unit names are used; the code keeps the old ones.
 | `embrace`             | `embrace.mp3`             | You choose _Embrace piracy_ on the death screen (the button, not the corsair's launch)    | You                                                        | effects   | ours   |
 | `beaching`            | `beaching.mp3`            | A corsair beaches: the claim is taken and the hold attacks the coast (no cue for a raid)  | The pirate and the owner of the coast                      | effects   | ours   |
 | `tithe`               | `tithe.mp3`               | The throne launches a tithe (docs/DarkStar-Rework.md §2.2); no cue on landing             | The throne, and every player whose nebula the ring touches | effects   | ours   |
+| `army`                | `army.mp3`                | An army is deployed (C6), a donated one included; not when it moves or patrols            | Its owner                                                  | effects   | ours   |
 | `build-train-station` | `build-train-station.mp3` | A structure of yours gains a freighter station (once per tick at most)                    | You                                                        | effects   | OF     |
 | `alliance-suggested`  | `alliance-suggested.mp3`  | Someone proposes an alliance to you                                                       | You                                                        | alerts    | OF     |
 | `alliance-accepted`   | `alliance-accepted.mp3`   | Your proposal is accepted                                                                 | You                                                        | alerts    | OF     |
@@ -192,6 +193,11 @@ with them since those units never appear.
 
 ## 7. Changelog
 
+- **2026-10-25** — **The army cue.** Tom's `ArmySound.mp3` (copied to
+  `resources/sounds/effects/army.mp3`) plays when an army is deployed, heard by its owner
+  alone (S8); a donated army is heard by the challenger who receives it, not the throne
+  that paid. No cue for moving or patrolling. `SoundEffectController.onCreated`, with a
+  test. Credited in `CREDITS.md` with Tom's other cues.
 - **2026-10-25** — **The tithe cue.** Tom's `TitheSound.mp3` (copied to
   `resources/sounds/effects/tithe.mp3`) plays when the throne launches a tithe, heard by the
   throne and by every player whose nebula its 50-tile ring touches (S8); the landing has no

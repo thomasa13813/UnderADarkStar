@@ -39,7 +39,8 @@ export type SoundEffect =
   | "defeat"
   | "embrace"
   | "beaching"
-  | "tithe";
+  | "tithe"
+  | "army";
 
 export const soundEffectUrls: ReadonlyMap<SoundEffect, string> = new Map([
   ["ka-ching", assetUrl("sounds/effects/ka-ching.mp3")],
@@ -88,6 +89,8 @@ export const soundEffectUrls: ReadonlyMap<SoundEffect, string> = new Map([
   // The throne's tithe (docs/DarkStar-Rework.md §2.2): Tom's cue of
   // 2026-10-25, at launch.
   ["tithe", assetUrl("sounds/effects/tithe.mp3")],
+  // An army deployed (C6): Tom's cue of 2026-10-25.
+  ["army", assetUrl("sounds/effects/army.mp3")],
 ]);
 
 export type AmbienceTrack = "city" | "factory" | "missile-silo" | "sam-silo";
@@ -160,6 +163,8 @@ const CUE_CATEGORY: Record<SoundEffect, Exclude<CueCategory, "ambience">> = {
   beaching: "effects",
   // A tithe's launch: the throne, and every player its ring touches.
   tithe: "effects",
+  // An army deployed: its owner alone.
+  army: "effects",
 };
 
 /** Channel of a cue. A pure function of the name — call sites never choose. */

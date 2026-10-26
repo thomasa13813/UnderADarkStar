@@ -196,6 +196,22 @@ describe("SoundEffectController", () => {
     expect(played).toEqual(["build-factory", "transport-ship"]);
   });
 
+  it("plays the army cue only for my own army, once, when it deploys", () => {
+    const me = {};
+    game.myPlayer = () => me;
+    game.inSpawnPhase = () => false;
+    // Created on the first tick (tickWithUnits advances it to 1).
+    const mine = {
+      ...makeCreatedUnit(1, UnitType.Army, me),
+      createdAt: () => 1,
+    };
+    tickWithUnits(mine, makeCreatedUnit(2, UnitType.Army, {}));
+    expect(played).toEqual(["army"]);
+    // Walking to its patrol tile later is not a new deployment.
+    tickWithUnits(mine);
+    expect(played).toEqual(["army"]);
+  });
+
   describe("projectiles", () => {
     const TILE = 42;
     const me = { smallID: () => 1, isHegemon: () => false };
