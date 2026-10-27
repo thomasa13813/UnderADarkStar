@@ -56,6 +56,13 @@ vi.mock("../../../src/client/hud/layers/BuildMenu", async () => {
         countable: true,
       },
       {
+        unitType: UnitType.Army,
+        key: "unit_type.army",
+        description: "unit_type.army_desc",
+        icon: "army-icon",
+        countable: true,
+      },
+      {
         unitType: UnitType.HydrogenBomb,
         key: "unit_type.hydrogen_bomb",
         description: "unit_type.hydrogen_bomb_desc",
@@ -153,6 +160,7 @@ describe("RadialMenuElements", () => {
           cost: 100n,
         },
         { type: UnitType.MIRV, canBuild: true, canUpgrade: false, cost: 100n },
+        { type: UnitType.Army, canBuild: true, canUpgrade: false, cost: 100n },
         {
           type: UnitType.TransportShip,
           canBuild: true,
@@ -300,7 +308,11 @@ describe("RadialMenuElements", () => {
       expect(subMenu).toBeDefined();
       expect(subMenu.length).toBeGreaterThan(0);
 
-      const constructionUnitTypes = [UnitType.City, UnitType.Factory];
+      const constructionUnitTypes = [
+        UnitType.City,
+        UnitType.Factory,
+        UnitType.Army,
+      ];
       const returnedUnitTypes = subMenu.map((item) => {
         const unitTypeStr = item.id.replace("build_", "");
         return Object.values(UnitType).find(
@@ -332,6 +344,35 @@ describe("RadialMenuElements", () => {
       attackUnitTypes.forEach((unitType) => {
         expect(returnedUnitTypes).not.toContain(unitType);
       });
+    });
+
+    // Phones have no hotbar, and an Army stands only on its owner's nebula,
+    // where the stargate menu never opens (2026-10-27).
+    it("deploys an Army on the tapped tile of your own territory", () => {
+      const subMenu = buildMenuElement.subMenu!(mockParams);
+      const army = subMenu.find((item) => item.id === `build_${UnitType.Army}`);
+      expect(army).toBeDefined();
+      expect(army!.disabled(mockParams)).toBe(false);
+
+      army!.action!(mockParams);
+
+      const emitted = (mockParams.eventBus.emit as Mock).mock.calls[0][0];
+      expect(emitted).toBeInstanceOf(BuildUnitIntentEvent);
+      expect(emitted.unit).toBe(UnitType.Army);
+      expect(emitted.tile).toBe(mockTile);
+    });
+
+    it("leaves the Army out of the stargate menu", () => {
+      mockParams.selected = {
+        id: () => 2,
+        isPlayer: vi.fn(() => true),
+        displayName: vi.fn(() => "Them"),
+      } as unknown as PlayerView;
+
+      const ids = attackMenuElement.subMenu!(mockParams).map((item) => item.id);
+
+      expect(ids).toContain(`attack_${UnitType.Warship}`);
+      expect(ids).not.toContain(`attack_${UnitType.Army}`);
     });
 
     it("should handle undefined params in submenu", () => {

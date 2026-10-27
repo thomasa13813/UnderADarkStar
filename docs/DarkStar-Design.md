@@ -2287,6 +2287,7 @@ hydrogen-bomb removal (closed by S6).
 ## 11. Changelog
 
 - **2026-10-27, shield arrays free-standing** — Tom: Shield Arrays as strict upgrades to Defense Posts were not working well. They are free-standing structures again (SH1 revised, C5), give no post's defence, no longer count towards the post's price, and cost **2.5M** (was 2M). Their shield shrinks a tenth, 100 → **90 tiles**. Capture intact unchanged.
+- **2026-10-27, Armies on phones** — Tom found no way to deploy an Army on mobile: the build bar is hidden below 1024px, and the radial menu offered the Army only in the Stargate menu, which opens off your territory, where an Army can never stand. The Army now sits in the build (wrench) menu on your own nebula and no longer in the Stargate menu; Destroyers stay in the Stargate menu on deep space. Wiki: an "On a phone" section in Controls, and both ways to deploy in Armies and Destroyers.
 - **2026-10-27, map** — **Periodic** (§5.3), from a picture of the periodic table: 118 element cards of nebula, 18 Lords. Built as Periodic Table and renamed the same day (Tom).
 - **2026-10-25, the throne's reach** — Tom: the Hegemon's destroyers may be placed and moved
   anywhere in deep space, never raid freighters (the invader's included) and engage pirates'

@@ -26,8 +26,11 @@ The Hegemon's Destroyers and a pirate's corsair are not limited this way.
 
 **A defensive land unit that patrols your nebula and thins out attacks on you.**
 
-- **Deploying.** Click your own nebula. The Army sets out from your nearest finished Industrial
-  Zone, walks there through your territory and patrols within {{armyPatrol}} tiles of the spot.
+- **Deploying.** Pick the Army in the build bar (or press <kbd>0</kbd>) and click your own nebula,
+  or open the [[interface#radial-menu|radial menu]] on your own nebula and pick **Army** from the
+  build menu. On a phone or small screen, where the build bar is hidden, the radial menu is the
+  way. The Army sets out from your nearest finished Industrial Zone, walks there through your
+  territory and patrols within {{armyPatrol}} tiles of the spot.
 - **Moving.** Click an Army to select it (Shift-drag to select several, Destroyers included),
   then click your own nebula to send it there. Armies never leave your territory and never cross
   deep space.
@@ -51,8 +54,11 @@ Lords (except on Easy) send their Armies to the front of a land attack and deplo
 
 **A deep-space warship that patrols, raids and defends.**
 
-- **Launching.** You need a Spaceport with a harbour on the body of space you click. The
-  Destroyer launches from your harbour nearest the click and patrols the area.
+- **Launching.** You need a Spaceport with a harbour on the body of space you click. Pick the
+  Destroyer in the build bar (or press <kbd>7</kbd>) and click deep space, or open the
+  [[interface#radial-menu|radial menu]] on deep space and pick **Destroyer** from the Stargate
+  menu (the gate slot); on a phone the radial menu is the way. The Destroyer launches from your
+  harbour nearest the click and patrols the area.
 - **What it does.** It captures enemy freighters in open deep space and destroys enemy fleets and
   Destroyers.
 - **Experience.** Destroyers level up (up to level 3) by capturing freighters and destroying

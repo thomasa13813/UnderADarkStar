@@ -44,10 +44,11 @@ buildings they have.
 Right click (or touch on mobile) opens the radial menu; right click outside it to close it. From
 the menu you can:
 
-- open the **build menu**;
+- open the **build menu** on your own territory: buildings and **Armies**;
 - open the **info menu** for the player under the cursor;
 - send a **fleet** to the spot (only if your territory touches deep space);
-- fire a **Stargate** shot or launch a warhead from the gate slot;
+- fire a **Stargate** shot, launch a warhead or launch a **Destroyer** (on deep space) from the
+  gate slot, which appears off your own territory;
 - open the **handshake** (the ally slot): **donate troops** or **gold** to anyone your
   Stargates reach, and **propose an alliance** (see [[alliances-and-diplomacy#donations-the-gate-network]]).
   On the Hegemon, donating troops reinforces the throne (see

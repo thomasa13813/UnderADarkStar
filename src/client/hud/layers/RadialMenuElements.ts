@@ -368,6 +368,11 @@ export const infoMenuElement: MenuElement = {
   },
 };
 
+// An Army stands on your own nebula (armySpawn), so the wrench menu offers it
+// beside the structures; the stargate menu opens only off your territory,
+// where it could never be placed. Without this a phone, which has no hotbar,
+// could not deploy one at all. Destroyers stay in the stargate menu: they are
+// placed in deep space.
 function getAllEnabledUnits(
   myPlayer: boolean,
   config: Config,
@@ -383,8 +388,11 @@ function getAllEnabledUnits(
 
   if (myPlayer) {
     Structures.types.forEach(addIfEnabled);
+    addIfEnabled(UnitType.Army);
   } else {
-    BuildableAttacks.types.forEach(addIfEnabled);
+    BuildableAttacks.types.forEach(
+      (unitType) => unitType !== UnitType.Army && addIfEnabled(unitType),
+    );
   }
 
   return units;
@@ -410,7 +418,11 @@ function createMenuElements(
         unitTypes.has(item.unitType) &&
         (filterType === "attack"
           ? BuildableAttacks.has(item.unitType)
-          : !BuildableAttacks.has(item.unitType)),
+          : filterType === "build"
+            ? !BuildableAttacks.has(item.unitType) ||
+              item.unitType === UnitType.Army
+            : // A gifted Army has its own handshake entry (donateArmyElement).
+              !BuildableAttacks.has(item.unitType)),
     )
     .map((item: BuildItemDisplay) => {
       return {

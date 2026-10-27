@@ -62,3 +62,11 @@ digit.
 | <kbd>8</kbd> | [[stargates-and-warheads#warheads\|Antimatter Reaction]] |
 | <kbd>9</kbd> | [[stargates-and-warheads#warheads\|Gamma Ray Burst]]     |
 | <kbd>0</kbd> | [[armies-and-destroyers#armies\|Army]]                   |
+
+## On a phone
+
+Touch opens the [[interface#radial-menu|radial menu]]; the build bar is hidden on small screens.
+
+- **Buildings and Armies:** touch your own territory and open the build menu.
+- **Destroyers:** touch deep space near your Spaceport and open the Stargate menu (the gate slot).
+- **Fleets:** touch a coast across deep space and pick the fleet.
