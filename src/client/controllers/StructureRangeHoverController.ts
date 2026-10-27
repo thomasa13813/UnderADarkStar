@@ -148,7 +148,9 @@ export class StructureRangeHoverController implements Controller {
     return {
       x: this.game.x(unit.tile()),
       y: this.game.y(unit.tile()),
-      r: gate ? config.stargateRange(unit.level()) : config.shieldArrayRadius(),
+      r: gate
+        ? config.stargateRange(unit.level())
+        : config.shieldArrayRadius(unit.level()),
       color: gate ? STARGATE_RANGE_COLOR : SHIELD_RANGE_COLOR,
     };
   }

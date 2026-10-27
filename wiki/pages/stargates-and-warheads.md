@@ -57,18 +57,24 @@ An AI Hegemon punishes every launch except from very small players.
 
 ## Shield Array
 
-**It keeps every other player's warheads off everything within {{shieldR}} tiles.**
+**It keeps every other player's warheads off everything within {{shieldR}} tiles per level, up to
+{{shieldMaxR}} at level {{shieldMaxLevel}}.**
 
 - **Stands on its own.** A Shield Array is a building of its own, placed like any other. It is
   not a Defense Post and gives no post's defence: pair it with a post if you want both.
-- **Price.** {{shieldCost}} gold, one level, no upgrades. {{shieldBuild}} seconds to build, and
-  it shields nothing until it is finished.
+- **Levels.** A new array shields {{shieldR}} tiles; each upgrade adds {{shieldR}}, up to
+  {{shieldMaxR}} tiles at level {{shieldMaxLevel}}, the top.
+- **Price.** Each level, a new array or an upgrade, costs by how many Shield Array levels you
+  already own: {{shieldCost1}} for the first, {{shieldCost2}} for the second, {{shieldCost3}}
+  for every one after. {{shieldBuild}} seconds to build, and a new array shields nothing until
+  it is finished.
 - **What it stops.** When another player's warhead lands, Gamma Ray Burst or Antimatter
   Reaction, the blast does nothing inside the shield: no nebula lost or erased, no troops killed,
-  no building destroyed. The ground outside is hit as usual. A Gamma Ray Burst reaches
-  {{grbRadius}} tiles, so one aimed at the array itself still clears the ring beyond the shield;
-  an Antimatter Reaction aimed at it does nothing at all. The Hegemon's warheads are kept out like anyone's; your own are
-  not.
+  no building destroyed. The ground outside is hit as usual. A warhead aimed at the array itself
+  still clears the ring between the shield's edge and its own blast's edge (Gamma Ray Burst
+  {{grbRadius}} tiles, Antimatter Reaction {{arRadius}}): from level 2 an Antimatter Reaction
+  aimed at the array does nothing at all, and at level {{shieldMaxLevel}} a Gamma Ray Burst does
+  nothing either. The Hegemon's warheads are kept out like anyone's; your own are not.
 - **What gets through.** Troops: the Hegemon's strikes and every Stargate shot land inside, and
   conquest takes the array. And the Hegemon's tithes.
 - **Captured intact.** A Shield Array taken by conquest is captured, shield and all, and protects

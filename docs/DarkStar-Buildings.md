@@ -24,7 +24,7 @@ Troop numbers are as shown in game. One second of game time is ten ticks.
 | **Spaceport**         | as the Industrial Zone, **same shared count**                   | 5 s        | Yes, no cap | Sends freighters; each level is one more chance to send one, one more docking berth and +5 repair, and supports one Destroyer |
 | **Defense Post**      | 50k → 100k → 150k → 200k → 250k (cap)                           | 5 s        | No          | Within 30 tiles, attackers lose 5× the troops and advance 3× slower                                                           |
 | **Stargate**          | 500k flat, new or per upgrade                                   | 10 s       | Yes, no cap | Range 180 at level 1, +75 per level; fires troops or warheads, 5 s reload                                                     |
-| **Shield Array**      | 2.5M flat                                                       | 10 s       | No          | No other player's warhead harms anything within 90 tiles                                                                      |
+| **Shield Array**      | 1M → 2.5M → 5M (cap)                                            | 10 s       | Yes, to 5   | +25 tiles of shield (125 at level 5): no other player's warhead harms anything inside                                         |
 
 ## 2. Rules every building follows
 
@@ -43,8 +43,8 @@ Troop numbers are as shown in game. One second of game time is ten ticks.
 
 ### 2.2 Prices climb
 
-Population Centers, Industrial Zones, Spaceports and Defense Posts get dearer the more you have.
-Stargates and Shield Arrays never do.
+Population Centers, Industrial Zones, Spaceports, Defense Posts and Shield Arrays get dearer the
+more you have. Stargates never do.
 
 - **The count is levels, not buildings.** A level-3 Population Center counts three, so upgrading
   costs the same as building new at that count. The first upgrade of your only Population Center
@@ -55,7 +55,8 @@ Stargates and Shield Arrays never do.
 - **Captured buildings do not raise your prices.** Only what you built or upgraded yourself
   counts.
 - **Losing buildings lowers your prices again**, whether they were destroyed, captured or deleted.
-- Prices stop climbing at the cap: 1M for the three economic buildings, 250k for Defense Posts.
+- Prices stop climbing at the cap: 1M for the three economic buildings, 250k for Defense Posts,
+  5M for Shield Arrays (1M for your first level, 2.5M for the second, 5M from then on).
 
 ### 2.3 Building and upgrading
 
@@ -103,7 +104,7 @@ The Hegemon may place any building a challenger could build on any challenger's 
 included), or upgrade one already there. It pays from its own gold, and the host cannot refuse.
 
 - **The Hegemon always pays the first-building price**, for every level: 125k for a Population
-  Center, Industrial Zone or Spaceport, 50k for a Defense Post, 500k for a Stargate, 2.5M for a
+  Center, Industrial Zone or Spaceport, 50k for a Defense Post, 500k for a Stargate, 1M for a
   Shield Array.
 - **The gift counts as the host's own build**, so the host's next one costs them more.
 - A gift follows every placement rule of §2.1 and is under construction like any build.
@@ -257,22 +258,27 @@ included), or upgrade one already there. It pays from its own gold, and the host
 
 ### 3.6 Shield Array
 
-**Keeps warheads off everything within 90 tiles.**
+**Keeps warheads off everything within 25 tiles per level, up to 125 at level 5.**
 
 - **Stands on its own.** A Shield Array is a building of its own, placed like any other (§2.1).
   It is not a Defense Post and gives no post's defence: pair it with a post if you want both.
+- **Levels.** A new array shields **25 tiles**; each upgrade adds 25, to **125 tiles at level
+  5**, the top. It cannot be upgraded past level 5.
 - **The shield.** When **another player's** warhead lands, Gamma Ray Burst or Antimatter
-  Reaction, the blast does nothing within **90 tiles** of the array: no nebula lost or erased,
-  no troops killed, no building destroyed. The ground outside is hit as usual. A Gamma Ray
-  Burst's blast reaches 100 tiles, so one aimed at the array itself still clears the ring from
-  90 to 100 tiles; an Antimatter Reaction aimed at it does nothing at all. The Hegemon's
-  warheads are kept out like anyone's; **your own** are not.
+  Reaction, the blast does nothing inside the array's shield: no nebula lost or erased, no troops
+  killed, no building destroyed. The ground outside is hit as usual. A warhead aimed at the array
+  itself still clears the ring between the shield's edge and its own blast's edge (a Gamma Ray
+  Burst reaches 100 tiles, an Antimatter Reaction 30): from level 2 an Antimatter Reaction aimed
+  at the array does nothing at all, and at level 5 a Gamma Ray Burst does nothing either. The
+  Hegemon's warheads are kept out like anyone's; **your own** are not.
 - **What gets through.** Troops: the Hegemon's strikes and every Stargate shot land inside, and
   conquest takes the array. And the Hegemon's tithes.
 - **Captured intact.** A Shield Array taken by conquest is **captured**, shield and all, and
   protects its new owner.
 - **Construction.** Nothing is shielded while the array is under construction.
-- **Price.** 2.5M flat, one level, no upgrades.
+- **Price.** Each level, a new array or an upgrade, costs by how many Shield Array levels you
+  already own: **1M** for the first, **2.5M** for the second, **5M** for every one after (§2.2).
+  A level-5 array as your only one costs 18.5M in all.
 
 ### 3.7 The cost of firing: punitive strikes
 
@@ -391,7 +397,7 @@ Other habits:
   one-per-level limit.
 - **One Shield Array.** Once a Lord owns at least one of every other building (Population
   Center, Industrial Zone, Spaceport, Defense Post and Stargate), it builds one Shield Array
-  where its shield covers the most of its buildings. Only one.
+  where its shield covers the most of its buildings. Only one, and it never upgrades it.
 - **Warheads.** A Lord fires a Gamma Ray Burst at its target wherever the blast spares its own
   and its friends' ground, bystanders be damned; where it cannot, an Antimatter Reaction if that
   fits on the target's ground.

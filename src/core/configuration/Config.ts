@@ -308,17 +308,18 @@ export const STARGATE_DEFAULTS = {
 // no launch — a warhead lands as usual and the blast is simply kept off the
 // tiles inside. The throne's missiles are kept out like anyone else's; the
 // Antimatter Reaction goes through (WH2), and so do strikes and gate shots
-// (troops, not missiles) and tithes.
+// (troops, not missiles) and tithes. Upgradable since 2026-10-27 (Tom).
 export const SHIELD_ARRAY_DEFAULTS = {
-  // The protected radius in tiles. 90 since 2026-10-27 (Tom: a tenth off),
-  // a little short of the Gamma Ray Burst's outer 100, so a burst aimed at
-  // the array still clears the outer ring; 100 from 2026-10-25 (SH3), 40
-  // before. A single level.
-  radius: 90,
-  // Lowered 2026-09-30 from the 5M baseline for a zone nothing short of
-  // conquest can clear; F21 keeps it open to tuning. 2.5M since 2026-10-27
-  // (Tom, with the return to a free-standing structure; 2M before).
-  costGold: 2_500_000,
+  // The protected radius in tiles is `radiusPerLevel` × level, up to
+  // `maxLevel`: 25 at level 1, 125 at level 5 (Tom, 2026-10-27). Before
+  // that a single level: 90 earlier the same day, 100 from 2026-10-25
+  // (SH3), 40 before.
+  radiusPerLevel: 25,
+  maxLevel: 5,
+  // The price of each level, new array or upgrade, by how many levels the
+  // player already owns: 1M, then 2.5M, then 5M for every one after (Tom,
+  // 2026-10-27; 2.5M flat earlier the same day, 2M before).
+  costGoldByCount: [1_000_000, 2_500_000, 5_000_000],
   constructionSeconds: 10,
 };
 
@@ -638,8 +639,14 @@ export class Config {
   shieldArrayConfig(): typeof SHIELD_ARRAY_DEFAULTS {
     return SHIELD_ARRAY_DEFAULTS;
   }
-  shieldArrayRadius(): number {
-    return this.shieldArrayConfig().radius;
+  // The protected radius of a shield array of `level` (capped at maxLevel).
+  shieldArrayRadius(level: number): number {
+    const c = this.shieldArrayConfig();
+    return c.radiusPerLevel * Math.min(Math.max(level, 1), c.maxLevel);
+  }
+  // The largest radius any shield array reaches.
+  shieldArrayMaxRadius(): number {
+    return this.shieldArrayRadius(this.shieldArrayConfig().maxLevel);
   }
   unitSupportConfig(): typeof UNIT_SUPPORT_DEFAULTS {
     return UNIT_SUPPORT_DEFAULTS;
@@ -1007,11 +1014,15 @@ export class Config {
       case UnitType.ShieldArray: {
         const c = this.shieldArrayConfig();
         info = {
-          cost: this.costWrapper(() => c.costGold, UnitType.ShieldArray),
+          cost: this.costWrapper((numUnits: number) => {
+            const ladder = c.costGoldByCount;
+            return ladder[Math.min(numUnits, ladder.length - 1)];
+          }, UnitType.ShieldArray),
           constructionDuration: this.instantBuild()
             ? 0
             : c.constructionSeconds * 10,
-          // One level only: the perimeter never grows.
+          upgradable: true,
+          maxLevel: c.maxLevel,
         };
         break;
       }

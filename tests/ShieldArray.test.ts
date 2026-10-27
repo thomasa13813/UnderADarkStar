@@ -10,6 +10,7 @@ import { HegemonExecution } from "../src/core/execution/HegemonExecution";
 import { NukeExecution } from "../src/core/execution/NukeExecution";
 import { PlayerExecution } from "../src/core/execution/PlayerExecution";
 import { RazeExecution } from "../src/core/execution/RazeExecution";
+import { UpgradeStructureExecution } from "../src/core/execution/UpgradeStructureExecution";
 import {
   listNukeBreakAlliance,
   missileShieldsNear,
@@ -29,9 +30,9 @@ import { TestConfig } from "./util/TestConfig";
 import { executeTicks } from "./util/utils";
 
 // Shield arrays (docs/DarkStar-Rework.md SH1-SH4, 2026-10-25, revised
-// 2026-10-27; C5 before): a free-standing structure, 2.5M flat, with a
-// 90-tile shield (a tenth short of the Gamma Ray Burst's 100 since
-// 2026-10-27) that no other player's warhead can harm the inside of, the Antimatter Reaction included (revised
+// 2026-10-27; C5 before): a free-standing structure with five levels, each
+// 1M, 2.5M, then 5M by the levels owned, and a shield of 25 tiles per level
+// (125 at level 5) that no other player's warhead can harm the inside of, the Antimatter Reaction included (revised
 // 2026-10-25); strikes and gate shots (troops) land inside it. It gives no
 // post's defence. A post is destroyed when taken; an array is captured
 // intact.
@@ -122,7 +123,7 @@ async function start(instantBuild = true) {
   west = game.player("west");
   settle(east, 1, 40, 300_000);
   // West's block is 60 deep and 160 tall, so a shield in one corner leaves
-  // land beyond its 90 tiles for a blast to clear.
+  // land beyond a level-5 array's 125 tiles for a blast to clear.
   settle(west, -1, 60, 300_000, 80);
   hegemon.addGold(50_000_000n);
   game.addExecution(new HegemonExecution());
@@ -139,12 +140,22 @@ function build(player: Player, type: UnitType, tile: TileRef): Unit {
   return unit;
 }
 
-function shieldArray(player: Player, tile: TileRef): Unit {
-  return build(player, UnitType.ShieldArray, tile);
+// A shield array, raised at once to `level` (the top, 125 tiles, unless
+// a test needs a smaller one).
+function shieldArray(player: Player, tile: TileRef, level = 5): Unit {
+  const array = build(player, UnitType.ShieldArray, tile);
+  if (level > 1) {
+    game.addExecution(
+      new UpgradeStructureExecution(player, array.id(), level - 1),
+    );
+    executeTicks(game, 1);
+  }
+  expect(array.level()).toBe(level);
+  return array;
 }
 
-function radius(): number {
-  return game.config().shieldArrayRadius();
+function radius(level = 5): number {
+  return game.config().shieldArrayRadius(level);
 }
 
 // Fire a warhead and run the game until it has landed.
@@ -160,8 +171,8 @@ function strike(player: Player, type: NukeType, target: TileRef) {
 }
 
 // The player's tiles inside and outside the shield around `site`.
-function tilesAround(player: Player, site: TileRef) {
-  const r2 = radius() * radius();
+function tilesAround(player: Player, site: TileRef, r = radius()) {
+  const r2 = r * r;
   let inside = 0;
   let outside = 0;
   for (const tile of player.tiles()) {
@@ -174,17 +185,44 @@ function tilesAround(player: Player, site: TileRef) {
 describe("Building a shield array (SH1, SH2, revised 2026-10-27)", () => {
   beforeEach(() => start());
 
-  test("it stands on its own ground, 2.5M flat, one level", () => {
+  test("it stands on its own ground at level 1", () => {
     const tile = tileOf(east, 20);
     expect(east.canBuild(UnitType.ShieldArray, tile)).toBe(tile);
-    const gold = east.gold();
-    const array = shieldArray(east, tile);
-    // Two ticks of income accrue meanwhile.
-    expect(gold - east.gold()).toBeGreaterThan(2_490_000n);
-    expect(gold - east.gold()).toBeLessThanOrEqual(2_500_000n);
+    const array = build(east, UnitType.ShieldArray, tile);
     expect(array.level()).toBe(1);
+    expect(radius(1)).toBe(25);
+  });
+
+  test("each level, new or upgrade, costs 1M, then 2.5M, then 5M", () => {
+    const cost = () =>
+      game.config().unitInfo(UnitType.ShieldArray).cost(game, east);
+    expect(cost()).toBe(1_000_000n);
+    const array = build(east, UnitType.ShieldArray, tileOf(east, 20));
+    expect(cost()).toBe(2_500_000n);
+    game.addExecution(new UpgradeStructureExecution(east, array.id()));
+    executeTicks(game, 1);
+    expect(array.level()).toBe(2);
+    expect(cost()).toBe(5_000_000n);
+    // A second array counts the levels of the first.
+    build(east, UnitType.ShieldArray, tileOf(east, 20, -18));
+    expect(cost()).toBe(5_000_000n);
+  });
+
+  test("each level adds 25 tiles, up to level 5 and 125 tiles", () => {
+    const array = build(east, UnitType.ShieldArray, tileOf(east, 20));
+    for (let level = 1; level <= 5; level++) {
+      expect(radius(level)).toBe(25 * level);
+    }
+    // A bulk order past the top stops at level 5.
+    game.addExecution(new UpgradeStructureExecution(east, array.id(), 10));
+    executeTicks(game, 1);
+    expect(array.level()).toBe(5);
     expect(east.canUpgradeUnit(array)).toBe(false);
-    expect(game.config().unitInfo(UnitType.ShieldArray).upgradable).toBeFalsy();
+    expect(game.config().unitInfo(UnitType.ShieldArray).maxLevel).toBe(5);
+    // Its zone is read at its level.
+    const zones = missileShieldsNear(game, west.smallID(), array.tile(), 1);
+    expect(zones).toHaveLength(1);
+    expect(zones[0].r2).toBe(125 * 125);
   });
 
   test("it no longer upgrades a post: both stand", () => {
@@ -212,11 +250,6 @@ describe("Building a shield array (SH1, SH2, revised 2026-10-27)", () => {
       false,
     );
     expect(east.canBuild(UnitType.ShieldArray, centre())).toBe(false);
-  });
-
-  test("the shield is 90 tiles, a tenth short of a Gamma Ray Burst", () => {
-    expect(radius()).toBe(90);
-    expect(game.config().nukeMagnitudes(UnitType.HydrogenBomb).outer).toBe(100);
   });
 });
 
@@ -290,24 +323,25 @@ describe("What a shield array does (SH3, SH4)", () => {
     expect(array.isActive()).toBe(true);
   });
 
-  test("a Gamma Ray Burst aimed at the array clears only the ring beyond 90 tiles", () => {
+  test("a Gamma Ray Burst aimed at a smaller array clears the ring beyond its shield", () => {
     build(east, UnitType.Stargate, tileOf(east, 10));
-    // In the block's top corner, so west owns land 90 to 100 tiles away.
+    // Level 3, 75 tiles, in the block's top corner: west owns land 75 to
+    // 100 tiles away.
     const site = tileOf(west, 5, -75);
-    const array = shieldArray(west, site);
+    const array = shieldArray(west, site, 3);
     const city = build(west, UnitType.City, tileOf(west, 30, -40));
-    const before = tilesAround(west, site);
+    const before = tilesAround(west, site, radius(3));
     strike(east, UnitType.HydrogenBomb, site);
-    const after = tilesAround(west, site);
+    const after = tilesAround(west, site, radius(3));
     expect(after.inside).toBe(before.inside);
     expect(after.outside).toBeLessThan(before.outside);
     expect(array.isActive()).toBe(true);
     expect(city.isActive()).toBe(true);
   });
 
-  test("a Gamma Ray Burst aimed at an array with no ground beyond 90 tiles does nothing", () => {
+  test("a Gamma Ray Burst aimed at a level-5 array does nothing at all", () => {
     build(east, UnitType.Stargate, tileOf(east, 10));
-    // Mid-block: every west tile lies within 90 tiles of it.
+    // 125 tiles: wider than the burst's 100.
     const site = tileOf(west, 30);
     const array = shieldArray(west, site);
     const tiles = west.numTilesOwned();
@@ -372,8 +406,7 @@ describe("What a shield array does (SH3, SH4)", () => {
     executeTicks(game, 1);
     expect(array.owner()).toBe(east);
     expect(array.isActive()).toBe(true);
-    // Now east's: west's own burst is kept out of its former zone (east's
-    // land beyond 90 tiles, across the Dark Star, is fair game).
+    // Now east's: west's own burst is kept out of its former zone.
     const before = tilesAround(east, site);
     strike(west, UnitType.HydrogenBomb, site);
     expect(tilesAround(east, site).inside).toBe(before.inside);

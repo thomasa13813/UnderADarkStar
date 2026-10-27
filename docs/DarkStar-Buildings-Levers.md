@@ -17,7 +17,7 @@ All in `src/core/configuration/Config.ts` unless stated.
 | Population Center, Industrial Zone, Spaceport price | `unitInfo` (`City`, `Factory`, `Port`)                                              | `min(1M, 125k × 2^n)`; Port and Factory share `n`                                                                                 |
 | Defense Post price                                  | `unitInfo` (`DefensePost`)                                                          | `min(250k, 50k × (n+1))`                                                                                                          |
 | Stargate                                            | `STARGATE_DEFAULTS`                                                                 | 500k, 10 s, range 180 +75/level, reload 5 s                                                                                       |
-| Shield Array                                        | `SHIELD_ARRAY_DEFAULTS`                                                             | 2.5M, 10 s, radius 90 (the Gamma Ray Burst's outer is 100); free-standing (`landBasedStructureSpawn`)                             |
+| Shield Array                                        | `SHIELD_ARRAY_DEFAULTS`                                                             | `costGoldByCount` 1M / 2.5M / 5M by levels owned; 10 s; `radiusPerLevel` 25 × level, `maxLevel` 5 (125); free-standing            |
 | Build times                                         | `unitInfo`                                                                          | City / Factory 20 ticks; Port / DefensePost 50; Stargate / ShieldArray 100                                                        |
 | Price count                                         | `costWrapper`                                                                       | `Σ min(unitsOwned, unitsConstructed)`; levels count; gift = `costFn(0)`                                                           |
 | Troops per center level                             | `cityTroopIncrease`                                                                 | 250,000 (25,000 shown)                                                                                                            |
@@ -98,6 +98,13 @@ Notes for Tom, not decisions.
 
 ## 3. Changelog
 
+- **2026-10-27, later** — Shield Arrays upgradable (Tom): `unitInfo` sets `upgradable` and
+  `maxLevel` 5 (`canUpgradeUnit` refuses past it, bulk orders stop there). Radius
+  `radiusPerLevel` × level, 25 → 125 (`Config.shieldArrayRadius(level)`; `missileShieldsNear`
+  reads each array's level and searches out to `shieldArrayMaxRadius`; the client's
+  `shieldArrayRadius(level)` in `render/types/UnitType.ts` drives the ring pass, and the hover
+  and the ghost read the config). Price by levels owned, `costGoldByCount` 1M, 2.5M, then 5M; a
+  gift pays 1M. Lords' one array stays level 1 (`shieldArrayValue` reads the level-1 radius).
 - **2026-10-27** — Shield Arrays are free-standing again (Tom: as an upgrade to Defense Posts they
   were not working well). Placed like any building (`landBasedStructureSpawn`;
   `shieldedPostSpawn` and `ConstructionExecution.replacePost` removed), no longer count towards

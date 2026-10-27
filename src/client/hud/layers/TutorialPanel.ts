@@ -578,7 +578,9 @@ export class TutorialPanel extends LitElement implements Controller {
       key: this.hotkeyFor(step),
       flag: HEGEMON_DEFAULTS.punitiveFlagSeconds,
       stall: HEGEMON_DEFAULTS.invasionStallSeconds,
-      shield: SHIELD_ARRAY_DEFAULTS.radius,
+      shield: SHIELD_ARRAY_DEFAULTS.radiusPerLevel,
+      shieldMax:
+        SHIELD_ARRAY_DEFAULTS.radiusPerLevel * SHIELD_ARRAY_DEFAULTS.maxLevel,
     };
   }
 }

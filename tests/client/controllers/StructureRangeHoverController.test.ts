@@ -111,7 +111,7 @@ describe("StructureRangeHoverController", () => {
     expect(view.updateHoverRange).toHaveBeenCalledWith({
       x: 200,
       y: 200,
-      r: game.config().shieldArrayRadius(),
+      r: game.config().shieldArrayRadius(1),
       color: SHIELD_RANGE_COLOR,
     });
   });

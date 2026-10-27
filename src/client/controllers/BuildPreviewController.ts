@@ -506,9 +506,11 @@ export class BuildPreviewController implements Controller {
         rangeRadius = this.game.config().stargateRange(level);
         break;
       }
-      case UnitType.ShieldArray:
-        rangeRadius = this.game.config().shieldArrayRadius();
+      case UnitType.ShieldArray: {
+        const level = this.resolveGhostRangeLevel(u) ?? 1;
+        rangeRadius = this.game.config().shieldArrayRadius(level);
         break;
+      }
     }
     let radiusTileX = this.game.x(tileRef);
     let radiusTileY = this.game.y(tileRef);
@@ -739,7 +741,8 @@ export class BuildPreviewController implements Controller {
   ): number | undefined {
     if (
       buildableUnit.type !== UnitType.SAMLauncher &&
-      buildableUnit.type !== UnitType.Stargate
+      buildableUnit.type !== UnitType.Stargate &&
+      buildableUnit.type !== UnitType.ShieldArray
     ) {
       return undefined;
     }

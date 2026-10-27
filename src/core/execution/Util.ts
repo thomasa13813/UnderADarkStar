@@ -24,22 +24,33 @@ export function missileShieldsNear(
   tile: TileRef,
   outer: number,
 ): ShieldZone[] {
-  const radius = game.config().shieldArrayRadius();
+  // Each array shields by its level; search as far as the largest reaches.
+  const config = game.config();
   return game
     .nearbyUnits(
       tile,
-      outer + radius,
+      outer + config.shieldArrayMaxRadius(),
       UnitType.ShieldArray,
       ({ unit }) =>
         unit.owner().smallID() !== attackerSmallId &&
         unit.isActive() &&
         !unit.isUnderConstruction(),
     )
-    .map(({ unit }) => ({
-      x: game.x(unit.tile()),
-      y: game.y(unit.tile()),
-      r2: radius * radius,
-    }));
+    .map(({ unit }) => {
+      const radius = config.shieldArrayRadius(unit.level());
+      return {
+        x: game.x(unit.tile()),
+        y: game.y(unit.tile()),
+        r2: radius * radius,
+      };
+    })
+    .filter((zone) => {
+      // Out of reach of the blast at this array's own radius.
+      const dx = zone.x - game.x(tile);
+      const dy = zone.y - game.y(tile);
+      const reach = outer + Math.sqrt(zone.r2);
+      return dx * dx + dy * dy <= reach * reach;
+    });
 }
 
 // Whether the tile lies inside any of the zones (the rim counts as inside,

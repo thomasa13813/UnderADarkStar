@@ -53,11 +53,20 @@ export const STRUCTURE_TYPES: ReadonlySet<string> = new Set([
   UT_SHIELD_ARRAY,
 ]);
 
-/** The shield array's protected radius in tiles (DarkStar C5, SH3; 90 since
- *  2026-10-27). Keep it equal to SHIELD_ARRAY_DEFAULTS.radius
- *  in src/core/configuration/Config.ts: the render types cannot import core.
+/** The shield array's protected radius in tiles per level, and its top
+ *  level (DarkStar C5; upgradable since 2026-10-27: 25 to 125). Keep them
+ *  equal to SHIELD_ARRAY_DEFAULTS.radiusPerLevel and .maxLevel in
+ *  src/core/configuration/Config.ts: the render types cannot import core.
  *  A blast is kept off the tiles inside; it refuses no launch. */
-export const SHIELD_ARRAY_RADIUS = 90;
+export const SHIELD_ARRAY_RADIUS_PER_LEVEL = 25;
+export const SHIELD_ARRAY_MAX_LEVEL = 5;
+
+export function shieldArrayRadius(level: number): number {
+  return (
+    SHIELD_ARRAY_RADIUS_PER_LEVEL *
+    Math.min(Math.max(level, 1), SHIELD_ARRAY_MAX_LEVEL)
+  );
+}
 
 /** The tithe's ring in tiles (TI1). Keep it equal to TITHE_DEFAULTS.radius
  *  in src/core/configuration/Config.ts: the render types cannot import core. */

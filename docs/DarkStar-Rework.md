@@ -172,9 +172,10 @@ means the Gamma Ray Burst after this change, so each one must be rewritten, not 
 > working well. They are **free-standing structures again**: placed like any building, no post's
 > defence, not counted as posts for the post's price, **2.5M** flat (was 2M). What the shield
 > stops and lets through (SH3) and capture intact (SH4) are unchanged. Lords
-> place their one array where it covers the most of their buildings (Q16). The shield shrinks a
-> tenth, **100 → 90 tiles** (Tom, same day), so a Gamma Ray Burst aimed at an array clears the
-> ring from 90 to 100. SH1, SH2 and the
+> place their one array where it covers the most of their buildings (Q16). The shield shrank a
+> tenth to 90 tiles the same day; then (Tom, later the same day) arrays became **upgradable to
+> level 5**: 25 tiles per level (25 to 125), each level costing 1M, 2.5M, then 5M by the levels
+> the player owns. Lords leave theirs at level 1. SH1, SH2 and the
 > post half of SH3/SH4 below are kept as history.
 
 - **SH1 — A Shield Array is built on a Defense Post, and only there.** Placing a Shield Array on

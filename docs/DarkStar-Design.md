@@ -469,6 +469,10 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   shield shrinks a tenth to **90 tiles** (Tom, same day), so a Gamma Ray Burst (100) aimed at an
   array clears the ring beyond it. Lords place their one array where it covers the most of their
   buildings.
+  [Revised again 2026-10-27, Tom] **Upgradable, five levels**: 25 tiles of shield per level, 25
+  at level 1 to 125 at level 5, no further. Each level, new array or upgrade, costs by the levels
+  the player owns: **1M**, then **2.5M**, then **5M** each. Lords build one and leave it at
+  level 1.
 - **C6 — Armies and fleet support.** [Decided and built 2026-10-23, Tom] Each **level** of a
   finished spaceport supports one destroyer, and each level of a finished industrial zone one
   **army**. With no support to spare, nothing new deploys. Losing support disbands nothing: the
@@ -2288,6 +2292,7 @@ hydrogen-bomb removal (closed by S6).
 
 - **2026-10-27, shield arrays free-standing** — Tom: Shield Arrays as strict upgrades to Defense Posts were not working well. They are free-standing structures again (SH1 revised, C5), give no post's defence, no longer count towards the post's price, and cost **2.5M** (was 2M). Their shield shrinks a tenth, 100 → **90 tiles**. Capture intact unchanged.
 - **2026-10-27, Armies on phones** — Tom found no way to deploy an Army on mobile: the build bar is hidden below 1024px, and the radial menu offered the Army only in the Stargate menu, which opens off your territory, where an Army can never stand. The Army now sits in the build (wrench) menu on your own nebula and no longer in the Stargate menu; Destroyers stay in the Stargate menu on deep space. Wiki: an "On a phone" section in Controls, and both ways to deploy in Armies and Destroyers.
+- **2026-10-27, shield arrays upgradable** — Tom: Shield Arrays have five levels, 25 tiles of shield each (25 to 125), priced by levels owned at 1M, 2.5M, then 5M (C5). Supersedes the same day's 90 tiles and 2.5M flat.
 - **2026-10-27, map** — **Periodic** (§5.3), from a picture of the periodic table: 118 element cards of nebula, 18 Lords. Built as Periodic Table and renamed the same day (Tom).
 - **2026-10-25, the throne's reach** — Tom: the Hegemon's destroyers may be placed and moved
   anywhere in deep space, never raid freighters (the invader's included) and engage pirates'

@@ -85,10 +85,20 @@ describe("one Shield Array once it has one of everything else (Q16)", () => {
     expect(arrays).toHaveLength(1);
     // Beside its buildings, not on the post, which still stands.
     expect(lord.units(UnitType.DefensePost)).toHaveLength(1);
-    const r = game.config().shieldArrayRadius();
+    // Near its buildings: one at least within its level-1 shield.
+    const r = game.config().shieldArrayRadius(1);
     expect(
-      game.euclideanDistSquared(arrays[0].tile(), tileOf(30, 0)),
-    ).toBeLessThanOrEqual(r * r);
+      lord
+        .units([
+          UnitType.City,
+          UnitType.Factory,
+          UnitType.Port,
+          UnitType.Stargate,
+        ])
+        .some(
+          (u) => game.euclideanDistSquared(arrays[0].tile(), u.tile()) <= r * r,
+        ),
+    ).toBe(true);
     // One only.
     expect((b as any).maybeBuildShieldArray()).toBe(false);
   });
@@ -97,7 +107,7 @@ describe("one Shield Array once it has one of everything else (Q16)", () => {
     buildAllButGate();
     build(UnitType.Stargate, tileOf(10, 30));
     lord.removeGold(lord.gold());
-    lord.addGold(1_000_000n);
+    lord.addGold(500_000n);
     expect((behaviour() as any).maybeBuildShieldArray()).toBe(false);
   });
 });

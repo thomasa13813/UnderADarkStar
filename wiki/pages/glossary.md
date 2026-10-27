@@ -87,7 +87,7 @@ lands on the launching gate. See [[hegemon#punitive-strikes]].
 nobody.
 
 **Shield Array.** A building that keeps other players' warheads off
-everything within {{shieldR}} tiles. See [[stargates-and-warheads#shield-array]].
+everything within {{shieldR}} tiles per level, up to {{shieldMaxR}}. See [[stargates-and-warheads#shield-array]].
 
 **Spaceport.** A building that sends freighters and launches Destroyers. See [[buildings]].
 

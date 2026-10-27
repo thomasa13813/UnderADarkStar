@@ -17,7 +17,7 @@
 
 import type { UnitState } from "../../types";
 import {
-  SHIELD_ARRAY_RADIUS,
+  shieldArrayRadius,
   UT_SAM_LAUNCHER,
   UT_SHIELD_ARRAY,
 } from "../../types";
@@ -387,11 +387,11 @@ export class SAMRadiusPass {
       const x = u.pos % w;
       const y = (u.pos - x) / w;
       if (u.unitType === UT_SHIELD_ARRAY) {
-        // One level, one radius: a plain spinning ring, no upgrade preview.
+        // A plain spinning ring of the array's level, no upgrade preview.
         circles.push({
           x,
           y,
-          radius: SHIELD_ARRAY_RADIUS,
+          radius: shieldArrayRadius(u.level),
           r: color[0],
           g: color[1],
           b: color[2],

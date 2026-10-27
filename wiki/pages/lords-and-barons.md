@@ -24,7 +24,7 @@ Lords are the smarter AI players. Each map places its own set of Lords (see [[ma
 - **Attitude.** A Lord has an attitude toward you, from Hostile to Friendly, shown when you hover
   over its territory.
 - **One Shield Array.** Once a Lord owns at least one of every other building, it builds one
-  Shield Array where it covers the most of its buildings.
+  Shield Array where it covers the most of its buildings, and leaves it at level 1.
 - **Warheads.** A Lord saves towards one warhead. It fires a Gamma Ray Burst at its target
   wherever the blast spares its own and its friends' ground, whoever else it hits, and otherwise
   an Antimatter Reaction if that fits on its target's ground.

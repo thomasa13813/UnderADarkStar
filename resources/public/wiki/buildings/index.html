@@ -95,7 +95,7 @@ Under a Dark Star: what it does, what it costs, what each level adds, and how it
 <tr><td><strong>Spaceport</strong></td><td>as the Industrial Zone, <strong>same shared count</strong></td><td>5 s</td><td>Yes, no cap</td><td>Sends freighters; each level is one more chance to send one, one more docking berth and +5 repair, and supports one Destroyer</td></tr>
 <tr><td><strong>Defense Post</strong></td><td>50k → 100k → 150k → 200k → 250k (cap)</td><td>5 s</td><td>No</td><td>Within 30 tiles, attackers lose 5× the troops and advance 3× slower</td></tr>
 <tr><td><strong>Stargate</strong></td><td>500k flat, new or per upgrade</td><td>10 s</td><td>Yes, no cap</td><td>Range 180 at level 1, +75 per level; fires troops or warheads, 5 s reload</td></tr>
-<tr><td><strong>Shield Array</strong></td><td>2.5M flat</td><td>10 s</td><td>No</td><td>No other player&#39;s warhead harms anything within 90 tiles</td></tr>
+<tr><td><strong>Shield Array</strong></td><td>1M → 2.5M → 5M (cap)</td><td>10 s</td><td>Yes, to 5</td><td>+25 tiles of shield (125 at level 5): no other player&#39;s warhead harms anything inside</td></tr>
 </tbody></table></div>
 <h2 id="2-rules-every-building-follows">2. Rules every building follows</h2>
 <h3 id="2-1-placing">2.1 Placing</h3>
@@ -112,8 +112,8 @@ second one. &quot;Near&quot; means within 15 tiles.</li>
 <li>There is no limit on how many of any building you may own.</li>
 </ul>
 <h3 id="2-2-prices-climb">2.2 Prices climb</h3>
-<p>Population Centers, Industrial Zones, Spaceports and Defense Posts get dearer the more you have.
-Stargates and Shield Arrays never do.</p>
+<p>Population Centers, Industrial Zones, Spaceports, Defense Posts and Shield Arrays get dearer the
+more you have. Stargates never do.</p>
 <ul>
 <li><strong>The count is levels, not buildings.</strong> A level-3 Population Center counts three, so upgrading
 costs the same as building new at that count. The first upgrade of your only Population Center
@@ -124,7 +124,8 @@ costs 500k.</li>
 <li><strong>Captured buildings do not raise your prices.</strong> Only what you built or upgraded yourself
 counts.</li>
 <li><strong>Losing buildings lowers your prices again</strong>, whether they were destroyed, captured or deleted.</li>
-<li>Prices stop climbing at the cap: 1M for the three economic buildings, 250k for Defense Posts.</li>
+<li>Prices stop climbing at the cap: 1M for the three economic buildings, 250k for Defense Posts,
+5M for Shield Arrays (1M for your first level, 2.5M for the second, 5M from then on).</li>
 </ul>
 <h3 id="2-3-building-and-upgrading">2.3 Building and upgrading</h3>
 <ul>
@@ -169,7 +170,7 @@ intact. When the bubble pops, whatever buildings it still holds are destroyed.</
 included), or upgrade one already there. It pays from its own gold, and the host cannot refuse.</p>
 <ul>
 <li><strong>The Hegemon always pays the first-building price</strong>, for every level: 125k for a Population
-Center, Industrial Zone or Spaceport, 50k for a Defense Post, 500k for a Stargate, 2.5M for a
+Center, Industrial Zone or Spaceport, 50k for a Defense Post, 500k for a Stargate, 1M for a
 Shield Array.</li>
 <li><strong>The gift counts as the host&#39;s own build</strong>, so the host&#39;s next one costs them more.</li>
 <li>A gift follows every placement rule of §2.1 and is under construction like any build.</li>
@@ -342,22 +343,27 @@ gate for a <strong>punitive strike</strong> for 30 seconds (§3.7).</li>
 <li><strong>Price</strong> never climbs: 500k for a new gate, 500k per level.</li>
 </ul>
 <h3 id="3-6-shield-array">3.6 Shield Array</h3>
-<p><strong>Keeps warheads off everything within 90 tiles.</strong></p>
+<p><strong>Keeps warheads off everything within 25 tiles per level, up to 125 at level 5.</strong></p>
 <ul>
 <li><strong>Stands on its own.</strong> A Shield Array is a building of its own, placed like any other (§2.1).
 It is not a Defense Post and gives no post&#39;s defence: pair it with a post if you want both.</li>
+<li><strong>Levels.</strong> A new array shields <strong>25 tiles</strong>; each upgrade adds 25, to <strong>125 tiles at level
+5</strong>, the top. It cannot be upgraded past level 5.</li>
 <li><strong>The shield.</strong> When <strong>another player&#39;s</strong> warhead lands, Gamma Ray Burst or Antimatter
-Reaction, the blast does nothing within <strong>90 tiles</strong> of the array: no nebula lost or erased,
-no troops killed, no building destroyed. The ground outside is hit as usual. A Gamma Ray
-Burst&#39;s blast reaches 100 tiles, so one aimed at the array itself still clears the ring from
-90 to 100 tiles; an Antimatter Reaction aimed at it does nothing at all. The Hegemon&#39;s
-warheads are kept out like anyone&#39;s; <strong>your own</strong> are not.</li>
+Reaction, the blast does nothing inside the array&#39;s shield: no nebula lost or erased, no troops
+killed, no building destroyed. The ground outside is hit as usual. A warhead aimed at the array
+itself still clears the ring between the shield&#39;s edge and its own blast&#39;s edge (a Gamma Ray
+Burst reaches 100 tiles, an Antimatter Reaction 30): from level 2 an Antimatter Reaction aimed
+at the array does nothing at all, and at level 5 a Gamma Ray Burst does nothing either. The
+Hegemon&#39;s warheads are kept out like anyone&#39;s; <strong>your own</strong> are not.</li>
 <li><strong>What gets through.</strong> Troops: the Hegemon&#39;s strikes and every Stargate shot land inside, and
 conquest takes the array. And the Hegemon&#39;s tithes.</li>
 <li><strong>Captured intact.</strong> A Shield Array taken by conquest is <strong>captured</strong>, shield and all, and
 protects its new owner.</li>
 <li><strong>Construction.</strong> Nothing is shielded while the array is under construction.</li>
-<li><strong>Price.</strong> 2.5M flat, one level, no upgrades.</li>
+<li><strong>Price.</strong> Each level, a new array or an upgrade, costs by how many Shield Array levels you
+already own: <strong>1M</strong> for the first, <strong>2.5M</strong> for the second, <strong>5M</strong> for every one after (§2.2).
+A level-5 array as your only one costs 18.5M in all.</li>
 </ul>
 <h3 id="3-7-the-cost-of-firing-punitive-strikes">3.7 The cost of firing: punitive strikes</h3>
 <p>A warhead launch flags its Stargate for 30 seconds. In that window the Hegemon may answer:</p>
@@ -468,7 +474,7 @@ dearer to them.</li>
 one-per-level limit.</li>
 <li><strong>One Shield Array.</strong> Once a Lord owns at least one of every other building (Population
 Center, Industrial Zone, Spaceport, Defense Post and Stargate), it builds one Shield Array
-where its shield covers the most of its buildings. Only one.</li>
+where its shield covers the most of its buildings. Only one, and it never upgrades it.</li>
 <li><strong>Warheads.</strong> A Lord fires a Gamma Ray Burst at its target wherever the blast spares its own
 and its friends&#39; ground, bystanders be damned; where it cannot, an Antimatter Reaction if that
 fits on the target&#39;s ground.</li>

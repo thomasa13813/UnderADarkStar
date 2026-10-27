@@ -1249,10 +1249,10 @@ export class NationStructureBehavior {
 
   /**
    * Value function for shield arrays: the levels of the nation's buildings
-   * the shield would cover.
+   * a level-1 shield would cover (Lords never upgrade theirs).
    */
   private shieldArrayValue(): (tile: TileRef) => number {
-    const radius = this.game.config().shieldArrayRadius();
+    const radius = this.game.config().shieldArrayRadius(1);
     const r2 = radius * radius;
     const structures = this.player.units(Structures.types);
     return (tile) => {
