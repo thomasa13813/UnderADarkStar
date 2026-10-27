@@ -2,7 +2,6 @@ import { renderTroops } from "../../client/Utils";
 import { AttackLogicInput } from "../configuration/Config";
 import {
   Attack,
-  DefensePosts,
   Execution,
   Game,
   HegemonStrike,
@@ -737,12 +736,10 @@ export class RazeExecution implements Execution, StrikeInFlight, HegemonStrike {
         isTraitor: this.target.isTraitor(),
         isDisconnectedTeammate: false,
       },
-      // A shielded post is a post (SH3).
-      defenderHasDefensePost: this.mg.anyUnitNearby(
+      defenderHasDefensePost: this.mg.hasUnitNearby(
         tile,
         this.mg.config().defensePostRange(),
-        DefensePosts.types,
-        () => true,
+        UnitType.DefensePost,
         this.target.id(),
       ),
       falloutRatio: this.mg.hasFallout(tile)

@@ -305,7 +305,7 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   still counts as the host's build, so the host's own next one costs them more.
   [Reworked 2026-10-25, F25, built on `feat/rework`] The throne's Gift moves one level down, into
   its handshake beside Donate troops and Donate gold (GN10). A gifted Shield Array needs a Defense
-  Post of the host's to stand on (SH2).
+  Post of the host's to stand on (SH2). [Revised 2026-10-27] No longer: arrays stand on their own.
   [Decided and built 2026-10-25, Tom, on `feat/rework`] **Donate army:** the throne may deploy an
   **Army** (C6) for any challenger whose industrial zones have support to spare, on the
   challenger's clicked nebula, from their nearest zone. The throne pays the flat first-army price
@@ -463,6 +463,12 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   Post**, which it upgrades into a **shielded post** (SH1): the post's defence stays, the shield
   grows to **100 tiles** (the Gamma Ray Burst's radius), and a shielded post is captured intact
   (SH4). It keeps out both warheads (WH2 reversed the same day); tithes go through (TI4).
+  [Revised 2026-10-27, Tom] **Free-standing again**: as an upgrade to Defense Posts it was not
+  working well. A Shield Array is placed like any building, gives no post's defence and no longer
+  counts as a post for the post's price; it costs **2.5M** (was 2M). Capture intact stays. The
+  shield shrinks a tenth to **90 tiles** (Tom, same day), so a Gamma Ray Burst (100) aimed at an
+  array clears the ring beyond it. Lords place their one array where it covers the most of their
+  buildings.
 - **C6 — Armies and fleet support.** [Decided and built 2026-10-23, Tom] Each **level** of a
   finished spaceport supports one destroyer, and each level of a finished industrial zone one
   **army**. With no support to spare, nothing new deploys. Losing support disbands nothing: the
@@ -790,6 +796,13 @@ persistence was OpenFront's closed-source API, which we do not have.
   overthrow under 15 minutes; a true equidistant first build with the exclusion at 400 (10° N
   there) went 2 of 3 at 18 minutes.
   `src/scripts/drawings/Polar.ts`.
+- **Periodic** (`map-generator/assets/maps/periodic/`, 1580×944, ~544k land tiles, 18 Lords)
+  [Built 2026-10-27, named Periodic the same day (Tom; first "Periodic Table")] from a picture of
+  the periodic table: each of the 118 elements is a 64×72 card of nebula with an 18-tile lane of
+  deep space between cards, the table in its real shape, the lanthanides and actinides pulled out
+  in two rows below. Each card carries its symbol in highland in the game's pixel face. The Dark
+  Star sits in the bay above the transition metals; Lords sit on the cards farthest from it, Baron
+  land nearer. In public lobbies at multiplayer frequency 4. `src/scripts/drawings/Periodic.ts`.
 - **Gap:** terrain colours are global, not per-map. Map thumbnails follow the global terrain
   defaults: `scripts/generateMapThumbnails.ts` redraws them after the Go generator, whose own
   `getThumbnailColor` colours are overwritten (2026-10-17).
@@ -2273,6 +2286,8 @@ hydrogen-bomb removal (closed by S6).
 
 ## 11. Changelog
 
+- **2026-10-27, shield arrays free-standing** — Tom: Shield Arrays as strict upgrades to Defense Posts were not working well. They are free-standing structures again (SH1 revised, C5), give no post's defence, no longer count towards the post's price, and cost **2.5M** (was 2M). Their shield shrinks a tenth, 100 → **90 tiles**. Capture intact unchanged.
+- **2026-10-27, map** — **Periodic** (§5.3), from a picture of the periodic table: 118 element cards of nebula, 18 Lords. Built as Periodic Table and renamed the same day (Tom).
 - **2026-10-25, the throne's reach** — Tom: the Hegemon's destroyers may be placed and moved
   anywhere in deep space, never raid freighters (the invader's included) and engage pirates'
   corsairs anywhere (H10); a fresh punitive flag puts a line with a **Strike** button in the

@@ -127,17 +127,6 @@ export class ConstructionExecution implements Execution {
     this.ticksUntilComplete--;
   }
 
-  // A shield array upgrades the defense post it is built on (SH1). The post
-  // keeps defending while the array goes up and makes way, quietly, when it
-  // stands; from then on the array is the post (DefensePosts).
-  private replacePost(array: Unit) {
-    const post = array
-      .owner()
-      .units(UnitType.DefensePost)
-      .find((u) => u.tile() === array.tile());
-    post?.delete(false);
-  }
-
   private completeConstruction() {
     if (this.structure) {
       this.structure.setUnderConstruction(false);
@@ -200,9 +189,7 @@ export class ConstructionExecution implements Execution {
         this.mg.addExecution(new FactoryExecution(this.structure!));
         break;
       case UnitType.ShieldArray:
-        // Passive (C5): its perimeter is read by NukeExecution, its post's
-        // defence by the attacks (DefensePosts).
-        this.replacePost(this.structure!);
+        // Passive (C5): its perimeter is read by NukeExecution.
         break;
       default:
         console.warn(

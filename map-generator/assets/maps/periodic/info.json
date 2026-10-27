@@ -1,0 +1,105 @@
+{
+  "id": "Periodic",
+  "name": "Periodic",
+  "translation_key": "map.periodic",
+  "categories": ["cosmic"],
+  "multiplayer_frequency": 4,
+  "themes": ["space"],
+  "hegemon": {
+    "center": [626, 169],
+    "radius": 111,
+    "moat": 15
+  },
+  "nations": [
+    {
+      "coordinates": [1487, 116],
+      "name": "The Beyrellean Guild",
+      "flag": ""
+    },
+    {
+      "coordinates": [1241, 206],
+      "name": "Achernar Directorate",
+      "flag": ""
+    },
+    {
+      "coordinates": [1405, 296],
+      "name": "Menkar Sovereignty",
+      "flag": ""
+    },
+    {
+      "coordinates": [1487, 476],
+      "name": "Betelgeuse Ascendancy",
+      "flag": ""
+    },
+    {
+      "coordinates": [1323, 476],
+      "name": "Merak Ascendancy",
+      "flag": ""
+    },
+    {
+      "coordinates": [1487, 656],
+      "name": "Aldebaran Mandate",
+      "flag": ""
+    },
+    {
+      "coordinates": [1159, 476],
+      "name": "Izar Commonwealth",
+      "flag": ""
+    },
+    {
+      "coordinates": [1323, 656],
+      "name": "Naos Free Worlds",
+      "flag": ""
+    },
+    {
+      "coordinates": [1487, 868],
+      "name": "Kepler Syndicate",
+      "flag": ""
+    },
+    {
+      "coordinates": [1077, 656],
+      "name": "Castor Dominion",
+      "flag": ""
+    },
+    {
+      "coordinates": [1241, 868],
+      "name": "Spica Assembly",
+      "flag": ""
+    },
+    {
+      "coordinates": [1077, 868],
+      "name": "Kochab Reach",
+      "flag": ""
+    },
+    {
+      "coordinates": [913, 778],
+      "name": "Sirius Trade League",
+      "flag": ""
+    },
+    {
+      "coordinates": [749, 868],
+      "name": "Wezen Free Worlds",
+      "flag": ""
+    },
+    {
+      "coordinates": [503, 778],
+      "name": "Perseus Compact",
+      "flag": ""
+    },
+    {
+      "coordinates": [339, 868],
+      "name": "Jadkrowsken Anarchy",
+      "flag": ""
+    },
+    {
+      "coordinates": [175, 656],
+      "name": "Swil Collective",
+      "flag": ""
+    },
+    {
+      "coordinates": [93, 476],
+      "name": "Andromeda Order",
+      "flag": ""
+    }
+  ]
+}

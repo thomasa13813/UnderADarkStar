@@ -276,13 +276,6 @@ export const MissileLaunchers = unitTypeGroup([
   UnitType.Stargate,
 ] as const);
 
-// DarkStar: the structures that give a defense post's defence (SH3): a post,
-// and a post upgraded with a shield array (a shielded post).
-export const DefensePosts = unitTypeGroup([
-  UnitType.DefensePost,
-  UnitType.ShieldArray,
-] as const);
-
 export const BuildMenus = unitTypeGroup([
   ...Structures.types,
   ...BuildableAttacks.types,

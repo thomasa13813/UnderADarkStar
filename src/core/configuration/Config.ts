@@ -301,21 +301,24 @@ export const STARGATE_DEFAULTS = {
 };
 
 // Shield arrays (C5 in docs/DarkStar-Design.md, decided 2026-09-28, revised
-// 2026-09-29; SH1-SH4 in docs/DarkStar-Rework.md, 2026-10-25): built only on
-// a defense post, which it upgrades into a shielded post. Its perimeter no
+// 2026-09-29; SH1-SH4 in docs/DarkStar-Rework.md, 2026-10-25, revised
+// 2026-10-27): a free-standing structure again, no longer an upgrade to a
+// defense post, and with no post's defence of its own. Its perimeter no
 // Gamma Ray Burst can harm the inside of. It intercepts nothing and refuses
 // no launch — a warhead lands as usual and the blast is simply kept off the
 // tiles inside. The throne's missiles are kept out like anyone else's; the
 // Antimatter Reaction goes through (WH2), and so do strikes and gate shots
 // (troops, not missiles) and tithes.
 export const SHIELD_ARRAY_DEFAULTS = {
-  // The protected radius in tiles: the Gamma Ray Burst's outer radius
-  // (nukeMagnitudes, HydrogenBomb), so a burst aimed at the post does
-  // nothing at all (SH3, 2026-10-25; 40 before). A single level.
-  radius: 100,
+  // The protected radius in tiles. 90 since 2026-10-27 (Tom: a tenth off),
+  // a little short of the Gamma Ray Burst's outer 100, so a burst aimed at
+  // the array still clears the outer ring; 100 from 2026-10-25 (SH3), 40
+  // before. A single level.
+  radius: 90,
   // Lowered 2026-09-30 from the 5M baseline for a zone nothing short of
-  // conquest can clear; F21 keeps it open to tuning.
-  costGold: 2_000_000,
+  // conquest can clear; F21 keeps it open to tuning. 2.5M since 2026-10-27
+  // (Tom, with the return to a free-standing structure; 2M before).
+  costGold: 2_500_000,
   constructionSeconds: 10,
 };
 
@@ -1070,11 +1073,9 @@ export class Config {
         break;
       case UnitType.DefensePost:
         info = {
-          // A shielded post is still a post for the escalating price (SH2).
           cost: this.costWrapper(
             (numUnits: number) => Math.min(250_000, (numUnits + 1) * 50_000),
             UnitType.DefensePost,
-            UnitType.ShieldArray,
           ),
           constructionDuration: this.instantBuild() ? 0 : 5 * 10,
         };

@@ -2,7 +2,6 @@ import { renderTroops } from "../../client/Utils";
 import { AttackLogicInput } from "../configuration/Config";
 import {
   Attack,
-  DefensePosts,
   Difficulty,
   Execution,
   Game,
@@ -12,14 +11,12 @@ import {
   PlayerType,
   TerrainType,
   TerraNullius,
+  UnitType,
 } from "../game/Game";
 import { GameMap, TileRef } from "../game/GameMap";
 import { PseudoRandom } from "../PseudoRandom";
 import { assertNever } from "../Util";
 import { FlatBinaryHeap } from "./utils/FlatBinaryHeap"; // adjust path if needed
-
-// Any post in range counts (allocated once: the test runs per conquered tile).
-const anyUnit = (): boolean => true;
 
 const malusForRetreat = 25;
 export class AttackExecution implements Execution {
@@ -369,14 +366,13 @@ export class AttackExecution implements Execution {
     // Same test as scanning nearbyUnits() for a post owned by the defender
     // (active, not under construction, within range), without building a
     // result array per conquered tile — this runs for every tile of every
-    // attack on the map. A shielded post is a post (SH3).
+    // attack on the map.
     const defenderHasDefensePost =
       defender !== null &&
-      this.mg.anyUnitNearby(
+      this.mg.hasUnitNearby(
         tile,
         this.mg.config().defensePostRange(),
-        DefensePosts.types,
-        anyUnit,
+        UnitType.DefensePost,
         defender.id(),
       );
     return {

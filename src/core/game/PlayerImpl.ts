@@ -1910,7 +1910,8 @@ export class PlayerImpl implements Player {
       case UnitType.Train:
         return this.landBasedUnitSpawn(targetTile);
       // A spaceport stands anywhere in the territory, like a city (S7,
-      // §6.17); its harbour, the nearest deep space, is found on demand.
+      // §6.17); its harbour, the nearest deep space, is found on demand. A
+      // shield array is free-standing again (SH1 revised 2026-10-27).
       case UnitType.Port:
       case UnitType.MissileSilo:
       case UnitType.DefensePost:
@@ -1918,35 +1919,11 @@ export class PlayerImpl implements Player {
       case UnitType.City:
       case UnitType.Factory:
       case UnitType.Stargate:
-        return this.landBasedStructureSpawn(targetTile, validTiles);
       case UnitType.ShieldArray:
-        return this.shieldedPostSpawn(targetTile);
+        return this.landBasedStructureSpawn(targetTile, validTiles);
       default:
         assertNever(unitType);
     }
-  }
-
-  // A shield array is built only on one of the player's own finished defense
-  // posts, which it replaces when it stands (SH1): the post nearest the tile,
-  // within the reach an upgrade snaps to, that no array is going up on.
-  private shieldedPostSpawn(targetTile: TileRef): TileRef | false {
-    if (this.mg.owner(targetTile) !== this) return false;
-    const upgrading = new Set(
-      this.units(UnitType.ShieldArray).map((u) => u.tile()),
-    );
-    const post = findClosestBy(
-      this.mg.nearbyUnits(
-        targetTile,
-        this.mg.config().structureMinDist(),
-        UnitType.DefensePost,
-        ({ unit }) => unit.owner() === this && !upgrading.has(unit.tile()),
-      ),
-      (entry) => entry.distSquared,
-    );
-    if (post === null || (post.unit as Unit).isMarkedForDeletion()) {
-      return false;
-    }
-    return post.unit.tile();
   }
 
   nukeSpawn(tile: TileRef, nukeType: UnitType): TileRef | false {

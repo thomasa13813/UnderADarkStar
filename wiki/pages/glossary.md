@@ -86,7 +86,7 @@ lands on the launching gate. See [[hegemon#punitive-strikes]].
 **Shadow tax.** The Hegemon's income: {{tax}}% of everything the challengers earn, taken from
 nobody.
 
-**Shield Array.** An upgrade of a Defense Post that keeps other players' warheads off
+**Shield Array.** A building that keeps other players' warheads off
 everything within {{shieldR}} tiles. See [[stargates-and-warheads#shield-array]].
 
 **Spaceport.** A building that sends freighters and launches Destroyers. See [[buildings]].

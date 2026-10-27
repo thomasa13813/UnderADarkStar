@@ -166,7 +166,16 @@ means the Gamma Ray Burst after this change, so each one must be rewritten, not 
 
 ## 4. Shield Arrays on Defense Posts
 
-### 4.1 Rules [Decided 2026-10-25, revised the same day]
+### 4.1 Rules [Decided 2026-10-25, revised the same day; SH1, SH2 and SH4's post rules reversed 2026-10-27]
+
+> **[Revised 2026-10-27, Tom]** Shield Arrays as strict upgrades to Defense Posts were not
+> working well. They are **free-standing structures again**: placed like any building, no post's
+> defence, not counted as posts for the post's price, **2.5M** flat (was 2M). What the shield
+> stops and lets through (SH3) and capture intact (SH4) are unchanged. Lords
+> place their one array where it covers the most of their buildings (Q16). The shield shrinks a
+> tenth, **100 → 90 tiles** (Tom, same day), so a Gamma Ray Burst aimed at an array clears the
+> ring from 90 to 100. SH1, SH2 and the
+> post half of SH3/SH4 below are kept as history.
 
 - **SH1 — A Shield Array is built on a Defense Post, and only there.** Placing a Shield Array on
   one of your Defense Posts **upgrades** it: the post becomes a **shielded post**. The Shield
@@ -343,7 +352,7 @@ Milky Way, AI only, 20 minutes; `--no-tithe` (added for this) switches off the A
 | **Q4** | Which way does the Hegemon take part?           | The throne reaches everyone (GN4); challengers supply it only within gate range (GN5).         |
 | **Q5** | Where are transfers ordered?                    | In a two-level handshake menu: Donate troops, Donate gold, Propose alliance (GN8).             |
 | **Q6** | Do donation cooldowns apply?                    | Yes (GN6). The lobby toggles and the invader became Q13 and Q14.                               |
-| **Q7** | Can a Shield Array go on bare ground?           | No. Only on a Defense Post, whose icon it replaces (SH1).                                      |
+| **Q7** | Can a Shield Array go on bare ground?           | ~~No.~~ Yes since 2026-10-27: free-standing again (SH1 revised).                               |
 | **Q8** | May the throne erase land near its own rim?     | Yes, with no restriction (WH6).                                                                |
 | **Q9** | May a player dodge a tithe by giving gold away? | Yes (TI11). The AI's first tithe comes after one minute of play (TI9).                         |
 
@@ -359,10 +368,10 @@ Milky Way, AI only, 20 minutes; `--no-tithe` (added for this) switches off the A
 
 ### 7.3 Answered (Tom, 2026-10-25, RW5)
 
-| #       | Question                                                   | Answer                                                                                                                                    |
-| ------- | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| **Q15** | Lords no longer fire warheads. Lower their savings target? | Yes: one 5M warhead, not five (`getSaveUpTarget`).                                                                                        |
-| **Q16** | Do Lords build Shield Arrays?                              | Yes, one: once a Lord owns at least one of every other building, it shields the post covering most of its buildings (`maybeShieldAPost`). |
+| #       | Question                                                   | Answer                                                                                                                                                                      |
+| ------- | ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Q15** | Lords no longer fire warheads. Lower their savings target? | Yes: one 5M warhead, not five (`getSaveUpTarget`).                                                                                                                          |
+| **Q16** | Do Lords build Shield Arrays?                              | Yes, one: once a Lord owns at least one of every other building, it builds one where it covers most of its buildings (`maybeBuildShieldArray`; on a post until 2026-10-27). |
 
 ## 8. Changelog
 

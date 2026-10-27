@@ -1,0 +1,120 @@
+{
+  "categories": ["cosmic"],
+  "hegemon": {
+    "center": [626, 169],
+    "moat": 15,
+    "radius": 111
+  },
+  "id": "Periodic",
+  "map": {
+    "height": 944,
+    "num_land_tiles": 543744,
+    "width": 1580
+  },
+  "map16x": {
+    "height": 236,
+    "num_land_tiles": 30990,
+    "width": 395
+  },
+  "map4x": {
+    "height": 472,
+    "num_land_tiles": 131688,
+    "width": 790
+  },
+  "multiplayer_frequency": 4,
+  "name": "Periodic",
+  "nations": [
+    {
+      "coordinates": [1487, 116],
+      "flag": "",
+      "name": "The Beyrellean Guild"
+    },
+    {
+      "coordinates": [1241, 206],
+      "flag": "",
+      "name": "Achernar Directorate"
+    },
+    {
+      "coordinates": [1405, 296],
+      "flag": "",
+      "name": "Menkar Sovereignty"
+    },
+    {
+      "coordinates": [1487, 476],
+      "flag": "",
+      "name": "Betelgeuse Ascendancy"
+    },
+    {
+      "coordinates": [1323, 476],
+      "flag": "",
+      "name": "Merak Ascendancy"
+    },
+    {
+      "coordinates": [1487, 656],
+      "flag": "",
+      "name": "Aldebaran Mandate"
+    },
+    {
+      "coordinates": [1159, 476],
+      "flag": "",
+      "name": "Izar Commonwealth"
+    },
+    {
+      "coordinates": [1323, 656],
+      "flag": "",
+      "name": "Naos Free Worlds"
+    },
+    {
+      "coordinates": [1487, 868],
+      "flag": "",
+      "name": "Kepler Syndicate"
+    },
+    {
+      "coordinates": [1077, 656],
+      "flag": "",
+      "name": "Castor Dominion"
+    },
+    {
+      "coordinates": [1241, 868],
+      "flag": "",
+      "name": "Spica Assembly"
+    },
+    {
+      "coordinates": [1077, 868],
+      "flag": "",
+      "name": "Kochab Reach"
+    },
+    {
+      "coordinates": [913, 778],
+      "flag": "",
+      "name": "Sirius Trade League"
+    },
+    {
+      "coordinates": [749, 868],
+      "flag": "",
+      "name": "Wezen Free Worlds"
+    },
+    {
+      "coordinates": [503, 778],
+      "flag": "",
+      "name": "Perseus Compact"
+    },
+    {
+      "coordinates": [339, 868],
+      "flag": "",
+      "name": "Jadkrowsken Anarchy"
+    },
+    {
+      "coordinates": [175, 656],
+      "flag": "",
+      "name": "Swil Collective"
+    },
+    {
+      "coordinates": [93, 476],
+      "flag": "",
+      "name": "Andromeda Order"
+    }
+  ],
+  "themes": ["space"],
+  "translation_key": "map.periodic"
+}

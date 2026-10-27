@@ -17,6 +17,7 @@ export enum GameMapType {
   NucleicAcid = "Nucleic Acid", // map-generator/assets/maps/nucleicacid/info.json
   Nucleus = "Nucleus", // map-generator/assets/maps/nucleus/info.json
   Passage = "Passage", // map-generator/assets/maps/passage/info.json
+  Periodic = "Periodic", // map-generator/assets/maps/periodic/info.json
   Polar = "Polar", // map-generator/assets/maps/polar/info.json
   Royale = "Royale", // map-generator/assets/maps/royale/info.json
   Sierpinski = "Sierpinski", // map-generator/assets/maps/sierpinski/info.json
@@ -292,6 +293,18 @@ export const maps: readonly MapInfo[] = [
     teamFrequency: -1,
     specialFrequency: -1,
     defaultNationCount: 16,
+  },
+  {
+    id: "Periodic",
+    type: GameMapType.Periodic,
+    translationKey: "map.periodic",
+    categories: ["cosmic"],
+    multiplayerFrequency: 4,
+    ffaFrequency: -1,
+    teamFrequency: -1,
+    specialFrequency: -1,
+    defaultNationCount: 18,
+    themes: ["space"],
   },
   {
     id: "Polar",

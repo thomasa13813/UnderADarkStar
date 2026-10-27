@@ -168,11 +168,7 @@ describe("The tithe lands (TI1, TI2)", () => {
     baron.conquer(tileOf(1, 45, 30));
     setGold(baron, 1_000_000n);
     setGold(east, 3_000_000n);
-    // A shielded post right on the aim tile.
-    game.addExecution(
-      new ConstructionExecution(east, UnitType.DefensePost, tileOf(1, 20)),
-    );
-    executeTicks(game, 2);
+    // A Shield Array right on the aim tile.
     game.addExecution(
       new ConstructionExecution(east, UnitType.ShieldArray, tileOf(1, 20)),
     );

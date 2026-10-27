@@ -57,21 +57,19 @@ An AI Hegemon punishes every launch except from very small players.
 
 ## Shield Array
 
-**Built on a Defense Post, it keeps every other player's warheads off everything within
-{{shieldR}} tiles.**
+**It keeps every other player's warheads off everything within {{shieldR}} tiles.**
 
-- **On a post only.** A Shield Array is built on one of your own Defense Posts and turns it into
-  a **shielded post**. It cannot stand on bare ground. The post keeps its defence (attackers lose
-  5× the troops within 30 tiles); while the array goes up, the post defends as before.
-- **Price.** {{shieldCost}} gold on top of the post, one level, no upgrades. {{shieldBuild}}
-  seconds to build, and it shields nothing until it is finished. It still counts as a post for
-  the post's climbing price.
+- **Stands on its own.** A Shield Array is a building of its own, placed like any other. It is
+  not a Defense Post and gives no post's defence: pair it with a post if you want both.
+- **Price.** {{shieldCost}} gold, one level, no upgrades. {{shieldBuild}} seconds to build, and
+  it shields nothing until it is finished.
 - **What it stops.** When another player's warhead lands, Gamma Ray Burst or Antimatter
   Reaction, the blast does nothing inside the shield: no nebula lost or erased, no troops killed,
-  no building destroyed. The ground outside is hit as usual, and a warhead aimed at the post
-  itself does nothing at all. The Hegemon's warheads are kept out like anyone's; your own are
+  no building destroyed. The ground outside is hit as usual. A Gamma Ray Burst reaches
+  {{grbRadius}} tiles, so one aimed at the array itself still clears the ring beyond the shield;
+  an Antimatter Reaction aimed at it does nothing at all. The Hegemon's warheads are kept out like anyone's; your own are
   not.
 - **What gets through.** Troops: the Hegemon's strikes and every Stargate shot land inside, and
-  conquest takes the post. And the Hegemon's tithes.
-- **Captured intact.** A plain Defense Post is destroyed when its tile is taken; a shielded post
-  is captured, shield and defence, and protects its new owner.
+  conquest takes the array. And the Hegemon's tithes.
+- **Captured intact.** A Shield Array taken by conquest is captured, shield and all, and protects
+  its new owner.

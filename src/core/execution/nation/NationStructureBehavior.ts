@@ -186,7 +186,7 @@ const NEIGHBOR_SCRATCH: TileRef[] = [0, 0, 0, 0];
  */
 const TITHE_BUILD_ALLOWANCE = 1_000_000n;
 
-/** The buildings a Lord owns one of each before it shields a post (Q16). */
+/** The buildings a Lord owns one of each before it builds a Shield Array (Q16). */
 const SHIELD_PREREQUISITES: readonly UnitType[] = [
   UnitType.City,
   UnitType.Factory,
@@ -335,10 +335,11 @@ export class NationStructureBehavior {
   /**
    * Under a Dark Star: once a Lord owns at least one of every other building
    * (Population Center, Industrial Zone, Spaceport, Defense Post, Stargate),
-   * it wants one Shield Array (Tom, 2026-10-25, Q16), on the post whose
-   * shield would cover the most of its buildings. One only.
+   * it wants one Shield Array (Tom, 2026-10-25, Q16), where its shield
+   * covers the most of its buildings (shieldArrayValue). One only. The array
+   * stands on its own ground since 2026-10-27 (SH1 revised).
    */
-  private maybeShieldAPost(): boolean {
+  private maybeBuildShieldArray(): boolean {
     const config = this.game.config();
     if (
       !config.hegemonConfig().enabled ||
@@ -353,29 +354,10 @@ export class NationStructureBehavior {
     }
     if (this.player.gold() < this.cost(UnitType.ShieldArray)) return false;
 
-    const r2 = config.shieldArrayRadius() * config.shieldArrayRadius();
-    const structures = this.player.units(Structures.types);
-    let best: Unit | null = null;
-    let bestCovered = -1;
-    for (const post of this.player.units(UnitType.DefensePost)) {
-      if (post.isUnderConstruction()) continue;
-      let covered = 0;
-      for (const unit of structures) {
-        if (this.game.euclideanDistSquared(post.tile(), unit.tile()) <= r2) {
-          covered += unit.level();
-        }
-      }
-      if (covered > bestCovered) {
-        best = post;
-        bestCovered = covered;
-      }
-    }
-    if (best === null) return false;
-    if (this.player.canBuild(UnitType.ShieldArray, best.tile()) === false) {
-      return false;
-    }
+    const tile = this.structureSpawnTile(UnitType.ShieldArray);
+    if (tile === null) return false;
     this.game.addExecution(
-      new ConstructionExecution(this.player, UnitType.ShieldArray, best.tile()),
+      new ConstructionExecution(this.player, UnitType.ShieldArray, tile),
     );
     return true;
   }
@@ -738,7 +720,7 @@ export class NationStructureBehavior {
       return true;
     }
 
-    if (this.maybeShieldAPost()) {
+    if (this.maybeBuildShieldArray()) {
       return true;
     }
 
@@ -1225,6 +1207,8 @@ export class NationStructureBehavior {
         return this.samLauncherValue();
       case UnitType.Stargate:
         return this.stargateValue();
+      case UnitType.ShieldArray:
+        return this.shieldArrayValue();
       default:
         throw new Error(`Value function not implemented for ${type}`);
     }
@@ -1261,6 +1245,25 @@ export class NationStructureBehavior {
       return false;
     }
     return this.maybeSpawnStructure(UnitType.Stargate);
+  }
+
+  /**
+   * Value function for shield arrays: the levels of the nation's buildings
+   * the shield would cover.
+   */
+  private shieldArrayValue(): (tile: TileRef) => number {
+    const radius = this.game.config().shieldArrayRadius();
+    const r2 = radius * radius;
+    const structures = this.player.units(Structures.types);
+    return (tile) => {
+      let covered = 0;
+      for (const unit of structures) {
+        if (this.game.euclideanDistSquared(tile, unit.tile()) <= r2) {
+          covered += unit.level();
+        }
+      }
+      return covered;
+    };
   }
 
   /**

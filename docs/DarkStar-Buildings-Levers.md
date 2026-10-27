@@ -15,9 +15,9 @@ All in `src/core/configuration/Config.ts` unless stated.
 | Lever                                               | Where                                                                               | Value                                                                                                                             |
 | --------------------------------------------------- | ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | Population Center, Industrial Zone, Spaceport price | `unitInfo` (`City`, `Factory`, `Port`)                                              | `min(1M, 125k × 2^n)`; Port and Factory share `n`                                                                                 |
-| Defense Post price                                  | `unitInfo` (`DefensePost`)                                                          | `min(250k, 50k × (n+1))`, `n` counts Shield Arrays too (shielded posts)                                                           |
+| Defense Post price                                  | `unitInfo` (`DefensePost`)                                                          | `min(250k, 50k × (n+1))`                                                                                                          |
 | Stargate                                            | `STARGATE_DEFAULTS`                                                                 | 500k, 10 s, range 180 +75/level, reload 5 s                                                                                       |
-| Shield Array                                        | `SHIELD_ARRAY_DEFAULTS`                                                             | 2M, 10 s, radius 100 (= the Gamma Ray Burst's outer); only on an own Defense Post (`PlayerImpl.shieldedPostSpawn`)                |
+| Shield Array                                        | `SHIELD_ARRAY_DEFAULTS`                                                             | 2.5M, 10 s, radius 90 (the Gamma Ray Burst's outer is 100); free-standing (`landBasedStructureSpawn`)                             |
 | Build times                                         | `unitInfo`                                                                          | City / Factory 20 ticks; Port / DefensePost 50; Stargate / ShieldArray 100                                                        |
 | Price count                                         | `costWrapper`                                                                       | `Σ min(unitsOwned, unitsConstructed)`; levels count; gift = `costFn(0)`                                                           |
 | Troops per center level                             | `cityTroopIncrease`                                                                 | 250,000 (25,000 shown)                                                                                                            |
@@ -81,7 +81,7 @@ Notes for Tom, not decisions.
 - **The Population Center is the leveller's target.** It is the one building an AI Hegemon aims
   at, so building one tall center invites the strike there.
 - **A Spaceport with no harbour still earns** as a trade-network stop.
-- **Lords never build Shield Arrays** (open item F21), so the 2M array is a human-only defence.
+- **Lords build one Shield Array** once they own one of every other building (Q16, `maybeBuildShieldArray`).
 
 ### 2.3 Stale documents and comments
 
@@ -98,6 +98,15 @@ Notes for Tom, not decisions.
 
 ## 3. Changelog
 
+- **2026-10-27** — Shield Arrays are free-standing again (Tom: as an upgrade to Defense Posts they
+  were not working well). Placed like any building (`landBasedStructureSpawn`;
+  `shieldedPostSpawn` and `ConstructionExecution.replacePost` removed), no longer count towards
+  the post's price, and give no post's defence (the `DefensePosts` group is gone; the attack
+  checks ask for `DefensePost` only). Price 2M → 2.5M (`SHIELD_ARRAY_DEFAULTS.costGold`). Still
+  captured intact. Lords place theirs where it covers the most of their buildings
+  (`NationStructureBehavior.shieldArrayValue`). Same day: radius 100 → 90, a tenth off (Tom;
+  `SHIELD_ARRAY_DEFAULTS.radius` and the client's `SHIELD_ARRAY_RADIUS`), so a Gamma Ray Burst
+  aimed at an array clears the ring from 90 to 100.
 - **2026-10-25, the throne's reach** — The throne's Donate army (`GiftExecution` accepts
   `UnitType.Army`; `ArmyExecution` takes a payer; flat first-army price through `costWrapper`).
   The throne's destroyers: placed and moved anywhere in deep space (`PlayerImpl.warshipSpawn`,

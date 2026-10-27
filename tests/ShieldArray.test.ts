@@ -28,14 +28,13 @@ import { setup } from "./util/Setup";
 import { TestConfig } from "./util/TestConfig";
 import { executeTicks } from "./util/utils";
 
-// Shielded posts (docs/DarkStar-Rework.md SH1-SH4, 2026-10-25; C5 before):
-// a shield array is built only on one of the player's own defense posts,
-// which it upgrades. The shielded post keeps the post's defence (30 tiles)
-// and adds a 100-tile shield, the Gamma Ray Burst's own radius, that no
-// other player's warhead can harm the inside of, the Antimatter Reaction
-// included (revised 2026-10-25); strikes and gate shots (troops) land inside
-// it. A plain
-// post is destroyed when taken; a shielded one is captured intact.
+// Shield arrays (docs/DarkStar-Rework.md SH1-SH4, 2026-10-25, revised
+// 2026-10-27; C5 before): a free-standing structure, 2.5M flat, with a
+// 90-tile shield (a tenth short of the Gamma Ray Burst's 100 since
+// 2026-10-27) that no other player's warhead can harm the inside of, the Antimatter Reaction included (revised
+// 2026-10-25); strikes and gate shots (troops) land inside it. It gives no
+// post's defence. A post is destroyed when taken; an array is captured
+// intact.
 //
 // big_plains is 200×200: the Dark Star's radius is 18 and the moat 15; a
 // level-1 gate's 180 reaches everything, so range never gets in the way.
@@ -123,7 +122,7 @@ async function start(instantBuild = true) {
   west = game.player("west");
   settle(east, 1, 40, 300_000);
   // West's block is 60 deep and 160 tall, so a shield in one corner leaves
-  // land beyond its 100 tiles for a blast to clear.
+  // land beyond its 90 tiles for a blast to clear.
   settle(west, -1, 60, 300_000, 80);
   hegemon.addGold(50_000_000n);
   game.addExecution(new HegemonExecution());
@@ -140,9 +139,7 @@ function build(player: Player, type: UnitType, tile: TileRef): Unit {
   return unit;
 }
 
-// A defense post, upgraded at once into a shielded post.
-function shieldedPost(player: Player, tile: TileRef): Unit {
-  build(player, UnitType.DefensePost, tile);
+function shieldArray(player: Player, tile: TileRef): Unit {
   return build(player, UnitType.ShieldArray, tile);
 }
 
@@ -174,54 +171,40 @@ function tilesAround(player: Player, site: TileRef) {
   return { inside, outside };
 }
 
-describe("Building a shielded post (SH1, SH2)", () => {
+describe("Building a shield array (SH1, SH2, revised 2026-10-27)", () => {
   beforeEach(() => start());
 
-  test("a shield array cannot stand on bare ground", () => {
-    expect(east.canBuild(UnitType.ShieldArray, tileOf(east, 20))).toBe(false);
-    const row = east
-      .buildableUnits(tileOf(east, 20))
-      .find((b) => b.type === UnitType.ShieldArray);
-    expect(row?.canBuild).toBe(false);
-  });
-
-  test("it upgrades one of the player's own posts, which it replaces", () => {
+  test("it stands on its own ground, 2.5M flat, one level", () => {
     const tile = tileOf(east, 20);
-    const post = build(east, UnitType.DefensePost, tile);
-    // A click near the post snaps to it.
-    expect(east.canBuild(UnitType.ShieldArray, tileOf(east, 22, 2))).toBe(tile);
+    expect(east.canBuild(UnitType.ShieldArray, tile)).toBe(tile);
     const gold = east.gold();
-    game.addExecution(
-      new ConstructionExecution(
-        east,
-        UnitType.ShieldArray,
-        tileOf(east, 22, 2),
-      ),
-    );
-    executeTicks(game, 2);
-    const array = east.units(UnitType.ShieldArray)[0];
-    expect(array.tile()).toBe(tile);
-    expect(post.isActive()).toBe(false);
-    expect(east.units(UnitType.DefensePost)).toHaveLength(0);
-    // 2M flat on top of the post; two ticks of income accrue meanwhile.
-    expect(gold - east.gold()).toBeGreaterThan(1_990_000n);
-    expect(gold - east.gold()).toBeLessThanOrEqual(2_000_000n);
+    const array = shieldArray(east, tile);
+    // Two ticks of income accrue meanwhile.
+    expect(gold - east.gold()).toBeGreaterThan(2_490_000n);
+    expect(gold - east.gold()).toBeLessThanOrEqual(2_500_000n);
     expect(array.level()).toBe(1);
     expect(east.canUpgradeUnit(array)).toBe(false);
     expect(game.config().unitInfo(UnitType.ShieldArray).upgradable).toBeFalsy();
   });
 
-  test("not on another player's post", () => {
-    build(west, UnitType.DefensePost, tileOf(west, 20));
+  test("it no longer upgrades a post: both stand", () => {
+    const post = build(east, UnitType.DefensePost, tileOf(east, 5));
+    const array = shieldArray(east, tileOf(east, 35));
+    expect(post.isActive()).toBe(true);
+    expect(array.isActive()).toBe(true);
+    expect(array.tile()).not.toBe(post.tile());
+  });
+
+  test("not on another player's ground", () => {
     expect(east.canBuild(UnitType.ShieldArray, tileOf(west, 20))).toBe(false);
   });
 
-  test("a shielded post still counts as a post for the post's price", () => {
+  test("an array does not count as a post for the post's price", () => {
     const postCost = () =>
       game.config().unitInfo(UnitType.DefensePost).cost(game, east);
     expect(postCost()).toBe(50_000n);
-    shieldedPost(east, tileOf(east, 20));
-    expect(postCost()).toBe(100_000n);
+    shieldArray(east, tileOf(east, 20));
+    expect(postCost()).toBe(50_000n);
   });
 
   test("neither the Dark Star nor the throne may hold one (H2)", () => {
@@ -231,41 +214,14 @@ describe("Building a shielded post (SH1, SH2)", () => {
     expect(east.canBuild(UnitType.ShieldArray, centre())).toBe(false);
   });
 
-  test("the shield is the Gamma Ray Burst's own radius, 100 tiles", () => {
-    expect(radius()).toBe(100);
-    expect(radius()).toBe(
-      game.config().nukeMagnitudes(UnitType.HydrogenBomb).outer,
-    );
+  test("the shield is 90 tiles, a tenth short of a Gamma Ray Burst", () => {
+    expect(radius()).toBe(90);
+    expect(game.config().nukeMagnitudes(UnitType.HydrogenBomb).outer).toBe(100);
   });
 });
 
 describe("While the array goes up", () => {
   beforeEach(() => start(false));
-
-  test("the post keeps defending and makes way only when the array stands", () => {
-    const tile = tileOf(east, 20);
-    game.addExecution(
-      new ConstructionExecution(east, UnitType.DefensePost, tile),
-    );
-    executeTicks(game, 60);
-    const post = east.units(UnitType.DefensePost)[0];
-    expect(post.isUnderConstruction()).toBe(false);
-    game.addExecution(
-      new ConstructionExecution(east, UnitType.ShieldArray, tile),
-    );
-    executeTicks(game, 2);
-    const array = east.units(UnitType.ShieldArray)[0];
-    expect(array.isUnderConstruction()).toBe(true);
-    expect(post.isActive()).toBe(true);
-    // The same post cannot be upgraded twice.
-    expect(east.canBuild(UnitType.ShieldArray, tile)).toBe(false);
-    executeTicks(
-      game,
-      game.config().shieldArrayConfig().constructionSeconds * 10 + 5,
-    );
-    expect(array.isUnderConstruction()).toBe(false);
-    expect(post.isActive()).toBe(false);
-  });
 
   test("an array under construction shields nothing", () => {
     const gate = build(east, UnitType.Stargate, tileOf(east, 10));
@@ -276,10 +232,6 @@ describe("While the array goes up", () => {
     expect(gate.isUnderConstruction()).toBe(false);
     const site = tileOf(west, 30);
     game.addExecution(
-      new ConstructionExecution(west, UnitType.DefensePost, site),
-    );
-    executeTicks(game, 60);
-    game.addExecution(
       new ConstructionExecution(west, UnitType.ShieldArray, site),
     );
     executeTicks(game, 2);
@@ -289,10 +241,10 @@ describe("While the array goes up", () => {
   });
 });
 
-describe("What a shielded post does (SH3, SH4)", () => {
+describe("What a shield array does (SH3, SH4)", () => {
   beforeEach(() => start());
 
-  test("it keeps the post's defence", () => {
+  test("it gives no post's defence (revised 2026-10-27)", () => {
     // East takes a strip along the map's west edge, bordering west's block
     // (x 8 to 67), and attacks across it, near the post at x 12.
     for (let x = 0; x < 8; x++) {
@@ -303,18 +255,18 @@ describe("What a shielded post does (SH3, SH4)", () => {
     }
     const site = tileOf(west, 55);
     expect(game.x(site)).toBe(12);
-    shieldedPost(west, site);
+    shieldArray(west, site);
     postSeen.length = 0;
     game.addExecution(new AttackExecution(10_000, east, west.id(), null));
     executeTicks(game, 20);
     expect(postSeen.length).toBeGreaterThan(0);
-    expect(postSeen.some((seen) => seen)).toBe(true);
+    expect(postSeen.some((seen) => seen)).toBe(false);
   });
 
   test("a missile may still be aimed anywhere inside the shield", () => {
     const gate = build(east, UnitType.Stargate, tileOf(east, 10));
     const site = tileOf(west, 30);
-    shieldedPost(west, site);
+    shieldArray(west, site);
     expect(east.canBuild(UnitType.HydrogenBomb, site)).toBe(gate.tile());
     expect(east.canBuild(UnitType.AtomBomb, site)).toBe(gate.tile());
   });
@@ -323,7 +275,7 @@ describe("What a shielded post does (SH3, SH4)", () => {
     build(east, UnitType.Stargate, tileOf(east, 10));
     // The shield in the block's top corner; the burst aimed at the bottom.
     const site = tileOf(west, 5, -75);
-    const array = shieldedPost(west, site);
+    const array = shieldArray(west, site);
     const target = tileOf(west, 50, 70);
     expect(game.euclideanDistSquared(site, target)).toBeGreaterThan(
       radius() * radius(),
@@ -338,11 +290,26 @@ describe("What a shielded post does (SH3, SH4)", () => {
     expect(array.isActive()).toBe(true);
   });
 
-  test("a Gamma Ray Burst aimed at the post does nothing at all", () => {
+  test("a Gamma Ray Burst aimed at the array clears only the ring beyond 90 tiles", () => {
     build(east, UnitType.Stargate, tileOf(east, 10));
+    // In the block's top corner, so west owns land 90 to 100 tiles away.
+    const site = tileOf(west, 5, -75);
+    const array = shieldArray(west, site);
+    const city = build(west, UnitType.City, tileOf(west, 30, -40));
+    const before = tilesAround(west, site);
+    strike(east, UnitType.HydrogenBomb, site);
+    const after = tilesAround(west, site);
+    expect(after.inside).toBe(before.inside);
+    expect(after.outside).toBeLessThan(before.outside);
+    expect(array.isActive()).toBe(true);
+    expect(city.isActive()).toBe(true);
+  });
+
+  test("a Gamma Ray Burst aimed at an array with no ground beyond 90 tiles does nothing", () => {
+    build(east, UnitType.Stargate, tileOf(east, 10));
+    // Mid-block: every west tile lies within 90 tiles of it.
     const site = tileOf(west, 30);
-    const array = shieldedPost(west, site);
-    const city = build(west, UnitType.City, tileOf(west, 30, 40));
+    const array = shieldArray(west, site);
     const tiles = west.numTilesOwned();
     const troops = west.troops();
     strike(east, UnitType.HydrogenBomb, site);
@@ -350,12 +317,11 @@ describe("What a shielded post does (SH3, SH4)", () => {
     // Troops only grow over the flight: none died.
     expect(west.troops()).toBeGreaterThanOrEqual(troops);
     expect(array.isActive()).toBe(true);
-    expect(city.isActive()).toBe(true);
   });
 
   test("the throne's Gamma Ray Burst is kept out like anyone else's", () => {
     const site = tileOf(west, 30);
-    const array = shieldedPost(west, site);
+    const array = shieldArray(west, site);
     expect(hegemon.canBuild(UnitType.HydrogenBomb, site)).toBe(centre());
     const tiles = west.numTilesOwned();
     strike(hegemon, UnitType.HydrogenBomb, site);
@@ -366,7 +332,7 @@ describe("What a shielded post does (SH3, SH4)", () => {
   test("the owner's own Gamma Ray Burst is not kept out", () => {
     build(west, UnitType.Stargate, tileOf(west, 5));
     const site = tileOf(west, 30);
-    const array = shieldedPost(west, site);
+    const array = shieldArray(west, site);
     const tiles = west.numTilesOwned();
     strike(west, UnitType.HydrogenBomb, site);
     expect(west.numTilesOwned()).toBeLessThan(tiles);
@@ -376,7 +342,7 @@ describe("What a shielded post does (SH3, SH4)", () => {
   test("an Antimatter Reaction is kept out too (revised 2026-10-25)", () => {
     build(east, UnitType.Stargate, tileOf(east, 10));
     const site = tileOf(west, 30);
-    const array = shieldedPost(west, site);
+    const array = shieldArray(west, site);
     const tiles = west.numTilesOwned();
     strike(east, UnitType.AtomBomb, site);
     expect(array.isActive()).toBe(true);
@@ -386,7 +352,7 @@ describe("What a shielded post does (SH3, SH4)", () => {
 
   test("strikes are troops: they land inside a shield", () => {
     const site = tileOf(west, 30);
-    shieldedPost(west, site);
+    shieldArray(west, site);
     game.addExecution(new RazeExecution(hegemon, site, 20_000));
     executeTicks(game, 2);
     expect(game.strikesInFlight()).toHaveLength(1);
@@ -394,26 +360,27 @@ describe("What a shielded post does (SH3, SH4)", () => {
 
   test("gate shots are not missiles: they land inside a shield", () => {
     build(east, UnitType.Stargate, tileOf(east, 10));
-    shieldedPost(west, tileOf(west, 30));
+    shieldArray(west, tileOf(west, 30));
     expect(east.stargateFor(tileOf(west, 30))).not.toBeNull();
   });
 
-  test("a shielded post is captured intact and shields its new owner", () => {
+  test("an array is captured intact and shields its new owner", () => {
     const site = tileOf(west, 30);
-    const array = shieldedPost(west, site);
+    const array = shieldArray(west, site);
     build(west, UnitType.Stargate, tileOf(west, 5));
     east.conquer(site);
     executeTicks(game, 1);
     expect(array.owner()).toBe(east);
     expect(array.isActive()).toBe(true);
-    // Now east's: west's own burst is kept out of its former zone.
-    const eastTiles = east.numTilesOwned();
+    // Now east's: west's own burst is kept out of its former zone (east's
+    // land beyond 90 tiles, across the Dark Star, is fair game).
+    const before = tilesAround(east, site);
     strike(west, UnitType.HydrogenBomb, site);
-    expect(east.numTilesOwned()).toBe(eastTiles);
+    expect(tilesAround(east, site).inside).toBe(before.inside);
     expect(array.isActive()).toBe(true);
   });
 
-  test("a plain post is still destroyed when taken", () => {
+  test("a post is still destroyed when taken", () => {
     const site = tileOf(west, 30);
     const post = build(west, UnitType.DefensePost, site);
     east.conquer(site);
@@ -427,7 +394,7 @@ describe("What a shielded post does (SH3, SH4)", () => {
     // shields around the target; a player whose every tile and structure in
     // the circle is sheltered is not on the list.
     const site = tileOf(west, 30);
-    shieldedPost(west, site);
+    shieldArray(west, site);
     build(west, UnitType.City, tileOf(west, 30, 20));
     const magnitude = game.config().nukeMagnitudes(UnitType.HydrogenBomb);
     const threshold = game.config().nukeAllianceBreakThreshold();
