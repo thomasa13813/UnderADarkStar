@@ -50,6 +50,18 @@ function telegraphMagnitude(
   return NUKE_MAGNITUDES[u.unitType];
 }
 
+// A tithe's ring is green for every viewer (it takes the self colour); a
+// warhead's is coloured by who launched it.
+function telegraphRelation(
+  u: UnitState,
+  localPlayerID: number,
+  relationMatrix: Uint8Array | undefined,
+  relationSize: number,
+): number {
+  if (u.tithe) return TELEGRAPH_SELF;
+  return classifyOwner(u.ownerID, localPlayerID, relationMatrix, relationSize);
+}
+
 export function extractNukeTelegraphs(
   units: ReadonlyMap<number, UnitState>,
   mapW: number,
@@ -73,8 +85,8 @@ export function extractNukeTelegraphs(
       y: (u.targetTile - (u.targetTile % mapW)) / mapW,
       innerRadius: mag.inner,
       outerRadius: mag.outer,
-      relation: classifyOwner(
-        u.ownerID,
+      relation: telegraphRelation(
+        u,
         localPlayerID,
         relationMatrix,
         relationSize,
@@ -189,8 +201,8 @@ export function extractNukeTelegraphsFromIds(
       y: (u.targetTile - (u.targetTile % mapW)) / mapW,
       innerRadius: mag.inner,
       outerRadius: mag.outer,
-      relation: classifyOwner(
-        u.ownerID,
+      relation: telegraphRelation(
+        u,
         localPlayerID,
         relationMatrix,
         relationSize,

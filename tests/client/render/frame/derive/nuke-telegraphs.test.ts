@@ -118,6 +118,24 @@ describe("extractNukeTelegraphs", () => {
     expect(t).toMatchObject({ x: 5, y: 3, innerRadius: 50, outerRadius: 50 });
   });
 
+  it("draws a tithe's ring green (self colour) for every viewer", () => {
+    const rel = buildRelationMatrix(
+      new Map([
+        [1, ps({ smallID: 1 })],
+        [2, ps({ smallID: 2 })],
+      ]),
+    );
+    const tithe = units(
+      nuke({ unitType: UT_PROJECTILE, tithe: true, ownerID: 1 }),
+    );
+    expect(extractNukeTelegraphs(tithe, MAP_W)[0].relation).toBe(
+      TELEGRAPH_SELF,
+    );
+    expect(
+      extractNukeTelegraphs(tithe, MAP_W, 2, rel.matrix, rel.size)[0].relation,
+    ).toBe(TELEGRAPH_SELF);
+  });
+
   it("skips inactive nukes, nukes without a target, and non-nuke units", () => {
     const result = extractNukeTelegraphs(
       units(
