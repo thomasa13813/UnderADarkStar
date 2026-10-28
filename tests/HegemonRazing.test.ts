@@ -54,6 +54,20 @@ function anyTile(player: Player): TileRef {
   return Array.from(player.tiles())[0];
 }
 
+// The Hegemon's land beyond the Dark Star: its strikes' bubbles.
+function bubbleTiles(): TileRef[] {
+  return Array.from(hegemon.tiles()).filter((t) => !game.isInDarkStar(t));
+}
+
+// A popped bubble is erased into deep space, as an Antimatter Reaction erases.
+function expectErased(tiles: TileRef[]) {
+  expect(tiles.length).toBeGreaterThan(0);
+  for (const t of tiles) {
+    expect(game.hasOwner(t)).toBe(false);
+    expect(game.isWater(t)).toBe(true);
+  }
+}
+
 async function start(hegemonType: PlayerType, realCombat = false) {
   const humans = [
     new PlayerInfo("east", PlayerType.Human, "client1", "east"),
@@ -96,7 +110,7 @@ async function start(hegemonType: PlayerType, realCombat = false) {
 describe("Razing (H8)", () => {
   beforeEach(() => start(PlayerType.Human));
 
-  test("a strike lands after its flight, grows a bubble of Hegemon land, and pops it to neutral when it ends", () => {
+  test("a strike lands after its flight, grows a bubble of Hegemon land, and erases it into deep space when it ends", () => {
     const tiles = east.numTilesOwned();
     const troops = hegemon.troops();
     const domain = game.darkStar()!.domainTileCount;
@@ -115,12 +129,16 @@ describe("Razing (H8)", () => {
     expect(game.hegemonDomainTiles()).toBe(domain);
 
     // Spent: the bubble pops, and the Hegemon never keeps land beyond the
-    // Dark Star.
+    // Dark Star. Everything the strike took is gone for good.
+    const taken = new Set<TileRef>();
     let ticks = 0;
     while (hegemon.outgoingAttacks().length > 0 && ticks++ < 3000) {
+      for (const t of bubbleTiles()) taken.add(t);
       game.executeNextTick();
     }
+    game.executeNextTick();
     expect(hegemon.outgoingAttacks()).toHaveLength(0);
+    expectErased(Array.from(taken));
     expect(game.hegemonBubbleTiles()).toBe(0);
     expect(hegemon.numTilesOwned()).toBe(domain);
     expect(east.numTilesOwned()).toBeLessThan(tiles - 50);
@@ -200,7 +218,9 @@ describe("Razing (H8)", () => {
     executeTicks(game, 11);
     expect(game.hegemonBubbleTiles()).toBe(0);
     expect(hegemon.numTilesOwned()).toBe(domain);
+    // No strike held it, so it is no bubble: it reverts to neutral nebula.
     expect(game.hasOwner(tile)).toBe(false);
+    expect(game.isLand(tile)).toBe(true);
   });
 
   test("a strike cannot be aimed at the Dark Star or at unowned land", () => {
@@ -343,6 +363,17 @@ describe("Strike counterplay (H17)", () => {
     expect(hegemon.troops()).toBeLessThan(before + 10_000);
   });
 
+  test("a recalled strike's bubble is erased too", () => {
+    const raze = new RazeExecution(hegemon, anyTile(east), 300_000);
+    game.addExecution(raze);
+    while (hegemon.outgoingAttacks().length === 0) game.executeNextTick();
+    executeTicks(game, 30);
+    const bubble = bubbleTiles();
+    raze.recall();
+    executeTicks(game, 2);
+    expectErased(bubble);
+  });
+
   // An east tile next to the bubble, and one far from any Hegemon land.
   function orphanSites(): { touching: TileRef; far: TileRef } {
     const touchesHegemon = (t: TileRef) =>
@@ -381,8 +412,7 @@ describe("Strike counterplay (H17)", () => {
     expect(hegemon.outgoingAttacks()).toHaveLength(0);
     expect(game.hegemonBubbleTiles()).toBe(0);
     expect(hegemon.numTilesOwned()).toBe(domain);
-    expect(game.hasOwner(touching)).toBe(false);
-    expect(game.hasOwner(far)).toBe(false);
+    expectErased([touching, far]);
   });
 
   test("a pocket of the target's land the bubble seals in is swallowed into the bubble, and pops with it", () => {
@@ -429,7 +459,7 @@ describe("Strike counterplay (H17)", () => {
     executeTicks(game, 2);
     expect(hegemon.outgoingAttacks()).toHaveLength(0);
     expect(game.hegemonBubbleTiles()).toBe(0);
-    expect(game.hasOwner(pocket!)).toBe(false);
+    expectErased([pocket!]);
   });
 
   test("two strikes: one popping leaves the other's bubble, and its orphans, alone", () => {
@@ -471,6 +501,7 @@ describe("Strike counterplay (H17)", () => {
     landStrike(300_000);
     executeTicks(game, 30);
     expect(game.hegemonBubbleTiles()).toBeGreaterThan(0);
+    const bubble = bubbleTiles();
     for (const tile of Array.from(hegemon.tiles())) {
       if (game.isInDarkStar(tile)) west.conquer(tile);
     }
@@ -478,6 +509,7 @@ describe("Strike counterplay (H17)", () => {
     expect(game.hegemonBubbleTiles()).toBe(0);
     executeTicks(game, 2);
     expect(hegemon.outgoingAttacks()).toHaveLength(0);
+    expectErased(bubble);
   });
 });
 

@@ -20,7 +20,7 @@ See [[armies-and-destroyers]].
 challenger. See [[piracy]].
 
 **Bubble.** The nebula a Hegemon's strike holds while it lasts. Nobody can take it back; when
-the strike ends it pops and the nebula becomes neutral. See [[combat#strikes]].
+the strike ends it pops and the nebula is erased into deep space. See [[combat#strikes]].
 
 **Challenger.** Every player except the Hegemon.
 

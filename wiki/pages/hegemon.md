@@ -59,7 +59,8 @@ further it goes. On landing it takes the tile and fights outward like a landing.
   ceiling. See [[combat#fighting-a-strike|Fighting a strike]].
 - **The end.** A strike ends the moment it stops advancing: its troops are spent or cancelled,
   nothing is left in reach, the target is at the tyranny floor, it is called off, or the Hegemon
-  falls. Its bubble then pops and the nebula becomes neutral, free for anyone to take.
+  falls. Its bubble then pops and, like an Antimatter Reaction, **erases** the nebula into deep
+  space for good.
 - **No troops come home.** A strike's troops are spent the moment it is launched. Calling it off,
   in flight or on the ground, stops the razing but returns nothing to the Dark Star.
 
@@ -88,7 +89,8 @@ events feed and may answer with the line's **Strike** button, or by clicking the
 - **The strike.** The levy lands on the gate as a strike that captures it and razes everything
   within {{pRadius}} tiles. There is no tyranny penalty and no recall.
 - **The pop.** When nothing in reach is left, or the gate's owner has cancelled it, the strike
-  pops: the gate and every captured building are destroyed and the troops left over are burnt.
+  pops: the nebula it took is erased into deep space, the gate and every captured building are
+  destroyed and the troops left over are burnt.
 
 A player already under a punitive strike cannot be flagged again until it ends. Every warhead a
 challenger fires is a gamble that the whole galaxy pays for.

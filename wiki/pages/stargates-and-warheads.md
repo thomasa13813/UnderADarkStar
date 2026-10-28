@@ -51,7 +51,8 @@ Every launch flags its gate for {{flag}} seconds. In that window the Hegemon may
 **punitive strike**: every living challenger, the launcher included, is levied {{levy}}% of the
 troops they have at home, whichever warhead was fired, and the levy lands on the
 gate as a strike that captures it and razes everything within {{pRadius}} tiles. When it pops, the
-gate and every building it captured are destroyed. See [[hegemon#punitive-strikes]].
+nebula it took is erased into deep space, and the gate and every building it captured are
+destroyed. See [[hegemon#punitive-strikes]].
 
 An AI Hegemon punishes every launch except from very small players.
 

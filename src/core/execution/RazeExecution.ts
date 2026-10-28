@@ -38,10 +38,11 @@ import { FlatBinaryHeap } from "./utils/FlatBinaryHeap";
 // ceiling and at a better rate against a bigger one (counter()). When the
 // strike stops advancing — its troops spent or cancelled, the target beneath
 // the tyranny floor, nothing left in reach, recalled, or the Hegemon fallen —
-// the bubble POPS: all of it reverts to neutral, and the structures it
-// captured die with it (PlayerExecution deletes units on unowned land). The
-// Hegemon never keeps land beyond the Dark Star, and a strike's troops never
-// come home (2026-10-24): recalled or spent, they are gone.
+// the bubble POPS: all of it is erased into deep space, as an Antimatter
+// Reaction erases (2026-10-27), and the structures it captured die with it
+// (PlayerExecution deletes units on unowned land). The Hegemon never keeps
+// land beyond the Dark Star, and a strike's troops never come home
+// (2026-10-24): recalled or spent, they are gone.
 //
 // Not all of the Hegemon's land beyond the moat was taken by a strike: the
 // engine hands the Hegemon any pocket of the target's land a jagged bubble
@@ -559,13 +560,13 @@ export class RazeExecution implements Execution, StrikeInFlight, HegemonStrike {
     this.mg.stats().attackMaxIncoming(this.target, troops);
   }
 
-  // The bubble pops: whatever it still holds reverts to neutral — with the
-  // orphans it touches, and then anything else the Hegemon holds beyond the
-  // moat that no other live strike's bubble claims.
+  // The bubble pops: whatever it still holds is erased into deep space — with
+  // the orphans it touches, and then anything else the Hegemon holds beyond
+  // the moat that no other live strike's bubble claims.
   private pop(): void {
     this.adoptOrphans();
     for (const tile of this.bubble) {
-      this.hegemon.relinquish(tile);
+      this.erase(tile);
     }
     this.bubble.clear();
     this.mg.removeHegemonStrike(this);
@@ -576,8 +577,15 @@ export class RazeExecution implements Execution, StrikeInFlight, HegemonStrike {
     for (const tile of Array.from(this.hegemon.tiles())) {
       if (this.mg.isInDarkStar(tile)) continue;
       if (others.some((other) => other.holdsTile(tile))) continue;
-      this.hegemon.relinquish(tile);
+      this.erase(tile);
     }
+  }
+
+  // A popped bubble tile is gone for good, as under an Antimatter Reaction:
+  // unowned at once, and deep space when the water manager next flushes.
+  private erase(tile: TileRef): void {
+    this.hegemon.relinquish(tile);
+    this.mg.queueWaterConversion(tile, true);
   }
 
   // Drop what the target took back, then take in every Hegemon tile beyond

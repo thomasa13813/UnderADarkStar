@@ -13,8 +13,9 @@ the game. Every tile of territory is nebula. You spread over nebula by attacking
 border, and the more of it you hold, the higher your troop ceiling and the more room you have to
 build.
 
-Unclaimed nebula is neutral and cheap to take. A tile that becomes nobody's, for instance when a
-Hegemon's strike pops, is neutral again.
+Unclaimed nebula is neutral and cheap to take. Nebula can also be destroyed: an
+[[stargates-and-warheads#warheads|Antimatter Reaction]] and the pop of a Hegemon's strike both
+**erase** it into deep space for good.
 
 ## Deep space
 

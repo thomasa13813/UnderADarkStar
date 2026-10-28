@@ -217,8 +217,9 @@ for ordering one.
   captured.
 - **The end.** A strike ends the moment it stops advancing: its troops are spent or cancelled,
   nothing is left in its reach, you are struck down to the tyranny floor, the Hegemon calls it off
-  or the Hegemon falls. The bubble then **pops**: all of it becomes unclaimed nebula, free for
-  anyone, and every building in it is destroyed.
+  or the Hegemon falls. The bubble then **pops**: like an
+  [[stargates-and-warheads#warheads|Antimatter Reaction]], it **erases** the nebula into deep
+  space, gone for good, and every building in it is destroyed.
 - **Its troops never come home.** Whatever a strike still has when it ends is lost, and so is a
   strike the Hegemon calls off, in flight or on the ground.
 - Defense Posts and Armies work against strikes. Shield Arrays do not: a strike is troops, not a
@@ -238,7 +239,7 @@ attack ratio slider sets how many troops you offer.
   Hegemon sends.
 - **There is one front, and it only moves outward.** Countering does not win land back. It
   shrinks the strike, which slows it, and ends it the moment it is cancelled. What it has already
-  taken is lost when it pops.
+  taken is erased when it pops.
 - **Answer fast.** A strike always destroys the nebula around where it lands; how much more it
   takes depends on how quickly, and how heavily, you commit troops against it.
 - You cannot counter a strike still in flight: wait for it to land.

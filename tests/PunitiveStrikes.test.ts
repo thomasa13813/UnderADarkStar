@@ -332,7 +332,7 @@ describe("The levy and the strike (H19)", () => {
     expect(troops).toBeLessThan(expected * 1.02);
   });
 
-  test("it lands on the silo, razes only within punitiveRadius, then pops: silo gone, land neutral", () => {
+  test("it lands on the silo, razes only within punitiveRadius, then pops: silo gone, land erased into deep space", () => {
     const tile = inland(east, 1);
     const silo = buildSilo(east, tile);
     fire(east, UnitType.AtomBomb);
@@ -376,6 +376,8 @@ describe("The levy and the strike (H19)", () => {
     expect(east.numTilesOwned()).toBeLessThan(eastTiles - 100);
     expect(east.numTilesOwned()).toBeGreaterThan(eastTiles - bubblePeak - 50);
     expect(game.owner(tile).isPlayer()).toBe(false);
+    // Like any strike's bubble, the punishment's is gone for good.
+    expect(game.isWater(tile)).toBe(true);
   });
 
   test("the target cancels it by committing troops, as any strike", () => {

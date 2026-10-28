@@ -1137,14 +1137,17 @@ export class GameImpl implements Game {
     // The throne falls with its last Dark Star tile (R2): a strike's bubble
     // must not keep the Hegemon alive beyond it, and popping it here lets
     // the conqueror's attack see the Hegemon dead and record the killing
-    // blow (handleDeadDefender → conquerPlayer).
+    // blow (handleDeadDefender → conquerPlayer). A popped bubble is erased
+    // into deep space, as RazeExecution.pop erases it (2026-10-27).
     if (
       previousOwner.isPlayer() &&
       previousOwner.isHegemon() &&
       this.hegemonDomainTiles() === 0
     ) {
       for (const t of Array.from(previousOwner.tiles())) {
-        if (!this.isInDarkStar(t)) this.relinquish(t);
+        if (this.isInDarkStar(t)) continue;
+        this.relinquish(t);
+        this.queueWaterConversion(t, true);
       }
     }
     if (previousOwner.isPlayer()) this.castOutIfHomeless(previousOwner, tile);

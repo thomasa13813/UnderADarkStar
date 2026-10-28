@@ -116,8 +116,8 @@ players and Lords. A disconnected teammate costs nothing.
   from a player holding no domain tile, and its tile loop skips Hegemon tiles beyond the moat;
   `Player.canAttack`, `TransportShipExecution` and `GateShotExecution` refuse the bubble too.
 - **End:** troops < 1 (spent or countered), tyranny floor, frontier empty after a refresh,
-  recall, tile lost in flight, target or throne dead → `end()`: `pop()` (bubble to neutral,
-  structures destroyed) and **no troops return**, for punitive strikes and ordinary ones alike.
+  recall, tile lost in flight, target or throne dead → `end()`: `pop()` (bubble erased into
+  deep space as by an Antimatter Reaction, structures destroyed; 2026-10-27) and **no troops return**, for punitive strikes and ordinary ones alike.
 - **AI.** `AiAttackBehavior.counterStrike()` runs first in `maybeAttack` and
   `attackRandomTarget`: a struck Lord or Baron offers `STRIKE_COUNTER_SHARE` (half) of its troops.
   The AI throne no longer recalls on invasion (nothing would come back); its runner-up recall
@@ -201,6 +201,9 @@ always reduces the damage; (3) gone. Balance (the throne's pool now drains for g
 strike) is still to be measured in `HegemonSim` (F1).
 
 ## 5. Changelog
+
+- **2026-10-27** — A popped bubble is erased into deep space, like an Antimatter Reaction,
+  instead of reverting to neutral nebula (Tom; Design H17 revised). Wiki updated to match.
 
 - **2026-10-24, later** — The strike rework built (§3, §4.4): weighted cancel, the bubble out of
   bounds, no refunds, no punitive halt, AI counters. Wiki updated to match.

@@ -287,6 +287,12 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   overreaches against a weaker player wastes troops. **Strike troops never come home**, recalled in
   flight or on the ground, or left over when it pops (H8's refund and retreat malus are gone). Lords
   (and Barons) answer a landed strike before anything else by offering half their army.
+  **[Revised 2026-10-27, Tom's call; built the same day]** The pop no longer leaves neutral nebula:
+  the bubble is **erased into deep space**, as an Antimatter Reaction erases (WH5), for ordinary
+  and punitive strikes alike and when the throne falls. Captured structures still die with it.
+  Shield Arrays do not stop it, as they never stopped strikes. Only the belt-and-braces sweep of
+  stray Hegemon land that no strike holds (`HegemonExecution.sweepBeyondTheMoat`) still reverts
+  to neutral.
 - **H18 — Gifts: the Hegemon builds in its vassals' nebulae.** [Decided 2026-09-24] The Hegemon may
   place **any structure a challenger could build** — city, port, factory, defence post, stargate,
   shield array — on **any challenger's territory**, paying the cost from its own gold (H4). The structure
@@ -367,7 +373,7 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   moment the invader holds **no nebula beyond the moat**, it is **eliminated**, and every Dark Star
   tile it held **returns to the Hegemon at once** — by fiat, not reconquest, and with no troops
   attached (the bleed it already paid stays paid, H5). Whoever took its last nebula records the kill
-  (gold, standings); land lost to nobody (a warhead, a neutral pop) eliminates it uncredited. The
+  (gold, standings); land lost to nobody (a warhead, a strike's pop) eliminates it uncredited. The
   Hegemon is told by an event line. Why: a stranded invader kept regenerating troops and stayed
   alive on its foothold alone, deadlocking the round (the case H9's donations were opened to break).
   Built in `GameImpl.castOutIfHomeless` (checked whenever a challenger loses a tile outside the Dark
@@ -2262,7 +2268,7 @@ hydrogen-bomb removal (closed by S6).
 | **Challenger**                | Any non-Hegemon player.                                                                                                                                                                              |
 | **Dark Star / Domain**        | The central black-hole region: the Hegemon's territory, the only tiles it may ever own.                                                                                                              |
 | **Invader**                   | The single challenger currently allowed to attack the domain.                                                                                                                                        |
-| **Raze / Strike**             | The Hegemon's attack: nebula it takes returns to neutral instead of being claimed (challenger raids were dropped).                                                                                   |
+| **Raze / Strike**             | The Hegemon's attack: nebula it takes is erased into deep space when it ends instead of being claimed (challenger raids were dropped).                                                               |
 | **Gift**                      | A structure the Hegemon builds on a challenger's nebula at its own cost; the host owns it and cannot refuse (H18).                                                                                   |
 | **Shadow tax**                | The Hegemon's gold income: a share of the challengers' combined income, deducted from nobody (H4).                                                                                                   |
 | **Destroyer**                 | The engine's warship, a deep-space unit; a challenger's is launched from a spaceport's harbour, the Hegemon's spawn in the moat, portless and purely defensive (H10, S7).                            |
@@ -2274,7 +2280,7 @@ hydrogen-bomb removal (closed by S6).
 | **Shield Array**              | A challenger structure whose 40-tile perimeter no missile can harm the inside of, the throne's included; the blast clears the rest of its circle; strikes and gate shots pass through (C5).          |
 | **Projectile**                | The shared flight — a unit on a nuke-style arc with a motion plan — used by strikes, gate shots and the opening.                                                                                     |
 | **Tyranny**                   | The cost penalty on striking a small player; at the floor they cannot be struck at all.                                                                                                              |
-| **Bubble**                    | The nebula a strike holds while it lasts; fought over by the struck player, pops to neutral.                                                                                                         |
+| **Bubble**                    | The nebula a strike holds while it lasts; never retaken, erased into deep space when it pops.                                                                                                        |
 | **Overthrow**                 | Eliminating the Hegemon (zero tiles).                                                                                                                                                                |
 | **Killing blow**              | The conquest that eliminates the Hegemon; its owner wins the round.                                                                                                                                  |
 | **Pirate**                    | An eliminated challenger who stays in the round at the helm of a corsair; no territory, no building, no alliances; anonymous at sea (`DarkStar-Piracy.md`).                                          |
@@ -2289,6 +2295,8 @@ hydrogen-bomb removal (closed by S6).
 | **Intent / Turn / Execution** | Player action → server-bundled tick of intents → deterministic sim object that applies it.                                                                                                           |
 
 ## 11. Changelog
+
+- **2026-10-27, strikes erase** — Tom: the nebula under a Hegemon strike or punitive strike is destroyed when the bubble pops, like an Antimatter Reaction, instead of reverting to neutral (H17 revised). `RazeExecution.pop` and the throne-falls pop in `GameImpl.conquer` queue the tiles for deep-space conversion. Wiki: Combat, The Hegemon, Stargates and warheads, Nebulae and deep space, Glossary.
 
 - **2026-10-27, shield arrays free-standing** — Tom: Shield Arrays as strict upgrades to Defense Posts were not working well. They are free-standing structures again (SH1 revised, C5), give no post's defence, no longer count towards the post's price, and cost **2.5M** (was 2M). Their shield shrinks a tenth, 100 → **90 tiles**. Capture intact unchanged.
 - **2026-10-27, Armies on phones** — Tom found no way to deploy an Army on mobile: the build bar is hidden below 1024px, and the radial menu offered the Army only in the Stargate menu, which opens off your territory, where an Army can never stand. The Army now sits in the build (wrench) menu on your own nebula and no longer in the Stargate menu; Destroyers stay in the Stargate menu on deep space. Wiki: an "On a phone" section in Controls, and both ways to deploy in Armies and Destroyers.
