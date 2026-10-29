@@ -46,6 +46,8 @@ export class UnitImpl implements Unit {
   private _punitiveFlag: PunitiveFlag | undefined;
   // A Projectile carrying the throne's tithe (TI1), not a strike's troops.
   private _tithe = false;
+  // A Projectile carrying a transfer of troops or gold (GN2).
+  private _transfer = false;
   private _hasTrainStation: boolean = false;
   private _level: number = 1;
   private _targetable: boolean = true;
@@ -79,6 +81,7 @@ export class UnitImpl implements Unit {
     }
     this._troops = "troops" in params ? (params.troops ?? 0) : 0;
     this._tithe = "tithe" in params && params.tithe === true;
+    this._transfer = "transfer" in params && params.transfer === true;
     this._lastSetSafeFromPirates =
       "lastSetSafeFromPirates" in params
         ? (params.lastSetSafeFromPirates ?? 0)
@@ -189,6 +192,7 @@ export class UnitImpl implements Unit {
       loaded: this._loaded,
     };
     if (this._tithe) update.tithe = true;
+    if (this._transfer) update.transfer = true;
     return update;
   }
 

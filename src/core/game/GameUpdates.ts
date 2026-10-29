@@ -208,6 +208,8 @@ export interface UnitUpdate {
   punitiveFlag?: PunitiveFlag;
   // Projectiles only: the throne's tithe (TI1), drawn with its ring.
   tithe?: true;
+  // Projectiles only: a transfer of troops or gold (GN2), not an attack.
+  transfer?: true;
 }
 
 export interface AttackUpdate {

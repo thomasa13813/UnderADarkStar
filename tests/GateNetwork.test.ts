@@ -11,7 +11,7 @@ import {
 import { TileRef } from "../src/core/game/GameMap";
 import { setup } from "./util/Setup";
 import { TestConfig } from "./util/TestConfig";
-import { executeTicks } from "./util/utils";
+import { landTransfers } from "./util/utils";
 
 // The gate network (docs/DarkStar-Rework.md GN1-GN12): under a Dark Star a
 // transfer of troops or gold needs no alliance, only reach. A player reaches
@@ -152,12 +152,12 @@ describe("Reach (GN1-GN3)", () => {
     expect(west.canDonateTroops(east)).toBe(true);
   });
 
-  test("the transfer arrives at once and spends no gate charge (GN2)", () => {
+  test("the transfer lands and spends no gate charge (GN2)", () => {
     const g = gate(west, tileOf(-1, 0));
     east.conquer(tileOf(-1, 25, 15));
     const gold = east.gold();
     game.addExecution(new DonateGoldExecution(west, east.id(), 1_000_000));
-    executeTicks(game, 2);
+    landTransfers(game);
     expect(east.gold()).toBeGreaterThanOrEqual(gold + 1_000_000n);
     expect(g.missileTimerQueue()).toHaveLength(0);
     // The donation cooldown applies (GN6).
@@ -206,7 +206,7 @@ describe("The throne (GN4, GN5, GN12)", () => {
     expect(west.canDonateTroops(east)).toBe(true);
     east.setTroops(1_000);
     game.addExecution(new DonateTroopsExecution(west, east.id(), 10_000));
-    executeTicks(game, 2);
+    landTransfers(game);
     expect(east.troops()).toBeGreaterThan(5_000);
   });
 });

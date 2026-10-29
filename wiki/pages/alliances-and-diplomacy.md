@@ -33,7 +33,13 @@ Breaking an alliance (<kbd>L</kbd>) ends it, halts trade and weakens your defenc
 Troops and gold travel through your [[stargates-and-warheads|Stargates]]. You may send either to
 **any player who owns a tile within range of one of your finished Stargates**: no alliance is
 needed, and the range is the only test. Upgrading a gate widens your circle of clients as well as
-your reach. A transfer arrives at once and spends no gate charge.
+your reach. A transfer spends no gate charge.
+
+- **In flight:** a transfer leaves you at once and flies, in your colour, from your gate nearest
+  the recipient to their nearest tile (the Hegemon's from the Dark Star). It arrives only when it
+  lands. If that tile changes hands while it is in the air, even if the recipient takes it back,
+  the troops or gold come home to you when it lands. Troops beyond the recipient's room come home
+  too. A transfer in flight cannot be recalled.
 
 - **Where:** right-click the player and open the **handshake** (the ally slot): **Donate troops**
   (your attack ratio's share), **Donate gold** (opens the gold dialog) and **Propose alliance**.
@@ -43,7 +49,7 @@ your reach. A transfer arrives at once and spends no gate charge.
 - **Lobby settings:** a game may switch off gold or troop donations between challengers.
 - **To the throne:** you may send the Hegemon troops or gold only if one of your gates reaches
   the Dark Star. Troops go into its pool while it has room; while someone is invading, they join
-  the counter-attack at once. See [[overthrowing-the-hegemon#reinforcing-the-throne]].
+  the counter-attack as they land. See [[overthrowing-the-hegemon#reinforcing-the-throne]].
 - **To the invader:** the player holding the Dark Star can be supplied like anyone in reach.
 - **From the throne:** the Hegemon reaches everyone, with troops and gold, whatever the lobby
   settings say.

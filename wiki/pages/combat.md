@@ -197,7 +197,7 @@ The Dark Star is a fortress, and fighting over it follows its own rules.
   moves one way at a time.
 - **A stalled invasion is thrown back.** If the invader gains no tile for {{stall}} seconds, every
   troop the throne regrows is sent against them until they are evicted. Troops donated to the
-  throne while someone holds part of the Dark Star go straight into that counter-attack.
+  throne that land while someone holds part of the Dark Star go straight into that counter-attack.
 - **The killing blow.** Whoever takes the last Dark Star tile wins the round.
 
 ## Strikes

@@ -9,7 +9,7 @@ import {
 } from "../src/core/game/Game";
 import { TileRef } from "../src/core/game/GameMap";
 import { setup } from "./util/Setup";
-import { executeTicks } from "./util/utils";
+import { executeTicks, landTransfers } from "./util/utils";
 
 // The throne's toolkit, chunk 1 (docs/DarkStar-Design.md §6.13): nothing is
 // built on the Dark Star (H2), the Hegemon donates troops to anyone (H9), and
@@ -158,7 +158,7 @@ describe("The Hegemon donates troops to anyone (H9)", () => {
     east.setTroops(10_000);
     const before = hegemon.troops();
     game.addExecution(new DonateTroopsExecution(hegemon, east.id(), 50_000));
-    executeTicks(game, 2);
+    landTransfers(game);
     expect(east.troops()).toBeGreaterThanOrEqual(60_000);
     expect(hegemon.troops()).toBeLessThan(before);
     // The engine's donation cooldown applies to the throne as to anyone.
@@ -214,7 +214,7 @@ describe("Anyone whose gate reaches the Dark Star reinforces the throne (H9, GN5
     const max = game.config().maxTroops(hegemon);
     hegemon.setTroops(max - 10_000);
     game.addExecution(new DonateTroopsExecution(east, hegemon.id(), 50_000));
-    executeTicks(game, 3);
+    landTransfers(game);
     expect(hegemon.troops()).toBe(max);
     expect(hegemon.outgoingAttacks()).toHaveLength(0);
     // Only the room there was is taken from the donor (east started at 200k).
@@ -233,7 +233,7 @@ describe("Anyone whose gate reaches the Dark Star reinforces the throne (H9, GN5
     expect(hegemon.outgoingAttacks()).toHaveLength(0);
 
     game.addExecution(new DonateTroopsExecution(west, hegemon.id(), 50_000));
-    executeTicks(game, 2);
+    landTransfers(game);
     const attacks = hegemon.outgoingAttacks();
     expect(attacks).toHaveLength(1);
     expect(attacks[0].target()).toBe(east);
@@ -257,7 +257,7 @@ describe("Anyone whose gate reaches the Dark Star reinforces the throne (H9, GN5
     expect(game.darkStarInvader()).toBe(east);
 
     game.addExecution(new DonateTroopsExecution(west, hegemon.id(), 150_000));
-    executeTicks(game, 2);
+    landTransfers(game);
     expect(hegemon.outgoingAttacks()).toHaveLength(1);
     expect(hegemon.outgoingAttacks()[0].troops()).toBe(150_000);
 

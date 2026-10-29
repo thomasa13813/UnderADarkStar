@@ -228,8 +228,16 @@ DefensePost, owner)`, so they must also accept `ShieldArray`. Keep the cost per 
 - **GN1 — A gate reaches players, not just tiles.** A player may send **troops or gold** to any
   player who owns at least one tile within range of one of their finished stargates (180 tiles
   at level 1, +75 per level). **No alliance is needed**: gate range is the only test.
-- **GN2 — Instant, and nothing launches.** The transfer arrives at once. It spends no gate
-  charge, starts no reload, and flies no projectile.
+- **GN2 — A transfer flies** _(revised 2026-10-28; was "instant, and nothing launches")_. The
+  troops or gold leave the sender at once as a projectile in the sender's colour, on the strike's
+  arc, from the sender's gate nearest the recipient (the throne's from the Dark Star's centre) to
+  the recipient's tile nearest that gate. They arrive **only on impact**. If that tile changes
+  hands at any point in the flight (even if the recipient takes it back), or the recipient is
+  eliminated, the cargo goes home whole on impact. Troops beyond the recipient's room on impact
+  go home too. If the sender is eliminated in flight the cargo is lost. A transfer still spends
+  no gate charge and starts no reload; it cannot be recalled. Troops for the throne while someone
+  holds the Dark Star are thrown at the invader on impact (GN12). Outside a Dark Star the engine's
+  instant donation between allies stands. Code: `TransferFlight`.
 - **GN3 — Upgrading a gate widens the network.** Each level's +75 range brings more players in
   reach, for supply as for war.
 - **GN4 — The throne reaches everyone.** Sitting in the Dark Star, the Hegemon's reach is
@@ -375,6 +383,9 @@ Milky Way, AI only, 20 minutes; `--no-tithe` (added for this) switches off the A
 | **Q16** | Do Lords build Shield Arrays?                              | Yes, one: once a Lord owns at least one of every other building, it builds one where it covers most of its buildings (`maybeBuildShieldArray`; on a post until 2026-10-27). |
 
 ## 8. Changelog
+
+- **2026-10-28 (Tom)** — GN2 revised: transfers fly as a projectile in the sender's colour and
+  land on impact; a tile that changes hands in flight sends the cargo home. Built the same day.
 
 - **2026-10-25, second revision (Tom)** — The Population Center allowance is dropped (too much):
   tithes take half the gold above a flat 500k. Lords may fire a Gamma Ray Burst with collateral:

@@ -369,9 +369,11 @@ export class TutorialPanel extends LitElement implements Controller {
         .some(
           (s) => s.isActive() && !s.isInCooldown() && !s.isUnderConstruction(),
         ),
-      // A gate shot is a Projectile of ours (the throne's strikes are its).
-      gateShotFired: (this.gateShotSeen ||=
-        player.units(UnitType.Projectile).length > 0),
+      // A gate shot is a Projectile of ours (the throne's strikes are its),
+      // not a transfer (GN2).
+      gateShotFired: (this.gateShotSeen ||= player
+        .units(UnitType.Projectile)
+        .some((u) => !u.isTransfer())),
       atomDisabled: this.game.config().isUnitDisabled(UnitType.AtomBomb),
       shieldArrayDisabled: this.game
         .config()

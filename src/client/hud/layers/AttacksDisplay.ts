@@ -113,12 +113,15 @@ export class AttacksDisplay extends LitElement implements Controller {
 
     // A challenger's projectiles are its stargate shots (C4): they ride the
     // boat rows (troops, target, ETA, recall). The Hegemon's are strikes.
+    // Transfers in flight (GN2) are neither, and cannot be recalled.
     this.outgoingBoats = myPlayer
       .units()
       .filter(
         (u) =>
           u.type() === UnitType.TransportShip ||
-          (u.type() === UnitType.Projectile && !myPlayer.isHegemon()),
+          (u.type() === UnitType.Projectile &&
+            !myPlayer.isHegemon() &&
+            !u.isTransfer()),
       );
 
     this.requestUpdate();

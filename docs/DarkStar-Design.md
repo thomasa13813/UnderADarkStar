@@ -181,7 +181,7 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   invasion and free the slot, and are how rivals compete for the throne by proxy. [2026-10-23: the
   extreme case, an invader with no nebula at all beyond the moat, is now settled by H20.]
   [Reworked 2026-10-25, F25, built on `feat/rework`] **The gate network** (GN1-GN12): every transfer
-  needs no alliance, only reach. The throne reaches everyone, with **troops and gold**; a challenger
+  needs no alliance, only reach, and since 2026-10-28 flies from a gate and lands on impact (GN2). The throne reaches everyone, with **troops and gold**; a challenger
   reaches a player who owns a tile within range of one of its finished gates, and reinforces (or
   sends gold to) the throne only when a gate reaches the Dark Star. Cooldowns apply; the lobby
   toggles hold between challengers. All transfers live in the radial menu's handshake (GN8-GN10).
@@ -2295,6 +2295,8 @@ hydrogen-bomb removal (closed by S6).
 | **Intent / Turn / Execution** | Player action → server-bundled tick of intents → deterministic sim object that applies it.                                                                                                           |
 
 ## 11. Changelog
+
+- **2026-10-28, transfers fly** — Tom: a transfer of troops or gold through the gate network is no longer instant (GN2 revised, `docs/DarkStar-Rework.md` §5). It leaves the sender at once as a projectile in the sender's colour, from its gate nearest the recipient (the throne's from the Dark Star's centre) to the recipient's tile nearest that gate, and arrives only on impact. If the tile changes hands at any point in the flight, the cargo goes home on impact; troops beyond the recipient's room go home too; a sender eliminated in flight loses it. No gate charge, no recall; the cooldown runs from launch. `TransferFlight`, tests in `tests/TransferFlight.test.ts`. Outside a Dark Star the engine's instant donation stands. Wiki: Alliances and diplomacy, Combat, Overthrowing the Hegemon.
 
 - **2026-10-27, strikes erase** — Tom: the nebula under a Hegemon strike or punitive strike is destroyed when the bubble pops, like an Antimatter Reaction, instead of reverting to neutral (H17 revised). `RazeExecution.pop` and the throne-falls pop in `GameImpl.conquer` queue the tiles for deep-space conversion. Wiki: Combat, The Hegemon, Stargates and warheads, Nebulae and deep space, Glossary.
 

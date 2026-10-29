@@ -366,6 +366,8 @@ export interface UnitParamsMap {
     troops?: number;
     // The throne's tithe (TI1): no troops, a ring on the aim tile.
     tithe?: boolean;
+    // A transfer of troops or gold (GN2, TransferFlight): not an attack.
+    transfer?: boolean;
   };
 
   [UnitType.Stargate]: Record<string, never>;
@@ -813,6 +815,9 @@ export interface Player {
   gold(): Gold;
   addGold(toAdd: Gold, tile?: TileRef): void;
   removeGold(toRemove: Gold): Gold;
+  // Gold coming home (a transfer that failed, GN2): not income, so it
+  // leaves goldEarned alone.
+  refundGold(gold: Gold): void;
 
   // Cumulative trade revenue, surfaced on the live PlayerUpdate so clients can
   // compute per-source gold rates (leaderboard "Ship/Train Trade Gold/min").
@@ -932,6 +937,9 @@ export interface Player {
   inGateReach(recipient: Player): boolean;
   donateTroops(recipient: Player, troops: number): boolean;
   donateGold(recipient: Player, gold: Gold): boolean;
+  // Starts the donation cooldown towards the recipient (GN6): a transfer in
+  // flight records it at launch (TransferFlight).
+  recordDonation(recipient: Player): void;
   canDeleteUnit(): boolean;
   recordDeleteUnit(): void;
   canEmbargoAll(): boolean;

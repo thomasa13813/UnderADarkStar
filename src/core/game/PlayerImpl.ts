@@ -1378,7 +1378,7 @@ export class PlayerImpl implements Player {
     if (removed === 0) return false;
     recipient.addTroops(removed);
 
-    this.sentDonations.push(new Donation(recipient, this.mg.ticks()));
+    this.recordDonation(recipient);
     this.mg.addUpdate({
       type: GameUpdateType.DonateEvent,
       donationType: "troops",
@@ -1398,7 +1398,7 @@ export class PlayerImpl implements Player {
     if (removed === 0n) return false;
     recipient.addGold(removed);
 
-    this.sentDonations.push(new Donation(recipient, this.mg.ticks()));
+    this.recordDonation(recipient);
     this.mg.addUpdate({
       type: GameUpdateType.DonateEvent,
       donationType: "gold",
@@ -1407,6 +1407,10 @@ export class PlayerImpl implements Player {
       amount: removed,
     });
     return true;
+  }
+
+  recordDonation(recipient: Player): void {
+    this.sentDonations.push(new Donation(recipient, this.mg.ticks()));
   }
 
   canDeleteUnit(): boolean {
@@ -1572,6 +1576,10 @@ export class PlayerImpl implements Player {
         troops: 0,
       });
     }
+  }
+
+  refundGold(gold: Gold): void {
+    if (gold > 0n) this._gold += gold;
   }
 
   removeGold(toRemove: Gold): Gold {

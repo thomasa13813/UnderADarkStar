@@ -13,7 +13,7 @@ import { TileRef } from "../src/core/game/GameMap";
 import { GameUpdateType, PlayerUpdate } from "../src/core/game/GameUpdates";
 import { canBuildTransportShip } from "../src/core/game/TransportShipUtils";
 import { setup } from "./util/Setup";
-import { executeTicks } from "./util/utils";
+import { executeTicks, landTransfers } from "./util/utils";
 
 let game: Game;
 let hegemon: Player;
@@ -205,7 +205,7 @@ describe("The Dark Star fights back (H13)", () => {
     // West's gate reaches the Dark Star (GN5).
     west.buildUnit(UnitType.Stargate, Array.from(west.tiles())[0], {});
     game.addExecution(new DonateTroopsExecution(west, hegemon.id(), 100_000));
-    executeTicks(game, 2);
+    landTransfers(game);
     expect(hegemon.outgoingAttacks()).toHaveLength(1);
     expect(hegemon.outgoingAttacks()[0].troops()).toBeGreaterThanOrEqual(
       committed + 99_000,

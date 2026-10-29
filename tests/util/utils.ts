@@ -34,3 +34,17 @@ export function executeTicks(game: Game, numTicks: number): void {
     game.executeNextTick();
   }
 }
+
+// Under a Dark Star a transfer of troops or gold flies (GN2): runs the tick
+// it launches on, then on until no projectile is left in the air. What the
+// landing starts (the throne's counter-attack) is initialised that same tick.
+export function landTransfers(game: Game, maxTicks = 500): void {
+  executeTicks(game, 2);
+  for (
+    let i = 0;
+    i < maxTicks && game.units(UnitType.Projectile).length > 0;
+    i++
+  ) {
+    game.executeNextTick();
+  }
+}

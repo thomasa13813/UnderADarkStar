@@ -143,6 +143,8 @@ export interface UnitState {
   // Projectiles only: the throne's tithe (TI1), telegraphed with its ring.
   // Optional: test fixtures build partial states.
   tithe?: boolean;
+  // Projectiles only: a transfer of troops or gold (GN2).
+  transfer?: boolean;
 }
 
 /** Minimal dead-unit data needed by the FX pass. */
