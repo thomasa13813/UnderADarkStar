@@ -179,7 +179,9 @@ describe("Client.initialize() booted from Main.ts module scope", () => {
     // listener, join-lobby listener and slider wiring are all in place.
     await vi.waitFor(() => expect(mocks.userAuth).toHaveBeenCalled());
     await new Promise((resolve) => setTimeout(resolve, 25));
-  }, 20_000);
+    // Importing Main's whole component graph takes about 6 s alone but over
+    // 20 s while the full suite keeps every core busy transforming files.
+  }, 60_000);
 
   it("routes a hashchange through onHashUpdate", async () => {
     const joinModal = document.querySelector("join-lobby-modal") as unknown as {

@@ -234,12 +234,13 @@ describe("SoundEffectController", () => {
     const noOwner = { isPlayer: () => false };
 
     // One projectile across its life: created at the gate, in flight, landed.
-    function shot(id: number, owner: object, tithe = false) {
+    function shot(id: number, owner: object, tithe = false, transfer = false) {
       const state = { created: true, active: true, landed: false };
       const unit = {
         id: () => id,
         type: () => UnitType.Projectile,
         isTithe: () => tithe,
+        isTransfer: () => transfer,
         isActive: () => state.active,
         reachedTarget: () => state.landed,
         createdAt: () => (state.created ? tick : -1),
@@ -287,6 +288,17 @@ describe("SoundEffectController", () => {
       tileOwner = asOwner(rival);
       tickWithUnits(s.unit);
       expect(played).toEqual(["launch", "landing"]);
+    });
+
+    it("plays launch but not landing for a transfer (its own cue)", () => {
+      tileOwner = asOwner(rival);
+      const s = shot(1, me, false, true);
+      tickWithUnits(s.unit);
+      s.fly();
+      tickWithUnits(s.unit);
+      s.land();
+      tickWithUnits(s.unit);
+      expect(played).toEqual(["launch"]);
     });
 
     it("stays silent for a shot between two other players", () => {
@@ -598,6 +610,74 @@ describe("SoundEffectController", () => {
     };
     tickWithUnits(city);
     expect(played).toEqual([]);
+  });
+
+  describe("donations", () => {
+    function tickWithDonations(
+      ...donations: Array<{
+        donationType: "gold" | "troops";
+        senderId: string;
+        recipientId: string;
+      }>
+    ) {
+      game.updatesSinceLastTick = () => ({
+        [GameUpdateType.DonateEvent]: donations.map((d) => ({
+          ...d,
+          amount: 100n,
+        })),
+      });
+      controller.tick();
+    }
+
+    beforeEach(() => {
+      game.myPlayer = () => ({ id: () => "me", smallID: () => 1 });
+    });
+
+    it("plays the gold cue for the sender and the recipient", () => {
+      tickWithDonations({
+        donationType: "gold",
+        senderId: "me",
+        recipientId: "ally",
+      });
+      tickWithDonations({
+        donationType: "gold",
+        senderId: "ally",
+        recipientId: "me",
+      });
+      expect(played).toEqual(["gold-donation", "gold-donation"]);
+    });
+
+    it("plays the troop cue for the sender and the recipient", () => {
+      tickWithDonations({
+        donationType: "troops",
+        senderId: "me",
+        recipientId: "ally",
+      });
+      tickWithDonations({
+        donationType: "troops",
+        senderId: "ally",
+        recipientId: "me",
+      });
+      expect(played).toEqual(["troop-donation", "troop-donation"]);
+    });
+
+    it("stays silent for a donation between two other players", () => {
+      tickWithDonations(
+        { donationType: "gold", senderId: "a", recipientId: "b" },
+        { donationType: "troops", senderId: "b", recipientId: "a" },
+      );
+      expect(played).toEqual([]);
+    });
+
+    it("plays each kind once however many land on one tick", () => {
+      tickWithDonations(
+        { donationType: "gold", senderId: "a", recipientId: "me" },
+        { donationType: "gold", senderId: "b", recipientId: "me" },
+        { donationType: "troops", senderId: "me", recipientId: "a" },
+        { donationType: "troops", senderId: "b", recipientId: "me" },
+      );
+      expect(played).toEqual(["gold-donation", "troop-donation"]);
+    });
   });
 
   describe("piracy", () => {

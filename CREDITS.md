@@ -34,7 +34,8 @@ open licence and are not in this repository. See [LICENSING.md](LICENSING.md).
   (troops launched from the Dark Star or a stargate), `missile.mp3` (a missile
   leaving a stargate), `invasion.mp3` (a fleet setting out), `embrace.mp3`
   (choosing piracy), `beaching.mp3` (a corsair beaching), `tithe.mp3` (the
-  Hegemon launching a tithe) and `army.mp3` (an army deployed) in
+  Hegemon launching a tithe), `army.mp3` (an army deployed), `gold-donation.mp3`
+  (a gold donation landing) and `troop-donation.mp3` (a troop donation landing) in
   `resources/sounds/effects/` were produced with Claude, Anthropic's AI model,
   at January Games' direction (October 2026). Anthropic's terms assign its
   rights in that output to the user and ask for no attribution, so the files

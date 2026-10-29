@@ -257,8 +257,13 @@ _Done when_ nothing a player sees or hears is a placeholder.
       attribution line present. Done 2026-10-12: `GameVersion.sourceUrlFor` builds the
       `/tree/<commit>` link, CREDITS covers the fonts (OFL texts shipped), the Claude-made
       audio, the map sketches; the repository is public and the deploy key retired.
-- [ ] **Production keys**: ~~real Turnstile keys~~ (issued 2026-10-07, in `.env`); secrets rotated
-      from anything used in testing (the `API_KEY` of the audit was a throwaway).
+- [x] **Production keys**: ~~real Turnstile keys~~ (issued 2026-10-07, in `.env`); secrets rotated
+      from anything used in testing (the `API_KEY` of the audit was a throwaway). **Closed
+      2026-10-28, nothing to rotate:** no test value can reach the server. `deploy/push-env.sh`
+      writes its env from Tom's dashboard keys alone and generates `API_KEY` on the server
+      (`openssl rand`), the signing key was created on the server's own volume, the audit's
+      throwaway key lived only in a container on Tom's PC, and the live page serves the real
+      Turnstile site key, not Cloudflare's always-pass test key.
 - [x] **Throne launch lines** (was: throne count for the opening). Decided 2026-10-06 as
       L16-L28 in `DarkStar-Lobbies.md`: per-type lines with a floor of five, one countdown per
       line. Server side built (Lobbies §10.5); client side built 2026-10-11 (Lobbies §10.7:
@@ -278,7 +283,12 @@ _Done when_ nothing a player sees or hears is a placeholder.
       five channels: welcome, announcements, general, bug-reports, suggestions), owned by the
       `hello@` account, plus `hello@january-games.com`. Roles and channel permissions are still
       default; Tom tidies them before the friends test. The link goes on the help page in B2.
-- [ ] Walk the launch checklist in roadmap P8.
+- [x] Walk the launch checklist in roadmap P8. **Walked 2026-10-28, clean:** "OpenFront" left in
+      player-facing text only as the required "© OpenFront and Contributors" attribution;
+      `CREDITS.md`, the tutorial, the solo screen's throne note, the win screens, the bug-report
+      path (Discord, `hello@`), the admin command, English only, the Source link, hosting with
+      backups and uptime checks, and the legal pages are all in place. Its last line, a soft
+      launch, is Stage 8.
 
 _Done when_ the checklist is clean. This build is the release candidate.
 
@@ -330,12 +340,18 @@ _Done when_ the checklist is clean. This build is the release candidate.
 3. ~~The launch map count~~ (at least six new maps, 2026-10-01); which of the 13 inherited maps
    stay is still open. Tom's standard (2026-10-17): every launch map has reachable deep space for
    commerce and piracy; no solidly land-based maps.
-4. How many thrones to open with (suggest 3 to 5).
+4. ~~How many thrones to open with.~~ Answered 2026-10-06 by the launch lines (a floor of five per
+   line, L16–L28), and for the planned rooms by L32 (two rooms, more on demand).
 5. ~~Whether "January Games" is a legal entity yet.~~ Answered 2026-10-17: January Games, LLC,
    incorporated in Minnesota; the Terms and Privacy Policy name it.
 6. An itch.io listing at launch, or after the first week?
 
 ## 7. Changelog
+
+- **2026-10-28** — **Stage 6 closed.** The production-keys item closed with nothing to rotate (the
+  reasons are on the item) and the P8 checklist walked clean. What is left is Stage 8, Tom's go or
+  no-go: the public announcement. The rooms (Lobbies §14) are being built first, on their own
+  branch.
 
 - **2026-10-25, afternoon** — From a second readiness review: **English only enforced.** The
   game had followed the browser's language into upstream's forty Crowdin files (a French browser

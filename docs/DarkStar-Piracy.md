@@ -218,7 +218,8 @@ round would not otherwise have.
 - **PR12 — The last minute. [Proposed]** Landings are refused in the round's final minute
   (`pirateLandingClosesSeconds`, **60**). Raids continue.
 - **PR13 — Round end. [Proposed]** A pirate at the timer is a spectator for the end screen; R3/R4
-  are unchanged. A pirate at sea can never win; a returned challenger can, like anyone.
+  are unchanged. A pirate at sea can never win; a returned challenger can, like anyone who was in
+  the round from its start (a drop-in's victory is void, Lobbies L44).
 - **PR14 — Standings. [Proposed]** The first elimination stamps the finishing place, as today.
   [Decided 2026-10-17, Tom: **no piracy data is tracked or shown.**] The sim keeps two per-round
   counters (`pirateRaids`, `pirateLandings`) that nothing reads; no leaderboard line is planned
@@ -397,3 +398,5 @@ hold pays for the owner's tiles at the ordinary rate.
   corsair anywhere a first one may, wreck site included, and the "too close" toast is removed;
   the wait alone separates corsairs. `respawnExclusion` and the sinking tile left the config, the
   player state and the wire.
+- **2026-10-28** — PR13 notes that a returned challenger's win counts only for a player who was in
+  the round from its start: in the planned rooms a drop-in's victory is void (Lobbies L44).

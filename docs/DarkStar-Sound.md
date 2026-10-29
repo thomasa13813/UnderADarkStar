@@ -70,6 +70,7 @@ The fork's first commit is 2026-09-19.
 | 2026-10-12 | **The soundtrack carries across page loads:** leaving a game for the home page is a full navigation, and the player used to start again from "The Hegemon" every time, so a player knocked out of several games in a row heard little else (Tom). The track and the position now go through the tab's `sessionStorage`; the next page resumes them (a track with under six seconds left gives way to the next instead). A fresh tab still opens on the top of the list. |
 | 2026-10-17 | **Piracy cues:** Tom's `embrace.mp3` (choosing piracy on the death screen; the pirate alone) and `beaching.mp3` (the corsair beaching to attack a coast; the pirate and the coast's owner). A raid at sea gets no cue: a busy corsair would ring it all round long (Tom). Credited like the others.                                                                                                                                                                     |
 | 2026-10-12 | **Credits:** the soundtrack and the four own cues (`launch`, `landing`, `missile`, `invasion`) are recorded in `CREDITS.md` as produced with Claude; Anthropic's terms assign the output to the user and ask no attribution, so they ship as January Games' under `resources/`' CC BY-SA 4.0.                                                                                                                                                                           |
+| 2026-10-28 | **Donation cues:** Tom's `gold-donation` and `troop-donation` play when a donation lands, heard by the sender and the recipient; a transfer's landing no longer plays `landing`.                                                                                                                                                                                                                                                                                        |
 | 2026-10-28 | Gate-network transfers now fly (GN2): troops or gold sent to another player ride a projectile, so `launch` and `landing` play for them too, heard by the sender and by the owner of the aimed tile, as for a gate shot. No new cue.                                                                                                                                                                                                                                     |
 
 ## 4. The ledger
@@ -99,7 +100,7 @@ game. Player-facing unit names are used; the code keeps the old ones.
 | `spawn`               | `spawn.mp3`               | You place or re-place your spawn (never the Hegemon, who has none to place)                                        | You                                                        | effects   | OF     |
 | `game-start`          | `game-start.mp3`          | The spawn phase ends                                                                                               | Everyone                                                   | effects   | OF     |
 | `launch`              | `launch.mp3`              | Troops leave the Dark Star or a stargate (the opening flight, a strike, a gate shot, a transfer of troops or gold) | The launcher and the owner of the aimed tile               | effects   | ours   |
-| `landing`             | `landing.mp3`             | Those troops come down (once per tick at most)                                                                     | The launcher and the owner of the nebula they land on      | effects   | ours   |
+| `landing`             | `landing.mp3`             | Those troops come down (once per tick at most); not a transfer, which has its own cue                              | The launcher and the owner of the nebula they land on      | effects   | ours   |
 | `missile`             | `missile.mp3`             | A warhead leaves a stargate                                                                                        | The launcher, the target's owner, and always the Hegemon   | effects   | ours   |
 | `atom-hit`            | `atom-hit.mp3`            | An Antimatter Reaction detonates; each MIRV warhead (rate-limited)                                                 | Everyone                                                   | effects   | OF     |
 | `hydrogen-hit`        | `hydrogen-hit.mp3`        | A Gamma Ray Burst detonates                                                                                        | Everyone                                                   | effects   | OF     |
@@ -117,6 +118,8 @@ game. Player-facing unit names are used; the code keeps the old ones.
 | `beaching`            | `beaching.mp3`            | A corsair beaches: the claim is taken and the hold attacks the coast (no cue for a raid)                           | The pirate and the owner of the coast                      | effects   | ours   |
 | `tithe`               | `tithe.mp3`               | The throne launches a tithe (docs/DarkStar-Rework.md §2.2); no cue on landing                                      | The throne, and every player whose nebula the ring touches | effects   | ours   |
 | `army`                | `army.mp3`                | An army is deployed (C6), a donated one included; not when it moves or patrols                                     | Its owner                                                  | effects   | ours   |
+| `gold-donation`       | `gold-donation.mp3`       | A donation of gold lands (once per tick at most); none if it misses and goes home                                  | The sender and the recipient                               | effects   | ours   |
+| `troop-donation`      | `troop-donation.mp3`      | A donation of troops lands (once per tick at most); none if it misses and goes home                                | The sender and the recipient                               | effects   | ours   |
 | `build-train-station` | `build-train-station.mp3` | A structure of yours gains a freighter station (once per tick at most)                                             | You                                                        | effects   | OF     |
 | `alliance-suggested`  | `alliance-suggested.mp3`  | Someone proposes an alliance to you                                                                                | You                                                        | alerts    | OF     |
 | `alliance-accepted`   | `alliance-accepted.mp3`   | Your proposal is accepted                                                                                          | You                                                        | alerts    | OF     |
@@ -194,6 +197,14 @@ with them since those units never appear.
 
 ## 7. Changelog
 
+- **2026-10-28** — **The donation cues.** Tom's `GoldDonation.mp3` and `TroopLanding.mp3`
+  (copied to `resources/sounds/effects/gold-donation.mp3` and `troop-donation.mp3`) play when a
+  donation of gold or troops lands, heard by the sender and the recipient alone (S8), once per
+  kind per tick. They follow the sim's `DonateEvent`, which fires on landing, so a transfer that
+  misses and goes home is silent; the generic `landing` cue no longer plays for transfers.
+  `SoundEffectController.handleDonations`, with tests. The staged copies of all sound files
+  were removed from `MapImages/` (each was byte-identical to its copy under
+  `resources/sounds/effects/`); that folder now holds images only.
 - **2026-10-25** — **The army cue.** Tom's `ArmySound.mp3` (copied to
   `resources/sounds/effects/army.mp3`) plays when an army is deployed, heard by its owner
   alone (S8); a donated army is heard by the challenger who receives it, not the throne

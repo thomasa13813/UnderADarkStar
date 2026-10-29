@@ -11,7 +11,12 @@ import { apiConfigFromEnv } from "../../src/api/Config";
 import { openDatabase } from "../../src/api/Db";
 import { loadOrCreateSigningKey } from "../../src/api/Keys";
 import { RECORD_RETENTION_MS, RecordStore } from "../../src/api/Records";
-import { hegemonRun, rebuildStats, statsFor } from "../../src/api/Results";
+import {
+  hegemonRun,
+  rebuildStats,
+  statsFor,
+  summarizeRound,
+} from "../../src/api/Results";
 import { REFRESH_COOKIE } from "../../src/api/Sessions";
 import { UserMeResponseSchema } from "../../src/core/ApiSchemas";
 import { GameType } from "../../src/core/game/Game";
@@ -840,5 +845,26 @@ describe("hegemonRun", () => {
   it("continues on the first two conditions alone for a round without reign_before", () => {
     expect(hegemonRun("ada", null, previous("ada", "ada", 2))).toBe(3);
     expect(hegemonRun("ada", null, previous("ada", "bob", 2))).toBe(1);
+  });
+});
+
+// Lobbies L44: a winner missing from the record's players (a drop-in, who
+// joined after the start roster was fixed) leaves the round void, so nobody
+// is credited a victory.
+describe("summarizeRound", () => {
+  it("is void when the winner is not among the round's players", () => {
+    const record = {
+      info: {
+        players: [
+          { clientID: "AAAAAAAA", persistentID: "pid-throne", isHegemon: true },
+        ],
+        winner: ["player", "ZZZZZZZZ"],
+      },
+    } as unknown as GameRecord;
+    expect(summarizeRound(record)).toMatchObject({
+      outcome: "void",
+      winnerID: null,
+      hegemonID: "pid-throne",
+    });
   });
 });

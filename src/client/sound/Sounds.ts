@@ -40,7 +40,9 @@ export type SoundEffect =
   | "embrace"
   | "beaching"
   | "tithe"
-  | "army";
+  | "army"
+  | "gold-donation"
+  | "troop-donation";
 
 export const soundEffectUrls: ReadonlyMap<SoundEffect, string> = new Map([
   ["ka-ching", assetUrl("sounds/effects/ka-ching.mp3")],
@@ -91,6 +93,9 @@ export const soundEffectUrls: ReadonlyMap<SoundEffect, string> = new Map([
   ["tithe", assetUrl("sounds/effects/tithe.mp3")],
   // An army deployed (C6): Tom's cue of 2026-10-25.
   ["army", assetUrl("sounds/effects/army.mp3")],
+  // A donation of gold or troops landing: Tom's cues of 2026-10-28.
+  ["gold-donation", assetUrl("sounds/effects/gold-donation.mp3")],
+  ["troop-donation", assetUrl("sounds/effects/troop-donation.mp3")],
 ]);
 
 export type AmbienceTrack = "city" | "factory" | "missile-silo" | "sam-silo";
@@ -165,6 +170,9 @@ const CUE_CATEGORY: Record<SoundEffect, Exclude<CueCategory, "ambience">> = {
   tithe: "effects",
   // An army deployed: its owner alone.
   army: "effects",
+  // A donation landing: the sender and the recipient.
+  "gold-donation": "effects",
+  "troop-donation": "effects",
 };
 
 /** Channel of a cue. A pure function of the name — call sites never choose. */

@@ -157,6 +157,14 @@ describe("GameServer on a throne", () => {
     expect(none[0].winner).toBeUndefined();
   });
 
+  // Lobbies L44: a drop-in (anyone not in the start roster) who lands the
+  // killing blow wins nothing; the round is void and the seat opens.
+  it("reports a void round when the winner joined after the start", async () => {
+    const reports = await playRound(true, () => ["player", cid("dropin")]);
+    expect(reports[0]).toMatchObject({ outcome: "void" });
+    expect(reports[0].winner).toBeUndefined();
+  });
+
   it("reports once per round, and nothing for a game off the thrones", async () => {
     const reports: ThroneRoundReport[] = [];
     const game = makeGame({

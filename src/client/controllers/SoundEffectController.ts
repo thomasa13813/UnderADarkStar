@@ -9,6 +9,7 @@ import {
 import { TileRef } from "../../core/game/GameMap";
 import {
   DisplayMessageUpdate,
+  DonateEventUpdate,
   GameUpdateType,
 } from "../../core/game/GameUpdates";
 import { Controller } from "../Controller";
@@ -118,6 +119,7 @@ export class SoundEffectController implements Controller {
     const myPlayer = this.game.myPlayer();
     if (myPlayer === null) return;
     this.handleBeachings(updates[GameUpdateType.DisplayEvent] ?? [], myPlayer);
+    this.handleDonations(updates[GameUpdateType.DonateEvent] ?? [], myPlayer);
     for (const c of updates[GameUpdateType.ConquestEvent] ?? []) {
       if (c.conquerorId === myPlayer.id()) {
         // Battle cue for conquering a real player; the ka-ching payout
@@ -167,6 +169,25 @@ export class SoundEffectController implements Controller {
     }
   }
 
+  /**
+   * A donation landing (TransferFlight.land, or the instant transfer outside
+   * Dark Star rules): the sim announces it on the tick the troops or gold
+   * reach the recipient. Heard by the sender and the recipient alone (S8;
+   * Tom, 2026-10-28), once per kind per tick however many land together. A
+   * transfer that misses and goes home sends no announcement, so no cue.
+   */
+  private handleDonations(
+    donations: readonly DonateEventUpdate[],
+    me: PlayerView,
+  ): void {
+    const cues = new Set<SoundEffect>();
+    for (const d of donations) {
+      if (d.senderId !== me.id() && d.recipientId !== me.id()) continue;
+      cues.add(d.donationType === "gold" ? "gold-donation" : "troop-donation");
+    }
+    for (const cue of cues) this.emit(cue);
+  }
+
   private handleUnit(unit: UnitView): void {
     if (unit.isActive() && unit.createdAt() === this.game.ticks()) {
       this.onCreated(unit);
@@ -197,8 +218,13 @@ export class SoundEffectController implements Controller {
    * third player across the map (Tom, 2026-10-04).
    */
   private handleProjectile(unit: UnitView): void {
-    // A tithe is heard at launch only (onTitheLaunch).
+    // A tithe is heard at launch only (onTitheLaunch). A transfer's landing
+    // has its own cue, on the sim's donation announcement (handleDonations).
     if (unit.isTithe()) return;
+    if (unit.isTransfer()) {
+      if (!unit.isActive()) this.shotDefender.delete(unit.id());
+      return;
+    }
     if (unit.isActive()) {
       this.shotDefender.set(unit.id(), this.ownerSmallID(unit.targetTile()));
       return;
