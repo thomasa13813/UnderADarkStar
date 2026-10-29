@@ -42,6 +42,8 @@ export function authorizeIntent(
   switch (intent.type) {
     case "mark_disconnected":
       return { status: 400, error: "mark_disconnected is server-internal" };
+    case "join_round":
+      return { status: 400, error: "join_round is server-internal" };
 
     case "kick_player":
       if (!actor.isLobbyCreator && !actor.isAdmin) {

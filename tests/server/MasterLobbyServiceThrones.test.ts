@@ -10,19 +10,19 @@ vi.mock("../../src/server/Logger", () => ({
 }));
 vi.mock("../../src/server/PollingLoop", () => ({ startPolling: vi.fn() }));
 
-// Under a Dark Star (docs/DarkStar-Lobbies.md §5.2, §5.7, §5.8, L16-L27): the
-// master schedules thrones instead of the per-type queues. Boot opens one
-// lobby per throne; a countdown is sent only to the head of a line once two
-// humans are in and is withdrawn when they leave; a round's start opens a new
-// throne to keep the floor; a round's end opens the successor before anyone
+// Under a Dark Star (docs/DarkStar-Lobbies.md §5.2, §5.7, §5.8, §14): the
+// master schedules rooms instead of the per-type queues. Boot opens one lobby
+// per room; each room's countdown is sent once two humans are in and is
+// withdrawn when they leave; a round's end opens the successor before anyone
 // has picked anything and tells the finished game; stale reports of finished
-// rounds are not advertised; thrones are advertised in launch order with
-// their place, running rounds last; a retired throne's lobby is closed.
+// rounds are not advertised; lobbies are advertised soonest countdown first,
+// running rounds last; a room opens when every room of its type is nearly
+// full, and an added room nobody is in closes.
 
 const T0 = 1_700_000_000_000;
 const COUNTDOWN = 120_000;
 const WINDOW = 30_000;
-const CULL = 60_000;
+const CLOSE = 60_000;
 const NAMES = ["Vega", "Sirius", "Altair", "Deneb"];
 
 function createMockWorker() {
@@ -85,9 +85,7 @@ describe("MasterLobbyService thrones", () => {
   let registry: ThroneRegistry;
   let playlist: {
     gameConfig: ReturnType<typeof vi.fn>;
-    maxPlayersForMap?: ReturnType<typeof vi.fn>;
     throneSpecialConfig?: ReturnType<typeof vi.fn>;
-    throneTeamSplit?: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(() => {
@@ -99,12 +97,13 @@ describe("MasterLobbyService thrones", () => {
     let n = 0;
     registry = new ThroneRegistry({
       names: NAMES,
-      floor: { ffa: 2, team: 0, special: 1 },
+      rooms: { ffa: 2, team: 0, special: 1 },
       minPlayers: 2,
       countdownMs: COUNTDOWN,
       windowMs: WINDOW,
       vanishGraceMs: 10_000,
-      cullGraceMs: CULL,
+      cap: 50,
+      closeGraceMs: CLOSE,
       mintGameID: () => `g${String(++n).padStart(2, "0")}`,
     });
     // The playlist's roll, trusted-only as every seventh public game is.
@@ -134,12 +133,13 @@ describe("MasterLobbyService thrones", () => {
     let n = 0;
     const teamRegistry = new ThroneRegistry({
       names: NAMES,
-      floor: { ffa: 0, team: 2, special: 0 },
+      rooms: { ffa: 0, team: 2, special: 0 },
       minPlayers: 2,
       countdownMs: COUNTDOWN,
       windowMs: WINDOW,
       vanishGraceMs: 10_000,
-      cullGraceMs: CULL,
+      cap: 50,
+      closeGraceMs: CLOSE,
       mintGameID: () => `t${String(++n).padStart(2, "0")}`,
     });
     const log = { info: vi.fn(), error: vi.fn(), warn: vi.fn() } as any;
@@ -160,33 +160,31 @@ describe("MasterLobbyService thrones", () => {
       "team",
       expect.objectContaining({ mode: expect.anything() }),
     );
+    // The room's cap on every map (L33), piracy on for drop-ins (L36).
     expect(creates[0].gameConfig).toEqual({
       gameMap: "map-for-team",
       hegemon: { enabled: true },
+      maxPlayers: 50,
+      piracy: { enabled: true },
     });
   });
 
-  // L30: a team throne's winner sets the split; the master recomputes the
-  // cap for it on the next round's map. An FFA throne's pick may not.
-  it("applies a team throne winner's split with the cap for it", async () => {
+  // L30, L37: a team room's winner sets the count of teams; the cap stays
+  // the room's 50. An FFA room's pick may not.
+  it("applies a team room winner's count of teams under the room's cap", async () => {
     vi.mocked(startPolling).mockClear();
     let n = 0;
     const teamRegistry = new ThroneRegistry({
       names: NAMES,
-      floor: { ffa: 0, team: 1, special: 0 },
+      rooms: { ffa: 0, team: 1, special: 0 },
       minPlayers: 2,
       countdownMs: COUNTDOWN,
       windowMs: WINDOW,
       vanishGraceMs: 10_000,
-      cullGraceMs: CULL,
+      cap: 50,
+      closeGraceMs: CLOSE,
       mintGameID: () => `t${String(++n).padStart(2, "0")}`,
     });
-    playlist.throneTeamSplit = vi.fn(
-      async (_map: string, _base: unknown, split: unknown) => ({
-        playerTeams: split,
-        maxPlayers: 36,
-      }),
-    );
     const log = { info: vi.fn(), error: vi.fn(), warn: vi.fn() } as any;
     const teamService = new MasterLobbyService(
       playlist as any,
@@ -221,9 +219,9 @@ describe("MasterLobbyService thrones", () => {
       outcome: "overthrown",
       winner: ADA,
     });
-    // t02 kept the floor when t01 started; t03 is the successor.
+    // t02 is the successor.
     await vi.waitFor(() =>
-      expect(sent(teamWorker, "createGame")).toHaveLength(3),
+      expect(sent(teamWorker, "createGame")).toHaveLength(2),
     );
     teamWorker.emit("message", {
       type: "thronePick",
@@ -237,21 +235,15 @@ describe("MasterLobbyService thrones", () => {
     await vi.waitFor(() =>
       expect(sent(teamWorker, "updateLobby").length).toBeGreaterThan(0),
     );
-    expect(playlist.throneTeamSplit).toHaveBeenCalledWith(
-      "Event Horizon",
-      expect.objectContaining({ gameMap: "map-for-team" }),
-      3,
-    );
     expect(sent(teamWorker, "updateLobby")[0]).toEqual({
       type: "updateLobby",
-      gameID: "t03",
-      gameConfig: { gameMap: "Event Horizon", playerTeams: 3, maxPlayers: 36 },
+      gameID: "t02",
+      gameConfig: { gameMap: "Event Horizon", playerTeams: 3, maxPlayers: 50 },
       throne: { heir: ADA, reign: 1 },
     });
   });
 
   it("drops a split from an FFA throne's pick and one off the list", async () => {
-    playlist.maxPlayersForMap = vi.fn(async () => 42);
     await winRound();
     worker.emit("message", {
       type: "thronePick",
@@ -267,7 +259,7 @@ describe("MasterLobbyService thrones", () => {
     // Nothing else was chosen, so there is no patch at all.
     expect(sent(worker, "updateLobby")[0]).toEqual({
       type: "updateLobby",
-      gameID: "g05",
+      gameID: "g04",
       gameConfig: undefined,
       throne: { heir: ADA, reign: 1 },
     });
@@ -317,6 +309,8 @@ describe("MasterLobbyService thrones", () => {
     expect(creates[0].gameConfig).toEqual({
       gameMap: "map-for-ffa",
       hegemon: { enabled: true },
+      maxPlayers: 50,
+      piracy: { enabled: true },
     });
     // No countdown yet: nobody is in.
     expect(sent(worker, "updateLobby")).toHaveLength(0);
@@ -402,27 +396,19 @@ describe("MasterLobbyService thrones", () => {
       outcome: "overthrown",
       winner: { persistentID: "p-1", name: "Ada" },
     });
-    // The round's start already opened throne-04 (g04) to keep the FFA
-    // line at its floor of two.
-    expect(sent(worker, "createGame")).toHaveLength(4);
-    expect(sent(worker, "createGame")[3].throne).toMatchObject({
-      throneID: "throne-04",
-      name: "Deneb",
-      type: "ffa",
-    });
-    await vi.waitFor(() => expect(sent(worker, "createGame")).toHaveLength(5));
-    const successor = sent(worker, "createGame")[4];
-    expect(successor.gameID).toBe("g05");
+    await vi.waitFor(() => expect(sent(worker, "createGame")).toHaveLength(4));
+    const successor = sent(worker, "createGame")[3];
+    expect(successor.gameID).toBe("g04");
     expect(successor.throne.throneID).toBe("throne-01");
     expect(sent(worker, "successorCreated")).toEqual([
       {
         type: "successorCreated",
         gameID: "g01",
-        successorID: "g05",
+        successorID: "g04",
         reservationUntil: T0 + WINDOW,
       },
     ]);
-    expect(registry.get("throne-01")?.gameID).toBe("g05");
+    expect(registry.get("throne-01")?.gameID).toBe("g04");
 
     // The worker still reports the finished round while its win screen is
     // up; the broadcast advertises only the successor.
@@ -432,7 +418,6 @@ describe("MasterLobbyService thrones", () => {
         throneEntry("g01", {
           throne: { ...(throneEntry("g01").throne as object), running: true },
         }),
-        throneEntry("g05"),
         throneEntry("g04"),
         throneEntry("g02"),
         throneEntry("g03"),
@@ -442,7 +427,7 @@ describe("MasterLobbyService thrones", () => {
     const broadcast = last(sent(worker, "lobbiesBroadcast"));
     expect(
       broadcast.publicGames.games.throne.map((l: any) => l.gameID).sort(),
-    ).toEqual(["g02", "g03", "g04", "g05"]);
+    ).toEqual(["g02", "g03", "g04"]);
     expect(broadcast.publicGames.games.ffa).toEqual([]);
   });
 
@@ -489,19 +474,29 @@ describe("MasterLobbyService thrones", () => {
     expect(sent(worker, "successorCreated")).toHaveLength(0);
   });
 
-  it("advertises thrones in launch order with their place: each line's head first, running last", async () => {
+  it("advertises lobbies soonest countdown first, then FFA before special, running last", async () => {
     await schedulerTask()();
-    // throne-02 (g02) has the minimum, so it is the FFA head ahead of
-    // throne-01; throne-03 (g03) is the special line's only throne.
-    const entries = (g03Running: boolean) => [
+    // g02 has the minimum and counts down; g01 and g03 wait.
+    const entries = (g02Running: boolean) => [
       throneEntry("g01"),
-      throneEntry("g02", { numClients: 2, numPlayers: 2 }),
+      throneEntry("g02", {
+        numClients: 2,
+        numPlayers: 2,
+        ...(g02Running
+          ? {
+              throne: {
+                ...(throneEntry("g02").throne as object),
+                running: true,
+              },
+            }
+          : { startsAt: T0 + COUNTDOWN }),
+      }),
       throneEntry("g03", {
         throne: {
           ...(throneEntry("g03").throne as object),
           throneID: "throne-03",
+          name: "Altair",
           type: "special",
-          ...(g03Running ? { running: true } : {}),
         },
       }),
     ];
@@ -510,74 +505,74 @@ describe("MasterLobbyService thrones", () => {
     await broadcastTask()();
     const listed = () =>
       last(sent(worker, "lobbiesBroadcast")).publicGames.games.throne.map(
-        (l: any) => [l.gameID, l.throne.place],
+        (l: any) => l.gameID,
       );
-    expect(listed()).toEqual([
-      ["g02", 1],
-      ["g03", 1],
-      ["g01", 2],
-    ]);
+    expect(listed()).toEqual(["g02", "g01", "g03"]);
+    // No place in line any more (§14.7).
+    expect(
+      last(sent(worker, "lobbiesBroadcast")).publicGames.games.throne.every(
+        (l: any) => l.throne.place === undefined,
+      ),
+    ).toBe(true);
 
-    // The special round starts: it leaves its line and sorts last.
+    // g02's round starts: it sorts last.
     worker.emit("message", { type: "lobbyList", lobbies: entries(true) });
     await schedulerTask()();
     await broadcastTask()();
-    expect(listed()).toEqual([
-      ["g02", 1],
-      ["g01", 2],
-      ["g03", undefined],
-    ]);
+    expect(listed()).toEqual(["g01", "g03", "g02"]);
   });
 
-  it("closes the lobby of a surplus throne nobody is in (L20)", async () => {
+  it("opens a room when every room of the type is nearly full, and closes it a minute after it empties (L32)", async () => {
     await schedulerTask()();
+    const nearlyFull = { numClients: 38, numPlayers: 38 };
     worker.emit("message", {
       type: "lobbyList",
       lobbies: [
-        throneEntry("g01", {
-          throne: { ...(throneEntry("g01").throne as object), running: true },
-        }),
-        throneEntry("g02"),
+        throneEntry("g01", nearlyFull),
+        throneEntry("g02", nearlyFull),
         throneEntry("g03"),
       ],
     });
-    // throne-01 runs: throne-04 (g04) opens to keep the FFA floor of two.
     await schedulerTask()();
-    worker.emit("message", {
-      type: "throneRound",
-      throneID: "throne-01",
-      gameID: "g01",
-      outcome: "ai",
+    // Both FFA rooms at 75 %: a third FFA room (g04) opens.
+    const creates = sent(worker, "createGame");
+    expect(creates).toHaveLength(4);
+    expect(creates[3].throne).toMatchObject({
+      throneID: "throne-04",
+      name: "Deneb",
+      type: "ffa",
     });
-    // The AI held it: throne-01 returns to the back of the line as g05,
-    // one more than the floor.
-    await vi.waitFor(() => expect(sent(worker, "createGame")).toHaveLength(5));
-    const empty = {
+    // The first room thins out; the added room is still empty a minute
+    // later and closes.
+    const thin = {
       type: "lobbyList",
       lobbies: [
-        throneEntry("g02"),
+        throneEntry("g01", { numClients: 3, numPlayers: 3 }),
+        throneEntry("g02", nearlyFull),
         throneEntry("g03"),
         throneEntry("g04"),
-        throneEntry("g05"),
       ],
     };
-    worker.emit("message", empty);
+    worker.emit("message", thin);
     await schedulerTask()();
-    expect(sent(worker, "updateLobby")).toHaveLength(0);
-
-    // A second past the grace: waiting for the successor above moved the
-    // fake clock a little, and every surplus throne must be eligible so the
-    // last in line is the one that goes.
-    vi.setSystemTime(T0 + CULL + 1000);
-    worker.emit("message", empty);
+    const retires = () =>
+      sent(worker, "updateLobby").filter((m: any) => m.retire);
+    expect(retires()).toHaveLength(0);
+    vi.setSystemTime(T0 + CLOSE + 1000);
+    worker.emit("message", thin);
     await schedulerTask()();
-    expect(sent(worker, "updateLobby")).toEqual([
-      { type: "updateLobby", gameID: "g05", retire: true },
+    expect(retires()).toEqual([
+      { type: "updateLobby", gameID: "g04", retire: true },
     ]);
-    expect(registry.get("throne-01")).toBeUndefined();
-    // Once: the line is back at its floor.
+    expect(registry.get("throne-04")).toBeUndefined();
+    // Never below the opening rooms.
+    vi.setSystemTime(T0 + 10 * CLOSE);
+    worker.emit("message", {
+      type: "lobbyList",
+      lobbies: [throneEntry("g01"), throneEntry("g02"), throneEntry("g03")],
+    });
     await schedulerTask()();
-    expect(sent(worker, "updateLobby")).toHaveLength(1);
+    expect(retires()).toHaveLength(1);
   });
 
   it("keeps the per-type queues when built without a registry", async () => {
@@ -616,10 +611,9 @@ describe("MasterLobbyService thrones", () => {
       outcome: "overthrown",
       winner: ADA,
     });
-    // The fourth create was throne-04, opened when throne-01's round started
-    // (the floor); the fifth is throne-01's successor lobby, g05.
-    await vi.waitFor(() => expect(sent(worker, "createGame")).toHaveLength(5));
-    return sent(worker, "createGame")[4];
+    // The fourth create is throne-01's successor lobby, g04.
+    await vi.waitFor(() => expect(sent(worker, "createGame")).toHaveLength(4));
+    return sent(worker, "createGame")[3];
   }
 
   it("reserves the seat for the winner in the successor's assignment", async () => {
@@ -632,8 +626,7 @@ describe("MasterLobbyService thrones", () => {
     });
   });
 
-  it("applies the winner's pick: map with a recomputed cap, heir kept, reign set", async () => {
-    playlist.maxPlayersForMap = vi.fn(async () => 42);
+  it("applies the winner's pick: any map, the room's cap, heir kept, reign set (L33, L40)", async () => {
     await winRound();
     worker.emit("message", {
       type: "thronePick",
@@ -649,15 +642,11 @@ describe("MasterLobbyService thrones", () => {
     expect(sent(worker, "updateLobby")).toEqual([
       {
         type: "updateLobby",
-        gameID: "g05",
-        gameConfig: { gameMap: "Event Horizon", maxPlayers: 42 },
+        gameID: "g04",
+        gameConfig: { gameMap: "Event Horizon", maxPlayers: 50 },
         throne: { heir: ADA, reign: 1 },
       },
     ]);
-    expect(playlist.maxPlayersForMap).toHaveBeenCalledWith(
-      "Event Horizon",
-      expect.objectContaining({ gameMap: "map-for-ffa" }),
-    );
   });
 
   it("keeps the random map on an unknown map name, and honours step down", async () => {
@@ -676,38 +665,33 @@ describe("MasterLobbyService thrones", () => {
     expect(sent(worker, "updateLobby")).toEqual([
       {
         type: "updateLobby",
-        gameID: "g05",
+        gameID: "g04",
         gameConfig: undefined,
         throne: { heir: null, reign: 0 },
       },
     ]);
   });
 
-  it("keeps the winner seated on a random map when the window runs out (L4)", async () => {
+  it("opens the seat on a random map when the window runs out unanswered (L47)", async () => {
     await winRound();
     worker.emit("message", {
       type: "lobbyList",
-      lobbies: [
-        throneEntry("g05"),
-        throneEntry("g02"),
-        throneEntry("g03"),
-        throneEntry("g04"),
-      ],
+      lobbies: [throneEntry("g04"), throneEntry("g02"), throneEntry("g03")],
     });
     vi.setSystemTime(T0 + WINDOW + 1);
     await schedulerTask()();
     expect(sent(worker, "updateLobby")).toEqual([
       {
         type: "updateLobby",
-        gameID: "g05",
+        gameID: "g04",
         gameConfig: undefined,
-        throne: { heir: ADA, reign: 1 },
+        throne: { heir: null, reign: 0 },
       },
     ]);
     expect(registry.get("throne-01")).toMatchObject({
-      seat: "seated",
-      holder: ADA,
-      reign: 1,
+      seat: "open",
+      holder: null,
+      reign: 0,
     });
     // Too late now.
     worker.emit("message", {
@@ -727,7 +711,7 @@ describe("MasterLobbyService thrones", () => {
       {
         type: "successorCreated",
         gameID: "g01",
-        successorID: "g05",
+        successorID: "g04",
         reservationUntil: T0 + WINDOW,
       },
     ]);
@@ -760,11 +744,9 @@ describe("MasterLobbyService thrones", () => {
       outcome: "overthrown",
       winner: ADA,
     });
-    // The fourth create kept the special line's floor when g03 started; the
-    // fifth is throne-03's successor lobby.
-    await vi.waitFor(() => expect(sent(worker, "createGame")).toHaveLength(5));
-    expect(sent(worker, "createGame")[3].throne.type).toBe("special");
-    expect(sent(worker, "createGame")[4].throne).toMatchObject({
+    // The fourth create is throne-03's successor lobby.
+    await vi.waitFor(() => expect(sent(worker, "createGame")).toHaveLength(4));
+    expect(sent(worker, "createGame")[3].throne).toMatchObject({
       throneID: "throne-03",
       type: "special",
     });
@@ -802,7 +784,7 @@ describe("MasterLobbyService thrones", () => {
     const update = sent(worker, "updateLobby")[0];
     expect(update.gameConfig).toMatchObject({
       gameMap: "Event Horizon",
-      maxPlayers: 30,
+      maxPlayers: 50,
       publicGameModifiers: { isCompact: true },
       startingGold: 5_000_000,
     });

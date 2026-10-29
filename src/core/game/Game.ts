@@ -1015,7 +1015,8 @@ export interface Game extends GameMap {
   playerByClientID(id: ClientID): Player | null;
   playerBySmallID(id: number): Player | TerraNullius;
   hasPlayer(id: PlayerID): boolean;
-  addPlayer(playerInfo: PlayerInfo): Player;
+  // `team` overrides the assignment (a drop-in's smallest team, L37).
+  addPlayer(playerInfo: PlayerInfo, team?: Team | null): Player;
   terraNullius(): TerraNullius;
   owner(ref: TileRef): Player | TerraNullius;
 
@@ -1036,6 +1037,9 @@ export interface Game extends GameMap {
   // Between the spawn phase and the round's first tick, while the opening's
   // flights are in the air: nothing runs and nothing counts.
   inOpening(): boolean;
+  // The round's first tick of play, once the spawn phase has ended; null
+  // before.
+  roundStartTick(): number | null;
   elapsedGameSeconds(): number;
 
   // Game State

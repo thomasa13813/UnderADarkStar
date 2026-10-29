@@ -1,12 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import {
-  Duos,
-  GameMapSize,
-  GameMapType,
-  GameMode,
-  HumansVsNations,
-} from "../../src/core/game/Game";
-import { GameConfig, GameConfigSchema } from "../../src/core/Schemas";
+import { GameMode, HumansVsNations } from "../../src/core/game/Game";
+import { GameConfigSchema } from "../../src/core/Schemas";
 import { MapPlaylist } from "../../src/server/MapPlaylist";
 
 vi.mock("../../src/server/MapLandTiles", () => ({
@@ -57,35 +51,15 @@ describe("MapPlaylist team throne rounds", () => {
     expect(config.nations).toBe("default");
   });
 
-  // L30: the winner's split on the next round's map, with the cap rounded to
-  // it; the capacity rule keeps two players per team.
-  it("sizes the cap for a winner's team split", async () => {
+  // L37: a room's teams are a count, which latecomers balance; no teams of
+  // a size.
+  it("rolls a room's teams as a count of 2 to 7", async () => {
     const playlist = new MapPlaylist();
-    // Pinned to a normal-sized map: the playlist may roll a compact round,
-    // whose cap (about a dozen) cannot seat seven teams of two, and the
-    // capacity rule would rightly shrink the split. Compact is tested below.
-    const base = {
-      ...((await playlist.gameConfig("team", { throne: true })) as GameConfig),
-      gameMapSize: GameMapSize.Normal,
-    };
-    for (const split of [2, 3, 5, 7, Duos] as const) {
-      const result = await playlist.throneTeamSplit(
-        GameMapType.EventHorizon,
-        base,
-        split,
-      );
-      expect(result.playerTeams).toBe(split);
-      const divisor = split === Duos ? 2 : split;
-      expect(result.maxPlayers % divisor).toBe(0);
-      expect(result.maxPlayers).toBeGreaterThanOrEqual(2 * divisor);
+    for (let i = 0; i < 60; i++) {
+      const config = await playlist.gameConfig("team", { throne: true });
+      expect(typeof config.playerTeams).toBe("number");
+      expect(config.playerTeams).toBeGreaterThanOrEqual(2);
+      expect(config.playerTeams).toBeLessThanOrEqual(7);
     }
-    // A compact round keeps its smaller cap.
-    const compact = await playlist.throneTeamSplit(
-      GameMapType.EventHorizon,
-      { ...base, gameMapSize: GameMapSize.Compact },
-      2,
-    );
-    expect(compact.maxPlayers).toBeLessThan(30);
-    expect(compact.maxPlayers % 2).toBe(0);
   });
 });

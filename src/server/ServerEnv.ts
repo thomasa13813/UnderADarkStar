@@ -155,28 +155,25 @@ export class ServerEnv {
     return process.env.RANKED_MATCHMAKING === "on";
   }
   // How the master fills the public lobby list. "thrones" (the default) runs
-  // the fixed pool of persistent throne lobbies; PUBLIC_LOBBIES=queue keeps
+  // the persistent rooms (docs/DarkStar-Lobbies.md §14); PUBLIC_LOBBIES=queue keeps
   // upstream's disposable per-type queues (ffa/team/special) as a fallback.
   static publicLobbyMode(): "thrones" | "queue" {
     return process.env.PUBLIC_LOBBIES === "queue" ? "queue" : "thrones";
   }
-  // Thrones each type's launch line (FFA, team) keeps open (L16; the special
-  // line is off, RW0):
-  // 5 at launch, 2 in dev so the line is visible with a couple of tabs.
-  // THRONE_FLOOR overrides.
-  static throneFloor(): number {
-    return ServerEnv.positiveIntEnv(
-      "THRONE_FLOOR",
-      ServerEnv.gameEnv === GameEnv.Dev ? 2 : 5,
-    );
+  // Rooms each type (FFA, team) opens with and never drops below (L32; the
+  // special type is off, RW0): one. THRONE_ROOMS overrides.
+  static throneRooms(): number {
+    return ServerEnv.positiveIntEnv("THRONE_ROOMS", 1);
   }
-  // How long a surplus throne must have had nobody in it before it is
-  // retired (L20): a minute, 15 s in dev. Longer than the vanish grace
-  // because the players of the round that just ended are still on its win
-  // screen. THRONE_CULL_GRACE_MS overrides.
-  static throneCullGraceMs(): number {
+  // Humans a room holds on every map (L33): 50. THRONE_ROOM_CAP overrides.
+  static throneRoomCap(): number {
+    return ServerEnv.positiveIntEnv("THRONE_ROOM_CAP", 50);
+  }
+  // How long an added room must have had nobody in it before it closes
+  // (L32): a minute, 15 s in dev. THRONE_CLOSE_GRACE_MS overrides.
+  static throneCloseGraceMs(): number {
     return ServerEnv.positiveIntEnv(
-      "THRONE_CULL_GRACE_MS",
+      "THRONE_CLOSE_GRACE_MS",
       ServerEnv.gameEnv === GameEnv.Dev ? 15 * 1000 : 60 * 1000,
     );
   }
@@ -186,11 +183,11 @@ export class ServerEnv {
   static throneMinPlayers(): number {
     return ServerEnv.positiveIntEnv("THRONE_MIN_PLAYERS", 2);
   }
-  // The countdown once the minimum is met (L10): 2 minutes, 5 s in dev.
+  // The countdown once the minimum is met (L34): a minute, 5 s in dev.
   static throneCountdownMs(): number {
     return ServerEnv.positiveIntEnv(
       "THRONE_COUNTDOWN_MS",
-      ServerEnv.gameEnv === GameEnv.Dev ? 5 * 1000 : 2 * 60 * 1000,
+      ServerEnv.gameEnv === GameEnv.Dev ? 5 * 1000 : 60 * 1000,
     );
   }
   // The winner's window to pick the next map and keep or leave the seat
@@ -348,15 +345,6 @@ export class ServerEnv {
   static siteHost(): string | undefined {
     const v = process.env.SITE_HOST;
     return v && v.length > 0 ? v : undefined;
-  }
-  // Whether the master joins its site's shared public-lobby roster
-  // (LobbyCoordinatorClient.ts, infra docs/lobby-coordinator.md). "api"
-  // connects to the API's coordinator and lets it schedule this site's public
-  // lobbies; "off", anything else, or none keeps single-server scheduling,
-  // so a deploy that doesn't set it is unchanged on the wire. "off" exists
-  // so a GitHub environment can override a repo-level "api" explicitly.
-  static lobbyCoordinator(): "api" | "off" {
-    return process.env.LOBBY_COORDINATOR === "api" ? "api" : "off";
   }
   // The machine this container runs on — `falk2`, `nbg2`, `staging`: the
   // second argument to deploy.sh, which writes it into the container's env as

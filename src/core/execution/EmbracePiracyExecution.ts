@@ -1,5 +1,6 @@
 import { Execution, Game, Player, PlayerType, UnitType } from "../game/Game";
 import { TileRef } from "../game/GameMap";
+import { DROP_IN_PIRATE_DELAY_TICKS } from "./JoinRoundExecution";
 import { WarshipExecution } from "./WarshipExecution";
 
 // Piracy (docs/DarkStar-Piracy.md, PR1–PR3, PR10): an eliminated challenger
@@ -10,8 +11,8 @@ import { WarshipExecution } from "./WarshipExecution";
 //
 // Refused, as a deterministic no-op on every client: the toggle off; anyone
 // but a challenger (the Hegemon's fall ends the round, Lords and Barons do
-// not pirate); a player who is alive, has not spawned, or whose round is
-// over; a pirate who still has a corsair; and any tile the pirate branch of
+// not pirate); a player who is alive or whose round is over; one who never
+// spawned before 30 s into play (L36, Lobbies doc); a pirate who still has a corsair; and any tile the pirate branch of
 // PlayerImpl.warshipSpawn refuses (land, the disc, the moat, the cooldown). The client says why; the sim
 // only declines.
 //
@@ -42,12 +43,19 @@ export class EmbracePiracyExecution implements Execution {
     }
     if (
       player.isAlive() ||
-      !player.hasSpawned() ||
       mg.inSpawnPhase() ||
       mg.inOpening() ||
       mg.getWinner() !== null
     ) {
       return;
+    }
+    // A player who never spawned, a drop-in or one who sat out the spawn
+    // phase (docs/DarkStar-Lobbies.md L36), waits until 30 s into play.
+    if (!player.hasSpawned()) {
+      const start = mg.roundStartTick();
+      if (start === null || mg.ticks() < start + DROP_IN_PIRATE_DELAY_TICKS) {
+        return;
+      }
     }
     if (!mg.isValidRef(this.tile)) {
       console.warn(`EmbracePiracyExecution: invalid tile ${this.tile}`);

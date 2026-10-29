@@ -270,6 +270,8 @@ export class PirateLandingExecution implements Execution {
     player.setPirateLanding(undefined);
     this.ship.delete(false);
     for (const t of claim) player.conquer(t);
+    // A pirate who never spawned (a drop-in, L36) spawns here.
+    if (!player.hasSpawned()) player.setSpawnTile(shore);
     player.endPiracy();
     player.recordPirateLanding();
     // Back among the living: the spawn's own step.

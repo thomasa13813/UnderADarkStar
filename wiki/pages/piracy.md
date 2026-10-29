@@ -13,6 +13,8 @@ a private lobby or a solo game may switch it off.
 
 - A challenger who has been eliminated may **embrace piracy** from the death screen, as often as
   they fall.
+- A player who never picked a spawn, or who [[thrones|joined the round]] after the spawn phase,
+  may launch a corsair from {{dropInWait}} seconds into play.
 - The Hegemon, Lords and Barons never turn pirate.
 - A pirate commands one ship, **the corsair**, and nothing else: no territory, no building, no
   alliances.

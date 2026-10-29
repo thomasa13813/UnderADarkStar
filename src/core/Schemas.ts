@@ -68,7 +68,8 @@ export type Intent =
   | EmbracePiracyIntent
   | PirateLandIntent
   | CounterStrikeIntent
-  | TitheIntent;
+  | TitheIntent
+  | JoinRoundIntent;
 
 export type AttackIntent = z.infer<typeof AttackIntentSchema>;
 export type CancelAttackIntent = z.infer<typeof CancelAttackIntentSchema>;
@@ -112,6 +113,7 @@ export type ClaimSeatIntent = z.infer<typeof ClaimSeatIntentSchema>;
 export type LeaveSeatIntent = z.infer<typeof LeaveSeatIntentSchema>;
 export type EmbracePiracyIntent = z.infer<typeof EmbracePiracyIntentSchema>;
 export type PirateLandIntent = z.infer<typeof PirateLandIntentSchema>;
+export type JoinRoundIntent = z.infer<typeof JoinRoundIntentSchema>;
 export type ClientThronePickMessage = z.infer<typeof ClientThronePickSchema>;
 export type ToggleGameStartTimer = z.infer<
   typeof ToggleGameStartTimerIntentSchema
@@ -944,6 +946,17 @@ export const PirateLandIntentSchema = z.object({
   tile: zb.uint(),
 });
 
+// Server-internal (rejected from clients), docs/DarkStar-Lobbies.md L36:
+// a player arrives in a room's round after it started. The server issues
+// it, never the joiner's browser, so nobody can forge a name or a slot; the
+// joiner rides the stamped `clientID`, as with mark_disconnected. Every
+// client creates the player on the same tick (JoinRoundExecution).
+export const JoinRoundIntentSchema = z.object({
+  type: z.literal("join_round"),
+  username: DisplayUsernameSchema,
+  clanTag: ClanTagSchema,
+});
+
 export const IntentSchema = z.discriminatedUnion("type", [
   AttackIntentSchema,
   CancelAttackIntentSchema,
@@ -981,6 +994,7 @@ export const IntentSchema = z.discriminatedUnion("type", [
   PirateLandIntentSchema,
   CounterStrikeIntentSchema,
   TitheIntentSchema,
+  JoinRoundIntentSchema,
 ]);
 
 // StampedIntent = Intent with server-stamped clientID (used in turns and execution)
@@ -1178,6 +1192,10 @@ export const ServerStartGameMessageSchema = z.object({
   // because singleplayer and replays synthesize this message locally with no
   // server game behind it, so they have no token and must send none.
   groupToken: GroupToken.optional(),
+  // Under a Dark Star (docs/DarkStar-Lobbies.md L48): this connection asked
+  // to play a room's round in its last 3 minutes and watches instead; it is
+  // placed in the next round's lobby.
+  heldForNextRound: z.boolean().optional(),
 });
 
 export const ServerDesyncSchema = z.object({

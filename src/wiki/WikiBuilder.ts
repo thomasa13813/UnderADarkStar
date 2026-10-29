@@ -133,6 +133,13 @@ export function wikiParams(): Record<string, string> {
     landingClose: p.landingClosesSeconds,
     // The winner's window is server configuration (ThroneRegistry windowMs).
     window: 30,
+    // A room's countdown and cap (ServerEnv.throneCountdownMs, throneRoomCap).
+    roomCountdown: 60,
+    roomCap: 50,
+    // A drop-in's first corsair, seconds into play (JoinRoundExecution).
+    dropInWait: 30,
+    // No drop-in in a round's last minutes (DropIn.ts).
+    dropInCutoff: 3,
     discord: DISCORD_INVITE_URL,
     email: CONTACT_EMAIL,
   };

@@ -25,13 +25,6 @@ import {
   WorkerThronePick,
   WorkerThroneRound,
 } from "./IPCBridgeSchema";
-import {
-  CoordinatorCreateGame,
-  CoordinatorHandlers,
-  CoordinatorRoster,
-  CoordinatorUpdateLobby,
-  LobbyCoordinatorClient,
-} from "./LobbyCoordinatorClient";
 import { logger } from "./Logger";
 import { MapPlaylist, ModifierKey } from "./MapPlaylist";
 import { startPolling } from "./PollingLoop";
@@ -108,28 +101,29 @@ export interface MasterLobbyServiceOptions {
  */
 export const QUEUED_LOBBIES_PER_TYPE = 6;
 
-// Under a Dark Star: the throne lines from the environment
-// (docs/DarkStar-Lobbies.md §9, L16), or null when the server runs upstream's
-// per-type queues instead (PUBLIC_LOBBIES=queue). Two lines, FFA and team, at
-// the same floor (T5 opened the team line). The special line is off
-// (docs/DarkStar-Rework.md RW0): a floor of 0 opens no special throne, and the
-// lobby browser hides a pane and a card with nothing in them (L29).
+// Under a Dark Star: the persistent rooms from the environment
+// (docs/DarkStar-Lobbies.md §14, L32), or null when the server runs upstream's
+// per-type queues instead (PUBLIC_LOBBIES=queue). One FFA room and one team
+// room to open with. The special type is off (docs/DarkStar-Rework.md RW0):
+// no special room opens, and the lobby browser hides a pane and a card with
+// nothing in them (L29).
 export function throneRegistryFromEnv(): ThroneRegistry | null {
   if (ServerEnv.publicLobbyMode() !== "thrones") return null;
-  const floor = ServerEnv.throneFloor();
+  const rooms = ServerEnv.throneRooms();
   return new ThroneRegistry({
     names: throneNames,
-    floor: { ffa: floor, team: floor, special: 0 },
+    rooms: { ffa: rooms, team: rooms, special: 0 },
+    cap: ServerEnv.throneRoomCap(),
     minPlayers: ServerEnv.throneMinPlayers(),
     countdownMs: ServerEnv.throneCountdownMs(),
     windowMs: ServerEnv.throneWindowMs(),
     vanishGraceMs: DEFAULT_VANISH_GRACE_MS,
-    cullGraceMs: ServerEnv.throneCullGraceMs(),
+    closeGraceMs: ServerEnv.throneCloseGraceMs(),
     mintGameID: () => ServerEnv.generateGameId(),
   });
 }
 
-// The order the lines are advertised in when two thrones hold the same place.
+// The order the types are advertised in when two rooms tie.
 const THRONE_TYPE_ORDER: Record<string, number> = {
   ffa: 0,
   team: 1,
@@ -159,28 +153,6 @@ export class MasterLobbyService {
   // waiting for its first API answer is neither, so until setActive is
   // called the broadcast says active while scheduling stays off.
   private stateKnown: boolean;
-
-  // Two modes (infra docs/lobby-coordinator.md, "The master: two modes"):
-  //
-  //   coordinated: the site's lobby coordinator holds one roster for every
-  //     master on this build. It decides which lobby counts down and which
-  //     server creates the next one; this master obeys createGame /
-  //     updateLobby and feeds workers the coordinator's roster.
-  //   local: today's single-server behaviour — schedule over own workers,
-  //     advertise own lobbies only.
-  //
-  // Mode is a function of one thing: has a roster arrived in the last
-  // COORDINATOR_STALE_MS. Not "is the socket open" — a socket can be open and
-  // dead. Without a coordinator attached (LOBBY_COORDINATOR unset, local
-  // dev) the master is local forever and this code path is today's, byte for
-  // byte on the wire.
-  private coordinator: LobbyCoordinatorClient | null = null;
-  private coordinated = false;
-  private roster: CoordinatorRoster | null = null;
-  // Delists the coordinator asked for, forwarded on the next broadcast. A
-  // set rather than the roster's own field so a roster that arrives twice
-  // between broadcasts does not lose the first one's delists.
-  private readonly pendingDelist = new Set<string>();
 
   // Under a Dark Star: the persistent public lobbies this master runs
   // (docs/DarkStar-Lobbies.md). With a registry the master schedules thrones
@@ -224,10 +196,6 @@ export class MasterLobbyService {
         case "lobbyList":
           this.workerLobbies.set(workerId, this.validLobbies(msg.lobbies));
           this.workerLiveGames.set(workerId, msg.liveGames ?? 0);
-          // The client coalesces: at most one report a second, plus a
-          // heartbeat. Every change is offered so a numClients-only change
-          // still reaches the site roster within a second.
-          this.coordinator?.report(this.ownLobbies(), this.liveGames());
           break;
         case "throneRound":
           this.handleThroneRound(msg).catch((error) => {
@@ -283,91 +251,8 @@ export class MasterLobbyService {
     return this.started && this.readyWorkers.size >= minWorkers;
   }
 
-  /**
-   * Join the site's shared roster. The client owns the socket; this service
-   * owns what a roster or a command means. Attach before workers are ready
-   * so a coordinated master never schedules locally at boot: scheduling only
-   * starts once all workers are ready, by which time the socket has normally
-   * delivered a roster.
-   */
-  attachCoordinator(client: LobbyCoordinatorClient) {
-    this.coordinator = client;
-  }
-
-  coordinatorHandlers(): CoordinatorHandlers {
-    return {
-      onRoster: (roster) => this.handleRoster(roster),
-      onCreateGame: (msg) => {
-        this.handleCoordinatorCreate(msg).catch((error) => {
-          this.log.error("coordinator createGame failed:", error);
-        });
-      },
-      onUpdateLobby: (msg) => this.handleCoordinatorUpdate(msg),
-    };
-  }
-
-  private handleRoster(roster: CoordinatorRoster) {
-    this.roster = roster;
-    for (const gameID of roster.delistGameIDs) this.pendingDelist.add(gameID);
-  }
-
-  // "You create the next lobby of this type." The coordinator only asks
-  // masters the registry reports open; the active check is belt and braces.
-  // Before all workers are ready the create is refused too: the
-  // coordinator's pending slot expires in 10s and goes to another server.
-  // recentMaps (what the site just played) is not yet fed to the playlist —
-  // its no-consecutive-repeat rule stays per server for now.
-  private async handleCoordinatorCreate(msg: CoordinatorCreateGame) {
-    if (!this.active || !this.started) {
-      this.log.info(
-        `refusing coordinator createGame (${msg.publicGameType}): ${
-          this.active ? "workers not ready" : "deployment inactive"
-        }`,
-      );
-      return;
-    }
-    this.sendMessageToWorker({
-      type: "createGame",
-      gameID: ServerEnv.generateGameId(),
-      gameConfig: await this.playlist.gameConfig(msg.publicGameType),
-      publicGameType: msg.publicGameType,
-    } satisfies MasterCreateGame);
-  }
-
-  // The countdown for one of this master's lobbies. The coordinator sends it
-  // to the owner; a foreign id would hash to one of our workers anyway, so
-  // check ownership rather than forward a countdown for a game we don't run.
-  private handleCoordinatorUpdate(msg: CoordinatorUpdateLobby) {
-    if (!this.ownLobbies().some((l) => l.gameID === msg.gameID)) {
-      this.log.warn(`ignoring coordinator updateLobby for foreign lobby`, {
-        gameID: msg.gameID,
-      });
-      return;
-    }
-    this.sendMessageToWorker({
-      type: "updateLobby",
-      gameID: msg.gameID,
-      startsAt: msg.startsAt,
-    });
-  }
-
   private ownLobbies(): InternalGameInfo[] {
     return Array.from(this.workerLobbies.values()).flat();
-  }
-
-  // Re-evaluates the mode and logs a flip. Called from both loops so the
-  // decision is made at most twice a second and the log says which way.
-  private isCoordinated(): boolean {
-    const next = this.coordinator?.isCoordinated() ?? false;
-    if (next !== this.coordinated) {
-      this.coordinated = next;
-      this.log.info(
-        next
-          ? "lobby coordinator roster received, switching to coordinated mode"
-          : "no lobby coordinator roster for 5s, switching to single-server mode",
-      );
-    }
-    return next;
   }
 
   setActive(active: boolean) {
@@ -416,32 +301,19 @@ export class MasterLobbyService {
     // reporting a finished round while its players sit on the win screen,
     // and that round's successor is already listed in its place.
     if (this.thrones !== null) {
-      const thrones = this.thrones;
-      const current = thrones.currentGameIDs();
-      // Each entry carries its throne's place in line (L16-L19), which only
-      // the registry knows.
-      result.throne = result.throne
-        .filter((l) => current.has(l.gameID))
-        .map((l) => {
-          const throne = thrones.byGame(l.gameID);
-          const place =
-            throne === undefined ? undefined : thrones.placeOf(throne);
-          return l.throne === undefined || place === undefined
-            ? l
-            : { ...l, throne: { ...l.throne, place } };
-        });
+      const current = this.thrones.currentGameIDs();
+      result.throne = result.throne.filter((l) => current.has(l.gameID));
     }
-    // Launch order (L13, L16-L19): the head of each line first, then the
-    // seconds, and so on, FFA before team before special at the same place;
-    // thrones whose winner is still choosing next; running rounds last. The
-    // name keeps the order stable.
+    // Lobbies before running rounds, the soonest countdown first; then FFA
+    // before team before special. The name keeps the order stable. Which room
+    // a player is sent to is the client's steering (L38).
     result.throne.sort((a, b) => {
       const aRunning = a.throne?.running === true ? 1 : 0;
       const bRunning = b.throne?.running === true ? 1 : 0;
       if (aRunning !== bRunning) return aRunning - bRunning;
-      const aPlace = a.throne?.place ?? Number.MAX_SAFE_INTEGER;
-      const bPlace = b.throne?.place ?? Number.MAX_SAFE_INTEGER;
-      if (aPlace !== bPlace) return aPlace - bPlace;
+      const aStarts = a.startsAt ?? Number.MAX_SAFE_INTEGER;
+      const bStarts = b.startsAt ?? Number.MAX_SAFE_INTEGER;
+      if (aStarts !== bStarts) return aStarts - bStarts;
       const aType = THRONE_TYPE_ORDER[a.throne?.type ?? "ffa"] ?? 0;
       const bType = THRONE_TYPE_ORDER[b.throne?.type ?? "ffa"] ?? 0;
       if (aType !== bType) return aType - bType;
@@ -537,25 +409,9 @@ export class MasterLobbyService {
   }
 
   private broadcastLobbies() {
-    let games: Record<PublicGameType, InternalGameInfo[]>;
-    let delist: string[];
-    if (this.isCoordinated() && this.roster !== null) {
-      // The site's merged roster for this build, stamped with our own
-      // active flag. Dedup, cap and the two-strike delist rule ran on the
-      // coordinator; it only names lobbies this master owns.
-      games = this.roster.games;
-      delist = [...this.pendingDelist];
-      this.pendingDelist.clear();
-      if (delist.length > 0) {
-        this.log.info(
-          `delisting hosted lobbies at coordinator's request: ${delist.join(", ")}`,
-        );
-      }
-    } else {
-      const own = this.getAllLobbies();
-      games = own.games;
-      delist = this.delistGameIDs(own.losers);
-    }
+    const own = this.getAllLobbies();
+    const games = own.games;
+    const delist = this.delistGameIDs(own.losers);
     const msg = {
       type: "lobbiesBroadcast",
       publicGames: {
@@ -579,10 +435,6 @@ export class MasterLobbyService {
   }
 
   private async maybeScheduleLobby() {
-    // Coordinated: the site's queue depth and countdowns are the
-    // coordinator's; adding our own here would double-schedule.
-    if (this.isCoordinated()) return;
-
     // Under a Dark Star: thrones replace the per-type queues.
     if (this.thrones !== null) {
       await this.scheduleThrones();
@@ -626,9 +478,10 @@ export class MasterLobbyService {
 
   // --- Under a Dark Star: thrones (docs/DarkStar-Lobbies.md §5) ---
 
-  // One pass over the pool: open lobbies for thrones without one, start or
-  // withdraw countdowns on the players reported, and recycle games that
-  // vanished. An inactive deployment finishes its rounds but opens nothing.
+  // One pass over the rooms: open lobbies for rooms without one, start or
+  // withdraw countdowns on the players reported, recycle games that
+  // vanished, open and close rooms. An inactive deployment finishes its
+  // rounds but opens nothing.
   private async scheduleThrones() {
     if (this.thrones === null) return;
     const actions = this.thrones.observe(
@@ -814,7 +667,7 @@ export class MasterLobbyService {
           break;
         }
         case "retire":
-          this.log.info("retiring a surplus empty throne", {
+          this.log.info("closing an added room nobody is in", {
             throneID: action.throneID,
             gameID: action.gameID,
           });
@@ -831,12 +684,11 @@ export class MasterLobbyService {
     }
   }
 
-  // The config patch for a pick. On an FFA throne: the map and the cap the
-  // playlist would give it. On a special throne: the round rebuilt from the
-  // map and the modifiers (the chosen ones, or the rolled ones kept when
-  // none were chosen). On a team throne with a split chosen: the split and
-  // the cap for it on the map (chosen or kept). Nothing when nothing was
-  // chosen.
+  // The config patch for a pick. On an FFA room: the map. On a team room:
+  // the map and the count of teams (2 to 7, L37), whichever were chosen. On
+  // a special throne: the round rebuilt from the map and the modifiers (the
+  // chosen ones, or the rolled ones kept when none were chosen). The cap is
+  // the room's whatever the map (L33, L40). Nothing when nothing was chosen.
   private async pickedConfig(
     gameID: string,
     pick: ThronePick,
@@ -851,37 +703,21 @@ export class MasterLobbyService {
     const base = this.throneConfigs.get(gameID);
     const throne = this.thrones?.byGame(gameID);
     let patch: Partial<GameConfig>;
-    if (
-      throne?.type === "team" &&
-      base !== undefined &&
-      pick.playerTeams !== undefined
-    ) {
-      const map = pick.gameMap ?? base.gameMap;
-      const split = await this.playlist.throneTeamSplit(
-        map,
-        base,
-        pick.playerTeams,
-      );
-      patch = {
-        ...(pick.gameMap !== undefined ? { gameMap: pick.gameMap } : {}),
-        ...split,
-      };
-    } else if (throne?.type === "special" && base !== undefined) {
+    if (throne?.type === "special" && base !== undefined) {
       const map = pick.gameMap ?? base.gameMap;
       const modifiers =
         pick.modifiers ?? modifierKeysOf(base.publicGameModifiers);
       const rebuilt = await this.playlist.throneSpecialConfig(map, modifiers);
       patch = throneConfigPatch(rebuilt);
     } else {
-      if (pick.gameMap === undefined) return undefined;
-      patch = { gameMap: pick.gameMap };
-      if (base !== undefined) {
-        patch.maxPlayers = await this.playlist.maxPlayersForMap(
-          pick.gameMap,
-          base,
-        );
+      patch = {};
+      if (pick.gameMap !== undefined) patch.gameMap = pick.gameMap;
+      if (throne?.type === "team" && pick.playerTeams !== undefined) {
+        patch.playerTeams = pick.playerTeams;
       }
+      if (Object.keys(patch).length === 0) return undefined;
     }
+    if (this.thrones !== null) patch.maxPlayers = this.thrones.cap();
     if (base !== undefined) {
       this.throneConfigs.set(gameID, { ...base, ...patch });
     }
@@ -896,9 +732,10 @@ export class MasterLobbyService {
     }
   }
 
-  // A throne round's config: the playlist's usual roll for the throne's type
-  // (map rotation, player cap, the throne enabled), never trusted-only (a
-  // throne is open to everyone, L3). T2 merges the winner's pick on top.
+  // A room round's config: the playlist's usual roll for the room's type (map
+  // rotation, the throne enabled) with the room's cap and piracy on, never
+  // trusted-only (a throne is open to everyone, L3). T2 merges the winner's
+  // pick on top.
   private async throneGameConfig(throne: Throne): Promise<GameConfig> {
     // A special throne rolls a special game pinned to FFA (the modifier
     // picker is FFA's, §5.4); a team throne rolls a team game with the Lords
@@ -909,6 +746,12 @@ export class MasterLobbyService {
     });
     delete config.trusted;
     config.hegemon = { ...config.hegemon, enabled: true };
+    // The room's cap on every map (L33): a small map is packed the way the
+    // crowded modifier packs it, a large one is capped. Lords and Barons do
+    // not count against it.
+    config.maxPlayers = this.thrones!.cap();
+    // Drop-ins after the spawn phase come in as pirates (L36).
+    config.piracy = { enabled: true };
     return config;
   }
 

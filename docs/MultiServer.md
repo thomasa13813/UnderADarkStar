@@ -349,18 +349,11 @@ delete its `SERVER_HOSTS_JSON` entry. The letters stay retired forever.
 
 ## Future (discussed, not built)
 
-- **Merged public lobby feeds:** built as a per-site lobby coordinator on
-  the API (infra `docs/lobby-coordinator.md`) rather than the sibling poll
-  first sketched here. Every master holds one WebSocket to its site's
-  coordinator (`src/server/LobbyCoordinatorClient.ts`), reports its own
-  lobbies, and gets back the merged roster for its build plus "create the
-  next lobby" and "this lobby counts down" commands; the queue depth is
-  site-wide. `MasterLobbyService` runs `coordinated` while rosters arrive
-  and falls back to today's single-server scheduling within 5 s when they
-  stop. Off unless `LOBBY_COORDINATOR=api` and the site's `sharedLobbies`
-  registry flag is on. Zero client changes — the merged list arrives through
-  the existing feed, and joining a foreign lobby already routes by its
-  letter.
+- **Merged public lobby feeds:** upstream built these as a per-site lobby
+  coordinator on its API (`LobbyCoordinatorClient.ts`, `LOBBY_COORDINATOR`).
+  Under a Dark Star has no such API; the client and its branches in the
+  master were removed with the persistent rooms (docs/DarkStar-Lobbies.md
+  §14.7, 2026-10-28).
 - **Cluster registry:** pulled forward as "Server list v2" below.
 
 ---

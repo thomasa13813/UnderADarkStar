@@ -710,20 +710,22 @@ export class MapPlaylist {
     return maps;
   }
 
-  // `throne`: a throne round never rolls Humans vs Nations (§5.9).
+  // `throne`: a room's round rolls a count of teams only (§5.9, L37): never
+  // Humans vs Nations, and no teams of a size, since latecomers balance a
+  // fixed count.
   private getTeamCount(map: GameMapType, throne = false): TeamCountConfig {
     // Override team count for specific maps
     const forcedTeamCount = SPECIAL_TEAM_MAPS.get(map);
     if (
       forcedTeamCount !== undefined &&
-      !(throne && forcedTeamCount === HumansVsNations) &&
+      !(throne && typeof forcedTeamCount !== "number") &&
       Math.random() < SPECIAL_TEAM_FORCE_CHANCE
     ) {
       return forcedTeamCount;
     }
 
     const weights = throne
-      ? TEAM_WEIGHTS.filter((w) => w.config !== HumansVsNations)
+      ? TEAM_WEIGHTS.filter((w) => typeof w.config === "number")
       : TEAM_WEIGHTS;
     const totalWeight = weights.reduce((sum, w) => sum + w.weight, 0);
     const roll = Math.random() * totalWeight;
@@ -880,44 +882,6 @@ export class MapPlaylist {
       return isCompact ? 60 : MAX_PLAYER_COUNT;
     }
     return undefined;
-  }
-
-  // Under a Dark Star: the lobby cap for a map the throne's winner picked
-  // (L7), rolled the same way as for a map the playlist chose, so a picked
-  // map plays like a rolled one. The rest of the config stays.
-  public async maxPlayersForMap(
-    map: GameMapType,
-    config: GameConfig,
-  ): Promise<number> {
-    const cap = await this.lobbyMaxPlayers(
-      map,
-      config.gameMode,
-      config.gameMapSize === GameMapSize.Compact,
-    );
-    return this.adjustForTeams(cap, config.playerTeams);
-  }
-
-  // Under a Dark Star: a team throne winner's split (L30) on the map the
-  // next round will use, with the cap the playlist would roll for it. The
-  // capacity rule still applies: a fixed team count the map cannot give two
-  // players each falls back to as many teams as can be filled.
-  public async throneTeamSplit(
-    map: GameMapType,
-    config: GameConfig,
-    playerTeams: TeamCountConfig,
-  ): Promise<{ playerTeams: TeamCountConfig; maxPlayers: number }> {
-    const unadjusted = await this.lobbyMaxPlayers(
-      map,
-      GameMode.Team,
-      config.gameMapSize === GameMapSize.Compact,
-    );
-    const split =
-      this.adjustTeamCountForPlayerCapacity(playerTeams, unadjusted) ??
-      playerTeams;
-    return {
-      playerTeams: split,
-      maxPlayers: this.adjustForTeams(unadjusted, split),
-    };
   }
 
   private async lobbyMaxPlayers(

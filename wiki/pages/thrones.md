@@ -1,6 +1,6 @@
 ---
 title: Thrones and lobbies
-description: Public lobbies in Under a Dark Star are thrones - lobbies that run rounds back to back, where the winner keeps the seat. Reigns, the leaderboard and private lobbies.
+description: Public lobbies in Under a Dark Star are thrones - rooms that run rounds back to back, where the winner keeps the seat. Rooms, reigns, the leaderboard and private lobbies.
 section: The throne
 order: 3
 related: the-round, hegemon
@@ -8,33 +8,50 @@ related: the-round, hegemon
 
 ## Thrones
 
-Public lobbies are **thrones**: named lobbies that run rounds back to back. A throne is Free for
-all, Teams or Special for life.
+Public lobbies are **thrones**: named rooms that run rounds back to back. A room is Free for all
+or Teams for life.
 
-- The home page shows the throne starting soonest in each mode.
-- The lobby browser lists every throne under **Free for all**, **Teams** or **Special**, with
+- The home page shows the room starting soonest in each mode.
+- The lobby browser lists every throne under **Free for all** or **Teams**, with
   **Watch** to spectate a running round.
 
 ## After a round
 
-The winner has {{window}} seconds to pick the next map (on a Special throne, up to two rule
-modifiers too) and to **keep the throne or step down**. With no answer, the next map is random and
-the winner keeps the throne.
+The winner has {{window}} seconds to pick the next map (on a team throne, how the teams split too)
+and to **keep the throne or step down**. With no answer, the next map is random and the seat opens:
+the AI holds it, and anyone in the lobby may claim it.
 
 ## The seat
 
 - An open seat is first come, first served: claim it in the lobby, or give it up before the start.
 - On a team throne the teams are balanced at the start, on numbers alone: you cannot choose your
-  team, and clans and friends are not grouped.
+  team, and clans and friends are not grouped. The winner chooses between 2 and 7 teams.
 - If nobody holds it, the AI Hegemon plays.
 - A round needs two humans to start, the Hegemon included.
 
-## The launch line
+## Rooms
 
-Each mode has a launch line. Only the throne at its head counts down, and when it launches the
-next throne steps up. After a round you may stay with your throne and wait for its turn, shown
-its place in line, or join the head of the line: the next round of that mode to launch.
-Eliminated before the end, you may join the head at once.
+There is one room for each mode, and more open when they fill: once every room of a mode holds
+three quarters of its {{roomCap}} players, another opens, and it closes again after a minute with
+nobody in it. Each room counts down on its own: {{roomCountdown}} seconds once two humans are in,
+at once when it is full. The next round's lobby opens the moment a round ends, and its countdown
+runs while the winner chooses, but never ends before the winner has had their {{window}} seconds.
+
+## Joining a round in progress
+
+You can join a room whose round is already running, up to its {{roomCap}} players:
+
+- **During the spawn phase** you pick a starting location like everyone else and play as a
+  challenger.
+- **After it** you come in as a [[piracy|pirate]]: your first corsair can sail
+  {{dropInWait}} seconds into play. The same goes for anyone who was in the round but never picked
+  a spawn.
+- **In the last {{dropInCutoff}} minutes** nobody joins: you watch the end, and you are placed in
+  the room's next lobby.
+- On a team throne you join the team with the fewest players.
+- Leave and come back to the same round and you get your own player back.
+- A player who joined after the start may still land the killing blow, but **the round is then
+  void**: nobody is credited, and the seat opens for the next round.
 
 ## Reigns and the leaderboard
 

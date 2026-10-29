@@ -718,12 +718,14 @@ home page's three cards do when a type's head has nobody; the win-screen and Thr
 strings; the registry changes and tests (`ThroneRegistry` stays pure: the queue is an ordering
 over the existing gathering state, plus `create` / `retire` actions).
 
-## 14. Persistent rooms with drop-in [Decided 2026-10-27; revised 2026-10-28; not built]
+## 14. Persistent rooms with drop-in [Decided 2026-10-27; revised 2026-10-28; building on feat/rooms]
 
 **Status.** Proposed by Tom on 2026-10-25, reviewed in three passes and **decided as the plan
 on 2026-10-27** (every question in §14.5 closed); revised 2026-10-28 (a drop-in's victory is void,
 L44; the coordinator removal, client error reports and the lone-player hint join the batch,
-§14.8). **Nothing here is built.** The launch lines (§13, §10.5, §10.7) run until the rooms ship;
+§14.8). **Being built on `feat/rooms`** in four stages (§14.9), nothing merged until all four are
+in: stage 1, the server's scheduling, and stage 2, drop-in, landed 2026-10-28. The launch lines (§13, §10.5, §10.7) run
+on the live server until the rooms ship;
 then the rooms replace them (L16–L28, L31), revisit L1, L9, L10 and L22, and close the special
 line. The changelog (§15) records each pass. The thinner first round of a player who arrives
 mid-round is an **accepted risk** of persistent rooms against constant turnover, not a rule to
@@ -968,8 +970,123 @@ Three smaller pieces ship with the rooms, because the rooms make them matter mor
   rarer but still the first thing a newcomer meets on a quiet evening.
 - **The coordinator's removal** (§14.7).
 
+### 14.9 As built
+
+The batch is built in four stages on `feat/rooms`, each reviewed by Tom before the next: (1) the
+server's scheduling, (2) drop-in, (3) the client, (4) client error reports.
+
+**Stage 1: scheduling (2026-10-28).** L32, L34, L35, L39 and L47's server side; the launch lines'
+server side and upstream's coordinator removed (§14.7).
+
+- **Registry.** `ThroneRegistry` keeps the throne state machine (§3.2) and drops the lines: no
+  `line`, `placeOf`, `priority`, `enteredSeq`, floor or cull. Options: `rooms` per type (the
+  rooms a type opens with and never drops below) replaces `floor`; `cap` (L33) and
+  `closeGraceMs` replace `cullGraceMs`. `roomsOf(type)` lists a type's rooms in opening order.
+  `observe` runs three steps: each room (the window, the lobby, the report, its own countdown);
+  opening; closing.
+- **Countdown (L34).** Each room meters itself (`meter`): two humans start a one-minute
+  countdown, a dip holds it with its remaining time (L10). A room may count down while its
+  winner decides (the phase stays `deciding`), with `startsAt` never earlier than the window's
+  end; when the window resolves the countdown carries on. The worker has its own guard:
+  `GameServer.phase()` keeps a room's lobby a lobby while the reservation runs, even full, so a
+  full room cannot fire before the winner picks.
+- **The window (L47).** No answer resolves the window as stepping down: the seat opens, the map
+  stays random, the reign is 0. Staying or stepping down no longer moves anything in a line.
+- **Opening and closing (L32).** When every room of a type holds `ceil(0.75 × cap)` humans (38 of
+  50), counting the report of the room's current game (its lobby, or its running round), a room
+  is added. A room that has been `gathering` with nobody in it for `closeGraceMs` closes, newest
+  first, never below the type's opening rooms. **One addition to the rule:** an empty room does
+  not close while the rooms left would at once ask for another (every one of them at 75 %);
+  otherwise a room nobody was steered to in its first minute would close and reopen every
+  minute, under a new name each time.
+- **An empty round (L39).** Unchanged: a running round nobody is connected to is reaped by the
+  worker (about 30 s), drops out of the reports, and after the vanish grace the room ends the
+  round void, opens the seat and gathers again.
+- **The public list.** The master no longer stamps `place`; it sorts the room lobbies by their
+  countdown, soonest first, then FFA before team, running rounds last. `ThroneInfo.place` stays in
+  the schema until stage 3 removes its client readers; until then the client reads every room
+  as having no place ("Waiting for players").
+- **Config.** `THRONE_ROOMS` (1 per type) replaces `THRONE_FLOOR`; `THRONE_ROOM_CAP` (50) and
+  `THRONE_CLOSE_GRACE_MS` (60 s, 15 s in dev) replace `THRONE_CULL_GRACE_MS`;
+  `THRONE_COUNTDOWN_MS` defaults to 60 s (was 2 minutes; 5 s in dev as before). None of the retired
+  names is set in `deploy/` or the private environment.
+- **The coordinator (§14.7).** `LobbyCoordinatorClient.ts`, its tests,
+  `MasterLobbyServiceCoordinated.test.ts`, the coordinated mode in `MasterLobbyService` and its
+  start-up in `Master.ts`, and `ServerEnv.lobbyCoordinator` are gone. `docs/MultiServer.md`
+  notes the removal. The per-type queue (`PUBLIC_LOBBIES=queue`) and ranked matchmaking stay.
+- **The cap.** Set in stage 2 (below).
+- **Wiki.** The Thrones page: rooms in place of the launch line, no answer opens the seat, no
+  Special mode listed.
+- **Tests.** `ThroneRegistry.test.ts` rewritten for rooms (24); `MasterLobbyServiceThrones.test.ts`
+  (20: the list order, opening and closing, the unanswered window); `ThroneRegistryFromEnv.test.ts`
+  (one room per type); `GameServerPhase.test.ts` gains the full lobby held through the window.
+
+**Stage 2: drop-in (2026-10-28).** L33, L36, L37, L40, L42, L43 and L48's server side; L44 needed
+nothing (§14.4).
+
+- **The join (core).** A server-internal intent, `join_round` (`Schemas.ts`, appended to the
+  union; refused from clients in `IntentAuthorization` like `mark_disconnected`), carries the
+  name and clan tag; the joiner rides the stamped `clientID`. The `Executor` reads it before the
+  player lookup (the player does not exist yet), and a `clientID` that already has a player gets
+  a no-op, so a rejoin can never make a second player (L42). `JoinRoundExecution` creates the
+  player on the tick the turn lands, on every client: a fresh player ID drawn from the joiner and
+  the tick (redrawn on a clash), no team in FFA, in a team game the team with the fewest players
+  (ties to the first in order; Barons and the throne excluded), nothing after the round is won.
+  It runs in the spawn phase and the opening too. `Game.addPlayer` takes an optional team, and
+  `Game.roundStartTick()` exposes the round's first tick of play.
+- **Spawn or pirate (core, L36).** A joiner in the spawn phase spawns with the ordinary spawn
+  intent. Later, the spawn is refused as for anyone, and `EmbracePiracyExecution` now accepts a
+  player who **never spawned** from `roundStartTick() + 300` ticks (30 s,
+  `DROP_IN_PIRATE_DELAY_TICKS`); an eliminated player keeps the old rule (PR10's wait). This
+  applies in every game with piracy on, private ones included, which is L36's "anyone who never
+  picked a spawn". A never-spawned pirate who lands takes the shore as their spawn tile
+  (`PirateLandingExecution`), so they count as spawned from then on.
+- **The server (`DropIn.ts`, `GameServer`).** `dropInVerdict` decides for a newcomer to a running
+  round: not a room, the round over, piracy off or names hidden → today's late-joiner rules;
+  the last 3 minutes → **held** (L48); the room at its cap → **full** (watch only, L33);
+  otherwise **join**. The cutoff counts turns, one per tick: the spawn phase plus the round's
+  minutes, less 3 minutes; the opening's few seconds are left out, so it falls that much early.
+  A joining player is admitted as a player (no "game just started" refusal in a room) and the
+  server queues `join_round` ahead of the connection mark, with the start message's name rules
+  (the clan tag cleared where tags are off). They are not added to `gameStartInfo.players`,
+  which is what makes their win void (L44). A held arrival watches, and its start message
+  carries `heldForNextRound: true` for the client (stage 3). A watcher's `spectate: false`
+  during a running round is a drop-in on the same terms (L43). A returning player reconnects
+  by `persistentID` to their own client as before (L42), with no second join.
+- **The room's config (master, L33, L36, L37, L40).** Every room round is created with
+  `maxPlayers` = the room's cap (50) and piracy on, and every pick keeps that cap whatever the map;
+  `MapPlaylist.maxPlayersForMap` and `throneTeamSplit` are gone. A team room rolls a count of
+  teams only (2 to 7; a map's forced special team count is used only when it is a count), and
+  the winner's split list (`THRONE_TEAM_SPLITS`) is 2 to 7: Duos, Trios and Quads are no longer
+  offered.
+- **Browser check.** Two tabs start the dev FFA room; a third opens the running game's link during
+  the spawn phase and lands at "Choose a starting location" with its own player; both clients count
+  the new player (413 → 414 players).
+- **Wiki.** The Thrones page gains "Joining a round in progress" and the 2-to-7 team count; the
+  Piracy page says who else may launch a corsair.
+- **Tests.** `tests/JoinRound.test.ts` (11: spawn-phase challenger, the late pirate's 30 s, a
+  never-spawned starter, piracy off, the rejoin, a won round, the same player on two clients, the
+  wire, team balance, FFA, the landing's spawn tile); `tests/server/DropIn.test.ts` (13: the
+  verdict table, the cutoff, the issued join, the clan tag, the rejoin, held, full, the watcher
+  turning pirate, a non-room game, the client refusal); master, playlist and team-split tests
+  updated for the cap and the counts. The void win was already pinned (`ThroneGame.test.ts`,
+  `Ingest.test.ts`).
+
 ## 15. Changelog
 
+- **2026-10-28, stage 2 built** — **Drop-in** (§14.9, on `feat/rooms`, not merged). The server
+  issues a `join_round` into the turn stream for a newcomer to a running room round; every client
+  creates the player on that tick. Spawn-phase joiners spawn; later ones, and anyone who never
+  spawned, may launch a corsair 30 s into play. Team rooms put newcomers on the smallest team and
+  offer 2 to 7 teams only. The last 3 minutes hold arrivals as observers; a full room lets them
+  watch; a watcher may turn pirate; a returning player keeps their own player. Every room round
+  has the cap of 50 and piracy on. Wiki's Thrones and Piracy pages updated.
+- **2026-10-28, stage 1 built** — **The rooms' scheduling** (§14.9, on `feat/rooms`, not merged).
+  `ThroneRegistry` runs rooms: one FFA and one team to open with, each with its own one-minute
+  countdown that may run through the winner's window but never ends inside it; no answer opens
+  the seat (L47); a room opens when every room of its type is at 75 % and an added room closes
+  after a minute empty, but not while the others would at once reopen it. The launch lines'
+  server side and upstream's lobby coordinator are removed. Wiki's Thrones page updated.
 - **2026-10-28** — **Rooms revised and tidied** (§14). Tom: **a drop-in's victory is void**
   (L44 revised; was: it can win and counts): the round ends, nobody is credited, the seat opens;
   this is how the record, the throne report and the ingest already behave, so it costs no code

@@ -775,6 +775,10 @@ export class GameImpl implements Game {
     return this.spawnPhaseOver && this._ticks < this.startTick!;
   }
 
+  roundStartTick(): number | null {
+    return this.startTick;
+  }
+
   // Whether an execution runs (or is initialised) at this point of the round:
   // the spawn phase admits spawn-phase executions, the opening only the
   // spawns already under way, and play everything.

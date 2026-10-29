@@ -57,6 +57,30 @@ describe("GameServer.phase()", () => {
     expect(game.phase()).toBe(GamePhase.Active);
   });
 
+  // Under a Dark Star (docs/DarkStar-Lobbies.md L34): a room's lobby never
+  // starts inside the last winner's window, not even full.
+  it("holds a full room lobby until the winner's window closes", () => {
+    const game = makeGame({
+      publicGameType: "throne",
+      config: { maxPlayers: 2, hegemon: { enabled: true } },
+    });
+    game.setThrone({
+      throneID: "throne-01",
+      name: "Vega",
+      type: "ffa",
+      reign: 0,
+      minPlayers: 2,
+      heir: { persistentID: "heir-pid", name: "Ada" },
+      reservationUntil: T0 + 30_000,
+    });
+    game.joinClient(makeClient({ clientID: cid("a") }));
+    game.joinClient(makeClient({ clientID: cid("b") }));
+    expect(game.phase()).toBe(GamePhase.Lobby);
+
+    vi.advanceTimersByTime(30_001);
+    expect(game.phase()).toBe(GamePhase.Active);
+  });
+
   it("finishes an unattended game 30s after its start time", () => {
     // Nobody ever connected: Active through the warm-up window (clients may
     // still be loading), Finished once it passes with no pings received.

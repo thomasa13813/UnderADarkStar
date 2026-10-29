@@ -65,6 +65,7 @@ import { applyGameConfigPatch, hostCheatsEnabled } from "./ConfigPatch";
 import { LiveStatsVote, WinnerVote } from "./Consensus";
 import { fetchCustomTribes } from "./CustomTribes";
 import { DesyncDetector } from "./DesyncDetector";
+import { DropInVerdict, dropInVerdict } from "./DropIn";
 import {
   authorizeIntent,
   IntentActor,
@@ -268,6 +269,9 @@ export class GameServer {
   // The end-of-game winner vote and the running live-stats vote: both
   // IP-weighted majorities among the players (see Consensus.ts).
   private readonly winnerVote = new WinnerVote();
+  // Arrivals in a room round's last 3 minutes, watching until the next
+  // round (L48); their start message says so.
+  private readonly heldForNextRound = new Set<ClientID>();
   private readonly liveStatsVote = new LiveStatsVote();
 
   // Player reports filed this game, keyed "<reportedBy>:<reported>" so each
@@ -586,11 +590,27 @@ export class GameServer {
     // play (a last-second click on the lobby), so they are told they missed
     // it rather than dropped into a game they cannot play. Anyone later
     // came to watch (a shared link) and joins as a spectator.
+    //
+    // Under a Dark Star, a room's round takes players after the start
+    // (docs/DarkStar-Lobbies.md L36): the server issues their join into the
+    // turn stream below. In its last 3 minutes they are held as observers
+    // for the next round (L48); a full room only lets them watch (L33).
+    let dropIn = false;
     if (this.stage === "started") {
       if (this.rejoinClient(client.ws, client.persistentID, 0)) {
         return "joined";
       }
-      if (
+      const verdict = client.spectator ? null : this.dropInVerdict();
+      if (verdict === "join") {
+        dropIn = true;
+      } else if (verdict !== null) {
+        this.log.info("room round not open to drop-in, watching", {
+          clientID: client.clientID,
+          verdict,
+        });
+        client.spectator = true;
+        if (verdict === "held") this.heldForNextRound.add(client.clientID);
+      } else if (
         !client.spectator &&
         Date.now() - (this._startTime ?? 0) < LATE_JOIN_GRACE_MS
       ) {
@@ -608,7 +628,7 @@ export class GameServer {
         );
         return "started";
       }
-      client.spectator = true;
+      if (!dropIn) client.spectator = true;
     }
 
     // Spectators take no slot: they never spawn, so a full lobby is still
@@ -697,6 +717,8 @@ export class GameServer {
     // spectator from a player.
     this.clients.add(client);
     client.lastPing = Date.now();
+    // Ahead of the connection mark, which names the player it creates.
+    if (dropIn) this.issueJoin(client);
     this.markClientDisconnected(client.clientID, false);
     this.seatHeir(client);
     this.telemetry.emit(
@@ -1390,6 +1412,16 @@ export class GameServer {
   // was set is not proof they may hold a seat now.
   private setSpectator(client: Client, spectator: boolean): void {
     if (client.spectator === spectator) return;
+    // A watcher of a room's running round may turn pirate (L43), on the
+    // drop-in's terms; a player may always stop to watch.
+    if (!spectator && this.stage === "started" && !this.ended) {
+      if (this.dropInVerdict() !== "join") return;
+      client.spectator = false;
+      this.heldForNextRound.delete(client.clientID);
+      this.issueJoin(client);
+      this.markClientDisconnected(client.clientID, false);
+      return;
+    }
     if (!spectator) {
       if (this.stage === "started" || this.ended) return;
       if (!this.passesAllowlist(client)) return;
@@ -1594,6 +1626,9 @@ export class GameServer {
             // Repeated here for the late joiner, who connects after the
             // lobby broadcasts stopped and would otherwise never see it.
             groupToken: this.groupToken,
+            heldForNextRound: this.heldForNextRound.has(client.clientID)
+              ? true
+              : undefined,
           } satisfies ServerStartGameMessage,
           this.zbinCtx,
         ),
@@ -1758,9 +1793,10 @@ export class GameServer {
 
     const lessThanLifetime = this.startsAt ? Date.now() < this.startsAt : true;
     if (
-      (lessThanLifetime || this.throneHeld()) &&
       !this.hasStarted() &&
-      !this.hasReachedMaxPlayerCount
+      (this.throneWindowOpen() ||
+        ((lessThanLifetime || this.throneHeld()) &&
+          !this.hasReachedMaxPlayerCount))
     ) {
       return GamePhase.Lobby;
     }
@@ -2016,6 +2052,41 @@ export class GameServer {
       this.throneAssignment !== null &&
       this.playerCount() < this.throneAssignment.minPlayers
     );
+  }
+
+  // Under a Dark Star: may a newcomer drop into this round now (DropIn.ts)?
+  private dropInVerdict(): DropInVerdict | null {
+    return dropInVerdict({
+      isRoom: this.throneAssignment !== null && this.isPublic(),
+      config: this.gameConfig,
+      turns: this.turns.length,
+      players: this.playerCount(),
+      over: this.ended || this.winnerVote.winner() !== null,
+    });
+  }
+
+  // The drop-in's join (L36), issued by the server so nobody can forge a
+  // name or a slot. Same name and clan-tag rules as the start message; the
+  // player is not added to gameStartInfo.players, which is what makes a
+  // drop-in's victory void (L44).
+  private issueJoin(client: Client) {
+    this.log.info("drop-in joins the round", {
+      clientID: client.clientID,
+      turn: this.turns.length,
+    });
+    this.addIntent({
+      type: "join_round",
+      clientID: client.clientID,
+      username: client.username,
+      clanTag: this.gameConfig.disableClanTags ? null : client.clanTag,
+    });
+  }
+
+  // A room's lobby never starts while the last round's winner may still
+  // pick (L34), not even full: the winner always gets to choose.
+  private throneWindowOpen(): boolean {
+    const until = this.throneAssignment?.reservationUntil;
+    return until !== undefined && Date.now() <= until;
   }
 
   // The round's result for the master, from the winner vote. The vote names

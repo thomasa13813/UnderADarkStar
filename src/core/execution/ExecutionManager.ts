@@ -19,6 +19,7 @@ import { EmbracePiracyExecution } from "./EmbracePiracyExecution";
 import { EmojiExecution } from "./EmojiExecution";
 import { GateShotExecution } from "./GateShotExecution";
 import { GiftExecution } from "./GiftExecution";
+import { JoinRoundExecution } from "./JoinRoundExecution";
 import { MarkDisconnectedExecution } from "./MarkDisconnectedExecution";
 import { MoveWarshipExecution } from "./MoveWarshipExecution";
 import { NationExecution } from "./NationExecution";
@@ -63,6 +64,19 @@ export class Executor {
   }
 
   createExec(intent: StampedIntent): Execution {
+    // A drop-in (docs/DarkStar-Lobbies.md L36): the player does not exist
+    // yet, so this is the one intent read before the lookup. A clientID that
+    // already has a player is a rejoin and gets its own player back (L42).
+    if (intent.type === "join_round") {
+      if (this.mg.playerByClientID(intent.clientID) !== null) {
+        return new NoOpExecution();
+      }
+      return new JoinRoundExecution(
+        intent.clientID,
+        intent.username,
+        intent.clanTag,
+      );
+    }
     const player = this.mg.playerByClientID(intent.clientID);
     if (!player) {
       console.warn(`player with clientID ${intent.clientID} not found`);
