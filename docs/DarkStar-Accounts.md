@@ -296,6 +296,7 @@ with `better-sqlite3` as the fallback.
 | `rounds`        | `game_id`, `throne_id`, `throne_name`, `throne_type`, `map`, `started_at`, `ended_at`, `humans`, `outcome`, `hegemon_account`, `winner_account`, `reign_after`, `git_commit`, `reign_before`, `hegemon_run` | One row per public throne round. Account columns are null for guests and the AI. `hegemon_run` is the seated Hegemon's consecutive rounds on this throne, this one included (§5.4); `reign_before` the badge they brought in, null before migration 3. |
 | `round_players` | `game_id`, `account_id`, `was_hegemon`, `won`                                                                                                                                                               | Verified players only. Feeds "games played" and later profiles.                                                                                                                                                                                        |
 | `stats`         | `account_id`, `thrones_taken`, `rounds_held`, `hegemon_rounds`, `longest_reign`, `games_played`, `updated_at`                                                                                               | A cache of `rounds`; rebuildable (§5.5). Victories is `thrones_taken + rounds_held`; reigns is `hegemon_rounds`.                                                                                                                                       |
+| `solo_presets`  | `id`, `account_id`, `name`, `settings`, `created_at`, `updated_at`                                                                                                                                          | Saved solo setups (§12.11). `settings` is JSON; names unique per account in any case. Erased with the account.                                                                                                                                         |
 
 Schema changes are numbered migration files applied at boot.
 
@@ -789,6 +790,44 @@ month against R2's free million, and megabytes against its free 10 GB.
   it on Tom's PC: `integrity: ok`, 11 accounts, 6 rounds, the leaderboard identical to the live
   API's and the signing key the live JWKS serves. B6 is complete.
 
+### 12.11 As built: saved solo presets (2026-10-28)
+
+Tom's request: let players save the solo screen's settings under a name and load them again,
+following a signed-in player to any device. Up to five per account (Tom chose named presets over
+"remember the last game"). It adds one item to what the account holds (A12): the presets' names
+and settings, private to the player.
+
+- **Format**: `src/core/SoloPresets.ts`, shared by the page and the API. The settings are the
+  solo screen's own fields (map or random map, difficulty, mode, teams, bots, nations, each
+  toggle and its value, disabled units), not a `GameConfig`. Every field is optional and reads
+  leniently: a value the game no longer knows (a retired map, a renamed unit, a narrowed range)
+  reads as absent and the screen uses its default, so an old preset still loads. The bounds
+  keep one under about 2 KB. Names: trimmed, whitespace folded, 1 to 32 characters, no control
+  characters; private, so the name filter does not apply. `MAX_SOLO_PRESETS = 5`.
+- **API**: `SoloPresetRoutes.ts` and `SoloPresets.ts`, bearer token. `GET /users/@me/solo-presets`
+  lists by name; `PUT` with `{ name, settings }` saves, replacing a preset of the same name in
+  any case; `DELETE /users/@me/solo-presets/:id` removes one. Each answers with the whole list.
+  400 for a bad name or settings that are not an object, 409 for a sixth name, 404 for another
+  account's or a missing ID, 401 without a session. Rate limit 30 a minute per IP. Migration 4
+  adds the `solo_presets` table (§8); `deleteAccount` erases its rows.
+- **Guests**: the same rules in the browser (`localStorage`, key `darkstar_solo_presets`,
+  `SoloPresetsApi.LocalSoloPresetStore`). The two lists are separate: signing in shows the
+  account's, signing out the browser's; a guest's presets are not copied to the account on
+  sign-in.
+- **Client**: `solo-presets-bar` (`components/SoloPresetsBar.ts`) at the top of the solo screen:
+  one chip per preset loads it, the chip's ✕ asks "Delete?" and deletes on a second click, and
+  **Save preset** opens a name box (prefilled with the last loaded preset, so saving again
+  updates it). The list is read again each time the screen opens, so a preset saved on another
+  device shows without a reload. `SinglePlayerModal.capturePreset` / `applyPreset`: nations are
+  kept only when moved off the map's own count; a random-map preset rolls a new map on load.
+  Strings: `solo_presets.*`.
+- **Privacy**: the policy (effective 2026-10-28) lists saved presets under what a signed-in
+  account holds, under browser storage for guests, and in the retention table (until deleted,
+  or the account is). The nightly backup carries them like any other table.
+- **Cost**: none. Kilobytes per player in the existing database and backup.
+- **Tests**: `tests/api/SoloPresets.test.ts`, `tests/core/SoloPresets.test.ts`,
+  `tests/client/SoloPresetsApi.test.ts`, the table list in `ApiSkeleton.test.ts`.
+
 ## 13. Tests
 
 API tests run against an in-memory database, under `tests/api/`, added to `npm test`.
@@ -851,6 +890,10 @@ API tests run against an in-memory database, under `tests/api/`, added to `npm t
 
 ## 16. Changelog
 
+- **2026-10-28** — **Saved solo presets** (§12.11), at Tom's request: up to five named solo
+  setups per account (in the browser for guests), loaded from the top of the solo screen. Adds
+  the `solo_presets` table (migration 4) and one item to what an account holds (A12); the
+  Privacy Policy says so. No new service and no cost.
 - **2026-10-25** — **B6, first part** (§12.8), at Tom's request: the name filter rewritten to mask
   the offending word for everyone but the player (Tom's rule; few false positives), API rate
   limits, and the admin command for bans, renames, sign-outs and deletion on request. B6 keeps

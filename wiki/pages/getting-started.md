@@ -20,6 +20,10 @@ starts a solo game with a step-by-step guide through spawning, attacking, buildi
 warheads. Solo games are played against AI players: [[lords-and-barons|Lords and Barons]], and
 an AI Hegemon unless you choose to play the Hegemon yourself.
 
+Found a solo setup you like? **Save preset** at the top of the Solo screen keeps it under a name
+(up to five), and one click on it sets the screen up the same way next time. Signed in, your
+presets follow you to any device; as a guest they stay in this browser.
+
 ## Your first minute
 
 1. **Pick a spawn.** At the start of the round, click a spot of nebula to choose where you begin.

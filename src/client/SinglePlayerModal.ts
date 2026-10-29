@@ -15,6 +15,7 @@ import {
 } from "../core/game/Game";
 import { UserSettings } from "../core/game/UserSettings";
 import { PlayerCosmetics, TeamCountConfig } from "../core/Schemas";
+import { SoloPresetSettings } from "../core/SoloPresets";
 import { generateID } from "../core/Util";
 import { responseHasLinkedIdentity } from "./AccountIdentity";
 import "./components/baseComponents/Button";
@@ -22,6 +23,8 @@ import "./components/baseComponents/Modal";
 import { BaseModal } from "./components/BaseModal";
 import "./components/GameConfigSettings";
 import { MEDAL_ORDER, medalIcon } from "./components/map/Medals";
+import "./components/SoloPresetsBar";
+import { PresetApplyDetail } from "./components/SoloPresetsBar";
 import "./components/ToggleInputCard";
 import { modalHeader } from "./components/ui/ModalHeader";
 import { getPlayerCosmetics, prewarmCosmetics } from "./Cosmetics";
@@ -212,6 +215,8 @@ export class SinglePlayerModal extends BaseModal {
   // nothing visible until every await in startGame() settles, which reads as
   // a hang rather than as loading whenever the network is slow or absent.
   @state() private starting: boolean = false;
+  // Bumped on every open so the saved setups are read again (SoloPresetsBar).
+  @state() private presetsRefreshKey: number = 0;
   // Identifies the current start attempt. Bumped on every start and on every
   // close, so an attempt that outlives its modal can tell it has been retired.
   private startAttempt: number = 0;
@@ -466,6 +471,13 @@ export class SinglePlayerModal extends BaseModal {
         <div
           class="flex-1 min-h-0 overflow-y-auto custom-scrollbar px-6 pt-4 pb-6 mr-1 mx-auto w-full max-w-5xl"
         >
+          <solo-presets-bar
+            class="block mb-6"
+            .signedIn=${responseHasLinkedIdentity(this.userMeResponse)}
+            .refreshKey=${this.presetsRefreshKey}
+            .capture=${this.capturePreset}
+            @preset-apply=${this.handlePresetApply}
+          ></solo-presets-bar>
           <game-config-settings
             class="block"
             .sectionGapClass=${"space-y-6"}
@@ -696,7 +708,101 @@ export class SinglePlayerModal extends BaseModal {
     this.overtimeStartMinutes = DEFAULT_OPTIONS.overtimeStartMinutes;
   }
 
+  // The screen as a saved setup (docs/DarkStar-Accounts.md §12.11). Nations
+  // are kept only when moved off the map's own count, so a setup on a random
+  // map gets each map's count.
+  private capturePreset = (): SoloPresetSettings => {
+    const mapNations = this.compactMap
+      ? Math.max(0, Math.floor(this.defaultNationCount * 0.25))
+      : this.defaultNationCount;
+    return {
+      map: this.selectedMap,
+      randomMap: this.useRandomMap,
+      difficulty: this.selectedDifficulty,
+      gameMode: this.gameMode,
+      teamCount: this.teamCount,
+      bots: this.bots,
+      ...(this.nations !== mapNations ? { nations: this.nations } : {}),
+      compactMap: this.compactMap,
+      playAsHegemon: this.playAsHegemon,
+      piracy: this.piracy,
+      instantBuild: this.instantBuild,
+      randomSpawn: this.randomSpawn,
+      infiniteGold: this.infiniteGold,
+      infiniteTroops: this.infiniteTroops,
+      doomsdayClock: this.doomsdayClock,
+      doomsdayClockSpeed: this.doomsdayClockSpeed,
+      maxTimer: this.maxTimer,
+      maxTimerMinutes: this.maxTimerValue,
+      goldMultiplier: this.goldMultiplier,
+      goldMultiplierValue: this.goldMultiplierValue,
+      startingGold: this.startingGold,
+      startingGoldValue: this.startingGoldValue,
+      customAlliances: this.customAlliances,
+      customAllianceMinutes: this.customAllianceMinutes,
+      overtime: this.overtime,
+      overtimeStartMinutes: this.overtimeStartMinutes,
+      disabledUnits: [...this.disabledUnits],
+    };
+  };
+
+  // Each apply's nation count is used only if no later apply has started.
+  private presetApplySeq = 0;
+
+  private handlePresetApply = (e: Event) => {
+    void this.applyPreset(
+      (e as CustomEvent<PresetApplyDetail>).detail.settings,
+    );
+  };
+
+  // A saved setup onto the screen. Anything the setup lacks (or the game no
+  // longer knows, SoloPresetSettingsSchema) takes the screen's default.
+  private async applyPreset(s: SoloPresetSettings): Promise<void> {
+    if (this.starting) return;
+    const seq = ++this.presetApplySeq;
+    this.resetOptions();
+    this.compactMap = s.compactMap ?? DEFAULT_OPTIONS.compactMap;
+    this.useRandomMap = s.randomMap ?? DEFAULT_OPTIONS.useRandomMap;
+    this.selectedMap = this.useRandomMap
+      ? getRandomMapType()
+      : (s.map ?? DEFAULT_OPTIONS.selectedMap);
+    this.selectedDifficulty =
+      s.difficulty ?? DEFAULT_OPTIONS.selectedDifficulty;
+    this.gameMode = s.gameMode ?? DEFAULT_OPTIONS.gameMode;
+    this.teamCount = s.teamCount ?? DEFAULT_OPTIONS.teamCount;
+    this.bots = s.bots ?? DEFAULT_OPTIONS.bots;
+    this.playAsHegemon = s.playAsHegemon ?? DEFAULT_OPTIONS.playAsHegemon;
+    this.piracy = s.piracy ?? DEFAULT_OPTIONS.piracy;
+    this.instantBuild = s.instantBuild ?? DEFAULT_OPTIONS.instantBuild;
+    this.randomSpawn = s.randomSpawn ?? DEFAULT_OPTIONS.randomSpawn;
+    this.infiniteGold = s.infiniteGold ?? DEFAULT_OPTIONS.infiniteGold;
+    this.infiniteTroops = s.infiniteTroops ?? DEFAULT_OPTIONS.infiniteTroops;
+    this.doomsdayClock = s.doomsdayClock ?? DEFAULT_OPTIONS.doomsdayClock;
+    this.doomsdayClockSpeed =
+      s.doomsdayClockSpeed ?? DEFAULT_OPTIONS.doomsdayClockSpeed;
+    this.maxTimer = s.maxTimer ?? DEFAULT_OPTIONS.maxTimer;
+    this.maxTimerValue = s.maxTimerMinutes;
+    this.goldMultiplier = s.goldMultiplier ?? DEFAULT_OPTIONS.goldMultiplier;
+    this.goldMultiplierValue = s.goldMultiplierValue;
+    this.startingGold = s.startingGold ?? DEFAULT_OPTIONS.startingGold;
+    this.startingGoldValue = s.startingGoldValue;
+    this.customAlliances = s.customAlliances ?? DEFAULT_OPTIONS.customAlliances;
+    this.customAllianceMinutes = s.customAllianceMinutes;
+    this.overtime = s.overtime ?? DEFAULT_OPTIONS.overtime;
+    this.overtimeStartMinutes = s.overtimeStartMinutes;
+    const knownUnits = Object.values(UnitType) as string[];
+    this.disabledUnits = (s.disabledUnits ?? []).filter(
+      (unit): unit is UnitType => knownUnits.includes(unit),
+    );
+    // The map's own nation count first, then the setup's, if it kept one.
+    await this.loadNationCount();
+    if (seq === this.presetApplySeq && s.nations !== undefined) {
+      this.nations = s.nations;
+    }
+  }
+
   protected onOpen(): void {
+    this.presetsRefreshKey++;
     void this.loadNationCount();
     // Spend the cosmetics round trip while the player is picking a map, not
     // after they commit. startGame() still resolves cosmetics properly; this

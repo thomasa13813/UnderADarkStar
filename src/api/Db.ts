@@ -121,6 +121,24 @@ export const MIGRATIONS: readonly Migration[] = [
       rebuildStatsWithin(db, Date.now());
     },
   },
+  {
+    id: 4,
+    name: "solo_presets",
+    // Saved solo setups (§12.11): private to the account, erased with it.
+    sql: `
+      -- One named setup of the solo screen; settings is its JSON
+      -- (SoloPresetSettingsSchema). Names are unique per account, any case.
+      CREATE TABLE solo_presets (
+        id TEXT PRIMARY KEY,
+        account_id TEXT NOT NULL REFERENCES accounts(id),
+        name TEXT NOT NULL COLLATE NOCASE,
+        settings TEXT NOT NULL,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        UNIQUE (account_id, name)
+      );
+    `,
+  },
 ];
 
 export const DATABASE_FILE = "darkstar.sqlite";

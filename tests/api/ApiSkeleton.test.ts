@@ -158,6 +158,7 @@ describe("api database", () => {
       "rounds",
       "schema_migrations",
       "sessions",
+      "solo_presets",
       "stats",
     ]);
     expect(migrate(first)).toEqual([]);

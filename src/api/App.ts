@@ -10,6 +10,7 @@ import { FetchLike } from "./Providers";
 import { mountRateLimits } from "./RateLimits";
 import { RecordStore } from "./Records";
 import { mountResultRoutes } from "./ResultRoutes";
+import { mountSoloPresetRoutes } from "./SoloPresetRoutes";
 
 // Under a Dark Star: the account API (docs/DarkStar-Accounts.md §3, §7), the
 // small service that replaces OpenFront's closed one. B1 is the skeleton: it
@@ -17,7 +18,7 @@ import { mountResultRoutes } from "./ResultRoutes";
 // there is no cluster list (an empty one, which the client reads as
 // "reachable, one server"). B2 adds sign-in, sessions and /users/@me (AuthRoutes.ts), B3 the
 // join path (JoinRoutes.ts), B4 the results (ResultRoutes.ts), B5 the
-// board (LeaderboardRoutes.ts).
+// board (LeaderboardRoutes.ts); saved solo setups are SoloPresetRoutes.ts.
 //
 // Built as a factory so tests mount it on an ephemeral port; Server.ts is the
 // one place that reads the environment and listens.
@@ -94,6 +95,7 @@ export function createApiApp(deps: ApiDeps): Express {
   mountJoinRoutes(app, deps);
   mountResultRoutes(app, { ...deps, records });
   mountLeaderboardRoutes(app, deps);
+  mountSoloPresetRoutes(app, deps);
 
   app.use((_req, res) => {
     res.status(404).json({ error: "not found" });

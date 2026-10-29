@@ -1100,6 +1100,25 @@
     "options_changed_no_achievements": "Custom settings – achievements disabled",
     "toggle_achievements": "Toggle achievements"
   },
+  "solo_presets": {
+    "confirm_delete": "Delete?",
+    "confirm_save": "Save",
+    "delete_title": "Delete preset {name}",
+    "deleted": "Deleted {name}.",
+    "empty": "No presets yet. Set up a game and save it here.",
+    "failed": "Couldn't reach the server. Try again.",
+    "full": "You can keep up to {max} presets. Delete one to save another.",
+    "guest_hint": "Saved in this browser only. Sign in to keep your presets on every device.",
+    "invalid_name": "Give the preset a name of up to {length} characters.",
+    "load_failed": "Couldn't load your presets.",
+    "load_title": "Load preset {name}",
+    "loaded": "Loaded {name}.",
+    "name_placeholder": "Preset name",
+    "save": "Save preset",
+    "saved": "Saved {name}.",
+    "title": "Presets",
+    "updated": "Updated {name}."
+  },
   "spawn_timer": {
     "team_percent_tooltip": "{team}: {percent}"
   },

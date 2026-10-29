@@ -289,6 +289,7 @@ export function deleteAccount(
     db.prepare("DELETE FROM sessions WHERE account_id = ?").run(accountId);
     db.prepare("DELETE FROM stats WHERE account_id = ?").run(accountId);
     db.prepare("DELETE FROM round_players WHERE account_id = ?").run(accountId);
+    db.prepare("DELETE FROM solo_presets WHERE account_id = ?").run(accountId);
     db.prepare(
       "UPDATE rounds SET hegemon_account = NULL WHERE hegemon_account = ?",
     ).run(accountId);

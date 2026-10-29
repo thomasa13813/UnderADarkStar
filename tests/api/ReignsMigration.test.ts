@@ -69,7 +69,8 @@ function oldDatabase(): DatabaseSync {
 describe("migration 3 (reigns)", () => {
   it("adds the run columns and rebuilds the numbers under the new rule", () => {
     const db = oldDatabase();
-    expect(migrate(db)).toEqual([3]);
+    // Every migration after 2 runs; later ones (4, solo presets) ride along.
+    expect(migrate(db)[0]).toBe(3);
 
     // Ada: three victories as before; three rounds seated (GAME0002 to
     // GAME0004) in one run. Bob: a victory and no reign.

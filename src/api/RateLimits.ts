@@ -26,6 +26,8 @@ export const RATE_LIMITS = {
   session: { windowMs: MINUTE, max: 10 },
   // Renames are unlimited for a person (A13); this only stops a script.
   rename: { windowMs: MINUTE, max: 20 },
+  // Saved solo setups: listed when the solo screen opens, saved by hand.
+  soloPresets: { windowMs: MINUTE, max: 30 },
   // Everything else, as one budget: the board, /users/@me, stored records.
   everything: { windowMs: MINUTE, max: 300 },
 } satisfies Record<string, RateLimitRule>;
@@ -66,6 +68,7 @@ export function mountRateLimits(
   app.use(["/auth/login", "/auth/callback"], limiter(rules.signIn));
   app.use("/auth/refresh", limiter(rules.refresh));
   app.use("/users/@me/username", limiter(rules.rename));
+  app.use("/users/@me/solo-presets", limiter(rules.soloPresets));
   app.use(
     ["/auth/logout", "/auth/revoke", "/auth/delete"],
     limiter(rules.session),
