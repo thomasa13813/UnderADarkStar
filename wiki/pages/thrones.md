@@ -11,15 +11,27 @@ related: the-round, hegemon
 Public lobbies are **thrones**: named rooms that run rounds back to back. A room is Free for all
 or Teams for life.
 
-- The home page shows the room starting soonest in each mode.
-- The lobby browser lists every throne under **Free for all** or **Teams**, with
-  **Watch** to spectate a running round.
+- **Play** sends you to the room that suits best: one about to start, soonest first; then the
+  round that has run longest, which you join in progress; then a lobby with players in it; then an
+  empty one. A full room is never chosen.
+- The home page shows a card for each mode's room, a round in progress included.
+- The lobby browser lists every room under **Free for all** or **Teams**, with **Watch** to
+  spectate a running round. While watching you may **join as a pirate**.
+- Alone in a room's lobby, you can play Solo while you wait for a second player.
 
 ## After a round
 
 The winner has {{window}} seconds to pick the next map (on a team throne, how the teams split too)
-and to **keep the throne or step down**. With no answer, the next map is random and the seat opens:
-the AI holds it, and anyone in the lobby may claim it.
+and to **keep the throne or step down**. With no answer, the winner returns to the home page, the
+next map is random and the seat opens: the AI holds it, and anyone in the lobby may claim it.
+
+Everyone else chooses in the same {{window}} seconds: **stay** for the room's next round, go to
+**another room**, or leave. With no answer you return to the home page.
+
+## Eliminated
+
+Eliminated while the round goes on, you may [[piracy|embrace piracy]], watch to the end, go to
+another room, or leave.
 
 ## The seat
 

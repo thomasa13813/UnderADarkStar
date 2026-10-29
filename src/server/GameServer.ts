@@ -1629,6 +1629,7 @@ export class GameServer {
             heldForNextRound: this.heldForNextRound.has(client.clientID)
               ? true
               : undefined,
+            throne: this.throneInfo(),
           } satisfies ServerStartGameMessage,
           this.zbinCtx,
         ),

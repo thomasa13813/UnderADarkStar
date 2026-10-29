@@ -724,7 +724,8 @@ over the existing gathering state, plus `create` / `retire` actions).
 on 2026-10-27** (every question in §14.5 closed); revised 2026-10-28 (a drop-in's victory is void,
 L44; the coordinator removal, client error reports and the lone-player hint join the batch,
 §14.8). **Being built on `feat/rooms`** in four stages (§14.9), nothing merged until all four are
-in: stage 1, the server's scheduling, and stage 2, drop-in, landed 2026-10-28. The launch lines (§13, §10.5, §10.7) run
+in: stage 1, the server's scheduling, stage 2, drop-in, and stage 3, the client, landed
+2026-10-28. The launch lines (§13, §10.5, §10.7) run
 on the live server until the rooms ship;
 then the rooms replace them (L16–L28, L31), revisit L1, L9, L10 and L22, and close the special
 line. The changelog (§15) records each pass. The thinner first round of a player who arrives
@@ -1072,8 +1073,96 @@ nothing (§14.4).
   updated for the cap and the counts. The void win was already pinned (`ThroneGame.test.ts`,
   `Ingest.test.ts`).
 
+**Stage 3: the client (2026-10-28).** L38, L43, L46, L47 and L48's client side, the void win
+(L44), the lone player's hint (§14.8), the generic transition (L41); the launch lines' client side
+retired (§14.7).
+
+- **The rooms' reader.** `src/client/Rooms.ts` replaces `ThroneLine.ts`: `rooms`, `roomIsFull`
+  (players against the cap), `roomState` (countdown, running, gathering, empty), `steeringOrder`
+  and `steerTarget` (L38: rooms under their cap, countdown soonest first, then running rounds by
+  `startedAt`, then lobbies with players, most first, then empty ones) and `otherRooms` (the same
+  order without one's own room). The master now reports a room's **players** as its count on the
+  public list (`numClients` = the workers' `numPlayers`), so "full" means 50 players, not 50
+  connections.
+- **Home (L38, §14.7).** The nav bar's Play item (`joinHeroLobby`) joins the steering target
+  across modes, a running round included; with rooms listed but all full it does nothing. The
+  cards are one per room of each mode, first in the steering order, a running round included:
+  its pill reads "In progress · join" (dropping in, L36), or "Full · watch" (joined as a
+  spectator). A room's teams are titled by their count alone ("3 teams"), in the cards and the
+  lobby browser (`getGameModeLabel(config, { room: true })`): a size worked out from the cap ("3
+  teams of 16") read as teams of a fixed size, which L37 dropped.
+- **The lobby browser.** The place pill is gone; a room waits for players, counts down, says the
+  Hegemon is choosing, or offers Watch on a running round.
+- **The lobby (§14.8).** The place is gone from the status line. Alone in a room's lobby with no
+  countdown, a player sees "You are the only one here. A round starts once a second player
+  arrives. Play Solo meanwhile?" with a Play Solo button, which leaves the lobby and opens the
+  solo setup.
+- **The start message** now also carries the room (`throne`), as it does the group token: a
+  drop-in or a watcher never saw the lobby info, and the HUD, the win screen and the watcher's
+  bar read the room from `ThroneState`. `heldForNextRound` (stage 2) is kept there too.
+- **Arrival (L36).** A player with no spawn after the spawn phase and the opening, a drop-in or
+  one who sat the spawn out, with piracy on, gets the win modal titled "The round is under way":
+  Embrace piracy with the wait counted down (30 s into play), the other rooms, Exit and
+  Spectate. The client's piracy gates follow the core's: `PiracyController` lets a never-spawned
+  player embrace, and `pirateReadyAt` gives the launch time (the death's or sinking's wait, or
+  `roundStartTick + 300` for a never-spawned player), also shown by the pirate's panel.
+- **The death screen (L46).** The head-of-line panel is replaced by the rooms panel: the other
+  rooms, live, in the steering order, each going to that room's lobby or round, beside Embrace
+  piracy, Spectate and Exit.
+- **The round's end (L47).** A non-winner on a room round gets the rooms panel: **Stay** (the
+  successor the server announced) and the other rooms, with the time left to choose, the winner's
+  window (or 30 s when no window was announced, an AI or void round). When it runs out the player
+  is sent home, whether or not the modal is on screen. The winner's own panel sends them home too
+  when the window runs out unanswered; the old "join the next round" button after the window is
+  gone. A watcher held for the next round (L48) is sent to the successor's lobby at once. A
+  private lobby keeps its plain Join.
+- **The void win (L44).** `GameView.joinedAfterStart(clientID)` checks the start roster. On a room
+  round, a winner outside it gets "You landed the killing blow, but you joined after the round
+  began: the round is void, and the seat is open", everyone else the same with the name; no
+  winner's panel opens (the server reserves no seat).
+- **The watcher (L43, L48).** A new HUD strip, `room-watch-bar`, for a spectator of a public room's
+  running round: "Watching Vega. Join the round as a pirate?" with **Join as a pirate**, which
+  sends `spectate: false` (the server's drop-in on its terms, stage 2); the arrival screen takes
+  over once the player exists. In the round's last 3 minutes (`dropInCutoffTurn`, moved to
+  `src/core/DropIn.ts` so both sides share it) it says nobody joins now; a held watcher is told
+  they will be placed in the next round.
+- **The transition (L41).** `round-transition`: a 2.6 s black overlay, a dashed ring turning back
+  and "The Hegemon turns back time…", fading out over the lobby. The win screen asks for it (a
+  `sessionStorage` flag, ignored where storage is blocked) whenever it sends a player from a
+  room's round to a lobby or another room; the next page plays it once.
+- **Retired.** `ThroneLine.ts`, `ThroneInfo.place`, the `throne.line_*` and `throne.place_ahead`
+  strings and the throne block's `join_next`; `throne.pick_hint`, `pick_teams` and
+  `window_passed` reworded for L47 and L37. New strings under `rooms.*`.
+- **Browser check (dev).** The feed lists Sirius (FFA) and Canopus ("7 teams", 1/50). Alone in
+  the team lobby, the hint shows. Two tabs start the FFA round; after the opening a third presses
+  Play, is steered into the running round over the gathering team room, and gets "The round is
+  under way" with Embrace piracy (next corsair in 16 s) and "Go to Canopus · Gathering". A fourth
+  opens the round with `?spectate`, sees the watcher's bar, clicks Join as a pirate and gets the
+  arrival screen. The transition plays and clears. Not driven in the browser: a real elimination,
+  a round's end and a void win (each covered by the tests below).
+- **Wiki.** The Thrones page: how Play chooses, the cards, Watch and joining as a pirate, the lone
+  player's Solo, the end-of-round choice and no answer sending everyone home, and the death
+  screen's choices.
+- **Tests.** `tests/client/Rooms.test.ts` (4: the order, full rooms, states, other rooms);
+  `tests/client/graphics/layers/WinModalRooms.test.ts` (13: the round's end live, the deadline
+  home, an AI round's 30 s, the held watcher, the silent winner, the private Join, the feed's life,
+  the death screen with and without other rooms, off a room, the arrival screen and piracy off,
+  the void win for the drop-in and for others); `RoomWatchBar.test.ts` (4);
+  `RoomTeamsLabel.test.ts` (2); `JoinLobbyModal.test.ts` (the lone hint, 3, replacing the place);
+  `PlayJoinsHero.test.ts` (steering); `DetailedGameViewThronePill.test.ts` (no place); the drop-in
+  test gains the room in the start message. `ThroneLine.test.ts` and `WinModalLine.test.ts` are
+  gone with what they tested.
+
 ## 15. Changelog
 
+- **2026-10-28, stage 3 built** — **The rooms' client** (§14.9, on `feat/rooms`, not merged). Play
+  steers by L38 across modes; the home cards show each mode's room, a round in progress included,
+  and a room's teams by their count ("3 teams", fixing a label that read as fixed-size teams).
+  Arrivals after the spawn phase get an arrival screen with piracy; the death screen and the
+  round's end offer the other rooms, the round's end Stay too, and no answer sends a player home,
+  the winner included; held watchers go to the next lobby; watchers may join as pirates; a
+  drop-in's win reads as void; a lone player is offered Solo; a transition plays between rounds.
+  The line's client code and `ThroneInfo.place` are gone. Wiki's Thrones page updated.
 - **2026-10-28, stage 2 built** — **Drop-in** (§14.9, on `feat/rooms`, not merged). The server
   issues a `join_round` into the turn stream for a newcomer to a running room round; every client
   creates the player on that tick. Spawn-phase joiners spawn; later ones, and anyone who never

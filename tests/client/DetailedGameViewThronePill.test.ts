@@ -39,10 +39,10 @@ globalThis.ResizeObserver ??= class {
 
 type Modal = DetailedGameViewModal & { updateComplete: Promise<unknown> };
 
-// Under a Dark Star (docs/DarkStar-Lobbies.md L16-L19, §10.7): a throne
-// card's pill in the lobby browser reads its place in the launch line. The
-// head waits for players (then counts down as before); the thrones behind it
-// say how many are ahead; one whose winner is still choosing says so.
+// Under a Dark Star (docs/DarkStar-Lobbies.md §14): a room card's pill in the
+// lobby browser. A room waits for players, then counts down (L34); one whose
+// winner is still choosing says so; a running round is watched. No place in
+// line (§14.7).
 
 function throne(
   gameID: string,
@@ -94,32 +94,28 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe("throne cards read their place in line", () => {
-  it("head waits, the rest count thrones ahead, a deciding throne says so", async () => {
+describe("room cards in the lobby browser", () => {
+  it("rooms wait for players, a deciding one says so, none has a place", async () => {
     await push({
       throne: [
-        throne("head", { place: 1 }),
-        throne("second", { place: 2 }),
-        throne("fourth", { place: 4 }),
+        throne("first"),
+        throne("second"),
         throne("deciding", { reservationUntil: Date.now() + 20_000 }),
       ],
     });
-    expect(cardText("head")).toContain("public_lobby.waiting_for_players");
-    expect(cardText("second")).toContain("throne.place_ahead:1");
-    expect(cardText("fourth")).toContain("throne.place_ahead:3");
+    expect(cardText("first")).toContain("public_lobby.waiting_for_players");
+    expect(cardText("second")).toContain("public_lobby.waiting_for_players");
     expect(cardText("deciding")).toContain("throne.choosing");
-    expect(cardText("deciding")).not.toContain("place_ahead");
   });
 
-  it("a counting-down head shows its countdown, a running round its Watch", async () => {
+  it("a counting-down room shows its countdown, a running round its Watch", async () => {
     await push({
       throne: [
-        throne("head", { place: 1 }, Date.now() + 90_000),
+        throne("counting", {}, Date.now() + 90_000),
         throne("running", { running: true }),
       ],
     });
-    expect(cardText("head")).not.toContain("waiting_for_players");
-    expect(cardText("head")).not.toContain("place_ahead");
+    expect(cardText("counting")).not.toContain("waiting_for_players");
     expect(cardText("running")).toContain("throne.watch");
   });
 });

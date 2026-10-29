@@ -1,4 +1,5 @@
 import { EventBus, GameEvent } from "../../core/EventBus";
+import { DROP_IN_PIRATE_DELAY_TICKS } from "../../core/execution/JoinRoundExecution";
 import { isInDarkStarOrMoat } from "../../core/game/DarkStar";
 import { PlayerType, UnitType } from "../../core/game/Game";
 import { TileRef } from "../../core/game/GameMap";
@@ -16,6 +17,19 @@ import { GameView, PlayerView, UnitView } from "../view";
 // The death screen's Embrace piracy button: from here on, the next click on
 // deep space launches the corsair (docs/DarkStar-Piracy.md, PR1, PR3).
 export class BeginPiracyEvent implements GameEvent {}
+
+/**
+ * The tick from which the player may launch a corsair: the sinking's or the
+ * elimination's wait (PR10), and for a player who never spawned, a drop-in
+ * among them, 30 s into play (docs/DarkStar-Lobbies.md L36). Null while the
+ * round has not begun.
+ */
+export function pirateReadyAt(game: GameView, me: PlayerView): number | null {
+  if (me.hasSpawned()) return me.pirateRespawnAt();
+  const start = game.roundStartTick();
+  if (start === null) return null;
+  return Math.max(me.pirateRespawnAt(), start + DROP_IN_PIRATE_DELAY_TICKS);
+}
 
 /**
  * Piracy (docs/DarkStar-Piracy.md, PR3, PR4, PR15): a pirate's whole input
@@ -78,7 +92,6 @@ export class PiracyController implements Controller {
       this.game.config().piracyConfig().enabled &&
       me.type() === PlayerType.Human &&
       !me.isHegemon() &&
-      me.hasSpawned() &&
       !this.game.inSpawnPhase() &&
       !this.game.inOpening()
     );
@@ -122,7 +135,7 @@ export class PiracyController implements Controller {
       showToast(translateText("piracy.refused_dark_star"), "red");
       return;
     }
-    if (this.game.ticks() < me.pirateRespawnAt()) {
+    if (this.game.ticks() < (pirateReadyAt(this.game, me) ?? Infinity)) {
       showToast(translateText("piracy.refused_wait"), "red");
       return;
     }

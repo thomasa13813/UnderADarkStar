@@ -256,6 +256,8 @@ export class LangSelector extends LitElement {
       "emoji-table",
       "build-menu",
       "win-modal",
+      "round-transition",
+      "room-watch-bar",
       "game-starting-modal",
       "top-bar",
       "player-panel",

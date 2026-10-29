@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { DROP_IN_CUTOFF_TURNS, dropInCutoffTurn } from "../../src/core/DropIn";
 import { GameType } from "../../src/core/game/Game";
 import {
   GameConfig,
@@ -6,11 +7,7 @@ import {
   StampedIntent,
 } from "../../src/core/Schemas";
 import { createGameWireContext } from "../../src/core/ZbinWire";
-import {
-  DROP_IN_CUTOFF_TURNS,
-  dropInCutoffTurn,
-  dropInVerdict,
-} from "../../src/server/DropIn";
+import { dropInVerdict } from "../../src/server/DropIn";
 import { GameServer } from "../../src/server/GameServer";
 import { authorizeIntent } from "../../src/server/IntentAuthorization";
 import {
@@ -155,6 +152,8 @@ describe("GameServer drop-in", () => {
     ]);
     // The latecomer was sent the start and the turns so far.
     expect(startMsgOf(late, [p1.clientID])?.heldForNextRound).toBeUndefined();
+    // The room is repeated for the late joiner, who saw no lobby info.
+    expect(startMsgOf(late, [p1.clientID])?.throne?.name).toBe("Vega");
     // Not added to the start roster: their win would be void (L44).
     expect(
       startMsgOf(late, [p1.clientID])!.gameStartInfo.players.map(

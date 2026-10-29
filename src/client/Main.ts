@@ -91,6 +91,7 @@ import "./components/Footer";
 import "./components/MainLayout";
 import "./components/MobileNavBar";
 import "./components/PlayPage";
+import "./components/RoundTransition";
 import "./components/baseComponents/Button";
 import "./components/baseComponents/Modal";
 import "./styles.css";

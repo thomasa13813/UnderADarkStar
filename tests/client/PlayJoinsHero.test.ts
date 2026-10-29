@@ -124,12 +124,17 @@ describe("GameModeSelector.joinHeroLobby", () => {
     expect(joinedGameId()).toBe("first");
   });
 
-  it("skips a throne whose round is already running", async () => {
-    // The cards hide running rounds (Watch is T3), so Play must not land a
-    // player in one either.
-    await pushThrones(throne("running", true), throne("open"));
+  // L38: the steering button. Rooms about to launch first, then the round
+  // running longest (dropped into as a pirate), then lobbies with players.
+  it("prefers a room about to launch, then the round running longest (L38)", async () => {
+    const counting = { ...throne("counting"), startsAt: Date.now() + 30_000 };
+    await pushThrones(throne("running", true), counting, throne("open"));
     expect(selector.joinHeroLobby()).toBe(true);
-    expect(joinedGameId()).toBe("open");
+    expect(joinedGameId()).toBe("counting");
+    joinLobby.mockClear();
+    await pushThrones(throne("open"), throne("running", true));
+    expect(selector.joinHeroLobby()).toBe(true);
+    expect(joinedGameId()).toBe("running");
   });
 
   it("does nothing before any throne is on screen", () => {
@@ -137,16 +142,15 @@ describe("GameModeSelector.joinHeroLobby", () => {
     expect(joinLobby).not.toHaveBeenCalled();
   });
 
-  it("takes the FFA line's head, not whichever throne the master lists first", async () => {
-    // The hero card is the FFA head (L25, L29); a special throne ahead of it
-    // in the master's order belongs to the special card.
-    await pushThrones(throne("spec", false, "special"), throne("ffa-head"));
+  it("steers across modes, the team room included", async () => {
+    await pushThrones(throne("team-room", false, "team"));
     expect(selector.joinHeroLobby()).toBe(true);
-    expect(joinedGameId()).toBe("ffa-head");
+    expect(joinedGameId()).toBe("team-room");
   });
 
-  it("has no hero while the FFA line is empty", async () => {
-    await pushThrones(throne("spec", false, "special"));
+  it("never steers into a full room", async () => {
+    const full = { ...throne("full"), numClients: 8 };
+    await pushThrones(full);
     expect(selector.joinHeroLobby()).toBe(false);
     expect(joinLobby).not.toHaveBeenCalled();
   });

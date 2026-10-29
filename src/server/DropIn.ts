@@ -1,4 +1,4 @@
-import { Config, HEGEMON_DEFAULTS } from "../core/configuration/Config";
+import { dropInCutoffTurn } from "../core/DropIn";
 import { GameConfig } from "../core/Schemas";
 
 // Under a Dark Star: whether a player arriving at a running round of a room
@@ -14,9 +14,6 @@ import { GameConfig } from "../core/Schemas";
 
 export type DropInVerdict = "join" | "held" | "full";
 
-// No drop-in in a round's last 3 minutes (L48).
-export const DROP_IN_CUTOFF_TURNS = 3 * 60 * 10;
-
 export interface DropInState {
   // The game runs for a public room (a throne).
   isRoom: boolean;
@@ -27,15 +24,6 @@ export interface DropInState {
   players: number;
   // The round has a winner, or the game ended.
   over: boolean;
-}
-
-// The turn after which nobody drops in: the round's timer ends at about the
-// spawn phase plus the round's minutes. The opening (a few seconds of
-// flights) is left out, so the cutoff falls that much early, never late.
-export function dropInCutoffTurn(config: GameConfig): number {
-  const spawnTurns = new Config(config, null, false).numSpawnPhaseTurns();
-  const minutes = config.maxTimerValue ?? HEGEMON_DEFAULTS.defaultRoundMinutes;
-  return spawnTurns + minutes * 60 * 10 - DROP_IN_CUTOFF_TURNS;
 }
 
 export function dropInVerdict(state: DropInState): DropInVerdict | null {

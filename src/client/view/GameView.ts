@@ -165,6 +165,8 @@ export class GameView implements GameMap {
   private toDelete = new Set<number>();
 
   private _cosmetics: Map<string, PlayerCosmetics> = new Map();
+  // The players listed when the round started (gameStartInfo.players).
+  private _startRoster: Set<ClientID> = new Set();
   private _cosmeticVisibility: CosmeticVisibility = readCosmeticVisibility();
 
   private _map: GameMap;
@@ -190,6 +192,7 @@ export class GameView implements GameMap {
     this._cosmetics = new Map(
       humans.map((h) => [h.clientID, h.cosmetics ?? {}]),
     );
+    this._startRoster = new Set(humans.map((h) => h.clientID));
 
     // Nation-type players carry their own flag on the wire (PlayerUpdate.nationFlag,
     // sourced from the manifest via PlayerInfo) rather than being looked up here by
@@ -1266,6 +1269,18 @@ export class GameView implements GameMap {
 
   inSpawnPhase(): boolean {
     return !this.spawnPhaseOver;
+  }
+
+  // The round's first tick of play, once the spawn phase has ended.
+  roundStartTick(): Tick | null {
+    return this.startTick;
+  }
+
+  // Under a Dark Star (docs/DarkStar-Lobbies.md L44): a player who joined
+  // the round after it started, absent from the start roster. Their victory
+  // is void.
+  joinedAfterStart(clientID: ClientID): boolean {
+    return !this._startRoster.has(clientID);
   }
 
   // The opening (C3): the spawn phase is over but the round has not begun —

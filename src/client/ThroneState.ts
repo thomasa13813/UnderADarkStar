@@ -7,6 +7,17 @@ import { ThroneInfo } from "../core/Schemas";
 // here per join; a new join clears it.
 
 let throne: ThroneInfo | undefined;
+// This tab asked to play a room's round in its last 3 minutes and watches
+// instead (docs/DarkStar-Lobbies.md L48): the round's successor takes it.
+let heldForNextRound = false;
+
+export function isHeldForNextRound(): boolean {
+  return heldForNextRound;
+}
+
+export function setHeldForNextRound(held: boolean): void {
+  heldForNextRound = held;
+}
 
 export function currentThrone(): ThroneInfo | undefined {
   return throne;
@@ -18,4 +29,5 @@ export function setCurrentThrone(info: ThroneInfo | undefined): void {
 
 export function resetThroneState(): void {
   throne = undefined;
+  heldForNextRound = false;
 }

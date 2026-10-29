@@ -51,7 +51,11 @@ import {
 import { pagePin } from "./PagePin";
 import { versionedPathForMismatchedGame } from "./ServerList";
 import { terrainMapFileLoader } from "./TerrainMapFileLoader";
-import { resetThroneState, setCurrentThrone } from "./ThroneState";
+import {
+  resetThroneState,
+  setCurrentThrone,
+  setHeldForNextRound,
+} from "./ThroneState";
 import { GoToPlayerEvent } from "./TransformHandler";
 import {
   MoveWarshipIntentEvent,
@@ -272,6 +276,10 @@ export function joinLobby(
       resolveJoin();
       // For multiplayer games, GameStartInfo is not known until game starts.
       lobbyConfig.gameStartInfo = message.gameStartInfo;
+      // A room's round in its last 3 minutes holds a newcomer as a watcher
+      // for the next round (L48).
+      setHeldForNextRound(message.heldForNextRound === true);
+      if (message.throne !== undefined) setCurrentThrone(message.throne);
       createClientGame(
         lobbyConfig,
         clientID,

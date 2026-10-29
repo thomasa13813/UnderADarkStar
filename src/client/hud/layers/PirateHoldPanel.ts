@@ -2,7 +2,10 @@ import { html, LitElement, nothing } from "lit";
 import { customElement, state } from "lit/decorators.js";
 import { UnitType } from "../../../core/game/Game";
 import { Controller } from "../../Controller";
-import { PiracyController } from "../../controllers/PiracyController";
+import {
+  PiracyController,
+  pirateReadyAt,
+} from "../../controllers/PiracyController";
 import { renderNumber, renderTroops, translateText } from "../../Utils";
 import { GameView } from "../../view";
 
@@ -56,7 +59,8 @@ export class PirateHoldPanel extends LitElement implements Controller {
         ? translateText("piracy.landing_under_way")
         : translateText("piracy.at_sea");
     }
-    const wait = me.pirateRespawnAt() - this.game.ticks();
+    const wait =
+      (pirateReadyAt(this.game, me) ?? this.game.ticks()) - this.game.ticks();
     if (wait > 0) {
       return translateText("piracy.next_corsair_in", {
         seconds: Math.ceil(wait / 10),

@@ -42,6 +42,7 @@ import { PirateHoldPanel } from "./layers/PirateHoldPanel";
 import { PlayerInfoOverlay } from "./layers/PlayerInfoOverlay";
 import { PlayerPanel } from "./layers/PlayerPanel";
 import { ReplayPanel } from "./layers/ReplayPanel";
+import { RoomWatchBar } from "./layers/RoomWatchBar";
 import { SettingsModal } from "./layers/SettingsModal";
 import { SpawnTimer } from "./layers/SpawnTimer";
 import { TutorialPanel } from "./layers/TutorialPanel";
@@ -305,6 +306,13 @@ export function createRenderer(
   pirateHoldPanel.game = game;
   pirateHoldPanel.piracy = piracyController;
 
+  const roomWatchBar = document.querySelector("room-watch-bar") as RoomWatchBar;
+  if (!(roomWatchBar instanceof RoomWatchBar)) {
+    console.error("room watch bar not found");
+  }
+  roomWatchBar.game = game;
+  roomWatchBar.eventBus = eventBus;
+
   const tutorialPanel = document.querySelector(
     "tutorial-panel",
   ) as TutorialPanel;
@@ -354,6 +362,7 @@ export function createRenderer(
     spawnTimer,
     immunityTimer,
     pirateHoldPanel,
+    roomWatchBar,
     gameLeftSidebar,
     unitDisplay,
     gameRightSidebar,

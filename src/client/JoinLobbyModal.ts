@@ -1,5 +1,5 @@
 import { Howl } from "howler";
-import { html, TemplateResult } from "lit";
+import { html, nothing, TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ClientEnv } from "src/client/ClientEnv";
 import {
@@ -20,7 +20,6 @@ import {
   GameRecordSchema,
   LobbyInfoEvent,
   PublicGameInfo,
-  PublicGames,
   ThroneInfo,
 } from "../core/Schemas";
 import {
@@ -35,7 +34,6 @@ import { PublicLobbySocket } from "./LobbySocket";
 import { JoinFailedEvent, JoinLobbyEvent } from "./Main";
 import { ensureServerList, redirectToGameVersion } from "./ServerList";
 import { terrainMapFileLoader } from "./TerrainMapFileLoader";
-import { findLobby } from "./ThroneLine";
 import {
   ClaimSeatEvent,
   LeaveSeatEvent,
@@ -86,22 +84,10 @@ export class JoinLobbyModal extends BaseModal {
   private countdownTimerId: number | null = null;
   private handledJoinTimeout = false;
 
-  // Under a Dark Star: the whole snapshot is kept too, for this throne
-  // lobby's own place in its launch line (L16-L19), which only the public list
-  // carries.
-  @state() private publicGames: PublicGames["games"] | null = null;
   private readonly hostedLobbySocket = new PublicLobbySocket((lobbies) => {
     this.hostedLobbies = lobbies.games?.hosted ?? [];
     this.hostedLobbiesLoaded = true;
-    this.publicGames = lobbies.games ?? null;
   });
-
-  // My throne's place in its line, from the public list: undefined until the
-  // list arrives, or while the throne is not in line (the winner is choosing).
-  private thronePlace(): number | undefined {
-    if (this.throne === null) return undefined;
-    return findLobby(this.publicGames, this.currentLobbyId)?.throne?.place;
-  }
 
   private isPrivateLobby(): boolean {
     return this.gameConfig?.gameType === GameType.Private;
@@ -334,11 +320,7 @@ export class JoinLobbyModal extends BaseModal {
           ? translateText("private_lobby.joined_waiting")
           : this.throneChoosing()
             ? translateText("throne.choosing")
-            : (this.thronePlace() ?? 1) > 1
-              ? translateText("throne.line_place_ahead", {
-                  count: String(this.thronePlace()! - 1),
-                })
-              : translateText("public_lobby.waiting_for_players")
+            : translateText("public_lobby.waiting_for_players")
         : secondsRemaining > 0
           ? translateText("public_lobby.starting_in", {
               time: renderDuration(secondsRemaining),
@@ -409,6 +391,7 @@ export class JoinLobbyModal extends BaseModal {
           <div
             class="p-6 lg:p-6 border-t border-white/10 bg-black/60 backdrop-blur-md shrink-0 sticky bottom-0 z-10"
           >
+            ${this.renderLoneHint(secondsRemaining, playerCount)}
             <div
               class="w-full px-4 py-3 rounded-xl border border-white/10 bg-white/5 flex items-center justify-between gap-3"
             >
@@ -757,7 +740,6 @@ export class JoinLobbyModal extends BaseModal {
     this.hostedLobbySocket.stop();
     this.hostedLobbies = [];
     this.hostedLobbiesLoaded = false;
-    this.publicGames = null;
     this.clearCountdownTimer();
     this.stopLobbyUpdates();
 
@@ -1207,6 +1189,49 @@ export class JoinLobbyModal extends BaseModal {
         ? (lobby.lobbyCreatorClientID ?? null)
         : null;
     this.throne = lobby.throne ?? null;
+  }
+
+  // Under a Dark Star (docs/DarkStar-Lobbies.md §14.8): alone in a room's
+  // lobby, a newcomer is told what they wait for and offered Solo meanwhile.
+  private renderLoneHint(secondsRemaining: number | null, players: number) {
+    if (
+      this.throne === null ||
+      this.isPrivateLobby() ||
+      this.isConnecting ||
+      secondsRemaining !== null ||
+      this.isSpectating ||
+      players > 1
+    ) {
+      return nothing;
+    }
+    return html`
+      <div
+        class="mb-3 w-full px-4 py-3 rounded-xl border border-purple-400/30 bg-purple-500/10 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
+        data-lone-hint
+      >
+        <span class="text-sm text-white/80"
+          >${translateText("rooms.lone_hint")}</span
+        >
+        <button
+          type="button"
+          class="shrink-0 rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-white hover:bg-white/20"
+          data-lone-solo
+          @click=${() => this.playSoloInstead()}
+        >
+          ${translateText("rooms.lone_solo")}
+        </button>
+      </div>
+    `;
+  }
+
+  // Leave the room's lobby and open the solo setup.
+  private playSoloInstead() {
+    this.closeAndLeave();
+    (
+      document.querySelector("single-player-modal") as {
+        open?: () => void;
+      } | null
+    )?.open?.();
   }
 
   // Under a Dark Star: the last winner is still choosing the next map and

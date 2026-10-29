@@ -465,7 +465,10 @@ export class DetailedGameViewModal extends BaseModal {
       lobby,
       subtitle:
         lobby.throne !== undefined
-          ? throneCardSubtitle(lobby.throne, getGameModeLabel(config))
+          ? throneCardSubtitle(
+              lobby.throne,
+              getGameModeLabel(config, { room: true }),
+            )
           : getGameModeLabel(config),
       timeDisplay: this.timeDisplay(lobby),
       timeDisplayUppercase: lobby.startsAt === undefined,
@@ -481,9 +484,8 @@ export class DetailedGameViewModal extends BaseModal {
       return translateText("throne.watch");
     }
     if (lobby.startsAt === undefined) {
-      // A throne has no queue; it stands in its line (L16-L19): the head
-      // waits for players, then counts down; the rest show how many thrones
-      // are ahead; one whose winner is still choosing says so.
+      // A room waits for players, then counts down (L34); one whose winner
+      // is still choosing says so.
       if (lobby.throne !== undefined) {
         const until = lobby.throne.reservationUntil;
         if (
@@ -491,12 +493,6 @@ export class DetailedGameViewModal extends BaseModal {
           getSecondsUntilServerTimestamp(until, this.serverTimeOffset) > 0
         ) {
           return translateText("throne.choosing");
-        }
-        const place = lobby.throne.place;
-        if (place !== undefined && place > 1) {
-          return translateText("throne.place_ahead", {
-            count: String(place - 1),
-          });
         }
         return translateText("public_lobby.waiting_for_players");
       }

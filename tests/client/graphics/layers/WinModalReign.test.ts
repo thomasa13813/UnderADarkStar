@@ -69,6 +69,7 @@ function game(opts: {
     }),
     inSpawnPhase: () => false,
     updatesSinceLastTick: () => ({ [GameUpdateType.Win]: [winUpdate] }),
+    joinedAfterStart: () => false,
     playerByClientID: () => ({
       isPlayer: () => true,
       isHegemon: () => opts.winnerHegemon ?? false,

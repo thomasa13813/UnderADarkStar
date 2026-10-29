@@ -37,12 +37,24 @@ export function getMapName(mapName: string | undefined): string | null {
 
 /**
  * Returns a display label for the game mode (e.g. "FFA", "4 Teams", "Duos").
+ *
+ * Under a Dark Star: `room` names a public room's teams by their count alone
+ * ("3 teams"). A room's teams are a count that latecomers balance
+ * (docs/DarkStar-Lobbies.md L37), so a size worked out from the cap ("3 teams
+ * of 16") would promise teams of a fixed size.
  */
-export function getGameModeLabel(gameConfig: GameConfig): string {
+export function getGameModeLabel(
+  gameConfig: GameConfig,
+  opts: { room?: boolean } = {},
+): string {
   const { gameMode, playerTeams, maxPlayers } = gameConfig;
 
   if (gameMode !== GameMode.Team) {
     return translateText("game_mode.ffa");
+  }
+
+  if (opts.room === true && typeof playerTeams === "number") {
+    return translateText("public_lobby.teams", { num: playerTeams });
   }
 
   // Humans vs Nations

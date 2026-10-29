@@ -302,7 +302,13 @@ export class MasterLobbyService {
     // and that round's successor is already listed in its place.
     if (this.thrones !== null) {
       const current = this.thrones.currentGameIDs();
-      result.throne = result.throne.filter((l) => current.has(l.gameID));
+      // A room's count is its players, watchers left out: steering and the
+      // cards read it against the cap (L33, L38).
+      result.throne = result.throne
+        .filter((l) => current.has(l.gameID))
+        .map((l) =>
+          l.numPlayers === undefined ? l : { ...l, numClients: l.numPlayers },
+        );
     }
     // Lobbies before running rounds, the soonest countdown first; then FFA
     // before team before special. The name keeps the order stable. Which room

@@ -8,7 +8,7 @@ import {
 import { EventBus } from "../../../core/EventBus";
 import { GameMapType, PlayerType } from "../../../core/game/Game";
 import { GameUpdateType } from "../../../core/game/GameUpdates";
-import { PublicGames, TeamCountConfig } from "../../../core/Schemas";
+import { TeamCountConfig } from "../../../core/Schemas";
 import {
   THRONE_MAX_MODIFIERS,
   THRONE_MODIFIER_WHITELIST,
@@ -18,12 +18,16 @@ import {
 import { THRONE_TEAM_SPLITS } from "../../../core/ThroneTeams";
 import { ClientEnv } from "../../ClientEnv";
 import "../../components/map/MapPicker";
+import { requestRoundTransition } from "../../components/RoundTransition";
 import { Controller } from "../../Controller";
-import { BeginPiracyEvent } from "../../controllers/PiracyController";
+import {
+  BeginPiracyEvent,
+  pirateReadyAt,
+} from "../../controllers/PiracyController";
 import { PublicLobbySocket } from "../../LobbySocket";
+import { Games, otherRooms, roomState } from "../../Rooms";
 import { PlaySoundEffectEvent } from "../../sound/Sounds";
-import { findLobby, lineHead, placeLabel } from "../../ThroneLine";
-import { currentThrone } from "../../ThroneState";
+import { currentThrone, isHeldForNextRound } from "../../ThroneState";
 import {
   NewLobbyEvent,
   SendThronePickEvent,
@@ -33,17 +37,25 @@ import { GameView } from "../../view";
 import "./ReignPrompt";
 
 // Under a Dark Star: the winner's Next-round panel on the win screen
-// (docs/DarkStar-Lobbies.md §4 step 4, §5.5). The master opened the throne's
+// (docs/DarkStar-Lobbies.md §4 step 4, §5.5). The master opened the room's
 // next lobby and reserved its seat for the winner until `until`; here they
-// pick its map and keep the throne or step down, then jump to the lobby.
-// Everyone else on a throne round gets the line panel (L27): stay with this
-// throne, shown its place in line live, or join the head of the line, the
-// next round of the same mode to launch. Doing nothing stays. A player
-// eliminated while the round goes on gets the same panel on the death screen
-// with the head alone (L31): their throne's next round does not exist yet,
-// and staying is Spectate. A private lobby's successor is a plain Join
+// pick its map and keep the throne or step down, then jump to the lobby. A
+// winner who lets the window run out is sent home (L47).
+//
+// Everyone else on a room's round gets the rooms panel. At the round's end
+// (L47): stay for the room's next round, go to another room, or leave, before
+// the winner's window closes; no answer sends the player home, and a watcher
+// held for the next round (L48) is placed in it at once. Eliminated while the
+// round goes on (L46), or arrived after the spawn phase (L36), the same panel
+// offers the other rooms beside Embrace piracy, Spectate and Exit. A drop-in
+// who lands the killing blow ends a void round (L44): the title says so and
+// there is no winner's panel. A private lobby's successor is a plain Join
 // button beside Exit and Spectate. The winner of a public throne round also
 // gets the reign prompt (ReignPrompt.ts, Accounts §6) above the panels.
+// A room round's end when no winner's window was announced (an AI or void
+// round): as long as a winner would have had (L4, L47).
+const ROUND_END_ANSWER_MS = 30_000;
+
 interface ThronePanel {
   gameID: string;
   openedAt: number;
@@ -55,11 +67,14 @@ export class WinModal extends LitElement implements Controller {
   public game: GameView;
   public eventBus: EventBus;
 
-  // Set once the death screen has opened for us mid-round; it also turns
-  // the line panel into its head-only form (linePanelMode). Cleared when a
-  // pirate lands and is alive again, so a second death opens it again
+  // Set once the death screen (or the drop-in's arrival screen) has opened
+  // for us mid-round; it also shows the rooms panel's mid-round form. Cleared
+  // when a pirate lands and is alive again, so a second death opens it again
   // (docs/DarkStar-Piracy.md, section 8).
   private hasShownDeathModal = false;
+  // The screen opened because we arrived after the spawn phase, not because
+  // we died (L36): no defeat sound, the arrival's hint.
+  @state() private arrived = false;
   // The round has a result (or none): no more piracy from here.
   private roundOver = false;
 
@@ -81,17 +96,15 @@ export class WinModal extends LitElement implements Controller {
   @state() private pickedModifiers: ThroneModifier[] = [];
   // Team thrones: the split chosen (L30); undefined keeps the lobby's.
   @state() private pickedTeams: TeamCountConfig | undefined = undefined;
-  // Repaints the window bar once a second while the panel is up.
+  // Repaints the window bar and checks the deadlines while a window runs.
   @state() private windowTick = 0;
   private windowTimer: number | null = null;
-  // The line panel's live view of the public list (L27): the master stamps
-  // each throne's place on it, and nothing else carries that. Opened while
-  // the panel is up, closed with it.
-  @state() private line: PublicGames["games"] | null = null;
-  private lineSocket: PublicLobbySocket | null = null;
-  // Our throne's next round was listed at least once: when it is gone after
-  // that, the throne was retired under us (L20), and only the head remains.
-  private lineSeenOwn = false;
+  // A non-winner's answer is due by then, at a room round's end (L47).
+  @state() private endDeadline: number | null = null;
+  // The rooms panel's live view of the public list, opened while the panel
+  // is on screen and closed with it.
+  @state() private roomList: Games = null;
+  private roomSocket: PublicLobbySocket | null = null;
 
   private _title: string;
 
@@ -117,7 +130,7 @@ export class WinModal extends LitElement implements Controller {
         <reign-prompt
           .active=${this.wonRound && currentThrone() !== undefined}
         ></reign-prompt>
-        ${this.renderThronePanel()} ${this.renderLinePanel()}
+        ${this.renderThronePanel()} ${this.renderRoomsPanel()}
         ${this.renderPiracyPanel()}
         <div class="mt-4 flex justify-between gap-2.5 shrink-0">
           <o-button
@@ -136,7 +149,7 @@ export class WinModal extends LitElement implements Controller {
               : translateText("win_modal.spectate")}
             @click=${this.hide}
           ></o-button>
-          ${this.nextLobbyID !== null && !this.onThroneRound()
+          ${this.nextLobbyID !== null && currentThrone() === undefined
             ? html`<o-button
                 variant="primary"
                 width="block"
@@ -152,7 +165,8 @@ export class WinModal extends LitElement implements Controller {
   }
 
   // Piracy (docs/DarkStar-Piracy.md, PR1): a challenger eliminated while the
-  // round goes on may embrace it, any number of times; the Hegemon never
+  // round goes on may embrace it, any number of times, and so may a player
+  // who never spawned, a drop-in among them (Lobbies L36); the Hegemon never
   // (its fall ends the round), and nobody once the round has a result.
   private canEmbrace(): boolean {
     const me = this.game?.myPlayer();
@@ -164,7 +178,6 @@ export class WinModal extends LitElement implements Controller {
       me !== undefined &&
       !me.isAlive() &&
       !me.isPirate() &&
-      me.hasSpawned() &&
       me.type() === PlayerType.Human &&
       !me.isHegemon()
     );
@@ -177,14 +190,25 @@ export class WinModal extends LitElement implements Controller {
 
   private renderPiracyPanel() {
     if (!this.canEmbrace()) return nothing;
+    const me = this.game.myPlayer()!;
+    const readyAt = pirateReadyAt(this.game, me);
+    const wait =
+      readyAt === null ? 0 : Math.ceil((readyAt - this.game.ticks()) / 10);
     return html`
       <div
         class="mt-3 flex flex-col gap-2 rounded-lg border border-red-400/40 bg-black/30 p-3"
         data-piracy-panel
       >
         <p class="text-xs text-white/60">
-          ${translateText("win_modal.embrace_piracy_hint")}
+          ${this.arrived
+            ? translateText("rooms.arrived_hint")
+            : translateText("win_modal.embrace_piracy_hint")}
         </p>
+        ${this.arrived && wait > 0
+          ? html`<p class="text-xs tabular-nums text-white/80" data-pirate-wait>
+              ${translateText("piracy.next_corsair_in", { seconds: wait })}
+            </p>`
+          : nothing}
         <o-button
           variant="primary"
           width="block"
@@ -196,73 +220,58 @@ export class WinModal extends LitElement implements Controller {
     `;
   }
 
-  // A non-winner's successor on a public throne: the line panel, not a Join.
-  private onThroneRound(): boolean {
-    return (
-      this.nextLobbyID !== null &&
-      this.throne === null &&
-      currentThrone() !== undefined
-    );
-  }
-
-  // Why the line panel is on screen: "successor" after the round, stay with
-  // this throne or join the head; "fallen" while it still runs and we are
-  // out of it, the head alone. Nothing for the winner, a private lobby, or
-  // a game that runs for no throne.
-  private linePanelMode(): "successor" | "fallen" | null {
-    if (this.onThroneRound()) return "successor";
-    if (
-      this.hasShownDeathModal &&
-      this.nextLobbyID === null &&
-      this.throne === null &&
-      currentThrone() !== undefined
-    ) {
-      return "fallen";
-    }
+  // Why the rooms panel is on screen (§14): "round_end" once a room's round
+  // is over and its next lobby is open, stay, another room or leave (L47);
+  // "fallen" while it still runs and we are out of it, dead or arrived as a
+  // pirate (L46, L36): another room. Nothing for the winner (their own
+  // panel), a private lobby, or a game that runs for no room.
+  private roomsPanelMode(): "round_end" | "fallen" | null {
+    if (currentThrone() === undefined || this.throne !== null) return null;
+    if (this.nextLobbyID !== null) return "round_end";
+    if (this.hasShownDeathModal && !this.roundOver) return "fallen";
     return null;
   }
 
   async show() {
     this.isVisible = true;
-    this.syncLineFeed();
+    this.syncRoomFeed();
     this.requestUpdate();
   }
 
   hide() {
     this.isVisible = false;
-    if (this.windowTimer !== null) {
-      window.clearInterval(this.windowTimer);
-      this.windowTimer = null;
-    }
-    this.syncLineFeed();
+    this.syncRoomFeed();
     this.requestUpdate();
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
     this.isVisible = false;
-    this.syncLineFeed();
+    this.stopWindowTimer();
+    this.syncRoomFeed();
   }
 
-  // The public-list feed runs exactly while the line panel is on screen.
-  private syncLineFeed() {
-    const wanted = this.isVisible && this.linePanelMode() !== null;
-    if (wanted && this.lineSocket === null) {
-      this.lineSocket = new PublicLobbySocket((lobbies) => {
-        this.line = lobbies.games ?? {};
-        if (findLobby(this.line, this.nextLobbyID) !== undefined) {
-          this.lineSeenOwn = true;
-        }
+  // The public-list feed runs exactly while the rooms panel is on screen.
+  private syncRoomFeed() {
+    const wanted = this.isVisible && this.roomsPanelMode() !== null;
+    if (wanted && this.roomSocket === null) {
+      this.roomSocket = new PublicLobbySocket((lobbies) => {
+        this.roomList = lobbies.games ?? {};
       });
-      void this.lineSocket.start();
-    } else if (!wanted && this.lineSocket !== null) {
-      this.lineSocket.stop();
-      this.lineSocket = null;
+      void this.roomSocket.start();
+    } else if (!wanted && this.roomSocket !== null) {
+      this.roomSocket.stop();
+      this.roomSocket = null;
     }
   }
 
   private _handleExit() {
     this.hide();
+    this.goHome();
+  }
+
+  private goHome() {
+    this.stopWindowTimer();
     window.location.href = homeHref();
   }
 
@@ -270,20 +279,32 @@ export class WinModal extends LitElement implements Controller {
     this.eventBus.on(NewLobbyEvent, (e) => this.onNewLobby(e));
   }
 
-  // --- Under a Dark Star: the Next-round panel ---
+  // --- Under a Dark Star: the next round ---
 
   private onNewLobby(event: NewLobbyEvent) {
     if (event.reservationUntil === undefined || !this.wonRound) {
       // Not the winner's reserved seat. The host asked for this lobby, so
       // send them straight back to the host view (the ?host flag routes them
-      // there instead of the join flow on reload); everyone else gets a Join
-      // button on this screen, reopened if they had dismissed it to spectate.
+      // there instead of the join flow on reload).
       if (this.game?.myPlayer()?.isLobbyCreator()) {
         window.location.href = `${this.lobbyUrl(event.gameID)}?host`;
         return;
       }
+      // A watcher held for the next round asked to play (L48): placed in its
+      // lobby, no question asked.
+      if (currentThrone() !== undefined && isHeldForNextRound()) {
+        this.goTo(event.gameID);
+        return;
+      }
+      // Everyone else gets the choice on this screen, reopened if they had
+      // dismissed it to spectate. On a room it must be made within the
+      // winner's window, or they are sent home (L47).
       this.nextLobbyID = event.gameID;
-      this.lineSeenOwn = false;
+      if (currentThrone() !== undefined) {
+        this.endDeadline =
+          event.reservationUntil ?? Date.now() + ROUND_END_ANSWER_MS;
+        this.startWindowTimer();
+      }
       this.show();
       return;
     }
@@ -296,13 +317,34 @@ export class WinModal extends LitElement implements Controller {
     this.pickedModifiers = [];
     this.pickedTeams = undefined;
     this.pickSent = false;
-    this.windowTimer ??= window.setInterval(() => {
-      this.windowTick++;
-    }, 250);
+    this.startWindowTimer();
     this.show();
   }
 
   private wonRound = false;
+
+  private startWindowTimer() {
+    this.windowTimer ??= window.setInterval(() => this.onWindowTick(), 250);
+  }
+
+  private stopWindowTimer() {
+    if (this.windowTimer !== null) {
+      window.clearInterval(this.windowTimer);
+      this.windowTimer = null;
+    }
+  }
+
+  // Repaint the bars; a window that ran out unanswered sends the player
+  // home (L47), the winner included.
+  private onWindowTick() {
+    this.windowTick++;
+    const now = Date.now();
+    if (this.throne !== null && !this.pickSent && now > this.throne.until) {
+      this.goHome();
+    } else if (this.endDeadline !== null && now > this.endDeadline) {
+      this.goHome();
+    }
+  }
 
   private windowRemainingMs(): number {
     if (this.throne === null) return 0;
@@ -329,92 +371,98 @@ export class WinModal extends LitElement implements Controller {
     );
     // Give the socket a moment to flush the pick before the page unloads.
     const id = this.throne.gameID;
-    window.setTimeout(() => {
-      window.location.href = this.lobbyUrl(id);
-    }, 300);
+    window.setTimeout(() => this.goTo(id), 300);
   }
 
   private joinNext() {
     const id = this.throne?.gameID ?? this.nextLobbyID;
     if (id === null) return;
-    window.location.href = this.lobbyUrl(id);
+    this.goTo(id);
   }
 
-  // The non-winner's line panel (L27). "Stay" is the successor lobby of the
-  // throne this round ran on, with its place in line as the list reports it;
-  // "Join the head" is the next throne of the same type to launch, when that
-  // is another throne. A successor that vanished from the list after being
-  // seen was retired (L20): only the head is offered. Eliminated mid-round
-  // (L31) there is no successor to stay with, so the head is offered alone
-  // and the hint says the round goes on; our own throne is running, so it is
-  // never the head.
-  private renderLinePanel() {
-    const mode = this.linePanelMode();
+  // To a room's lobby or round. From a room's round the lobby opens behind
+  // the transition between rounds (L41).
+  private goTo(gameID: string) {
+    this.stopWindowTimer();
+    if (currentThrone() !== undefined) requestRoundTransition();
+    window.location.href = this.lobbyUrl(gameID);
+  }
+
+  // The rooms panel (L46, L47). At the round's end: Stay is the room's next
+  // lobby, the server announced; the other rooms follow in the steering
+  // order, each joining its lobby or dropping into its round; the bar counts
+  // down the time left to choose. Mid-round: the other rooms alone, beside
+  // Embrace piracy, Spectate and Exit.
+  private renderRoomsPanel() {
+    const mode = this.roomsPanelMode();
     if (mode === null) return nothing;
-    const fallen = mode === "fallen";
+    void this.windowTick;
     const throne = currentThrone()!;
-    const own = findLobby(this.line, this.nextLobbyID);
-    const retired = !fallen && this.lineSeenOwn && own === undefined;
-    const head = lineHead(this.line, throne.type);
-    const headIsOwn = head !== undefined && head.gameID === this.nextLobbyID;
-    const place = placeLabel(own?.throne?.place);
-    const hint = fallen
-      ? head === undefined
-        ? translateText("throne.line_fallen_empty")
-        : translateText("throne.line_fallen")
-      : retired
-        ? translateText("throne.line_retired")
-        : headIsOwn
-          ? translateText("throne.line_is_head")
-          : translateText("throne.line_hint");
+    const others = otherRooms(this.roomList, throne.throneID);
+    const remaining =
+      this.endDeadline === null
+        ? null
+        : Math.max(0, Math.ceil((this.endDeadline - Date.now()) / 1000));
     return html`
       <div
         class="flex flex-col gap-3 rounded-lg border border-purple-400/40 bg-black/30 p-3"
-        data-line-panel
-        data-line-mode=${mode}
+        data-rooms-panel
+        data-rooms-mode=${mode}
       >
-        <span class="font-bold tracking-wide text-purple-300">
-          ${translateText("throne.line_title")}
-        </span>
-        <p class="text-xs text-white/60">${hint}</p>
-        <div class="flex flex-col gap-2.5 sm:flex-row">
-          ${retired || fallen
-            ? nothing
-            : html`<div class="flex flex-1 flex-col gap-1" data-line-stay>
-                <o-button
-                  variant="primary"
-                  width="block"
-                  .title=${translateText("throne.line_stay", {
-                    name: throne.name,
-                  })}
-                  @click=${() => this.joinNext()}
-                ></o-button>
-                ${place !== undefined
-                  ? html`<span
-                      class="text-center text-xs tabular-nums text-white/70"
-                      data-line-place
-                      >${place}</span
-                    >`
-                  : nothing}
-              </div>`}
-          ${head !== undefined && !headIsOwn
-            ? html`<div class="flex flex-1 flex-col gap-1" data-line-head>
-                <o-button
-                  variant=${retired || fallen ? "primary" : "ghost"}
-                  width="block"
-                  .title=${translateText("throne.line_head", {
-                    name: head.throne?.name ?? "",
-                  })}
-                  @click=${() => {
-                    window.location.href = this.lobbyUrl(head.gameID);
-                  }}
-                ></o-button>
-                <span class="text-center text-xs tabular-nums text-white/70"
-                  >${placeLabel(1)}</span
-                >
-              </div>`
+        <div class="flex items-center justify-between gap-3">
+          <span class="font-bold tracking-wide text-purple-300">
+            ${mode === "round_end"
+              ? translateText("rooms.next_title")
+              : translateText("rooms.other_title")}
+          </span>
+          ${remaining !== null
+            ? html`<span
+                class="text-sm tabular-nums text-white/80"
+                data-rooms-deadline
+                >${translateText("throne.window_seconds", {
+                  seconds: String(remaining),
+                })}</span
+              >`
             : nothing}
         </div>
+        <p class="text-xs text-white/60">
+          ${mode === "round_end"
+            ? translateText("rooms.end_hint")
+            : others.length === 0
+              ? translateText("rooms.fallen_hint_alone")
+              : translateText("rooms.fallen_hint")}
+        </p>
+        ${mode === "round_end"
+          ? html`<o-button
+              variant="primary"
+              width="block"
+              data-rooms-stay
+              .title=${translateText("rooms.stay", { name: throne.name })}
+              @click=${() => this.joinNext()}
+            ></o-button>`
+          : nothing}
+        ${others.length > 0
+          ? html`<div class="flex flex-col gap-1.5" data-rooms-others>
+              ${others.map(
+                (lobby) =>
+                  html`<button
+                    type="button"
+                    class="flex items-center justify-between gap-3 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-left text-sm text-white hover:bg-white/15"
+                    data-room=${lobby.gameID}
+                    @click=${() => this.goTo(lobby.gameID)}
+                  >
+                    <span class="font-bold"
+                      >${translateText("rooms.go_to", {
+                        name: lobby.throne?.name ?? "",
+                      })}</span
+                    >
+                    <span class="text-xs uppercase tracking-wider text-white/60"
+                      >${translateText(`rooms.state_${roomState(lobby)}`)}</span
+                    >
+                  </button>`,
+              )}
+            </div>`
+          : nothing}
       </div>
     `;
   }
@@ -536,14 +584,8 @@ export class WinModal extends LitElement implements Controller {
         </div>
         ${expired
           ? html`<p class="text-sm text-white/80">
-                ${translateText("throne.window_passed")}
-              </p>
-              <o-button
-                variant="primary"
-                width="block"
-                .title=${translateText("throne.join_next")}
-                @click=${() => this.joinNext()}
-              ></o-button>`
+              ${translateText("throne.window_passed")}
+            </p>`
           : html`<p class="text-xs text-white/60">
                 ${translateText("throne.pick_hint")}
               </p>
@@ -597,10 +639,26 @@ export class WinModal extends LitElement implements Controller {
       myPlayer.hasSpawned()
     ) {
       this.hasShownDeathModal = true;
+      this.arrived = false;
       this._title = translateText("win_modal.died");
       this.eventBus.emit(new PlaySoundEffectEvent("defeat"));
-      // On a throne round this opens the head-only line panel (L31), and
-      // its feed with it.
+      // On a room's round this opens the rooms panel (L46), and its feed.
+      this.show();
+    } else if (
+      !this.hasShownDeathModal &&
+      !this.roundOver &&
+      myPlayer &&
+      !myPlayer.hasSpawned() &&
+      !myPlayer.isPirate() &&
+      !this.game.inSpawnPhase() &&
+      !this.game.inOpening() &&
+      this.game.config().piracyConfig().enabled
+    ) {
+      // Arrived after the spawn phase, or never picked a spawn: a pirate
+      // from 30 s into play (L36).
+      this.hasShownDeathModal = true;
+      this.arrived = true;
+      this._title = translateText("rooms.arrived_title");
       this.show();
     }
     const updates = this.game.updatesSinceLastTick();
@@ -654,7 +712,21 @@ export class WinModal extends LitElement implements Controller {
           );
         }
         const me = this.game.myPlayer();
-        if (winnerClient !== null && winnerClient === me?.clientID()) {
+        if (
+          currentThrone() !== undefined &&
+          winnerClient !== null &&
+          this.game.joinedAfterStart(winnerClient)
+        ) {
+          // A drop-in landed the killing blow (L44): the round is void,
+          // nobody is credited, and the seat opens for the next round.
+          this._title =
+            winnerClient === me?.clientID()
+              ? translateText("rooms.void_you")
+              : translateText("rooms.void_other", {
+                  player: winner.displayName(),
+                });
+          this.isWin = false;
+        } else if (winnerClient !== null && winnerClient === me?.clientID()) {
           // Under a Dark Star: the throne's next round is mine to shape
           // (onNewLobby opens the Next-round panel instead of a Join button).
           this.wonRound = true;

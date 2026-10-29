@@ -32,6 +32,7 @@ import { showInGameAlert } from "./InGameModal";
 import { JoinLobbyModal } from "./JoinLobbyModal";
 import { PublicLobbySocket } from "./LobbySocket";
 import { JoinLobbyEvent } from "./Main";
+import { roomIsFull, rooms, steeringOrder, steerTarget } from "./Rooms";
 import {
   backendUnreachableConfirmed,
   isPinnedToAVersion,
@@ -459,25 +460,22 @@ export class GameModeSelector extends LitElement {
   /**
    * The lobbies the three homepage cards show, hero first.
    *
-   * Under a Dark Star: thrones replace the per-type queues, and each card is
-   * the head of one line (L25, L29): the FFA throne closest to starting is
-   * the hero, with the team and special heads beside it. The master lists
-   * each line head first. Rounds in progress are not joinable from here
-   * (Watch lives in the lobby browser). A line with no throne has no card,
-   * so until the team line exists (T5) the special card takes the column.
-   * The ffa/team/special queue lookups stay for the queue fallback.
+   * Under a Dark Star: one card per room (docs/DarkStar-Lobbies.md §14.7): the
+   * FFA room is the hero, the team room beside it, a round in progress
+   * included (its card drops the player in, L36). With more than one room of
+   * a type, the card is the one the steering order puts first (L38); the
+   * rest are in the lobby browser. A type with no room has no card. The
+   * ffa/team/special queue lookups stay for the queue fallback.
    */
   private cardLobbies(): {
     hero: PublicGameInfo | undefined;
     teams: PublicGameInfo | undefined;
     special: PublicGameInfo | undefined;
   } {
-    const thrones = (this.lobbies?.games?.["throne"] ?? []).filter(
-      (lobby) => lobby.throne?.running !== true,
-    );
+    const games = this.lobbies?.games;
+    const ordered = [...steeringOrder(games), ...rooms(games)];
     const head = (type: ScheduledLobbyPane) =>
-      this.lobbies?.games?.[type]?.[0] ??
-      thrones.find((lobby) => lobbyPane(lobby) === type);
+      games?.[type]?.[0] ?? ordered.find((lobby) => lobbyPane(lobby) === type);
     return {
       hero: head("ffa"),
       teams: head("team"),
@@ -486,15 +484,19 @@ export class GameModeSelector extends LitElement {
   }
 
   /**
-   * Join the throne the hero card shows, exactly as clicking that card would
-   * (name check and trust gate included). The nav bar's Play item calls this
-   * (2026-10-08): a second way into the top game. False when no joinable
-   * throne is on screen yet, in which case nothing happens.
+   * The steering button (L38): the nav bar's Play item joins the room the
+   * steering order puts first, whatever its mode: about to launch, then the
+   * round running longest, then a lobby with players, then an empty one.
+   * Full rooms are never steered into (L33). The queue fallback joins the
+   * hero card. False when nothing joinable is on screen, in which case
+   * nothing happens.
    */
   public joinHeroLobby(): boolean {
-    const { hero } = this.cardLobbies();
-    if (hero === undefined) return false;
-    this.validateAndJoin(hero);
+    const games = this.lobbies?.games;
+    const target =
+      rooms(games).length > 0 ? steerTarget(games) : this.cardLobbies().hero;
+    if (target === undefined) return false;
+    this.validateAndJoin(target);
     return true;
   }
 
@@ -773,7 +775,14 @@ export class GameModeSelector extends LitElement {
 
     let timeDisplay: string;
     let timeDisplayUppercase = false;
-    if (timeRemaining === undefined && lobby.throne !== undefined) {
+    if (lobby.throne?.running === true) {
+      // A room's round in progress: joining drops in (L36), or watches a
+      // full room (L33).
+      timeDisplay = roomIsFull(lobby)
+        ? translateText("rooms.full_watch")
+        : translateText("rooms.in_progress");
+      timeDisplayUppercase = true;
+    } else if (timeRemaining === undefined && lobby.throne !== undefined) {
       // A throne lobby has no countdown until enough players are in (L9).
       timeDisplay = translateText("public_lobby.waiting_for_players");
       timeDisplayUppercase = true;
@@ -818,6 +827,11 @@ export class GameModeSelector extends LitElement {
           gameID: lobby.gameID,
           source: "public",
           publicLobbyInfo: lobby,
+          // A full room's round can only be watched (L33).
+          spectator:
+            lobby.throne?.running === true && roomIsFull(lobby)
+              ? true
+              : undefined,
         } as JoinLobbyEvent,
         bubbles: true,
         composed: true,
@@ -887,6 +901,14 @@ export class GameModeSelector extends LitElement {
             : translateText("public_lobby.teams_hvn");
         }
         default:
+          // A room's teams are a count that latecomers balance (L37): no
+          // size worked out from the cap.
+          if (
+            typeof config.playerTeams === "number" &&
+            lobby.throne !== undefined
+          ) {
+            return formatTeamsOf(config.playerTeams, undefined);
+          }
           if (typeof config.playerTeams === "number") {
             const teamCount = config.playerTeams;
             const playersPerTeam =

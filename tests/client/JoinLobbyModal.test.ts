@@ -115,10 +115,11 @@ describe("JoinLobbyModal spectate link", () => {
   });
 });
 
-// Under a Dark Star (docs/DarkStar-Lobbies.md L16-L19, §10.7): the lobby reads
-// its throne's place in line off the public list its own feed carries, since
-// the lobby info from the worker has no place.
-describe("JoinLobbyModal throne place in line", () => {
+// Under a Dark Star (docs/DarkStar-Lobbies.md §14.8): alone in a room's
+// lobby, a newcomer is told a round starts once a second player arrives and
+// is offered Solo meanwhile. Not in a private lobby, not to a watcher, not
+// once a second player is in or the countdown runs.
+describe("JoinLobbyModal lone player's hint", () => {
   const vega = {
     throneID: "throne-vega",
     name: "Vega",
@@ -126,58 +127,42 @@ describe("JoinLobbyModal throne place in line", () => {
     reign: 0,
     seat: "open" as const,
   };
-
-  it("is unknown before the list arrives, or off a throne", () => {
+  const hint = (modal: JoinLobbyModal, seconds: number | null, players = 1) =>
+    (modal as any).renderLoneHint(seconds, players);
+  const roomLobby = () => {
     const modal = new JoinLobbyModal();
-    (modal as any).currentLobbyId = "g1";
-    expect((modal as any).thronePlace()).toBeUndefined();
     (modal as any).throne = vega;
-    expect((modal as any).thronePlace()).toBeUndefined();
-    (modal as any).throne = null;
-    (modal as any).publicGames = {
-      throne: [
-        {
-          gameID: "g1",
-          numClients: 1,
-          publicGameType: "throne",
-          throne: { ...vega, place: 2 },
-        },
-      ],
-    };
-    expect((modal as any).thronePlace()).toBeUndefined();
+    (modal as any).isConnecting = false;
+    (modal as any).gameConfig = { gameType: "Public" };
+    return modal;
+  };
+
+  it("shows alone in a room's lobby with no countdown", () => {
+    const result = hint(roomLobby(), null);
+    expect(result.strings?.join("")).toContain("data-lone-hint");
   });
 
-  it("follows the list's place for this lobby", () => {
-    const modal = new JoinLobbyModal();
-    (modal as any).currentLobbyId = "g1";
-    (modal as any).throne = vega;
-    (modal as any).publicGames = {
-      throne: [
-        {
-          gameID: "g0",
-          numClients: 1,
-          publicGameType: "throne",
-          throne: { ...vega, name: "Altair", place: 1 },
-        },
-        {
-          gameID: "g1",
-          numClients: 1,
-          publicGameType: "throne",
-          throne: { ...vega, place: 3 },
-        },
-      ],
-    };
-    expect((modal as any).thronePlace()).toBe(3);
-    (modal as any).publicGames = {
-      throne: [
-        {
-          gameID: "g1",
-          numClients: 1,
-          publicGameType: "throne",
-          throne: { ...vega, place: 1 },
-        },
-      ],
-    };
-    expect((modal as any).thronePlace()).toBe(1);
+  it("stays away with company, a countdown, off a room, or in private", () => {
+    const nothingTemplate = hint(new JoinLobbyModal(), null);
+    expect(hint(roomLobby(), null, 2)).toBe(nothingTemplate);
+    expect(hint(roomLobby(), 40)).toBe(nothingTemplate);
+    const priv = roomLobby();
+    (priv as any).gameConfig = { gameType: "Private" };
+    expect(hint(priv, null)).toBe(nothingTemplate);
+  });
+
+  it("leaves the lobby and opens Solo", () => {
+    const modal = roomLobby();
+    const leave = vi
+      .spyOn(modal, "closeAndLeave")
+      .mockImplementation(() => undefined);
+    const open = vi.fn();
+    const solo = document.createElement("single-player-modal") as any;
+    solo.open = open;
+    document.body.append(solo);
+    (modal as any).playSoloInstead();
+    expect(leave).toHaveBeenCalledTimes(1);
+    expect(open).toHaveBeenCalledTimes(1);
+    solo.remove();
   });
 });
