@@ -830,6 +830,20 @@ persistence was OpenFront's closed-source API, which we do not have.
   `HegemonSim` look: overthrown in 3 of 3 seeds, all by gate (16m28s, 18m23s, 18m35s; first
   landings at 12 to 15 minutes). `src/scripts/drawings/TripToTheMoon.ts`. Tom kept the land as
   it is (same day).
+- **All Seeing Eye** (`map-generator/assets/maps/allseeingeye/`, 1800×1800, ~666k land tiles, 20
+  Lords) [Built 2026-10-29] from Tom's brief and a stock engraving of the Eye of Providence (not in
+  the repo; the motif itself is old and free): the eye in a triangle of light over an unfinished
+  pyramid. The Dark Star is the eye's pupil (radius 80: in the engraving's proportions the eye
+  could not hold one, so the capstone is drawn larger and squatter and the eye wide open). The
+  capstone is an outline (mountain and highland) with the eye inside (mountain lids, plains white,
+  a streaked iris round the moat) and a brow over it, deep space between; the eye's corners meet
+  the outline, so it is one piece. Twenty-five dashed rays of glory fan over the top as chains of
+  small islands. The pyramid is fifteen staggered courses of 90×37 bricks with 18 tiles of deep
+  space as mortar (Tom), cut by its sloping sides, long stones in the bottom course, stipple
+  thicker on the shaded left. Lords are picked farthest-first on whole bricks beyond 500 tiles,
+  as on Periodic. First `HegemonSim` look: overthrown in 3 of 3 seeds, all by gate (14m42s,
+  15m37s, 16m27s); at exclusion 600 no better (12m40s, 15m41s, 16m55s), so 500 stands.
+  `src/scripts/drawings/AllSeeingEye.ts`.
 - **Gap:** terrain colours are global, not per-map. Map thumbnails follow the global terrain
   defaults: `scripts/generateMapThumbnails.ts` redraws them after the Go generator, whose own
   `getThumbnailColor` colours are overwritten (2026-10-17).
@@ -2313,6 +2327,7 @@ hydrogen-bomb removal (closed by S6).
 
 ## 11. Changelog
 
+- **2026-10-29, map** — **All Seeing Eye** (§5.3), the Eye of Providence over a pyramid: the Dark Star as the pupil, the pyramid's bricks islands with deep space for mortar, 20 Lords.
 - **2026-10-29, map** — **Trip to the Moon** (§5.3), from the frame of Méliès's 1902 film: the Man in the Moon, the Dark Star in the eye the shell strikes, 21 Lords on the far limb.
 
 - **2026-10-29, quick fixes** — Tom: (1) reinforcements and gold for the Hegemon land only on the Dark Star, never on an invasion pocket (GN2, `TransferFlight.route`); (2) the round-end screen of a room drops Keep Playing / Spectate, since the room resets; (3) stargate range doubled, **360** at level 1, **+150** per level (`STARGATE_DEFAULTS`); (4) the handshake's Donate troops and Reinforce are sized by the troop slider at the click, as an attack is, not when the menu opened.

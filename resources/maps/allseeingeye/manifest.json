@@ -1,0 +1,130 @@
+{
+  "categories": ["cosmic"],
+  "hegemon": {
+    "center": [900, 675],
+    "moat": 18,
+    "radius": 81
+  },
+  "id": "AllSeeingEye",
+  "map": {
+    "height": 1800,
+    "num_land_tiles": 666326,
+    "width": 1800
+  },
+  "map16x": {
+    "height": 450,
+    "num_land_tiles": 36380,
+    "width": 450
+  },
+  "map4x": {
+    "height": 900,
+    "num_land_tiles": 160181,
+    "width": 900
+  },
+  "multiplayer_frequency": 4,
+  "name": "All Seeing Eye",
+  "nations": [
+    {
+      "coordinates": [1323, 1208],
+      "flag": "",
+      "name": "Mizar Authority"
+    },
+    {
+      "coordinates": [1431, 1429],
+      "flag": "",
+      "name": "Argent Hive"
+    },
+    {
+      "coordinates": [1539, 1649],
+      "flag": "",
+      "name": "Beardenian Tribal Council"
+    },
+    {
+      "coordinates": [1269, 1374],
+      "flag": "",
+      "name": "Algol Order"
+    },
+    {
+      "coordinates": [1215, 1539],
+      "flag": "",
+      "name": "Finks Federation"
+    },
+    {
+      "coordinates": [1107, 1318],
+      "flag": "",
+      "name": "Alcyone Sovereignty"
+    },
+    {
+      "coordinates": [1053, 1153],
+      "flag": "",
+      "name": "Mira Covenant"
+    },
+    {
+      "coordinates": [999, 1539],
+      "flag": "",
+      "name": "Bohlandian Autocracy"
+    },
+    {
+      "coordinates": [945, 1374],
+      "flag": "",
+      "name": "Rigel Commonwealth"
+    },
+    {
+      "coordinates": [891, 1704],
+      "flag": "",
+      "name": "Menkar Union"
+    },
+    {
+      "coordinates": [891, 1208],
+      "flag": "",
+      "name": "Antares Combine"
+    },
+    {
+      "coordinates": [783, 1429],
+      "flag": "",
+      "name": "Naos Dominion"
+    },
+    {
+      "coordinates": [729, 1594],
+      "flag": "",
+      "name": "Mortonian Order"
+    },
+    {
+      "coordinates": [567, 1649],
+      "flag": "",
+      "name": "Sirius Protectorate"
+    },
+    {
+      "coordinates": [729, 1153],
+      "flag": "",
+      "name": "Deneb Protectorate"
+    },
+    {
+      "coordinates": [621, 1374],
+      "flag": "",
+      "name": "Arbiten Harmony"
+    },
+    {
+      "coordinates": [351, 1539],
+      "flag": "",
+      "name": "Cygnus Ascendancy"
+    },
+    {
+      "coordinates": [243, 1704],
+      "flag": "",
+      "name": "Orion Reach"
+    },
+    {
+      "coordinates": [459, 1318],
+      "flag": "",
+      "name": "Rotertian Assembly"
+    },
+    {
+      "coordinates": [567, 1098],
+      "flag": "",
+      "name": "Adlerean Alliance"
+    }
+  ],
+  "themes": ["space"],
+  "translation_key": "map.allseeingeye"
+}

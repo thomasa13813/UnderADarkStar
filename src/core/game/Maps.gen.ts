@@ -3,6 +3,7 @@
 // Regenerate with `npm run gen-maps`.
 
 export enum GameMapType {
+  AllSeeingEye = "All Seeing Eye", // map-generator/assets/maps/allseeingeye/info.json
   BranchingPaths = "Branching Paths", // map-generator/assets/maps/branchingpaths/info.json
   Bullseye = "Bullseye", // map-generator/assets/maps/bullseye/info.json
   ChoppingBlock = "Chopping Block", // map-generator/assets/maps/choppingblock/info.json
@@ -137,6 +138,18 @@ export interface MapLayer {
 }
 
 export const maps: readonly MapInfo[] = [
+  {
+    id: "AllSeeingEye",
+    type: GameMapType.AllSeeingEye,
+    translationKey: "map.allseeingeye",
+    categories: ["cosmic"],
+    multiplayerFrequency: 4,
+    ffaFrequency: -1,
+    teamFrequency: -1,
+    specialFrequency: -1,
+    defaultNationCount: 20,
+    themes: ["space"],
+  },
   {
     id: "BranchingPaths",
     type: GameMapType.BranchingPaths,
