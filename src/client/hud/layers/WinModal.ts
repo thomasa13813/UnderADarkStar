@@ -140,15 +140,19 @@ export class WinModal extends LitElement implements Controller {
             translationKey="win_modal.exit"
             @click=${this._handleExit}
           ></o-button>
-          <o-button
-            variant="primary"
-            width="block"
-            class="flex-1"
-            .title=${this.game?.myPlayer()?.isAlive()
-              ? translateText("win_modal.keep")
-              : translateText("win_modal.spectate")}
-            @click=${this.hide}
-          ></o-button>
+          ${this.roundOver && currentThrone() !== undefined
+            ? // A room resets at the round's end: there is nothing to keep
+              // playing or watching (Tom, 2026-10-29).
+              nothing
+            : html`<o-button
+                variant="primary"
+                width="block"
+                class="flex-1"
+                .title=${this.game?.myPlayer()?.isAlive()
+                  ? translateText("win_modal.keep")
+                  : translateText("win_modal.spectate")}
+                @click=${this.hide}
+              ></o-button>`}
           ${this.nextLobbyID !== null && currentThrone() === undefined
             ? html`<o-button
                 variant="primary"

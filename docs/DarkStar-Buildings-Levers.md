@@ -16,7 +16,7 @@ All in `src/core/configuration/Config.ts` unless stated.
 | --------------------------------------------------- | ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | Population Center, Industrial Zone, Spaceport price | `unitInfo` (`City`, `Factory`, `Port`)                                              | `min(1M, 125k × 2^n)`; Port and Factory share `n`                                                                                 |
 | Defense Post price                                  | `unitInfo` (`DefensePost`)                                                          | `min(250k, 50k × (n+1))`                                                                                                          |
-| Stargate                                            | `STARGATE_DEFAULTS`                                                                 | 500k, 10 s, range 180 +75/level, reload 5 s                                                                                       |
+| Stargate                                            | `STARGATE_DEFAULTS`                                                                 | 500k, 10 s, range 360 +150/level, reload 5 s                                                                                      |
 | Shield Array                                        | `SHIELD_ARRAY_DEFAULTS`                                                             | `costGoldByCount` 1M / 2.5M / 5M by levels owned; 10 s; `radiusPerLevel` 25 × level, `maxLevel` 5 (125); free-standing            |
 | Build times                                         | `unitInfo`                                                                          | City / Factory 20 ticks; Port / DefensePost 50; Stargate / ShieldArray 100                                                        |
 | Price count                                         | `costWrapper`                                                                       | `Σ min(unitsOwned, unitsConstructed)`; levels count; gift = `costFn(0)`                                                           |
@@ -98,6 +98,8 @@ Notes for Tom, not decisions.
 
 ## 3. Changelog
 
+- **2026-10-29** — Stargate range doubled (Tom): `STARGATE_DEFAULTS.rangeBase` 180 → 360,
+  `rangePerLevel` 75 → 150 (360, 510, 660 …). The wiki reads both from the config.
 - **2026-10-27, later** — Shield Arrays upgradable (Tom): `unitInfo` sets `upgradable` and
   `maxLevel` 5 (`canUpgradeUnit` refuses past it, bulk orders stop there). Radius
   `radiusPerLevel` × level, 25 → 125 (`Config.shieldArrayRadius(level)`; `missileShieldsNear`

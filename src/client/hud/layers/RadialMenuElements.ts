@@ -939,12 +939,23 @@ export function reinforceThroneElement(params: MenuElementParams): MenuElement {
     disabled: (p: MenuElementParams) =>
       p.game.inSpawnPhase() || !canDonate || troops < 1,
     action: (p: MenuElementParams) => {
-      if (throne !== null && troops >= 1) {
-        p.playerActionHandler.handleDonateTroops(throne, troops);
+      // Sized at the click, like an attack: the slider and pool as they are now.
+      const now = p.selected;
+      if (now !== null) {
+        const sent = Math.min(
+          Math.max(0, p.game.config().maxTroops(now) - now.troops()),
+          sliderTroops(p),
+        );
+        if (sent >= 1) p.playerActionHandler.handleDonateTroops(now, sent);
       }
       p.closeMenu();
     },
   };
+}
+
+// The troop slider's share of the player's troops at this moment.
+function sliderTroops(p: MenuElementParams): number {
+  return Math.floor((p.uiState?.attackRatio ?? 1) * p.myPlayer.troops());
 }
 
 // Why a transfer to the selected player is refused, for the greyed item's
@@ -1008,8 +1019,10 @@ function donateTroopsElement(params: MenuElementParams): MenuElement {
     disabled: (p: MenuElementParams) =>
       p.game.inSpawnPhase() || reason !== null || troops < 1,
     action: (p: MenuElementParams) => {
-      if (p.selected !== null && troops >= 1) {
-        p.playerActionHandler.handleDonateTroops(p.selected, troops);
+      // Sized at the click, like an attack: the slider as it is now.
+      const sent = sliderTroops(p);
+      if (p.selected !== null && sent >= 1) {
+        p.playerActionHandler.handleDonateTroops(p.selected, sent);
       }
       p.closeMenu();
     },

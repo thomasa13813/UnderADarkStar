@@ -21,7 +21,7 @@ import { executeTicks } from "./util/utils";
 // Stargates (C4 in docs/DarkStar-Design.md, §6.8 stage 3).
 //
 // big_plains is 200×200: the Dark Star's radius is 18 and the moat 15, so
-// with the real range (180 at level 1) a gate anywhere reaches everything.
+// with the real range (360 at level 1) a gate anywhere reaches everything.
 // ShortRange shrinks it so range can be tested at all.
 class ShortRange extends TestConfig {
   stargateConfig() {
@@ -157,11 +157,11 @@ describe("Building a stargate", () => {
   test("upgrades buy range at the same flat price, with no level cap", () => {
     const gate = buildGate(east, tileOf(east, 5));
     const config = game.config();
-    expect(config.stargateRange(1)).toBe(180);
-    expect(config.stargateRange(2)).toBe(255);
-    expect(config.stargateRange(5)).toBe(480);
+    expect(config.stargateRange(1)).toBe(360);
+    expect(config.stargateRange(2)).toBe(510);
+    expect(config.stargateRange(5)).toBe(960);
     expect(config.unitInfo(UnitType.Stargate).maxLevel).toBeUndefined();
-    // Past the old cap of 5, each level still adds 75 for 500k.
+    // Past the old cap of 5, each level still adds 150 for 500k.
     for (let level = 1; level < 8; level++) {
       expect(east.canUpgradeUnit(gate)).toBe(true);
       const gold = east.gold();
@@ -169,7 +169,7 @@ describe("Building a stargate", () => {
       expect(gate.level()).toBe(level + 1);
       expect(east.gold()).toBe(gold - 500_000n);
     }
-    expect(config.stargateRange(gate.level())).toBe(180 + 75 * 7);
+    expect(config.stargateRange(gate.level())).toBe(360 + 150 * 7);
     expect(east.canUpgradeUnit(gate)).toBe(true);
   });
 });

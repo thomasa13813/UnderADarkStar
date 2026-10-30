@@ -22,7 +22,7 @@ import { executeTicks } from "./util/utils";
 // throne fires from the Dark Star itself.
 //
 // big_plains is 200×200: the Dark Star's radius is 18 and the moat 15, so
-// with the real range (180 at level 1) a gate anywhere reaches everything.
+// with the real range (360 at level 1) a gate anywhere reaches everything.
 // ShortRange shrinks it so range can be tested at all.
 class ShortRange extends TestConfig {
   stargateConfig() {

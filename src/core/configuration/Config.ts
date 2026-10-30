@@ -284,13 +284,13 @@ const OVERTIME_DEFAULTS = {
 // fires troops as a projectile at any tile in range. Numbers are F15's
 // starting points (decided 2026-09-24), tunable here.
 export const STARGATE_DEFAULTS = {
-  // Range in tiles at level 1 and what each upgrade adds (range 180 / 255 /
-  // 330 / ...; raised 2026-09-26 from 120 +60, which underperformed in play).
-  // No level cap (2026-09-30, was 5): like a city, a gate upgrades for as
-  // long as the gold lasts. On World, nations spawn a median 75 tiles apart
-  // and ~280 from the moat.
-  rangeBase: 180,
-  rangePerLevel: 75,
+  // Range in tiles at level 1 and what each upgrade adds (range 360 / 510 /
+  // 660 / ...; doubled 2026-10-29 from 180 +75, itself raised 2026-09-26
+  // from 120 +60). No level cap (2026-09-30, was 5): like a city, a gate
+  // upgrades for as long as the gold lasts. On World, nations spawn a median
+  // 75 tiles apart and ~280 from the moat.
+  rangeBase: 360,
+  rangePerLevel: 150,
   // A gate holds one shot; this is the reload after firing, whatever the
   // level (upgrades buy range, not throughput; a silo reloads in 9 s).
   // 5 s since 2026-09-30, was 60.

@@ -111,7 +111,9 @@ export class TransferFlight {
   // centre at the recipient's tile nearest it; anyone else from the gate,
   // and at the tile, of the nearest gate–tile pair (inGateReach has found
   // one within range). The nearest tile of a territory to a point outside
-  // it lies on its border, so the border is enough.
+  // it lies on its border, so the border is enough. Reinforcements for the
+  // throne land only on the Dark Star itself, never on an invasion pocket
+  // the Hegemon holds outside the disc (2026-10-29).
   static route(
     mg: Game,
     sender: Player,
@@ -128,9 +130,16 @@ export class TransferFlight {
         origins.push(gate.tile());
       }
     }
+    const disc = recipient.isHegemon() ? mg.darkStar() : null;
+    if (recipient.isHegemon() && disc === null) return null;
     let best: { from: TileRef; target: TileRef } | null = null;
     let bestDist = Infinity;
     for (const tile of recipient.borderTiles()) {
+      if (disc !== null) {
+        const dx = mg.x(tile) - disc.cx;
+        const dy = mg.y(tile) - disc.cy;
+        if (dx * dx + dy * dy > disc.rSq) continue;
+      }
       for (const from of origins) {
         const dist = mg.euclideanDistSquared(from, tile);
         if (dist < bestDist) {

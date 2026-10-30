@@ -36,7 +36,8 @@ needed, and the range is the only test. Upgrading a gate widens your circle of c
 your reach. A transfer spends no gate charge.
 
 - **In flight:** a transfer leaves you at once and flies, in your colour, from your gate nearest
-  the recipient to their nearest tile (the Hegemon's from the Dark Star). It arrives only when it
+  the recipient to their nearest tile (the Hegemon's from the Dark Star). Troops and gold for the
+  Hegemon always land on the Dark Star itself, never on ground it holds beyond the moat. It arrives only when it
   lands. If that tile changes hands while it is in the air, even if the recipient takes it back,
   the troops or gold come home to you when it lands. Troops beyond the recipient's room come home
   too. A transfer in flight cannot be recalled.

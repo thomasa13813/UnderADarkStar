@@ -23,7 +23,7 @@ Troop numbers are as shown in game. One second of game time is ten ticks.
 | **Industrial Zone**   | 125k → 250k → 500k → 1M (cap), **count shared with Spaceports** | 2 s        | Yes, no cap | Starts a trade network; each level is one more chance to send a supply delivery and supports one Army                         |
 | **Spaceport**         | as the Industrial Zone, **same shared count**                   | 5 s        | Yes, no cap | Sends freighters; each level is one more chance to send one, one more docking berth and +5 repair, and supports one Destroyer |
 | **Defense Post**      | 50k → 100k → 150k → 200k → 250k (cap)                           | 5 s        | No          | Within 30 tiles, attackers lose 5× the troops and advance 3× slower                                                           |
-| **Stargate**          | 500k flat, new or per upgrade                                   | 10 s       | Yes, no cap | Range 180 at level 1, +75 per level; fires troops or warheads, 5 s reload                                                     |
+| **Stargate**          | 500k flat, new or per upgrade                                   | 10 s       | Yes, no cap | Range 360 at level 1, +150 per level; fires troops or warheads, 5 s reload                                                    |
 | **Shield Array**      | 1M → 2.5M → 5M (cap)                                            | 10 s       | Yes, to 5   | +25 tiles of shield (125 at level 5): no other player's warhead harms anything inside                                         |
 
 ## 2. Rules every building follows
@@ -237,7 +237,7 @@ included), or upgrade one already there. It pays from its own gold, and the host
 
 **Fires troops or warheads at any tile in range.**
 
-- **Range:** 180 tiles at level 1, **+75 per level** (255, 330, 405 …). No level cap. **Level
+- **Range:** 360 tiles at level 1, **+150 per level** (510, 660, 810 …). No level cap. **Level
   buys range only**; the reload and the charge never change.
 - **One charge, then a 5-second reload.** A troop shot and a warhead launch spend the same
   charge.

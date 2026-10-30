@@ -1,4 +1,6 @@
+import { DonateGoldExecution } from "../src/core/execution/DonateGoldExecution";
 import { DonateTroopsExecution } from "../src/core/execution/DonateTroopExecution";
+import { TransferFlight } from "../src/core/execution/TransferFlight";
 import {
   Game,
   Player,
@@ -124,7 +126,7 @@ describe("Nothing is built on the Dark Star (H2)", () => {
 });
 
 // A finished stargate on the player's home ground: the gate network's reach
-// (GN1) for gold and troops. Range 180 reaches across this small map.
+// (GN1) for gold and troops. Range 360 reaches across this small map.
 function gate(player: Player) {
   player.buildUnit(UnitType.Stargate, homeTile(player), {});
 }
@@ -267,6 +269,33 @@ describe("Anyone whose gate reaches the Dark Star reinforces the throne (H9, GN5
     expect(hegemon.numTilesOwned()).toBe(game.darkStar()!.domainTileCount);
     // The slot is free again for whoever wants it.
     expect(game.canInvadeDarkStar(west)).toBe(true);
+  });
+
+  test("reinforcements land on the Dark Star, never on an invasion pocket", () => {
+    // A pocket of the throne's right beside east's gate, far nearer to it
+    // than the disc is.
+    const g = game.darkStar()!;
+    const outer = g.radius + g.moatWidth;
+    const pocket = game.ref(g.cx + outer + 8, g.cy);
+    hegemon.conquer(pocket);
+    expect(game.owner(pocket)).toBe(hegemon);
+    expect(game.isInDarkStar(pocket)).toBe(false);
+
+    const route = TransferFlight.route(game, east, hegemon)!;
+    expect(game.isInDarkStar(route.target)).toBe(true);
+
+    const max = game.config().maxTroops(hegemon);
+    hegemon.setTroops(max - 10_000);
+    game.addExecution(new DonateTroopsExecution(east, hegemon.id(), 5_000));
+    game.addExecution(new DonateGoldExecution(east, hegemon.id(), 1_000));
+    executeTicks(game, 2);
+    const shots = east
+      .units(UnitType.Projectile)
+      .filter((u) => u.targetTile() !== undefined);
+    expect(shots.length).toBeGreaterThan(0);
+    for (const shot of shots) {
+      expect(game.isInDarkStar(shot.targetTile()!)).toBe(true);
+    }
   });
 });
 
