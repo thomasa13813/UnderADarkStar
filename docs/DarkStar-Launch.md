@@ -269,7 +269,8 @@ _Done when_ nothing a player sees or hears is a placeholder.
       line. Server side built (Lobbies §10.5); client side built 2026-10-11 (Lobbies §10.7:
       home cards per line head, place in line, the win screen's stay-or-join-the-head choice,
       L31 the dead join the head); team thrones (T5, Lobbies §10.6) with it. All live since
-      2026-10-12.
+      2026-10-12. **To be replaced by the persistent rooms** (Lobbies §14, L32–L48), built
+      2026-10-28/29 on `feat/rooms` and play-tested by Tom; the lines run until it ships.
 - [x] **Watching it**: ~~an uptime check on `/api/health` and the API's `/health`~~ (UptimeRobot,
       both endpoints, set up by Tom 2026-10-12); ~~a look at the server's logs and load with a
       dozen clients connected~~ dropped 2026-10-12: a scripted soak was built and proven on the dev
@@ -341,12 +342,20 @@ _Done when_ the checklist is clean. This build is the release candidate.
    stay is still open. Tom's standard (2026-10-17): every launch map has reachable deep space for
    commerce and piracy; no solidly land-based maps.
 4. ~~How many thrones to open with.~~ Answered 2026-10-06 by the launch lines (a floor of five per
-   line, L16–L28), and for the planned rooms by L32 (two rooms, more on demand).
+   line, L16–L28), and for the rooms by L32 (two rooms, more on demand; built on `feat/rooms`).
 5. ~~Whether "January Games" is a legal entity yet.~~ Answered 2026-10-17: January Games, LLC,
    incorporated in Minnesota; the Terms and Privacy Policy name it.
 6. An itch.io listing at launch, or after the first week?
 
 ## 7. Changelog
+
+- **2026-10-29** — **The rooms batch is built** on `feat/rooms` (Lobbies §14.9), not merged:
+  persistent drop-in rooms in place of the launch lines, the removal of upstream's lobby
+  coordinator, and two findings of the 2026-10-25 readiness review, client error reports
+  (`POST /api/client-error`, one log line per report, no IP) and the lone player's lobby hint.
+  The Privacy Policy's "Server logs" item now names the error reports (effective October 29),
+  approved by Tom; it goes live with the batch. Tom play-tested it with no critical errors.
+  Merging and the deploy are Tom's call; Stage 8 is unchanged.
 
 - **2026-10-28** — **Stage 6 closed.** The production-keys item closed with nothing to rotate (the
   reasons are on the item) and the P8 checklist walked clean. What is left is Stage 8, Tom's go or

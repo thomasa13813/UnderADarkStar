@@ -426,7 +426,9 @@ named FFA throne lobbies back to back (`ThroneRegistry`), AI seated, two humans 
 hold, the successor opened the moment a round ends. Upstream's per-type queues (`ffa`, `team`,
 `special`; up to 6 queued per type, a new one every 2 minutes in prod) remain behind
 `PUBLIC_LOBBIES=queue`. The map playlist, worker hashing, the successor flow and the archive from P0
-are reused. Nothing persists between games server-side yet (L12).
+are reused. Nothing persists between games server-side yet (L12). The launch lines (L16–L28,
+live 2026-10-12) are being replaced by persistent drop-in rooms (Lobbies §14, L32–L48), built
+2026-10-28/29 on `feat/rooms`, not yet merged.
 
 **Tom's outline, and the recommended first version.** Thirty lobbies firing every minute is a target
 for a large population; the mechanism should be the same at any count, so start with a handful of

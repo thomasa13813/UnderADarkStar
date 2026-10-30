@@ -5,8 +5,9 @@
 > Companion to `DarkStar-Design.md` (§2 round loop, §3 rules R1–R6, §5.2 continuity) and
 > `DarkStar-Roadmap.md` phase P6, which this document expands and supersedes.
 > T1–T5 are built (T1–T4 2026-10-03, §10.1–§10.4; T5 2026-10-10, §10.6); T6 is not. Changelog at the end.
-> §14 is the decided plan (2026-10-27, revised 2026-10-28) to replace the launch lines with
-> persistent drop-in rooms (L32–L48); not built, so the launch lines still run.
+> §14 replaces the launch lines with persistent drop-in rooms (L32–L48; decided 2026-10-27,
+> revised 2026-10-28). Built 2026-10-28/29 on `feat/rooms` in four stages (§14.9), play-tested
+> by Tom 2026-10-29; not merged, so the launch lines still run on the live server.
 
 ## 1. Goals
 
@@ -718,14 +719,15 @@ home page's three cards do when a type's head has nobody; the win-screen and Thr
 strings; the registry changes and tests (`ThroneRegistry` stays pure: the queue is an ordering
 over the existing gathering state, plus `create` / `retire` actions).
 
-## 14. Persistent rooms with drop-in [Decided 2026-10-27; revised 2026-10-28; building on feat/rooms]
+## 14. Persistent rooms with drop-in [Decided 2026-10-27; revised 2026-10-28; built on feat/rooms, not merged]
 
 **Status.** Proposed by Tom on 2026-10-25, reviewed in three passes and **decided as the plan
 on 2026-10-27** (every question in §14.5 closed); revised 2026-10-28 (a drop-in's victory is void,
 L44; the coordinator removal, client error reports and the lone-player hint join the batch,
 §14.8). **Being built on `feat/rooms`** in four stages (§14.9), nothing merged until all four are
-in: stage 1, the server's scheduling, stage 2, drop-in, and stage 3, the client, landed
-2026-10-28. The launch lines (§13, §10.5, §10.7) run
+in: all four landed, stages 1-3 on 2026-10-28 and stage 4, client error reports, on 2026-10-29.
+Tom play-tested the batch on 2026-10-29 (no critical errors) and approved the Privacy Policy
+clause, published in `privacy.html` the same day (§14.9, stage 4). The launch lines (§13, §10.5, §10.7) run
 on the live server until the rooms ship;
 then the rooms replace them (L16–L28, L31), revisit L1, L9, L10 and L22, and close the special
 line. The changelog (§15) records each pass. The thinner first round of a player who arrives
@@ -1153,8 +1155,62 @@ retired (§14.7).
   test gains the room in the start message. `ThroneLine.test.ts` and `WinModalLine.test.ts` are
   gone with what they tested.
 
+**Stage 4: client error reports (2026-10-29).** §14.8's first item.
+
+- **The browser (`src/client/ClientErrorReporter.ts`).** Installed by `ClientErrorBoot.ts`, the
+  first import of `Main.ts`, so the errors of everything loaded after it are caught: `window`
+  `error` and `unhandledrejection`. A report holds the kind, the message, the stack (cut to
+  4,000 characters), the source position (`file:line:col`), the page (home, lobby, game,
+  catching up, replay or other: in a game it asks the `GameView`, set by `ClientGameRunner`,
+  whether it is catching up) and the build's `gitCommit`. Nothing about the player. The same
+  error goes once per page load and a page sends at most 10. Left out: the opaque
+  "Script error." of a cross-origin script, the browser's ResizeObserver notice, errors from
+  extensions. Sent with `navigator.sendBeacon` as `text/plain` to
+  `ClientEnv.serverHttpBase() + /api/client-error` (fetch with `keepalive` where beacons are
+  missing): a plain-text POST needs no CORS preflight, so a page served from the CDN reaches its
+  game server, and a report written as the page unloads still goes. Sending never throws.
+- **The server (`src/server/ClientErrorReport.ts`, mounted by `Master.ts`).** `POST
+/api/client-error` on the master (nginx's default location already sends `/api/*` there; no
+  config change): at most 10 reports a minute per address on top of the master's own limit, a
+  body of at most 8 KB, checked against a schema (oversized fields are refused, not trusted).
+  The same error from one address is logged once per 10 minutes (the address is held in memory
+  for that only, at most 5,000 entries). Every request is answered 204. One JSON line per report,
+  `"client error"` with `comp: "client"`, `kind`, `page`, `error`, `stack`, `source`, `commit` and
+  the `userAgent` read from the request (cut to 300 characters); **no IP address**, in keeping
+  with the policy's "only a shortened, anonymised form" (it is not logged at all). The field is
+  `error`, not `message`: winston folds a `message` field into the line's own message.
+- **Reading them.** The private runbook gains the command (`docs-private/DarkStar-Operations.md`,
+  the server checks).
+- **Browser check (dev).** A thrown error and a rejected promise on the home page each produced
+  one line in the dev server's log, for example:
+  `{"comp":"client","kind":"error","page":"home","error":"Error: darkstar-probe: thrown","stack":"…","commit":"DEV","userAgent":"Mozilla/5.0 … HeadlessChrome/140…","message":"client error",…}`.
+- **Tests.** `tests/server/ClientErrorReport.test.ts` (8: parsing and limits, the line and the
+  absent IP, repeats within and after the window, a malformed report, a long user agent, the
+  mounted route's plain-text body over HTTP, the rate limit's 429);
+  `tests/client/ClientErrorReporter.test.ts` (7: an error, rejections, once each and ten in all,
+  the noise left out, cutting, the page, a failing send).
+- **The Privacy Policy (approved by Tom and published 2026-10-29, effective date moved to
+  October 29).** The "Server logs" item under Technical information in
+  `resources/public/privacy.html` reads:
+
+  > **Server logs** of requests and errors, including error reports the game sends from your
+  > browser when something goes wrong: the error message and where in the game's code it
+  > happened, which part of the game you were in, the game's version, and your browser's name
+  > and version. A report contains nothing that identifies you. The logs are overwritten
+  > automatically as they fill and are cleared whenever the server is updated.
+
+  The retention table's "Server logs" row is unchanged. The policy ships with the rooms release,
+  which starts sending reports.
+
 ## 15. Changelog
 
+- **2026-10-29, stage 4 built** — **Client error reports** (§14.9, on `feat/rooms`, not merged).
+  Uncaught errors and rejected promises in the browser are sent as beacons to
+  `POST /api/client-error` on the master, rate-limited per address, repeats dropped, and logged
+  as one `"client error"` line with the page, error, stack, build and user agent, no IP. The
+  Privacy Policy clause is drafted for Tom's approval, not published. The batch is complete.
+  Later the same day: Tom approved the clause and it was published in `privacy.html`
+  (effective October 29); his play-test found no critical errors.
 - **2026-10-28, stage 3 built** — **The rooms' client** (§14.9, on `feat/rooms`, not merged). Play
   steers by L38 across modes; the home cards show each mode's room, a round in progress included,
   and a room's teams by their count ("3 teams", fixing a label that read as fixed-size teams).

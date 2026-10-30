@@ -34,6 +34,7 @@ import {
   UserSettings,
 } from "../core/game/UserSettings";
 import { WorkerClient } from "../core/worker/WorkerClient";
+import { setReportedGame } from "./ClientErrorReporter";
 import { showInGameAlert, showInGameConfirm } from "./InGameModal";
 import {
   AutoUpgradeEvent,
@@ -729,6 +730,8 @@ async function createClientGame(
     lobbyConfig.gameStartInfo.gameID,
     lobbyConfig.gameStartInfo.players,
   );
+  // Error reports say whether the page was playing or catching up (§14.8).
+  setReportedGame(gameView);
 
   // Transparent fullscreen overlay used purely as the pointer-event /
   // bounding-rect target for InputHandler + TransformHandler. The actual

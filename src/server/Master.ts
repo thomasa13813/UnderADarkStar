@@ -6,6 +6,7 @@ import http from "http";
 import path from "path";
 import { fileURLToPath } from "url";
 import { GameEnv } from "../core/configuration/Config";
+import { mountClientErrorRoute } from "./ClientErrorReport";
 import {
   applyCheckinState,
   CHECKIN_INTERVAL_MS,
@@ -173,6 +174,10 @@ export async function startMaster() {
     }, CHECKIN_INTERVAL_MS);
   }
 }
+
+// Under a Dark Star: error reports from players' browsers
+// (docs/DarkStar-Lobbies.md §14.8, ClientErrorReport.ts).
+mountClientErrorRoute(app, logger.child({ comp: "client" }));
 
 app.get("/api/health", (_req, res) => {
   const ready = lobbyService?.isHealthy() ?? false;

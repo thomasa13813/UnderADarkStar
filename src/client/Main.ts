@@ -15,6 +15,7 @@ import { UserSettings } from "../core/game/UserSettings";
 import { getUserMe } from "./Api";
 import { userAuth } from "./Auth";
 import { joinOwnsInFlightFlag } from "./BootInterrupts";
+import "./ClientErrorBoot";
 import { joinLobby, type JoinLobbyResult } from "./ClientGameRunner";
 import { getPlayerCosmeticsRefs } from "./Cosmetics";
 import "./GameModeSelector";

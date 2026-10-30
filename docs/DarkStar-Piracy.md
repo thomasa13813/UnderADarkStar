@@ -368,6 +368,12 @@ hold pays for the owner's tiles at the ordinary rate.
 
 ## 11. Changelog
 
+- **2026-10-29** — **Drop-in pirates built** with the rooms (Lobbies §14.9, L41–L44, on
+  `feat/rooms`, not merged). Public rooms always have piracy on. A player who joins after the
+  spawn phase, or who never spawned, may launch a corsair once the round is 300 ticks (30 s) past
+  its start (`DROP_IN_PIRATE_DELAY_TICKS`); a never-spawned pirate's landing shore is their spawn.
+  A watcher in a full or closing room may turn pirate from the watch bar. A drop-in's win is void
+  (PR13 as noted 2026-10-28). Wiki's Piracy page updated.
 - **2026-10-14** — First draft from Tom's proposal: assessment, rules, numbers, touch points,
   eight decisions for Tom. Same day, Tom decided: pirates must be able to return; landings may go
   on other players' coasts; fragility accepted with a guaranteed 100-tile claim and nothing more;
