@@ -332,7 +332,7 @@ subject replaces the UUID in the same field with no registry change (L3).
 | `THRONE_MIN_PLAYERS`   | 2            | 2         | L9 (humans, spectators excluded)                                         |
 | `WINNER_WINDOW_MS`     | 30 000       | 30 000    | L4                                                                       |
 | `THRONE_MAX_MODIFIERS` | 2            | 2         | L7                                                                       |
-| Round timer            | 20 min       | —         | R5, not choosable                                                        |
+| Round timer            | 15 min       | —         | R5, not choosable (20 until 2026-10-29)                                  |
 
 **Scaling rule [superseded 2026-10-05 by the launch lines, L16-L20]:** `open = clamp(floor(online / PLAYERS_PER_THRONE), THRONE_COUNT,
 THRONE_COUNT_MAX)` where `online` is home-page lobby-socket clients plus in-game clients (workers

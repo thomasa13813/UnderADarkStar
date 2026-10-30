@@ -1,5 +1,6 @@
 import { Logger } from "winston";
 import WebSocket from "ws";
+import { HEGEMON_DEFAULTS } from "../core/configuration/Config";
 import {
   Difficulty,
   GameMapSize,
@@ -122,7 +123,8 @@ export class GameManager {
           nations: "default",
           infiniteGold: false,
           infiniteTroops: false,
-          maxTimerValue: 20, // a Hegemon round is always timed (R5)
+          // a Hegemon round is always timed (R5)
+          maxTimerValue: HEGEMON_DEFAULTS.defaultRoundMinutes,
           instantBuild: false,
           randomSpawn: false,
           gameMode: GameMode.FFA,

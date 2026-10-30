@@ -112,7 +112,7 @@ describe("dropInVerdict", () => {
 
   it("uses the default round length when the timer is unset", () => {
     expect(dropInCutoffTurn({ ...config, maxTimerValue: undefined })).toBe(
-      200 + 20 * 600 - DROP_IN_CUTOFF_TURNS,
+      200 + 15 * 600 - DROP_IN_CUTOFF_TURNS,
     );
   });
 });

@@ -8,7 +8,7 @@ import {
   showToast,
   translateText,
 } from "../client/Utils";
-import { GameEnv } from "../core/configuration/Config";
+import { GameEnv, HEGEMON_DEFAULTS } from "../core/configuration/Config";
 import { EventBus } from "../core/EventBus";
 import { DoomsdayClockSpeed } from "../core/game/DoomsdayClock";
 import {
@@ -78,9 +78,10 @@ export class HostLobbyModal extends BaseModal {
   @state() private donateGold: boolean = false;
   @state() private infiniteTroops: boolean = false;
   @state() private donateTroops: boolean = false;
-  // A Hegemon round is always timed (R5): 20 minutes unless the host says.
+  // A Hegemon round is always timed (R5): the default unless the host says.
   @state() private maxTimer: boolean = true;
-  @state() private maxTimerValue: number | undefined = 20;
+  @state() private maxTimerValue: number | undefined =
+    HEGEMON_DEFAULTS.defaultRoundMinutes;
   @state() private startDelayValue: number | undefined = 3;
   @state() private instantBuild: boolean = false;
   @state() private randomSpawn: boolean = false;
@@ -884,7 +885,7 @@ export class HostLobbyModal extends BaseModal {
     this.infiniteTroops = false;
     this.donateTroops = false;
     this.maxTimer = true;
-    this.maxTimerValue = 20;
+    this.maxTimerValue = HEGEMON_DEFAULTS.defaultRoundMinutes;
     this.hegemonSeat = null;
     this.startDelayValue = 3;
     this.instantBuild = false;

@@ -57,12 +57,12 @@ describe("Hegemon win rules", () => {
     expect(setWinner).toHaveBeenCalledWith(hegemon, expect.anything());
   });
 
-  test("an untimed round lasts the default 20 minutes (R5)", () => {
+  test("an untimed round lasts the default 15 minutes (R5)", () => {
     const elapsed = vi.spyOn(game, "elapsedGameSeconds");
-    elapsed.mockReturnValue(20 * 60 - 1);
+    elapsed.mockReturnValue(15 * 60 - 1);
     executeTicks(game, 20);
     expect(setWinner).not.toHaveBeenCalled();
-    elapsed.mockReturnValue(20 * 60);
+    elapsed.mockReturnValue(15 * 60);
     executeTicks(game, 20);
     expect(setWinner).toHaveBeenCalledWith(hegemon, expect.anything());
   });

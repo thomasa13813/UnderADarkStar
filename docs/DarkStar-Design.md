@@ -75,7 +75,8 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
 - **R4 — Timer favours the throne.** If the timer expires with the Hegemon alive, the Hegemon wins and
   keeps the throne. In the fiction this _is_ the Hegemon's power: it unleashes the Dark Star to reverse
   time and reset its enemies to weakness (§1).
-- **R5 — Default round length: 20 minutes** (tunable; engine supports 1–120 via `maxTimerValue`).
+- **R5 — Default round length: 15 minutes** (tunable; engine supports 1–120 via `maxTimerValue`). Was 20 until
+  2026-10-29: Tom's tests found one challenger usually dominating before 20 minutes were up.
 - **R6 — AI Hegemon fallback.** First round, or previous winner absent → a purpose-built AI holds the
   throne. This is also how singleplayer works.
 
@@ -121,7 +122,7 @@ Where a rule still has an unresolved detail it points at a follow-up in §4.
   share), swept with the headless sim, then a short list playtested (F1). The AI Hegemon's strike
   thresholds (H11) are left as they are and retuned after. [Built 2026-09-27, §6.21 — the M4 first
   pass, every number a lever:] **The refill is flat**, not the engine's curve: the same troops every
-  tick, the ceiling over `refillMinutes` (20). Tom's reasoning: the curve peaks part way up and crawls
+  tick, the ceiling over `refillMinutes` (15, one default round). Tom's reasoning: the curve peaks part way up and crawls
   near empty, so a Hegemon bled dry — by design or by collusion with an invader — could be kept down
   by a slow-rolled invasion for as long as the round lasts; a flat refill is well below what a
   challenger holding half the map regenerates at its best, well above what an emptied challenger
@@ -2326,6 +2327,8 @@ hydrogen-bomb removal (closed by S6).
 | **Intent / Turn / Execution** | Player action → server-bundled tick of intents → deterministic sim object that applies it.                                                                                                           |
 
 ## 11. Changelog
+
+- **2026-10-29, round length** — Tom: the default round is **15 minutes**, down from 20 (R5), since in his tests one challenger usually dominated the galaxy before the 20-minute mark. `HEGEMON_DEFAULTS.defaultRoundMinutes` is now the single source: the private lobby (`GameManager`), the host and solo modals and the wiki all read it. The throne's pool refill follows it (`refillMinutes`, one constant for both; Tom: the two should not keep different clocks), so the pool still fills from empty once per default round, now ~415k a minute on Milky Way instead of ~310k. Earlier measurements quoting 20-minute rounds stand as recorded.
 
 - **2026-10-29, map** — **All Seeing Eye** (§5.3), the Eye of Providence over a pyramid: the Dark Star as the pupil, the pyramid's bricks islands with deep space for mortar, 20 Lords.
 - **2026-10-29, map** — **Trip to the Moon** (§5.3), from the frame of Méliès's 1902 film: the Man in the Moon, the Dark Star in the eye the shell strikes, 21 Lords on the far limb.

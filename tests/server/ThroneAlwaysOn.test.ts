@@ -30,7 +30,7 @@ describe("the throne is always on", () => {
     const gm = new GameManager(mockLogger());
     const game = gm.createGame("aTestGame1", undefined, "creator-pid");
     expect(game?.gameConfig.hegemon).toEqual({ enabled: true });
-    expect(game?.gameConfig.maxTimerValue).toBe(20);
+    expect(game?.gameConfig.maxTimerValue).toBe(15);
   });
 });
 

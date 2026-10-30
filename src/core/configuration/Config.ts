@@ -401,9 +401,12 @@ export const PIRACY_DEFAULTS = {
   healEveryTicks: 3,
 };
 
+// R5: the round length when maxTimerValue is unset, and the throne's refill.
+const DEFAULT_ROUND_MINUTES = 15;
+
 export const HEGEMON_DEFAULTS = {
   enabled: false,
-  defaultRoundMinutes: 20, // R5, used when maxTimerValue is unset
+  defaultRoundMinutes: DEFAULT_ROUND_MINUTES, // R5, used when maxTimerValue is unset
   domainRadiusPermille: 90,
   moatWidthPermille: 10,
   moatMinTiles: 15,
@@ -414,11 +417,11 @@ export const HEGEMON_DEFAULTS = {
   // so that a throne bled dry cannot be kept down by a slow-rolled invasion
   // while its regeneration is at its weakest (Tom): the refill is well below
   // a challenger's peak (half the map at 60% full regenerates ~2.4M/min on
-  // Milky Way) but never as low as an emptied challenger's. At 20 minutes
-  // on Milky Way (ceiling ~6.2M) that is ~310k a minute: one full strike
-  // per round, and the throne stays open for most of it.
+  // Milky Way) but never as low as an emptied challenger's. The refill takes
+  // one default round (Tom, 2026-10-29): at 15 minutes on Milky Way (ceiling
+  // ~6.2M) that is ~415k a minute, one full strike per round.
   troopCeilingPercentOfWholeMapCap: 125,
-  refillMinutes: 20, // from empty to the ceiling
+  refillMinutes: DEFAULT_ROUND_MINUTES, // from empty to the ceiling
   // Gold is a shadow tax (H4): each tick the Hegemon earns this share of the
   // gold every challenger earned that tick (workers, trade, trains, piracy,
   // conquest — everything but their starting gold), deducted from nobody.

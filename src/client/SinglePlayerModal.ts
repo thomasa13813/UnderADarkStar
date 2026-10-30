@@ -3,6 +3,7 @@ import { customElement, state } from "lit/decorators.js";
 import { translateText } from "../client/Utils";
 import { UserMeResponse } from "../core/ApiSchemas";
 import { assetUrl } from "../core/AssetUrls";
+import { HEGEMON_DEFAULTS } from "../core/configuration/Config";
 import { DoomsdayClockSpeed } from "../core/game/DoomsdayClock";
 import {
   Difficulty,
@@ -1275,7 +1276,9 @@ export class SinglePlayerModal extends BaseModal {
                 ...(this.hegemon
                   ? {
                       hegemon: { enabled: true },
-                      maxTimerValue: finalMaxTimerValue ?? 20,
+                      maxTimerValue:
+                        finalMaxTimerValue ??
+                        HEGEMON_DEFAULTS.defaultRoundMinutes,
                     }
                   : {}),
               },
