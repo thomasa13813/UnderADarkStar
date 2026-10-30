@@ -1,0 +1,135 @@
+{
+  "categories": ["cosmic"],
+  "hegemon": {
+    "center": [775, 843],
+    "moat": 18,
+    "radius": 121
+  },
+  "id": "TripToTheMoon",
+  "map": {
+    "height": 1800,
+    "num_land_tiles": 853943,
+    "width": 1800
+  },
+  "map16x": {
+    "height": 450,
+    "num_land_tiles": 51140,
+    "width": 450
+  },
+  "map4x": {
+    "height": 900,
+    "num_land_tiles": 210501,
+    "width": 900
+  },
+  "multiplayer_frequency": 4,
+  "name": "Trip to the Moon",
+  "nations": [
+    {
+      "coordinates": [970, 380],
+      "flag": "",
+      "name": "Gienah Order"
+    },
+    {
+      "coordinates": [1180, 380],
+      "flag": "",
+      "name": "Menkar Dominion"
+    },
+    {
+      "coordinates": [1360, 475],
+      "flag": "",
+      "name": "Arbiten Harmony"
+    },
+    {
+      "coordinates": [1230, 630],
+      "flag": "",
+      "name": "Pollux Compact"
+    },
+    {
+      "coordinates": [1480, 655],
+      "flag": "",
+      "name": "Cygnus Union"
+    },
+    {
+      "coordinates": [1340, 750],
+      "flag": "",
+      "name": "Achernar Confederation"
+    },
+    {
+      "coordinates": [1535, 900],
+      "flag": "",
+      "name": "Rotertian Assembly"
+    },
+    {
+      "coordinates": [1275, 900],
+      "flag": "",
+      "name": "Vindemiatrix Sovereignty"
+    },
+    {
+      "coordinates": [1360, 1040],
+      "flag": "",
+      "name": "Argent Hive"
+    },
+    {
+      "coordinates": [1485, 1145],
+      "flag": "",
+      "name": "Hadar Marches"
+    },
+    {
+      "coordinates": [1355, 1215],
+      "flag": "",
+      "name": "Capella Dominion"
+    },
+    {
+      "coordinates": [1225, 1135],
+      "flag": "",
+      "name": "Vega Confederation"
+    },
+    {
+      "coordinates": [1325, 1360],
+      "flag": "",
+      "name": "Zosma Combine"
+    },
+    {
+      "coordinates": [1065, 1315],
+      "flag": "",
+      "name": "Polaris Crown"
+    },
+    {
+      "coordinates": [1125, 1475],
+      "flag": "",
+      "name": "Harbekkan Concord"
+    },
+    {
+      "coordinates": [960, 1500],
+      "flag": "",
+      "name": "Arcturus Free Worlds"
+    },
+    {
+      "coordinates": [855, 1340],
+      "flag": "",
+      "name": "Thuban Protectorate"
+    },
+    {
+      "coordinates": [745, 1470],
+      "flag": "",
+      "name": "Beardenian Tribal Council"
+    },
+    {
+      "coordinates": [590, 1380],
+      "flag": "",
+      "name": "Kepler Collective"
+    },
+    {
+      "coordinates": [460, 1260],
+      "flag": "",
+      "name": "Procyon Concord"
+    },
+    {
+      "coordinates": [770, 330],
+      "flag": "",
+      "name": "Izar Reach"
+    }
+  ],
+  "themes": ["space"],
+  "translation_key": "map.triptothemoon"
+}

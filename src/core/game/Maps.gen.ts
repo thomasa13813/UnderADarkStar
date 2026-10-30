@@ -24,6 +24,7 @@ export enum GameMapType {
   Sol = "Sol", // map-generator/assets/maps/sol/info.json
   Standoff = "Standoff", // map-generator/assets/maps/standoff/info.json
   TradersDream = "Traders Dream", // map-generator/assets/maps/tradersdream/info.json
+  TripToTheMoon = "Trip to the Moon", // map-generator/assets/maps/triptothemoon/info.json
   WarshipWarship = "Destroyers of Worlds", // map-generator/assets/maps/warshipwarship/info.json
   Wurm = "Wurm", // map-generator/assets/maps/wurm/info.json
 }
@@ -423,6 +424,18 @@ export const maps: readonly MapInfo[] = [
     specialFrequency: -1,
     defaultNationCount: 13,
     specialTeamCount: 2,
+  },
+  {
+    id: "TripToTheMoon",
+    type: GameMapType.TripToTheMoon,
+    translationKey: "map.triptothemoon",
+    categories: ["cosmic"],
+    multiplayerFrequency: 4,
+    ffaFrequency: -1,
+    teamFrequency: -1,
+    specialFrequency: -1,
+    defaultNationCount: 21,
+    themes: ["space"],
   },
   {
     id: "WarshipWarship",

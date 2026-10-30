@@ -813,6 +813,23 @@ persistence was OpenFront's closed-source API, which we do not have.
   in two rows below. Each card carries its symbol in highland in the game's pixel face. The Dark
   Star sits in the bay above the transition metals; Lords sit on the cards farthest from it, Baron
   land nearer. In public lobbies at multiplayer frequency 4. `src/scripts/drawings/Periodic.ts`.
+- **Trip to the Moon** (`map-generator/assets/maps/triptothemoon/`, 1800×1800, ~855k land tiles,
+  21 Lords) [Built 2026-10-29] from the famous frame of Méliès's 1902 film (public domain; kept
+  as `MapImages/Trip to the Moon.png`): the Man in the Moon with the explorers' shell in his right
+  eye, and the Dark Star in that eye where the shell strikes (Tom). Positions are measured off the
+  frame. The moon is a 610-tile disc of lumpy nebula; the face is high ground (heavy brows, the
+  open left eye a lake of deep space with the pupil an island, the nose a ridge with two nostril
+  pools, the frowning mouth an inland sea between mountain lips, chin and cheek); craters from
+  the frame and more by seed have mountain rims, the large ones floors of deep space. The shell
+  is its own piece, ringed at its open back, with an 8-tile channel round it and its nose cut by
+  the moat. **The star is drawn at radius 120**: the standard 162 is wider than the gap between
+  the face's eyes. **Over the land budget by choice**: the star sits near the middle of one
+  continent, so land beyond the 500-tile exclusion is a crescent on the lower and right limb
+  (~296k, the Lords' land) and the face and shell are Baron land (~559k); a 570-tile moon came
+  to 753k but crowded 23 Lords onto 215k, and a honeycomb of craters drowned the face. First
+  `HegemonSim` look: overthrown in 3 of 3 seeds, all by gate (16m28s, 18m23s, 18m35s; first
+  landings at 12 to 15 minutes). `src/scripts/drawings/TripToTheMoon.ts`. Tom kept the land as
+  it is (same day).
 - **Gap:** terrain colours are global, not per-map. Map thumbnails follow the global terrain
   defaults: `scripts/generateMapThumbnails.ts` redraws them after the Go generator, whose own
   `getThumbnailColor` colours are overwritten (2026-10-17).
@@ -2295,6 +2312,8 @@ hydrogen-bomb removal (closed by S6).
 | **Intent / Turn / Execution** | Player action → server-bundled tick of intents → deterministic sim object that applies it.                                                                                                           |
 
 ## 11. Changelog
+
+- **2026-10-29, map** — **Trip to the Moon** (§5.3), from the frame of Méliès's 1902 film: the Man in the Moon, the Dark Star in the eye the shell strikes, 21 Lords on the far limb.
 
 - **2026-10-29, quick fixes** — Tom: (1) reinforcements and gold for the Hegemon land only on the Dark Star, never on an invasion pocket (GN2, `TransferFlight.route`); (2) the round-end screen of a room drops Keep Playing / Spectate, since the room resets; (3) stargate range doubled, **360** at level 1, **+150** per level (`STARGATE_DEFAULTS`); (4) the handshake's Donate troops and Reinforce are sized by the troop slider at the click, as an attack is, not when the menu opened.
 
